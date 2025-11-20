@@ -5,7 +5,7 @@ describe("fetchImageDigest", () => {
   test(
     "fetch image digest",
     async () => {
-      const expected = "sha256:bc9b603c90e9a9f2af9c4de3352a521f6b68eb0466ed65e0103b8e92cfc3af06"
+      const expected = "sha256:eba31f8fabdda288240cb5d4a97a867e2ab72b01ec9df22163a84b98a7c818f8"
       const image = `ghcr.io/exeteres/reside/contracts/alpha.v1:latest@${expected}`
 
       const digest = await fetchImageDigest(image)
@@ -21,7 +21,7 @@ describe("fetchResideManifest", () => {
     "fetch contract manifest",
     async () => {
       const image =
-        "ghcr.io/exeteres/reside/contracts/alpha.v1@sha256:bc9b603c90e9a9f2af9c4de3352a521f6b68eb0466ed65e0103b8e92cfc3af06"
+        "ghcr.io/exeteres/reside/contracts/alpha.v1@sha256:eba31f8fabdda288240cb5d4a97a867e2ab72b01ec9df22163a84b98a7c818f8"
 
       const manifest = await fetchResideManifest(image)
 
@@ -34,7 +34,7 @@ describe("fetchResideManifest", () => {
     "fetch replica manifest",
     async () => {
       const image =
-        "ghcr.io/exeteres/reside/replicas/alpha@sha256:e94a4a90d72c587f9c682b6e4b0c6b1cc7218ed46953275cddaf58100b35d693"
+        "ghcr.io/exeteres/reside/replicas/alpha@sha256:7748e6e1e9f00c04fde78cea6f9214e3dbb50e1cf4518207ab51958f71c17aa5"
 
       const manifest = await fetchResideManifest(image)
 

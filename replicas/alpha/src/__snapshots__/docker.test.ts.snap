@@ -4,11 +4,11 @@ exports[`fetchResideManifest fetch contract manifest 1`] = `
 {
   "displayInfo": {
     "en": {
-      "description": "The contract of the alpha replica that manages other replicas.",
+      "description": "Allows managing other replicas and their loading into the cluster.",
       "title": "Alpha Replica",
     },
     "ru": {
-      "description": "Контракт альфа-реплики, управляющей другими репликами.",
+      "description": "Позволяет управлять другими репликами и их загрузкой в кластер.",
       "title": "Альфа Реплика",
     },
   },
@@ -100,11 +100,23 @@ exports[`fetchResideManifest fetch contract manifest 1`] = `
         },
       },
     },
+    "replica:manage:all": {
+      "displayInfo": {
+        "en": {
+          "description": "Allows managing all replicas in the cluster: enabling and disabling them. Not to be confused with rcb:manage:all.",
+          "title": "Manage all replicas",
+        },
+        "ru": {
+          "description": "Позволяет управлять всеми репликами в кластере: включать и выключать их. Не путать с rcb:manage:all.",
+          "title": "Управление всеми репликами",
+        },
+      },
+    },
     "replica:read:all": {
       "displayInfo": {
         "ru": {
-          "description": "Позволяет читать информацию обо всех репликах, зарегистрированных в кластере.",
-          "title": "Чтение информации о репликах",
+          "description": "Позволяет читать информацию обо всех репликах и контрактах, зарегистрированных в кластере.",
+          "title": "Чтение информации о репликах и контрактах",
         },
       },
     },
@@ -122,7 +134,7 @@ exports[`fetchResideManifest fetch replica manifest 1`] = `
     },
     "ru": {
       "description": "Управляет другими репликами и запускает новые.",
-      "title": "Альфа Реплика",
+      "title": "Альфа-Реплика",
     },
   },
   "identity": "ghcr.io/exeteres/reside/replicas/alpha",
@@ -146,7 +158,19 @@ exports[`fetchResideManifest fetch replica manifest 1`] = `
           "params": {},
         },
         {
+          "name": "job:manage:all",
+          "params": {},
+        },
+        {
           "name": "secret:manage:all",
+          "params": {},
+        },
+        {
+          "name": "service:manage:all",
+          "params": {},
+        },
+        {
+          "name": "ingress:manage:all",
           "params": {},
         },
       ],
