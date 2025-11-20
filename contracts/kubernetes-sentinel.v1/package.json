@@ -1,0 +1,23 @@
+{
+  "name": "@contracts/kubernetes-sentinel.v1",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "publish": "reside build --push",
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings"
+  },
+  "dependencies": {
+    "@reside/shared": "workspace:*",
+    "jazz-tools": "catalog:",
+    "kubernetes-models": "catalog:"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:"
+  }
+}

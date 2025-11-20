@@ -1,0 +1,13 @@
+diff --git a/dist/chunks/index.cjs b/dist/chunks/index.cjs
+index 4e289d1216d84cc8b4ba57ec0a0519574a3dc14b..ce23f235c75c365d6f7b57c06e0c642a58f5531d 100644
+--- a/dist/chunks/index.cjs
++++ b/dist/chunks/index.cjs
+@@ -136,7 +136,7 @@ function download(url, to, redirect = 0) {
+ }
+ 
+ function startCloudflaredTunnel(options = {}) {
+-  const args = ["tunnel"];
++  const args = ["tunnel", "--protocol", "http2"];
+   for (const [key, value] of Object.entries(options)) {
+     if (typeof value === "string") {
+       args.push(`${key}`, value);

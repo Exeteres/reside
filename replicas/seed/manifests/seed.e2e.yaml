@@ -1,0 +1,64 @@
+# Временный SA для запуска Первоначальной Реплики
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: seed
+  labels:
+    app.kubernetes.io/managed-by: kubernetes-sentinel
+---
+# Роль с полными правами для этого SA
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: seed
+  labels:
+    app.kubernetes.io/managed-by: kubernetes-sentinel
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+# Привязка роли к SA
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: seed
+  labels:
+    app.kubernetes.io/managed-by: kubernetes-sentinel
+subjects:
+  - kind: ServiceAccount
+    name: seed
+roleRef:
+  kind: Role
+  name: seed
+  apiGroup: rbac.authorization.k8s.io
+---
+# Непосредственно сама джоба с Первоначальной Репликой
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-1
+  labels:
+    reside.io/replica: seed
+    app.kubernetes.io/managed-by: kubernetes-sentinel
+spec:
+  template:
+    metadata:
+      labels:
+        reside.io/replica: seed
+    spec:
+      containers:
+        - name: seed
+          image: ghcr.io/exeteres/reside/replicas/seed:e2e
+          env:
+            - name: RESIDE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: RESIDE_BOOTSTRAP_JAZZ_SERVICE_TYPE
+              value: LoadBalancer
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "0"
+      restartPolicy: Never
+      serviceAccountName: seed
+  backoffLimit: 0

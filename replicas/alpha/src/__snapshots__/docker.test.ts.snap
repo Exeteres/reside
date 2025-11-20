@@ -1,0 +1,160 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`fetchResideManifest fetch contract manifest 1`] = `
+{
+  "displayInfo": {
+    "en": {
+      "description": "The contract of the alpha replica that manages other replicas.",
+      "title": "Alpha Replica",
+    },
+    "ru": {
+      "description": "Контракт альфа-реплики, управляющей другими репликами.",
+      "title": "Альфа Реплика",
+    },
+  },
+  "identity": "ghcr.io/exeteres/reside/contracts/alpha.v1",
+  "methods": {
+    "approveLoadRequest": {
+      "displayInfo": {
+        "en": {
+          "description": "Method to approve a load request for a new replica in the cluster.",
+          "title": "Approve Load Request",
+        },
+        "ru": {
+          "description": "Метод для подтверждения запроса на загрузку новой реплики в кластер.",
+          "title": "Подтверждение запроса на загрузку реплики",
+        },
+      },
+    },
+    "claimSuperAdminAccess": {
+      "displayInfo": {
+        "en": {
+          "description": "Method to claim super admin access after the first cluster startup.",
+          "title": "Claim Super Admin Access",
+        },
+        "ru": {
+          "description": "Метод для запроса доступа супер администратора после первого запуска кластера.",
+          "title": "Запрос доступа супер администратора",
+        },
+      },
+    },
+    "createLoadRequest": {
+      "displayInfo": {
+        "en": {
+          "description": "Method to create a load request for a new replica in the cluster.",
+          "title": "Create Load Request",
+        },
+        "ru": {
+          "description": "Метод для создания запроса на загрузку новой реплики в кластер.",
+          "title": "Создание запроса на загрузку реплики",
+        },
+      },
+    },
+    "rejectLoadRequest": {
+      "displayInfo": {
+        "en": {
+          "description": "Method to reject a load request for a new replica in the cluster.",
+          "title": "Reject Load Request",
+        },
+        "ru": {
+          "description": "Метод для отклонения запроса на загрузку новой реплики в кластер.",
+          "title": "Отклонение запроса на загрузку реплики",
+        },
+      },
+    },
+  },
+  "permissions": {
+    "load-request:approve": {
+      "displayInfo": {
+        "ru": {
+          "description": "Позволяет подтверждать запросы на загрузку новых реплик в кластер.",
+          "title": "Подтверждение загрузки реплики",
+        },
+      },
+    },
+    "load-request:create": {
+      "displayInfo": {
+        "ru": {
+          "description": "Позволяет создавать запросы на загрузку новых реплик в кластер.",
+          "title": "Запрос на загрузку реплики",
+        },
+      },
+    },
+    "load-request:read:all": {
+      "displayInfo": {
+        "ru": {
+          "description": "Позволяет читать все запросы на загрузку новых реплик в кластер.",
+          "title": "Чтение всех запросов на загрузку реплик",
+        },
+      },
+    },
+    "rcb:manage:all": {
+      "displayInfo": {
+        "en": {
+          "description": "Allows managing the control blocks of all replicas in the cluster. In other words, allows instructing replicas to grant or revoke any permissions to any accounts.",
+          "title": "Manage all RCBs",
+        },
+        "ru": {
+          "description": "Позволяет управлять блоками управления всех реплик в кластере. Иными словами, позволяет приказывать репликам наделять или отзывать любые разрешения любым аккаунтам.",
+          "title": "Управление всеми RCB",
+        },
+      },
+    },
+    "replica:read:all": {
+      "displayInfo": {
+        "ru": {
+          "description": "Позволяет читать информацию обо всех репликах, зарегистрированных в кластере.",
+          "title": "Чтение информации о репликах",
+        },
+      },
+    },
+  },
+  "type": "contract",
+}
+`;
+
+exports[`fetchResideManifest fetch replica manifest 1`] = `
+{
+  "displayInfo": {
+    "en": {
+      "description": "Manages other replicas and launches new ones.",
+      "title": "Alpha Replica",
+    },
+    "ru": {
+      "description": "Управляет другими репликами и запускает новые.",
+      "title": "Альфа Реплика",
+    },
+  },
+  "identity": "ghcr.io/exeteres/reside/replicas/alpha",
+  "implementations": {
+    "alpha": {
+      "identity": "ghcr.io/exeteres/reside/contracts/alpha.v1",
+    },
+  },
+  "info": {
+    "class": "long-running",
+    "exclusive": true,
+    "name": "alpha",
+    "scalable": true,
+  },
+  "requirements": {
+    "k8s": {
+      "identity": "ghcr.io/exeteres/reside/contracts/kubernetes-sentinel.v1",
+      "permissions": [
+        {
+          "name": "deployment:manage:all",
+          "params": {},
+        },
+        {
+          "name": "secret:manage:all",
+          "params": {},
+        },
+      ],
+    },
+  },
+  "testingPackages": [
+    "regclient",
+  ],
+  "type": "replica",
+}
+`;

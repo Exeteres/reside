@@ -1,0 +1,32 @@
+{
+  "name": "@replicas/alpha-secretary",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "publish": "reside build --push",
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings"
+  },
+  "dependencies": {
+    "@contracts/alpha.v1": "workspace:*",
+    "@contracts/telegram-handler.v1": "workspace:*",
+    "@contracts/telegram.v1": "workspace:*",
+    "@contracts/user-manager.v1": "workspace:*",
+    "@hpcc-js/wasm-graphviz": "^1.15.0",
+    "@reside/shared": "workspace:*",
+    "@reside/telegram": "workspace:*",
+    "@resvg/resvg-js": "^2.6.2",
+    "grammy": "catalog:",
+    "jazz-tools": "catalog:",
+    "pino": "catalog:",
+    "remeda": "catalog:"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:"
+  }
+}

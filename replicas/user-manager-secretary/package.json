@@ -1,0 +1,29 @@
+{
+  "name": "@replicas/user-manager-secretary",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "publish": "reside build --push",
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings"
+  },
+  "dependencies": {
+    "@contracts/telegram-handler.v1": "workspace:*",
+    "@contracts/telegram.v1": "workspace:*",
+    "@contracts/user-manager.v1": "workspace:*",
+    "@reside/shared": "workspace:*",
+    "@reside/telegram": "workspace:*",
+    "grammy": "catalog:",
+    "jazz-tools": "catalog:",
+    "pino": "catalog:",
+    "remeda": "catalog:"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:"
+  }
+}

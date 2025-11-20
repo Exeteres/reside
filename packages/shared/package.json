@@ -1,0 +1,32 @@
+{
+  "name": "@reside/shared",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "cojson": "catalog:",
+    "cojson-transport-ws": "catalog:",
+    "etcd3": "^1.1.2",
+    "get-port-please": "^3.2.0",
+    "jazz-run": "catalog:",
+    "jazz-tools": "catalog:",
+    "p-retry": "^7.1.0",
+    "pino": "catalog:",
+    "remeda": "catalog:",
+    "type-fest": "^5.1.0",
+    "ws": "^8.18.3",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:"
+  }
+}
