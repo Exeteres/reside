@@ -14,7 +14,6 @@ import { getReplicasImplementingContract } from "./replica"
 export async function discoverRequirement<TContract extends Contract>(
   alphaData: AlphaData,
   contract: TContract,
-  baseUrl?: string,
 ): Promise<Requirement<TContract>> {
   const contractEntity = await getContractEntityByIdentity(alphaData, contract.identity)
   if (!contractEntity) {
@@ -37,7 +36,6 @@ export async function discoverRequirement<TContract extends Contract>(
   return createRequirement(
     contract,
     loadedReplica.account.$jazz.id,
-    baseUrl,
     loadedReplica.$jazz.loadedAs as Account,
   )
 }

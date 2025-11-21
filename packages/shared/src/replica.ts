@@ -11,8 +11,7 @@ export const CommonReplicaConfig = z.object({
   RESIDE_ACCOUNT_ID: z.string(),
   RESIDE_AGENT_SECRET: z.string(),
   RESIDE_SYNC_SERVER_URL: z.string(),
-  RESIDE_ENDPOINT: z.string().optional(),
-  RESIDE_RPC_SERVER_URL: z.string().optional(),
+  RESIDE_REPLICA_ENDPOINT: z.string().optional(),
   RESIDE_ETCD_HOSTS: z.string().optional(),
   RESIDE_LISTEN_PORT: z.string().optional(),
 })
@@ -36,6 +35,7 @@ export function ReplicaProfile<TImplementations extends Record<string, Contract>
   return co.map({
     name: z.string(),
     replicaId: z.number(),
+    endpoint: z.string().optional(),
     contracts: co.map(
       Object.fromEntries(
         Object.values(implementations).map(contract => [contract.identity, contract.data]),
@@ -106,6 +106,13 @@ export async function populateReplicaAccount<
   }
 
   ok(loadedAccount.profile.$isLoaded)
+
+  // update endpoint so consumers can reach this replica
+  const endpoint = process.env.RESIDE_REPLICA_ENDPOINT ?? `http://${replicaName}`
+
+  if (loadedAccount.profile.endpoint !== endpoint) {
+    loadedAccount.profile.$jazz.set("endpoint", endpoint)
+  }
 
   // create empty objects for each implemented contract and run migrations
   for (const contract of Object.values(replicaDef.implementations ?? {})) {

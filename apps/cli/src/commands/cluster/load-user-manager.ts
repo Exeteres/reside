@@ -25,13 +25,8 @@ export const loadUserManagerCommand = defineCommand({
 
     await sleep(6_000)
 
-    const { cluster, alpha, logOut } = await createJazzContextForCurrentContext(args.context)
-
-    const { register } = await discoverRequirement(
-      alpha.data,
-      UserManagerContract,
-      cluster.endpoint,
-    )
+    const { alpha, logOut } = await createJazzContextForCurrentContext(args.context)
+    const { register } = await discoverRequirement(alpha.data, UserManagerContract)
 
     await register({})
     await logOut()

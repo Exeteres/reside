@@ -42,7 +42,7 @@ export const grantPermissionCommand = defineCommand({
       throw new Error(`Invalid user ID "${args.userId}", must be a positive number`)
     }
 
-    const { cluster, alpha, logOut } = await createJazzContextForCurrentContext(args.context)
+    const { alpha, logOut } = await createJazzContextForCurrentContext(args.context)
 
     const contractEntity = await getContractEntityByIdentity(alpha.data, args.contractIdentity)
     if (!contractEntity) {
@@ -62,7 +62,7 @@ export const grantPermissionCommand = defineCommand({
       )
     }
 
-    const userManager = await discoverRequirement(alpha.data, UserManagerContract, cluster.endpoint)
+    const userManager = await discoverRequirement(alpha.data, UserManagerContract)
     const user = await getUserById(userManager.data, userId)
     if (!user) {
       throw new Error(`User with ID ${userId} not found in the User Manager Replica`)

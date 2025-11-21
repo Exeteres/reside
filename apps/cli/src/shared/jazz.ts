@@ -41,7 +41,7 @@ export async function createJazzContextForCurrentContext(context?: string) {
     ],
   })
 
-  const alpha = await createRequirement(AlphaContract, cluster.alphaReplicaId, cluster.endpoint)
+  const alpha = await createRequirement(AlphaContract, cluster.alphaReplicaId)
 
   return {
     ...jazzContext,

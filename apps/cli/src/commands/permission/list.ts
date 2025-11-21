@@ -22,9 +22,8 @@ export const listPermissionsCommand = defineCommand({
       throw new Error(`Invalid user ID "${args.userId}", must be a positive number`)
     }
 
-    const { cluster, alpha, logOut } = await createJazzContextForCurrentContext(args.context)
-
-    const userManager = await discoverRequirement(alpha.data, UserManagerContract, cluster.endpoint)
+    const { alpha, logOut } = await createJazzContextForCurrentContext(args.context)
+    const userManager = await discoverRequirement(alpha.data, UserManagerContract)
 
     const user = await getUserById(userManager.data, userId)
     if (!user) {

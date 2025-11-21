@@ -18,8 +18,8 @@ export const getSecretValueCommand = defineCommand({
   },
 
   async run({ args }) {
-    const { cluster, alpha, logOut } = await createJazzContextForCurrentContext(args.context)
-    const secretManager = await discoverRequirement(alpha.data, SecretContract, cluster.endpoint)
+    const { alpha, logOut } = await createJazzContextForCurrentContext(args.context)
+    const secretManager = await discoverRequirement(alpha.data, SecretContract)
 
     const secret = await getManagedSecretByName(secretManager.data, args.secretName)
     if (!secret) {

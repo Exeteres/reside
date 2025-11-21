@@ -63,7 +63,7 @@ export const loadReplicaCommand = defineCommand({
     logger.info("creating load request for replica image %s...", args.image)
 
     const { data, createLoadRequest, approveLoadRequest, rejectLoadRequest } =
-      await createRequirement(AlphaContract, cluster.alphaReplicaId, cluster.endpoint)
+      await createRequirement(AlphaContract, cluster.alphaReplicaId)
 
     const replicaId = args["replica-id"] ? Number(args["replica-id"]) : undefined
     if (replicaId !== undefined && Number.isNaN(replicaId)) {
