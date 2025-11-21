@@ -152,7 +152,7 @@ export function createImplementations<TImplementations extends Record<string, Co
  *
  * @param contract The contract definition.
  * @param accountId The account ID of the requirement.
- * @param baseUrl The base URL to use for making public method calls. If not specified, only internal calls will be made within the cluster.
+ * @param loadAs Optional account to load the requirement as.
  */
 export async function createRequirement<TContract extends Contract>(
   contract: TContract,
