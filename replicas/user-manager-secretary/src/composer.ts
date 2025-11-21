@@ -12,12 +12,7 @@ export function createComposer(umAccountId: string, _logger: Logger) {
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const userManager = await createRequirement(
-        UserManagerContract,
-        umAccountId,
-        undefined,
-        account,
-      )
+      const userManager = await createRequirement(UserManagerContract, umAccountId, account)
 
       const me = await getMe(userManager.data)
       if (!me) {

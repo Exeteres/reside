@@ -2,28 +2,6 @@ import { type Account, co, z } from "jazz-tools"
 import { ControlBlockPermissions } from "./permissions"
 
 export type ReplicaControlBlock = co.loaded<typeof ReplicaControlBlock>
-export type ControlBlockRequirement = co.loaded<typeof ControlBlockRequirement>
-
-export const ControlBlockRequirement = co
-  .map({
-    /**
-     * The data object of the requirement's contract.
-     */
-    data: co.map({}),
-
-    /**
-     * The ID of the account of the replica implementing this requirement.
-     */
-    accountId: z.string(),
-
-    /**
-     * The base URL for calling methods on this requirement.
-     *
-     * Will not be set for requirements that are not services (does not expose methods).
-     */
-    baseUrl: z.string().optional(),
-  })
-  .resolved({ data: true })
 
 /**
  * The control block is per-replica structure writable by both: Alpha Replica and the replica itself.

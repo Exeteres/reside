@@ -41,25 +41,19 @@ export async function setupTelegramBot(
 
     try {
       for (const handler of handlers) {
-        if (!handler.definition.endpoint) {
-          logger.warn('skipping handler "%s" as it does not have an endpoint defined', handler.name)
-          continue
-        }
-
-        // TODO: in the future such undeclared communication will be forbidden by network policies
-        const requirement = await createRequirement(
-          TelegramHandlerContract,
-          handler.owner.$jazz.id,
-          handler.definition.endpoint,
-        )
-
-        if (user && !user.$jazz.owner.getRoleOf(handler.owner.$jazz.id)) {
-          // ensure that handler owner can read the particular user
-          // this way we lazyly grant access only to handlers that actually process updates from the user
-          user.$jazz.owner.addMember(handler.owner, "reader")
-        }
-
         try {
+          // TODO: in the future such undeclared communication will be forbidden by network policies
+          const requirement = await createRequirement(
+            TelegramHandlerContract,
+            handler.owner.$jazz.id,
+          )
+
+          if (user && !user.$jazz.owner.getRoleOf(handler.owner.$jazz.id)) {
+            // ensure that handler owner can read the particular user
+            // this way we lazyly grant access only to handlers that actually process updates from the user
+            user.$jazz.owner.addMember(handler.owner, "reader")
+          }
+
           const { handled } = await requirement.handleUpdate({ update: ctx.update, user })
 
           if (handled) {

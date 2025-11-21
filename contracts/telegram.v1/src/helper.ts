@@ -5,12 +5,10 @@ import type { Logger } from "pino"
 import type { TelegramContract } from "./contract"
 import { Readable } from "node:stream"
 import {
-  CommonReplicaConfig,
   createSubstitutor,
   errorToString,
   type Implementation,
   type LocalizedDisplayInfo,
-  loadConfig,
   type PermissionRequirement,
   type Requirement,
 } from "@reside/shared"
@@ -184,14 +182,6 @@ export function defineHandler(options: HandlerOptions): HandlerContext {
         JSON.stringify(loadedHandler.definition.displayInfo) !== JSON.stringify(options.displayInfo)
       ) {
         loadedHandler.definition.$jazz.set("displayInfo", options.displayInfo)
-      }
-
-      const config = loadConfig(CommonReplicaConfig)
-
-      const endpoint = config.RESIDE_RPC_SERVER_URL ?? `http://${replicaName}`
-
-      if (loadedHandler.definition.endpoint !== endpoint) {
-        loadedHandler.definition.$jazz.set("endpoint", endpoint)
       }
 
       // mark handler as ready to receive updates

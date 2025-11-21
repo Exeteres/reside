@@ -157,7 +157,6 @@ export function createImplementations<TImplementations extends Record<string, Co
 export async function createRequirement<TContract extends Contract>(
   contract: TContract,
   accountId: string,
-  baseUrl?: string,
   loadAs?: Account,
 ): Promise<Requirement<TContract>> {
   // lookup contract data from account
@@ -191,24 +190,32 @@ export async function createRequirement<TContract extends Contract>(
 
   // allow data to be undefined for seed replica to bootstrap correctly
   // TODO: handle this case better
-  const data = (account.profile?.contracts as any)?.[contract.identity]
+  const data = (account.profile.contracts as any)?.[contract.identity]
+
+  // the endpoint may change over time, all replicas should be ready to handle that
+  let endpoint: string | undefined
+  account.profile.$jazz.subscribe(profile => {
+    endpoint = profile.endpoint
+  })
 
   const replicaName = account.profile.name
 
-  let resolvedBaseUrl = baseUrl
-
-  if (!resolvedBaseUrl) {
-    const config = loadConfig(CommonReplicaConfig)
-    resolvedBaseUrl = config.RESIDE_ENDPOINT
-  }
-
-  resolvedBaseUrl ??= `http://${replicaName}`
-
   const methods = mapValues(contract.methods, (method, methodName) => {
-    const fullUrl = `${resolvedBaseUrl}/replicas/${replicaName}/rpc/${contract.identity}/${methodName}`
-    const definition = method.definition(fullUrl, accountId)
+    const send: ReturnType<typeof method.definition>["send"] = async (requestData, options) => {
+      if (!endpoint) {
+        throw new Error(
+          `No endpoint defined for replica "${replicaName}" (account ID: ${accountId})`,
+        )
+      }
 
-    return definition.send.bind(definition)
+      // create "send" method on each request to always use the latest endpoint
+      const fullUrl = `${endpoint}/replicas/${replicaName}/rpc/${contract.identity}/${methodName}`
+      const definition = method.definition(fullUrl, accountId)
+
+      return await definition.send(requestData, options)
+    }
+
+    return send
   })
 
   return {

@@ -22,11 +22,6 @@ export const HandlerDefinition = co.map({
    * If empty, no events will be sent to this handler.
    */
   allowedUpdates: z.string().array(),
-
-  /**
-   * The URL of the handler endpoint.
-   */
-  endpoint: z.string().optional(),
 })
 
 export const ManagedHandler = co.map({

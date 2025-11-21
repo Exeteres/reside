@@ -13,8 +13,8 @@ export const listSecretsCommand = defineCommand({
   },
 
   async run({ args }) {
-    const { cluster, alpha, logOut } = await createJazzContextForCurrentContext(args.context)
-    const secretManager = await discoverRequirement(alpha.data, SecretContract, cluster.endpoint)
+    const { alpha, logOut } = await createJazzContextForCurrentContext(args.context)
+    const secretManager = await discoverRequirement(alpha.data, SecretContract)
 
     const loadedSecretManager = await secretManager.data.$jazz.ensureLoaded({
       resolve: {
