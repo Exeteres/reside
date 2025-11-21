@@ -55,6 +55,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: RESIDE_EXTERNAL_ENDPOINT
+              value: "${RESIDE_EXTERNAL_ENDPOINT}"
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: "0"
       restartPolicy: Never

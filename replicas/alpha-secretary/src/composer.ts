@@ -1,9 +1,8 @@
 import type { Logger } from "pino"
-import { resolve } from "node:path"
 import { AlphaContract, getReplicaById } from "@contracts/alpha.v1"
 import { type ResideTelegramContext, TelegramRealm } from "@contracts/telegram.v1"
 import { createRequirement } from "@reside/shared"
-import { Composer, InlineKeyboard, InputFile } from "grammy"
+import { Composer, InlineKeyboard } from "grammy"
 import { drawReplicaGraph } from "./graph"
 import { renderReplica, renderReplicaListKeyboard } from "./replica-ui"
 
@@ -58,13 +57,9 @@ export function createComposer(alphaAccountId: string, _logger: Logger) {
 
       const rendered = await renderReplica(replica, ctx.from.language_code)
 
-      const file = new InputFile(
-        resolve(import.meta.path, `../../assets/replicas-compressed/${replica.info.name}.jpg`),
-      )
-
       await ctx.editMessageMedia({
         type: "photo",
-        media: file,
+        media: `https://github.com/exeteres/reside/raw/main/replicas/${replica.info.name}/REPLICA.png`,
         caption: rendered.value,
         parse_mode: "HTML",
       })

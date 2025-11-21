@@ -177,7 +177,7 @@ export const devCommand = defineCommand({
           RESIDE_ACCOUNT_ID: accountId,
           RESIDE_AGENT_SECRET: agentSecret,
           RESIDE_SYNC_SERVER_URL: getJazzEndpoint(cluster.endpoint),
-          RESIDE_REPLICA_ENDPOINT: url,
+          RESIDE_INTERNAL_ENDPOINT: url, // to force other replicas to use local replica
           RESIDE_LISTEN_PORT: port.toString(),
         },
         stdin: "inherit",

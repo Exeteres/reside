@@ -132,6 +132,14 @@ export async function syncReplicaVersionWorkload(
               name: "RESIDE_ETCD_HOSTS",
               value: config.RESIDE_ETCD_HOSTS,
             },
+            {
+              name: "RESIDE_EXTERNAL_ENDPOINT",
+              value: config.RESIDE_EXTERNAL_ENDPOINT,
+            },
+            {
+              name: "RESIDE_ACCESS_CONTEXT",
+              value: config.RESIDE_ACCESS_CONTEXT,
+            },
           ],
         },
       ],

@@ -12,6 +12,8 @@ import {
   secretCommand,
 } from "./commands"
 
+process.env.RESIDE_ACCESS_CONTEXT ??= "external"
+
 const main = defineCommand({
   meta: {
     name: "reside",

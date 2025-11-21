@@ -11,7 +11,16 @@ export const CommonReplicaConfig = z.object({
   RESIDE_ACCOUNT_ID: z.string(),
   RESIDE_AGENT_SECRET: z.string(),
   RESIDE_SYNC_SERVER_URL: z.string(),
-  RESIDE_REPLICA_ENDPOINT: z.string().optional(),
+  RESIDE_INTERNAL_ENDPOINT: z.string().optional(),
+  RESIDE_EXTERNAL_ENDPOINT: z.string().optional(),
+
+  /**
+   * Whether this replica is running in an internal or external context.
+   *
+   * In an internal context, the replica will use internal endpoints to communicate with other replicas.
+   * In an external context, the replica (or any other process) will use external endpoints.
+   */
+  RESIDE_ACCESS_CONTEXT: z.enum(["internal", "external"]).default("internal"),
   RESIDE_ETCD_HOSTS: z.string().optional(),
   RESIDE_LISTEN_PORT: z.string().optional(),
 })
@@ -35,7 +44,12 @@ export function ReplicaProfile<TImplementations extends Record<string, Contract>
   return co.map({
     name: z.string(),
     replicaId: z.number(),
-    endpoint: z.string().optional(),
+    endpoints: z
+      .object({
+        internal: z.string().optional(),
+        external: z.string().optional(),
+      })
+      .optional(),
     contracts: co.map(
       Object.fromEntries(
         Object.values(implementations).map(contract => [contract.identity, contract.data]),
@@ -107,11 +121,19 @@ export async function populateReplicaAccount<
 
   ok(loadedAccount.profile.$isLoaded)
 
-  // update endpoint so consumers can reach this replica
-  const endpoint = process.env.RESIDE_REPLICA_ENDPOINT ?? `http://${replicaName}`
+  // update endpoints so consumers can reach this replica
+  const externalEndpoint = process.env.RESIDE_EXTERNAL_ENDPOINT
+  const internalEndpoint = process.env.RESIDE_INTERNAL_ENDPOINT ?? `http://${replicaName}`
 
-  if (loadedAccount.profile.endpoint !== endpoint) {
-    loadedAccount.profile.$jazz.set("endpoint", endpoint)
+  if (
+    !loadedAccount.profile.endpoints ||
+    loadedAccount.profile.endpoints.internal !== internalEndpoint ||
+    loadedAccount.profile.endpoints.external !== externalEndpoint
+  ) {
+    loadedAccount.profile.$jazz.set("endpoints", {
+      internal: internalEndpoint,
+      external: externalEndpoint,
+    })
   }
 
   // create empty objects for each implemented contract and run migrations

@@ -3,6 +3,7 @@ import { loadLocalConfig, logger, saveLocalConfig } from "../../shared"
 import { runCommand } from "@reside/shared"
 import { resolve } from "node:path"
 import { sleep } from "bun"
+import { readFile } from "node:fs/promises"
 
 export const bootstrapClusterCommand = defineCommand({
   meta: {
@@ -143,17 +144,24 @@ export const bootstrapClusterCommand = defineCommand({
 
     // 2. apply bootstrap manifests
     const manifestPath = resolve(import.meta.dir, "../../../assets/seed.yaml")
+    const manifestContent = await readFile(manifestPath, "utf-8")
 
-    await runCommand([
-      "kubectl",
-      "--context",
-      kubeContext,
-      "apply",
-      "-f",
-      manifestPath,
-      "-n",
-      args.namespace,
-    ])
+    const renderedManifest = manifestContent
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: it's intended
+      .replace("${RESIDE_EXTERNAL_ENDPOINT}", args.endpoint)
+
+    const applyProc = Bun.spawn(
+      ["kubectl", "--context", kubeContext, "apply", "-n", args.namespace, "-f", "-"],
+      { stdin: "pipe" },
+    )
+
+    applyProc.stdin!.write(renderedManifest)
+    applyProc.stdin!.end()
+
+    const applyExitCode = await applyProc.exited
+    if (applyExitCode !== 0) {
+      throw new Error("Failed to apply Seed Replica manifests")
+    }
 
     logger.info({ success: true }, "applied Seed Replica manifests")
 

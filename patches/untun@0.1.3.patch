@@ -1,8 +1,24 @@
+diff --git a/home/exeteres/Projects/personal/reside3/node_modules/untun/.bun-tag-d2366c2f33d207c b/.bun-tag-d2366c2f33d207c
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/dist/chunks/index.cjs b/dist/chunks/index.cjs
 index 4e289d1216d84cc8b4ba57ec0a0519574a3dc14b..ce23f235c75c365d6f7b57c06e0c642a58f5531d 100644
 --- a/dist/chunks/index.cjs
 +++ b/dist/chunks/index.cjs
 @@ -136,7 +136,7 @@ function download(url, to, redirect = 0) {
+ }
+ 
+ function startCloudflaredTunnel(options = {}) {
+-  const args = ["tunnel"];
++  const args = ["tunnel", "--protocol", "http2"];
+   for (const [key, value] of Object.entries(options)) {
+     if (typeof value === "string") {
+       args.push(`${key}`, value);
+diff --git a/dist/chunks/index.mjs b/dist/chunks/index.mjs
+index 65c4a93d6910196df612805105f3794e60d93e27..c33bc8bf96697091c5330afa419bfb9873b7f7c3 100644
+--- a/dist/chunks/index.mjs
++++ b/dist/chunks/index.mjs
+@@ -127,7 +127,7 @@ function download(url, to, redirect = 0) {
  }
  
  function startCloudflaredTunnel(options = {}) {

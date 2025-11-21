@@ -192,10 +192,12 @@ export async function createRequirement<TContract extends Contract>(
   // TODO: handle this case better
   const data = (account.profile.contracts as any)?.[contract.identity]
 
+  const context = process.env.RESIDE_ACCESS_CONTEXT === "external" ? "external" : "internal"
+
   // the endpoint may change over time, all replicas should be ready to handle that
-  let endpoint: string | undefined = account.profile.endpoint
+  let endpoint: string | undefined = account.profile.endpoints?.[context]
   account.profile.$jazz.subscribe(profile => {
-    endpoint = profile.endpoint
+    endpoint = profile.endpoints?.[context]
   })
 
   const replicaName = account.profile.name
@@ -204,7 +206,7 @@ export async function createRequirement<TContract extends Contract>(
     const send: ReturnType<typeof method.definition>["send"] = async (requestData, options) => {
       if (!endpoint) {
         throw new Error(
-          `No endpoint defined for replica "${replicaName}" (account ID: ${accountId})`,
+          `No ${context} endpoint defined for replica "${replicaName}" (account ID: ${accountId})`,
         )
       }
 

@@ -118,8 +118,13 @@ function createSourceCopyStep(includedPackages: IncludedPackage[]): string {
 }
 
 function createFinalCommandStep(path: string): string {
-  const comment = "# final command to run the replica"
-  const command = `CMD ["bun", "${path}/src/main.ts"]`
+  const lines: string[] = [
+    "# set working directory",
+    `WORKDIR /app/${path}`,
+    "",
+    "# final command to run the replica",
+    `CMD ["bun", "src/main.ts"]`,
+  ]
 
-  return `${comment}\n${command}`
+  return lines.join("\n")
 }
