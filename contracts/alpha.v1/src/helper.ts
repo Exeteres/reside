@@ -9,7 +9,6 @@ import { getReplicasImplementingContract } from "./replica"
  *
  * @param alphaData The alpha data to search within.
  * @param contract The contract for which to discover the requirement.
- * @param baseUrl Optional base URL for the requirement.
  */
 export async function discoverRequirement<TContract extends Contract>(
   alphaData: AlphaData,
