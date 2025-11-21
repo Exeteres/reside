@@ -1,9 +1,9 @@
 import type { Logger } from "pino"
 import {
   AlphaContract,
+  GrantedPermission,
   getContractEntityByIdentity,
   getReplicasImplementingContract,
-  GrantedPermission,
 } from "@contracts/alpha.v1"
 import { type ResideTelegramContext, TelegramRealm } from "@contracts/telegram.v1"
 import {
@@ -97,7 +97,7 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
 
       const loadedAlpha = await alpha.data.$jazz.ensureLoaded({
-        resolve: { contracts: { $each: { displayInfo: true } } },
+        resolve: { contracts: { $each: true } },
       })
 
       if (!loadedAlpha.contracts.$isLoaded) {
@@ -107,6 +107,10 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
 
       const keyboard = new InlineKeyboard()
       for (const contract of loadedAlpha.contracts.values()) {
+        if (!contract.$isLoaded) {
+          continue
+        }
+
         const displayInfo = resolveDisplayInfo(contract.displayInfo, ctx.from?.language_code)
         const title = displayInfo?.title ?? contract.identity
 
@@ -123,6 +127,11 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
     const userId = Number(ctx.match[1])
     const contractIdentity = ctx.match[2]
 
+    if (!contractIdentity) {
+      await ctx.answerCallbackQuery({ text: "Неверные параметры запроса!", show_alert: true })
+      return
+    }
+
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
@@ -135,12 +144,16 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
       }
 
       const loadedContract = await contractEntity.$jazz.ensureLoaded({
-        resolve: { permissions: { $each: { displayInfo: true } } },
+        resolve: { permissions: { $each: true } },
       })
 
       const keyboard = new InlineKeyboard()
       for (const permName of Object.keys(loadedContract.permissions)) {
         const permission = loadedContract.permissions[permName]
+        if (!permission) {
+          continue
+        }
+
         const displayInfo = resolveDisplayInfo(permission.displayInfo, ctx.from?.language_code)
         const title = displayInfo?.title ?? permName
 
@@ -157,6 +170,11 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
     const userId = Number(ctx.match[1])
     const contractIdentity = ctx.match[2]
     const permissionName = ctx.match[3]
+
+    if (!contractIdentity || !permissionName) {
+      await ctx.answerCallbackQuery({ text: "Неверные параметры запроса!", show_alert: true })
+      return
+    }
 
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
 
