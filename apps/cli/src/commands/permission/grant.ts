@@ -88,20 +88,39 @@ export const grantPermissionCommand = defineCommand({
       )
     }
 
-    await createGrantedPermissionSet(loadedUser.permissionSets, contractEntity, replicas, [
-      GrantedPermission.create({
-        requestType: "manual",
-        status: "approved",
-        permission,
-        instanceId: undefined,
-        params: {},
-      }),
-    ])
-
-    logger.info(
-      { success: true },
-      `granted permission "${args.permissionName}" from contract "${args.contractIdentity}" to user ID ${userId}`,
+    // find existing permission set for this contract
+    const existingPermissionSet = loadedUser.permissionSets.find(
+      ps => ps.contract.id === contractEntity.id,
     )
+
+    const newPermission = GrantedPermission.create({
+      requestType: "manual",
+      status: "approved",
+      permission,
+      instanceId: undefined,
+      params: {},
+    })
+
+    if (existingPermissionSet) {
+      // add permission to existing set
+      newPermission.$jazz.owner.addMember(existingPermissionSet.$jazz.owner, "reader")
+      existingPermissionSet.permissions.$jazz.push(newPermission)
+
+      logger.info(
+        { success: true },
+        `added permission "${args.permissionName}" from contract "${args.contractIdentity}" to existing permission set for user ID ${userId}`,
+      )
+    } else {
+      // create new permission set
+      await createGrantedPermissionSet(loadedUser.permissionSets, contractEntity, replicas, [
+        newPermission,
+      ])
+
+      logger.info(
+        { success: true },
+        `created new permission set and granted permission "${args.permissionName}" from contract "${args.contractIdentity}" to user ID ${userId}`,
+      )
+    }
 
     await logOut()
   },

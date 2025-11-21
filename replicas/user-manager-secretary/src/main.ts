@@ -6,12 +6,12 @@ import { UserManagerSecretaryReplica } from "./replica"
 
 const {
   implementations: { telegramHandler },
-  requirements: { telegram, userManager },
+  requirements: { telegram, userManager, alpha },
   replicaName,
   logger,
 } = await startReplica(UserManagerSecretaryReplica)
 
-const composer = createComposer(userManager.accountId, logger)
+const composer = createComposer(userManager.accountId, alpha.accountId, logger)
 
 await handler.init(telegram, telegramHandler, replicaName, composer, logger)
 await TelegramRealm.init(userManager, logger)
