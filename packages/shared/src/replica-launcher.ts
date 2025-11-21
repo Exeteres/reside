@@ -193,7 +193,7 @@ export async function createRequirement<TContract extends Contract>(
   const data = (account.profile.contracts as any)?.[contract.identity]
 
   // the endpoint may change over time, all replicas should be ready to handle that
-  let endpoint: string | undefined
+  let endpoint: string | undefined = account.profile.endpoint
   account.profile.$jazz.subscribe(profile => {
     endpoint = profile.endpoint
   })
