@@ -30,3 +30,7 @@ jobs:
 
       - name: Install devenv
         run: nix profile install nixpkgs#devenv
+
+      - name: Install dependencies
+        shell: devenv shell bash -- -e {0}
+        run: bun i
