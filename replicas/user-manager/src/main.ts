@@ -21,51 +21,6 @@ const {
   logger,
 } = await startReplica(UserManagerReplica)
 
-const loadedUserManager = await userManager.data.$jazz.ensureLoaded({
-  resolve: {
-    defaultPermissionSets: true,
-  },
-})
-
-if (loadedUserManager.defaultPermissionSets.length === 0) {
-  logger.info("populating default permission sets")
-
-  const alphaPermissionSet = await createPermissionSet(
-    alpha.data,
-    alpha.replicaId,
-    AlphaContract.identity,
-    [
-      // warning: will break everything if removed
-      "replica:read:all",
-    ],
-    userManager.data.$jazz.loadedAs as Account,
-  )
-
-  const umPermissionSet = await createPermissionSet(
-    alpha.data,
-    replicaId,
-    UserManagerContract.identity,
-    [
-      // warning: will break everything if removed
-      "default-permissions:read",
-    ],
-    userManager.data.$jazz.loadedAs as Account,
-  )
-
-  loadedUserManager.defaultPermissionSets.$jazz.push(alphaPermissionSet)
-  loadedUserManager.defaultPermissionSets.$jazz.push(umPermissionSet)
-
-  // inherit read access from the collection
-  alphaPermissionSet.$jazz.owner.addMember(
-    loadedUserManager.defaultPermissionSets.$jazz.owner,
-    "reader",
-  )
-  umPermissionSet.$jazz.owner.addMember(
-    loadedUserManager.defaultPermissionSets.$jazz.owner,
-    "reader",
-  )
-}
-
 const loadedAlphaData = await alpha.data.$jazz.ensureLoaded({
   resolve: {
     superAdminAccount: true,
@@ -78,6 +33,7 @@ userManager.handleRegister(async ({}, madeBy) => {
       resolve: {
         users: true,
         defaultRealm: true,
+        defaultPermissionSets: { $each: true },
         managePermissionsGroup: true,
       },
     })
@@ -123,6 +79,46 @@ userManager.handleRegister(async ({}, madeBy) => {
 
       // biome-ignore lint/suspicious/noExplicitAny: they are loaded i guess
       loadedUser.permissionSets.$jazz.push(alphaPermissionSet as any, umPermissionSet as any)
+
+      // also populate default permission sets if empty
+      if (loadedData.defaultPermissionSets.length === 0) {
+        logger.info("populating default permission sets")
+
+        const alphaPermissionSet = await createPermissionSet(
+          alpha.data,
+          alpha.replicaId,
+          AlphaContract.identity,
+          [
+            // warning: will break everything if removed
+            "replica:read:all",
+          ],
+          userManager.data.$jazz.loadedAs as Account,
+        )
+
+        const umPermissionSet = await createPermissionSet(
+          alpha.data,
+          replicaId,
+          UserManagerContract.identity,
+          [
+            // warning: will break everything if removed
+            "default-permissions:read",
+          ],
+          userManager.data.$jazz.loadedAs as Account,
+        )
+
+        loadedData.defaultPermissionSets.$jazz.push(alphaPermissionSet)
+        loadedData.defaultPermissionSets.$jazz.push(umPermissionSet)
+
+        // inherit read access from the collection
+        alphaPermissionSet.$jazz.owner.addMember(
+          loadedData.defaultPermissionSets.$jazz.owner,
+          "reader",
+        )
+        umPermissionSet.$jazz.owner.addMember(
+          loadedData.defaultPermissionSets.$jazz.owner,
+          "reader",
+        )
+      }
 
       logger.info(
         `granted super admin permissions to new user #%d for account "%s"`,
