@@ -176,5 +176,32 @@ export const TelegramContract = defineContract({
         loadedData.handlers.$jazz.owner.removeMember(account)
       },
     },
+
+    "user:read:all": {
+      params: z.object(),
+
+      displayInfo: {
+        ru: {
+          title: "Чтение всех пользователей",
+          description: "Позволяет читать всех пользователей, взаимодействовавших с ботом.",
+        },
+        en: {
+          title: "Read all users",
+          description: "Allows reading all users who have interacted with the bot.",
+        },
+      },
+
+      onGranted: async (data, account) => {
+        const loadedData = await data.$jazz.ensureLoaded({ resolve: { users: true } })
+
+        loadedData.users.$jazz.owner.addMember(account, "reader")
+      },
+
+      onRevoked: async (data, account) => {
+        const loadedData = await data.$jazz.ensureLoaded({ resolve: { users: true } })
+
+        loadedData.users.$jazz.owner.removeMember(account)
+      },
+    },
   },
 })

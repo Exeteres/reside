@@ -1,3 +1,4 @@
+import { AlphaContract } from "@contracts/alpha.v1"
 import { TelegramContract, TelegramRealm } from "@contracts/telegram.v1"
 import { TelegramHandlerContract } from "@contracts/telegram-handler.v1"
 import { UserManagerContract } from "@contracts/user-manager.v1"
@@ -37,6 +38,9 @@ export const UserManagerSecretaryReplica = defineReplica({
         TelegramRealm.permissions.readUsers,
         TelegramRealm.permissions.impersonateUsers,
       ],
+    },
+    alpha: {
+      contract: AlphaContract,
     },
   },
 

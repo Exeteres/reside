@@ -13,6 +13,7 @@
     "biome:check": "biome check --error-on-warnings"
   },
   "dependencies": {
+    "@contracts/alpha.v1": "workspace:*",
     "@contracts/telegram-handler.v1": "workspace:*",
     "@contracts/telegram.v1": "workspace:*",
     "@contracts/user-manager.v1": "workspace:*",

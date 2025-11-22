@@ -292,6 +292,7 @@
     "replicas/user-manager-secretary": {
       "name": "@replicas/user-manager-secretary",
       "dependencies": {
+        "@contracts/alpha.v1": "workspace:*",
         "@contracts/telegram-handler.v1": "workspace:*",
         "@contracts/telegram.v1": "workspace:*",
         "@contracts/user-manager.v1": "workspace:*",
