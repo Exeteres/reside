@@ -58,7 +58,7 @@ export function createComposer(
     ctx.reply(JSON.stringify(ctx.from, null, 2))
   })
 
-  // /grant command - step 1: show user selection
+  // step 1: show user selection
   composer.command("grant", async ctx => {
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
 
@@ -66,7 +66,7 @@ export function createComposer(
       const userManager = await createRequirement(UserManagerContract, umAccountId, account)
       const telegram = await createRequirement(TelegramContract, telegramAccountId, account)
 
-      // Try to load user manager users - access check
+      // try to load user manager users - access check
       const loadedUserManager = await userManager.data.$jazz.ensureLoaded({
         resolve: { users: { $each: { account: true } } },
       })
@@ -76,7 +76,7 @@ export function createComposer(
         return
       }
 
-      // Try to load telegram users - access check
+      // try to load telegram users - access check
       const loadedTelegram = await telegram.data.$jazz.ensureLoaded({
         resolve: {
           users: { $each: { user: { account: true } } },
@@ -87,7 +87,7 @@ export function createComposer(
       for (const user of loadedUserManager.users.values()) {
         let displayName = `User ID ${user.id}`
 
-        // Try to find matching telegram user for username
+        // try to find matching telegram user for username
         if (loadedTelegram.users.$isLoaded) {
           const telegramUser = Array.from(loadedTelegram.users.values()).find(
             tu =>
@@ -122,20 +122,20 @@ export function createComposer(
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
       const userManager = await createRequirement(UserManagerContract, umAccountId, account)
 
-      // Get target user
+      // get target user
       const targetUser = await getUserById(userManager.data, userId)
       if (!targetUser) {
         await ctx.answerCallbackQuery({ text: "Пользователь не найден!", show_alert: true })
         return
       }
 
-      // Create grant session
+      // create grant session
       const session = GrantSession.create({
         targetUser,
         step: "select-contract",
       })
 
-      // Check access to contracts list
+      // check access to contracts list
       const loadedAlpha = await alpha.data.$jazz.ensureLoaded({
         resolve: { contracts: { $each: true } },
       })
@@ -178,14 +178,14 @@ export function createComposer(
     await TelegramRealm.impersonate(loadedUser.user, async account => {
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
 
-      // Load session
+      // load session
       const session = await GrantSession.load(sessionId, { loadAs: account })
       if (!session || !session.$isLoaded) {
         await ctx.answerCallbackQuery({ text: "Сессия не найдена!", show_alert: true })
         return
       }
 
-      // Check access to contracts
+      // check access to contracts
       const loadedAlpha = await alpha.data.$jazz.ensureLoaded({
         resolve: { contracts: { $each: true } },
       })
@@ -204,7 +204,7 @@ export function createComposer(
         return
       }
 
-      // Update session with contract
+      // update session with contract
       session.$jazz.set("contract", contract)
       session.$jazz.set("step", "select-permission")
 
@@ -252,7 +252,7 @@ export function createComposer(
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
       const userManager = await createRequirement(UserManagerContract, umAccountId, account)
 
-      // Load session
+      // load session
       const session = await GrantSession.load(sessionId, { loadAs: account })
       if (!session || !session.$isLoaded) {
         await ctx.answerCallbackQuery({ text: "Сессия не найдена!", show_alert: true })
@@ -274,7 +274,7 @@ export function createComposer(
         return
       }
 
-      // Load target user with permissions
+      // load target user with permissions
       const targetUser = await getUserById(userManager.data, loadedSession.targetUser.id)
       if (!targetUser) {
         await ctx.answerCallbackQuery({
@@ -296,7 +296,7 @@ export function createComposer(
         },
       })
 
-      // Check if user has permission to manage user permissions
+      // check if user has permission to manage user permissions
       if (!loadedTargetUser.permissionSets.$isLoaded) {
         await ctx.answerCallbackQuery({
           text: "У вас нет доступа к управлению разрешениями этого пользователя!",
@@ -322,7 +322,7 @@ export function createComposer(
         replicas,
       )
 
-      // Update session
+      // update session
       session.$jazz.set("step", "completed")
 
       if (result.action === "duplicate") {
