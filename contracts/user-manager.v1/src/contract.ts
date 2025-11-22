@@ -234,6 +234,38 @@ export const UserManagerContract = defineContract({
       },
     },
 
+    "default-permissions:read": {
+      params: z.object(),
+
+      displayInfo: {
+        ru: {
+          title: "Чтение разрешений по умолчанию",
+          description:
+            "Разрешает читать наборы разрешений, назначаемые всем пользователям по умолчанию.",
+        },
+        en: {
+          title: "Read default permissions",
+          description: "Allows reading the permission sets assigned to all users by default.",
+        },
+      },
+
+      onGranted: async (data, account) => {
+        const loadedData = await data.$jazz.ensureLoaded({
+          resolve: { defaultPermissionSets: true },
+        })
+
+        loadedData.defaultPermissionSets.$jazz.owner.addMember(account, "reader")
+      },
+
+      onRevoked: async (data, account) => {
+        const loadedData = await data.$jazz.ensureLoaded({
+          resolve: { defaultPermissionSets: true },
+        })
+
+        loadedData.defaultPermissionSets.$jazz.owner.removeMember(account)
+      },
+    },
+
     "default-permissions:manage": {
       params: z.object(),
 

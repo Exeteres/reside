@@ -27,6 +27,12 @@ export function createComposer(
     await TelegramRealm.impersonate(loadedUser.user, async account => {
       const userManager = await createRequirement(UserManagerContract, umAccountId, account)
 
+      const loadedUm = await userManager.data.$jazz.ensureLoaded({
+        resolve: {
+          defaultPermissionSets: { $each: { permissions: { $each: { permission: true } } } },
+        },
+      })
+
       const me = await getMe(userManager.data)
       if (!me) {
         await ctx.reply("Профиль не найден. Это странно. И грустно.")
@@ -37,9 +43,10 @@ export function createComposer(
         resolve: { permissionSets: { $each: { permissions: { $each: { permission: true } } } } },
       })
 
-      const allPermissions = loadedMe.permissionSets.flatMap(ps =>
-        ps.permissions.map(p => p.permission),
-      )
+      const allPermissions = [
+        ...loadedUm.defaultPermissionSets,
+        ...loadedMe.permissionSets,
+      ].flatMap(ps => ps.permissions.map(p => p.permission))
 
       const permissionTitles = allPermissions.map(
         p => resolveDisplayInfo(p.displayInfo, ctx.from?.language_code)?.title ?? p.name,

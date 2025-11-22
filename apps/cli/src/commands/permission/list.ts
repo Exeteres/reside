@@ -1,7 +1,8 @@
 import { defineCommand } from "citty"
-import { contextArgs, createJazzContextForCurrentContext, logger } from "../../shared"
-import { getUserById, UserManagerContract } from "@contracts/user-manager.v1"
 import { discoverRequirement } from "@contracts/alpha.v1"
+import { getUserById, UserManagerContract } from "@contracts/user-manager.v1"
+import { contextArgs, createJazzContextForCurrentContext, logger } from "../../shared"
+import { logPermissionSets } from "./utils"
 
 export const listPermissionsCommand = defineCommand({
   meta: {
@@ -47,27 +48,19 @@ export const listPermissionsCommand = defineCommand({
       },
     })
 
+    if (!loadedUser.permissionSets.$isLoaded) {
+      throw new Error("Failed to load user permission sets")
+    }
+
     const profileName = loadedUser.account.profile.$isLoaded
       ? loadedUser.account.profile.name
       : "unknown"
 
-    logger.info("listing permission sets for user %s (ID: %d):", profileName, user.id)
-
-    for (const permissionSet of loadedUser.permissionSets.values()) {
-      logger.info("- Permission Set")
-
-      for (const replica of permissionSet.replicas.values()) {
-        logger.info("  - Replica: %s (ID: %d)", replica.name, replica.id)
-      }
-
-      for (const permissionEntry of permissionSet.permissions.values()) {
-        logger.info("  - Permission: %s", permissionEntry.permission.name)
-        if (permissionEntry.params && Object.keys(permissionEntry.params).length > 0) {
-          logger.info("    - Instance ID: %s", permissionEntry.instanceId)
-          logger.info("    - Params: %o", permissionEntry.params)
-        }
-      }
-    }
+    logPermissionSets(logger, loadedUser.permissionSets, {
+      logHeader: () =>
+        logger.info("listing permission sets for user %s (ID: %d):", profileName, user.id),
+      logEmpty: () => logger.info("user %s (ID: %d) has no permission sets", profileName, user.id),
+    })
 
     await logOut()
   },

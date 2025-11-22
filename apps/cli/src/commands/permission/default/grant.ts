@@ -1,13 +1,13 @@
 import { defineCommand } from "citty"
 import { discoverRequirement } from "@contracts/alpha.v1"
-import { grantPermissionToUser, getUserById, UserManagerContract } from "@contracts/user-manager.v1"
-import { contextArgs, createJazzContextForCurrentContext, logger } from "../../shared"
-import { logGrantResult, resolveContractGrantContext } from "./utils"
+import { grantPermissionToPermissionSetList, UserManagerContract } from "@contracts/user-manager.v1"
+import type { Account } from "jazz-tools"
+import { contextArgs, createJazzContextForCurrentContext, logger } from "../../../shared"
+import { logGrantResult, resolveContractGrantContext } from "../utils"
 
-export const grantPermissionCommand = defineCommand({
+export const grantDefaultPermissionCommand = defineCommand({
   meta: {
-    description:
-      "Grants the specified permission of the specified contract to the specified user in the cluster.",
+    description: "Grants the specified contract permission to default permission sets.",
   },
   args: {
     ...contextArgs,
@@ -21,19 +21,9 @@ export const grantPermissionCommand = defineCommand({
       description: "The name of the permission within the contract to grant.",
       required: true,
     },
-    userId: {
-      type: "positional",
-      description: "The ID of the user to grant the permission to.",
-      required: true,
-    },
   },
 
   async run({ args }) {
-    const userId = Number(args.userId)
-    if (Number.isNaN(userId) || userId <= 0) {
-      throw new Error(`Invalid user ID "${args.userId}", must be a positive number`)
-    }
-
     const { alpha, logOut } = await createJazzContextForCurrentContext(args.context)
 
     const { contractEntity, permission, replicas } = await resolveContractGrantContext(
@@ -43,14 +33,9 @@ export const grantPermissionCommand = defineCommand({
     )
 
     const userManager = await discoverRequirement(alpha.data, UserManagerContract)
-    const user = await getUserById(userManager.data, userId)
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found in the User Manager Replica`)
-    }
-
-    const loadedUser = await user.$jazz.ensureLoaded({
+    const loadedUserManager = await userManager.data.$jazz.ensureLoaded({
       resolve: {
-        permissionSets: {
+        defaultPermissionSets: {
           $each: {
             contract: true,
             replicas: { $each: true },
@@ -60,12 +45,24 @@ export const grantPermissionCommand = defineCommand({
       },
     })
 
-    const result = await grantPermissionToUser(loadedUser, contractEntity, permission, replicas)
+    if (!loadedUserManager.defaultPermissionSets.$isLoaded) {
+      throw new Error("Failed to load default permission sets")
+    }
+
+    const ownerAccount = userManager.data.$jazz.loadedAs as Account
+
+    const result = await grantPermissionToPermissionSetList(
+      loadedUserManager.defaultPermissionSets,
+      contractEntity,
+      permission,
+      replicas,
+      ownerAccount,
+    )
 
     logGrantResult(logger, result, {
       contractIdentity: args.contractIdentity,
       permissionName: args.permissionName,
-      targetDescription: `for user ID ${userId}`,
+      targetDescription: "in default permission sets",
     })
 
     await logOut()
