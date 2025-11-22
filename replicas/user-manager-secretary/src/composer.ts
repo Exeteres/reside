@@ -172,7 +172,7 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
   })
 
   // step 4: permission selected, grant it
-  composer.callbackQuery(/^grant:perm:(\d+):(\d+):([A-Za-z0-9_-]+)$/, async ctx => {
+  composer.callbackQuery(/^grant:perm:(\d+):(\d+):([A-Za-z0-9_-]+=*)$/, async ctx => {
     const userId = Number(ctx.match[1])
     const contractId = Number(ctx.match[2])
     const encodedPermissionName = ctx.match[3]

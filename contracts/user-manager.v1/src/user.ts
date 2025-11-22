@@ -167,13 +167,9 @@ export async function grantPermissionToUser(
   }
 
   // find existing permission set for this contract
-  const existingPermissionSet = user.permissionSets.find(ps => {
-    if (!ps.$isLoaded) {
-      return false
-    }
-
-    return ps.contract?.$isLoaded && ps.contract.id === contractEntity.id
-  })
+  const existingPermissionSet = user.permissionSets.find(
+    ps => ps.$isLoaded && ps.contract?.$isLoaded && ps.contract.id === contractEntity.id,
+  )
 
   const newPermission = GrantedPermission.create({
     requestType: "manual",
