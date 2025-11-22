@@ -5,6 +5,7 @@ import { type Etcd3, EtcdLockFailedError } from "etcd3"
 import {
   type Account,
   type CoValueClassOrSchema,
+  JazzRequestError,
   type co,
   createJazzContextFromExistingCredentials,
   isControlledAccount,
@@ -59,6 +60,23 @@ export interface LockService {
   ): Promise<TResult>
 }
 
+export class SafeJazzRequestError extends Error {
+  public readonly isJazzRequestError = true
+
+  public constructor(
+    message: string,
+    public readonly code: number,
+    public readonly details?: unknown,
+  ) {
+    super(message)
+    this.name = "JazzRequestError"
+  }
+
+  toJSON() {
+    return { message: this.message, code: this.code, details: this.details }
+  }
+}
+
 export class EtcdLockService implements LockService {
   constructor(
     private readonly etcd: Etcd3 | undefined,
@@ -74,11 +92,24 @@ export class EtcdLockService implements LockService {
       throw new Error("etcd client is not initialized, cannot acquire lock")
     }
 
+    const safeHandler = async (): Promise<TResult> => {
+      try {
+        return await handler()
+      } catch (err) {
+        if (err instanceof JazzRequestError) {
+          throw new SafeJazzRequestError(err.message, err.code, err.details)
+        }
+
+        this.logger.error({ err }, `error occurred while executing handler for lock "${key}"`)
+        throw err
+      }
+    }
+
     const ttl = options?.ttl ?? 30
 
     return await pRetry(
       async () => {
-        return await this.etcd!.lock(key).ttl(ttl).do(handler)
+        return await this.etcd!.lock(key).ttl(ttl).do(safeHandler)
       },
       {
         minTimeout: 100,

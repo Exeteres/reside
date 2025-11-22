@@ -103,7 +103,8 @@ export function createImplementations<TImplementations extends Record<string, Co
                 { err },
                 `Error handling RPC method "${methodName}" of contract "${contract.identity}"`,
               )
-              throw err
+
+              throw new Error("Failed to handle RPC method", { cause: err })
             }
           }
 
@@ -126,10 +127,8 @@ export function createImplementations<TImplementations extends Record<string, Co
       instanceId?: string,
     ): boolean => {
       const fullKey = instanceId
-        ? `${account.$jazz.id}:${permissionKey}:${instanceId}`
-        : `${account.$jazz.id}:${permissionKey}`
-
-      console.log("permission check:", fullKey, Object.keys(rcb.permissions))
+        ? `${account.$jazz.id}:${contract.identity}:${permissionKey}:${instanceId}`
+        : `${account.$jazz.id}:${contract.identity}:${permissionKey}`
 
       return rcb.permissions.$jazz.has(fullKey)
     }
