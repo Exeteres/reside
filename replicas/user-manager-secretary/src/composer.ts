@@ -1,15 +1,10 @@
 import type { Logger } from "pino"
-import {
-  AlphaContract,
-  GrantedPermission,
-  getContractEntityByIdentity,
-  getReplicasImplementingContract,
-} from "@contracts/alpha.v1"
+import { AlphaContract, getReplicasImplementingContract } from "@contracts/alpha.v1"
 import { type ResideTelegramContext, TelegramRealm } from "@contracts/telegram.v1"
 import {
-  createGrantedPermissionSet,
   getMe,
   getUserById,
+  grantPermissionToUser,
   UserManagerContract,
 } from "@contracts/user-manager.v1"
 import { createRequirement, resolveDisplayInfo } from "@reside/shared"
@@ -114,7 +109,8 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
         const displayInfo = resolveDisplayInfo(contract.displayInfo, ctx.from?.language_code)
         const title = displayInfo?.title ?? contract.identity
 
-        keyboard.text(title, `grant:contract:${userId}:${contract.identity}`).row()
+        // use contract ID instead of identity to keep callback data short
+        keyboard.text(title, `grant:contract:${userId}:${contract.id}`).row()
       }
 
       await ctx.editMessageText("Выберите контракт:", { reply_markup: keyboard })
@@ -123,27 +119,34 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
   })
 
   // step 3: contract selected, show permission selection
-  composer.callbackQuery(/^grant:contract:(\d+):(.+)$/, async ctx => {
+  composer.callbackQuery(/^grant:contract:(\d+):(\d+)$/, async ctx => {
     const userId = Number(ctx.match[1])
-    const contractIdentity = ctx.match[2]
-
-    if (!contractIdentity) {
-      await ctx.answerCallbackQuery({ text: "Неверные параметры запроса!", show_alert: true })
-      return
-    }
+    const contractId = Number(ctx.match[2])
 
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
 
-      const contractEntity = await getContractEntityByIdentity(alpha.data, contractIdentity)
-      if (!contractEntity) {
+      const contractEntity = await alpha.data.$jazz.ensureLoaded({
+        resolve: { contracts: { $each: true } },
+      })
+
+      if (!contractEntity.contracts.$isLoaded) {
+        await ctx.answerCallbackQuery({ text: "Нет доступа к контрактам!", show_alert: true })
+        return
+      }
+
+      const contract = Array.from(contractEntity.contracts.values()).find(
+        c => c.$isLoaded && c.id === contractId,
+      )
+
+      if (!contract || !contract.$isLoaded) {
         await ctx.answerCallbackQuery({ text: "Контракт не найден!", show_alert: true })
         return
       }
 
-      const loadedContract = await contractEntity.$jazz.ensureLoaded({
+      const loadedContract = await contract.$jazz.ensureLoaded({
         resolve: { permissions: { $each: true } },
       })
 
@@ -157,7 +160,10 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
         const displayInfo = resolveDisplayInfo(permission.displayInfo, ctx.from?.language_code)
         const title = displayInfo?.title ?? permName
 
-        keyboard.text(title, `grant:perm:${userId}:${contractIdentity}:${permName}`).row()
+        // encode permission name to base64 to handle special characters like colons
+        const encodedPermName = Buffer.from(permName).toString("base64url")
+
+        keyboard.text(title, `grant:perm:${userId}:${contractId}:${encodedPermName}`).row()
       }
 
       await ctx.editMessageText("Выберите разрешение:", { reply_markup: keyboard })
@@ -166,15 +172,18 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
   })
 
   // step 4: permission selected, grant it
-  composer.callbackQuery(/^grant:perm:(\d+):(.+):(.+)$/, async ctx => {
+  composer.callbackQuery(/^grant:perm:(\d+):(\d+):([A-Za-z0-9_-]+)$/, async ctx => {
     const userId = Number(ctx.match[1])
-    const contractIdentity = ctx.match[2]
-    const permissionName = ctx.match[3]
+    const contractId = Number(ctx.match[2])
+    const encodedPermissionName = ctx.match[3]
 
-    if (!contractIdentity || !permissionName) {
+    if (!encodedPermissionName) {
       await ctx.answerCallbackQuery({ text: "Неверные параметры запроса!", show_alert: true })
       return
     }
+
+    // decode permission name from base64url
+    const permissionName = Buffer.from(encodedPermissionName, "base64url").toString("utf-8")
 
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
 
@@ -182,8 +191,20 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
       const userManager = await createRequirement(UserManagerContract, umAccountId, account)
 
-      const contractEntity = await getContractEntityByIdentity(alpha.data, contractIdentity)
-      if (!contractEntity) {
+      const loadedAlpha = await alpha.data.$jazz.ensureLoaded({
+        resolve: { contracts: { $each: true } },
+      })
+
+      if (!loadedAlpha.contracts.$isLoaded) {
+        await ctx.answerCallbackQuery({ text: "Нет доступа к контрактам!", show_alert: true })
+        return
+      }
+
+      const contractEntity = Array.from(loadedAlpha.contracts.values()).find(
+        c => c.$isLoaded && c.id === contractId,
+      )
+
+      if (!contractEntity || !contractEntity.$isLoaded) {
         await ctx.answerCallbackQuery({ text: "Контракт не найден!", show_alert: true })
         return
       }
@@ -229,36 +250,22 @@ export function createComposer(umAccountId: string, alphaAccountId: string, _log
         return
       }
 
-      // find existing permission set for this contract
-      const existingPermissionSet = loadedTargetUser.permissionSets.find(
-        ps => ps.contract.id === contractEntity.id,
+      const result = await grantPermissionToUser(
+        loadedTargetUser,
+        contractEntity,
+        permission,
+        replicas,
       )
 
-      const newPermission = GrantedPermission.create({
-        requestType: "manual",
-        status: "approved",
-        permission,
-        instanceId: undefined,
-        params: {},
-      })
-
-      if (existingPermissionSet) {
-        // add permission to existing set
-        newPermission.$jazz.owner.addMember(existingPermissionSet.$jazz.owner, "reader")
-        existingPermissionSet.permissions.$jazz.push(newPermission)
-
+      if (result.action === "duplicate") {
+        await ctx.editMessageText(
+          `⚠️ Разрешение "${permissionName}" уже существует в наборе разрешений для пользователя ID ${userId}.`,
+        )
+      } else if (result.action === "added") {
         await ctx.editMessageText(
           `✅ Разрешение "${permissionName}" добавлено в существующий набор разрешений для пользователя ID ${userId}.`,
         )
       } else {
-        // create new permission set
-        await createGrantedPermissionSet(
-          loadedTargetUser.permissionSets,
-          contractEntity,
-          replicas,
-          [newPermission],
-        )
-
         await ctx.editMessageText(
           `✅ Создан новый набор разрешений и выдано разрешение "${permissionName}" пользователю ID ${userId}.`,
         )

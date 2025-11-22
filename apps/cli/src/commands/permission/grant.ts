@@ -4,10 +4,9 @@ import {
   getContractEntityByIdentity,
   getReplicasImplementingContract,
   discoverRequirement,
-  GrantedPermission,
 } from "@contracts/alpha.v1"
 import {
-  createGrantedPermissionSet,
+  grantPermissionToUser,
   getUserById,
   UserManagerContract,
 } from "@contracts/user-manager.v1"
@@ -88,34 +87,19 @@ export const grantPermissionCommand = defineCommand({
       )
     }
 
-    // find existing permission set for this contract
-    const existingPermissionSet = loadedUser.permissionSets.find(
-      ps => ps.contract.id === contractEntity.id,
-    )
+    const result = await grantPermissionToUser(loadedUser, contractEntity, permission, replicas)
 
-    const newPermission = GrantedPermission.create({
-      requestType: "manual",
-      status: "approved",
-      permission,
-      instanceId: undefined,
-      params: {},
-    })
-
-    if (existingPermissionSet) {
-      // add permission to existing set
-      newPermission.$jazz.owner.addMember(existingPermissionSet.$jazz.owner, "reader")
-      existingPermissionSet.permissions.$jazz.push(newPermission)
-
+    if (result.action === "duplicate") {
+      logger.info(
+        { success: true },
+        `permission "${args.permissionName}" from contract "${args.contractIdentity}" already exists for user ID ${userId}, skipping duplicate`,
+      )
+    } else if (result.action === "added") {
       logger.info(
         { success: true },
         `added permission "${args.permissionName}" from contract "${args.contractIdentity}" to existing permission set for user ID ${userId}`,
       )
     } else {
-      // create new permission set
-      await createGrantedPermissionSet(loadedUser.permissionSets, contractEntity, replicas, [
-        newPermission,
-      ])
-
       logger.info(
         { success: true },
         `created new permission set and granted permission "${args.permissionName}" from contract "${args.contractIdentity}" to user ID ${userId}`,

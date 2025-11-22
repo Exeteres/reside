@@ -1,8 +1,9 @@
 import type { UserManagerData } from "./contract"
 import {
   type ContractEntity,
-  type GrantedPermission,
+  GrantedPermission,
   GrantedPermissionSet,
+  type PermissionEntity,
   type Replica,
 } from "@contracts/alpha.v1"
 import { loadBoxed } from "@reside/shared"
@@ -139,4 +140,76 @@ export async function createGrantedPermissionSet(
   permissionSet.$jazz.owner.addMember(collection.$jazz.owner, "reader")
 
   return permissionSet
+}
+
+/**
+ * Grants a permission to a user by either adding it to an existing permission set for the contract or creating a new one.
+ *
+ * This function checks if the user already has a permission set for the given contract.
+ * If found, it adds the permission to the existing set (if not already present).
+ * Otherwise, it creates a new permission set.
+ *
+ * @param user The user to grant the permission to. Must have permissionSets loaded with contract and permissions resolved.
+ * @param contractEntity The contract entity for which the permission is being granted.
+ * @param permission The permission entity to grant.
+ * @param replicas The replicas implementing the contract.
+ * @returns An object indicating whether the permission was added to an existing set, created in a new set, or already existed.
+ */
+export async function grantPermissionToUser(
+  user: User,
+  contractEntity: ContractEntity,
+  permission: co.loaded<typeof PermissionEntity>,
+  replicas: Replica[],
+): Promise<{ action: "added" | "created" | "duplicate" }> {
+  // verify permission sets are loaded
+  if (!user.permissionSets.$isLoaded) {
+    throw new Error("User's permission sets are not loaded")
+  }
+
+  // find existing permission set for this contract
+  const existingPermissionSet = user.permissionSets.find(ps => {
+    if (!ps.$isLoaded) {
+      return false
+    }
+
+    return ps.contract?.$isLoaded && ps.contract.id === contractEntity.id
+  })
+
+  const newPermission = GrantedPermission.create({
+    requestType: "manual",
+    status: "approved",
+    permission,
+    instanceId: undefined,
+    params: {},
+  })
+
+  if (existingPermissionSet?.$isLoaded) {
+    // check if permission already exists
+    if (!existingPermissionSet.permissions.$isLoaded) {
+      throw new Error("Permission set's permissions are not loaded")
+    }
+
+    const alreadyExists = existingPermissionSet.permissions.some(p => {
+      if (!p.$isLoaded) {
+        return false
+      }
+
+      return p.permission?.$isLoaded && p.permission.name === permission.name
+    })
+
+    if (alreadyExists) {
+      return { action: "duplicate" }
+    }
+
+    // add permission to existing set
+    newPermission.$jazz.owner.addMember(existingPermissionSet.$jazz.owner, "reader")
+    existingPermissionSet.permissions.$jazz.push(newPermission)
+
+    return { action: "added" }
+  }
+
+  // create new permission set
+  await createGrantedPermissionSet(user.permissionSets, contractEntity, replicas, [newPermission])
+
+  return { action: "created" }
 }
