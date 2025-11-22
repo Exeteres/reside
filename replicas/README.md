@@ -54,6 +54,10 @@
 <td><img src="./user-manager-secretary/REPLICA.png" width="120" alt="User Manager Secretary Replica"/></td>
 <td><strong><a href="./user-manager-secretary/README.md">Секретарь Пользовательской Реплики</a></strong><br/><br/>Позволяет взаимодействовать с Пользовательской Репликой через Телеграм-бота.</td>
 </tr>
+<tr>
+<td><img src="./ai/REPLICA.png" width="120" alt="AI Replica"/></td>
+<td><strong><a href="./ai/README.md">Нейросетевая Реплика</a></strong><br/><br/>Отвечает за интеграцию с языковыми моделями и другими AI-инструментами.</td>
+</tr>
 </tbody>
 </table>
 
