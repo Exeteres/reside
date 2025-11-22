@@ -12,7 +12,7 @@ import { capitalize, mapKeys, mapValues } from "remeda"
 import { loadConfig } from "./config"
 import { loadControlBlock, type ReplicaControlBlock } from "./control-block"
 import { EtcdLockService, type LockService } from "./lock"
-import { reconcileControlBlockPermissions } from "./permissions"
+import { getGrantedPermissions, reconcileControlBlockPermissions } from "./permissions"
 import singleConcurrencyFireAndForget from "./queue-handler"
 import { CommonReplicaConfig, populateReplicaAccount, ReplicaAccount } from "./replica"
 import { type MethodHandler, type RpcMethod, rpcHandlers, startRpcServer } from "./rpc"
@@ -220,11 +220,22 @@ export async function createRequirement<TContract extends Contract>(
     return send
   })
 
+  const checkPermission = async (permissionKey: string, instanceId?: string): Promise<boolean> => {
+    const fullKey = instanceId
+      ? `${contract.identity}:${permissionKey}:${instanceId}`
+      : `${contract.identity}:${permissionKey}`
+
+    const permissions = await getGrantedPermissions(account.profile as any)
+
+    return permissions.includes(fullKey)
+  }
+
   return {
     data,
     replicaId: account.profile.replicaId,
     accountId: account.$jazz.id,
     ...methods,
+    checkPermission,
   } as Requirement<TContract>
 }
 
@@ -296,7 +307,13 @@ export async function startReplica<
 
   // sync permissions on startup + set up listeners for future changes
   controlBlock.permissions.$jazz.subscribe(permissions => {
-    reconcileControlBlockPermissionsHandler(worker, permissions, contractMap, logger)
+    reconcileControlBlockPermissionsHandler(
+      worker,
+      loadedWorker.profile as any,
+      permissions,
+      contractMap,
+      logger,
+    )
   })
 
   process.on("SIGINT", async () => {

@@ -130,10 +130,14 @@ export async function syncControlBlockPermissions(
     throw new Error("Target account is not loaded")
   }
 
-  const buildPermissionKey = (permissionName: string, instanceId?: string) =>
+  const buildPermissionKey = (
+    contractIdentity: string,
+    permissionName: string,
+    instanceId?: string,
+  ) =>
     instanceId
-      ? `${loadedAccount.$jazz.id}:${permissionName}:${instanceId}`
-      : `${loadedAccount.$jazz.id}:${permissionName}`
+      ? `${loadedAccount.$jazz.id}:${contractIdentity}:${permissionName}:${instanceId}`
+      : `${loadedAccount.$jazz.id}:${contractIdentity}:${permissionName}`
 
   type RcbState = {
     rcb: ReplicaControlBlock
@@ -212,6 +216,7 @@ export async function syncControlBlockPermissions(
 
       for (const grantedPermission of grantedPermissions) {
         const permissionKey = buildPermissionKey(
+          loadedSet.contract.identity,
           grantedPermission.permission.name,
           grantedPermission.instanceId ?? undefined,
         )

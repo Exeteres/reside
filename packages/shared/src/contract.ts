@@ -189,7 +189,18 @@ export type Requirement<TContract extends Contract> = {
    */
   accountId: string
 
+  /**
+   * The data managed by the contract.
+   */
   data: co.loaded<TContract["data"]>
+
+  /**
+   * Checks whether the permission is granted for the current account.
+   */
+  checkPermission(
+    permissionKey: keyof TContract["permissions"] & string,
+    instanceId?: string,
+  ): Promise<boolean>
 } & {
   [M in keyof TContract["methods"] & string]: ReturnType<
     TContract["methods"][M]["definition"]

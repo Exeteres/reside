@@ -7,6 +7,7 @@ import {
   PermissionEntity,
   Replica,
 } from "@contracts/alpha.v1"
+import { KubernetesSentinelContract } from "@contracts/kubernetes-sentinel.v1"
 import { createReplicaTestAccount, testLogger } from "@reside/shared"
 import { co } from "jazz-tools"
 import { createJazzTestAccount, setupJazzTestSync } from "jazz-tools/testing"
@@ -176,8 +177,8 @@ function buildPermissionKey(
   instanceId?: string,
 ): string {
   return instanceId
-    ? `${accountId}:${permissionName}:${instanceId}`
-    : `${accountId}:${permissionName}`
+    ? `${accountId}:${KubernetesSentinelContract.identity}:${permissionName}:${instanceId}`
+    : `${accountId}:${KubernetesSentinelContract.identity}:${permissionName}`
 }
 
 async function setupScenario({

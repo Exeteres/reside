@@ -1,5 +1,6 @@
 import type { Logger } from "pino"
 import type { Contract } from "./contract"
+import type { ReplicaProfile } from "./replica"
 import { Account, co, z } from "jazz-tools"
 
 export type ControlBlockPermission = co.loaded<typeof ControlBlockPermission>
@@ -51,7 +52,7 @@ export const ControlBlockPermission = co.map({
 })
 
 /**
- * The key is calculated as `${accountId}:${permissionName}:${instanceId}` where `instanceId` is optional.
+ * The key is calculated as `${accountId}:${contract}:${permissionName}:${instanceId}` where `instanceId` is optional.
  */
 export const ControlBlockPermissions = co.record(z.string(), ControlBlockPermission)
 
@@ -64,8 +65,9 @@ export const ControlBlockPermissions = co.record(z.string(), ControlBlockPermiss
  * @param contractMap A map of contract identities to their corresponding Contract objects.
  * @param logger The logger to use for logging information and errors.
  */
-export async function reconcileControlBlockPermissions(
+export async function reconcileControlBlockPermissions<TContracts extends Record<string, Contract>>(
   account: Account,
+  profile: ReplicaProfile<TContracts>,
   permissions: ControlBlockPermissions,
   contractMap: Map<string, Contract>,
   logger: Logger,
@@ -86,6 +88,8 @@ export async function reconcileControlBlockPermissions(
       },
     },
   })
+
+  const accountsToSync = new Map<string, Account>()
 
   for (const [permissionKey, loadedPermission] of Object.entries(loadedPermissions)) {
     const permissionRecord = loadedPermission
@@ -185,6 +189,8 @@ export async function reconcileControlBlockPermissions(
 
     permissionRecord.$jazz.set("current", expectedState)
 
+    accountsToSync.set(targetAccount.$jazz.id, targetAccount)
+
     if (action === "grant") {
       if (handlerExecuted) {
         logger.info(`granted permission "%s" for account "%s"`, permissionRecord.name, accountName)
@@ -227,6 +233,33 @@ export async function reconcileControlBlockPermissions(
       )
     }
   }
+
+  for (const [accountId, targetAccount] of accountsToSync) {
+    const grantedPermissions: string[] = []
+
+    for (const permission of Object.values(loadedPermissions)) {
+      if (!permission) {
+        continue
+      }
+
+      if (permission.account?.$jazz.id !== accountId) {
+        continue
+      }
+
+      const state = permission.current ?? permission.expected
+      if (!state?.granted) {
+        continue
+      }
+
+      const permissionKey = permission.instanceId
+        ? `${permission.identity}:${permission.name}:${permission.instanceId}`
+        : `${permission.identity}:${permission.name}`
+
+      grantedPermissions.push(permissionKey)
+    }
+
+    await writeGrantedPermissions(profile, targetAccount, grantedPermissions)
+  }
 }
 
 function statesEqual(
@@ -242,4 +275,51 @@ function statesEqual(
   }
 
   return JSON.stringify(a.params) === JSON.stringify(b.params)
+}
+
+export const GrantedPermissionList = co.map({
+  /**
+   * The list of granted permissions keys in format "{contract}:{permission}" or "{contract}:{permission}:{instanceId}".
+   */
+  permissions: z.string().array(),
+})
+
+export async function getGrantedPermissions<TContracts extends Record<string, Contract>>(
+  profile: ReplicaProfile<TContracts>,
+): Promise<string[]> {
+  const list = await GrantedPermissionList.loadUnique(
+    `granted-permissions:for-account:${(profile.$jazz.loadedAs as Account).$jazz.id}`,
+    profile.$jazz.owner.$jazz.id,
+    { loadAs: profile.$jazz.loadedAs },
+  )
+
+  return list.$isLoaded ? list.permissions : []
+}
+
+async function writeGrantedPermissions<TContracts extends Record<string, Contract>>(
+  profile: ReplicaProfile<TContracts>,
+  account: Account,
+  permissions: string[],
+) {
+  const existing = await GrantedPermissionList.loadUnique(
+    `granted-permissions:for-account:${account.$jazz.id}`,
+    profile.$jazz.owner.$jazz.id,
+    { loadAs: profile.$jazz.loadedAs },
+  )
+
+  if (existing.$isLoaded) {
+    existing.$jazz.set("permissions", permissions)
+    return
+  }
+
+  const grantedPermissions = GrantedPermissionList.create(
+    { permissions },
+    {
+      unique: `granted-permissions:for-account:${account.$jazz.id}`,
+      owner: profile.$jazz.owner,
+    },
+  )
+
+  // ensure account can read its granted permissions
+  grantedPermissions.$jazz.owner.addMember(account, "reader")
 }

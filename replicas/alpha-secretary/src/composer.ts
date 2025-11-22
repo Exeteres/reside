@@ -14,15 +14,10 @@ export function createComposer(alphaAccountId: string, _logger: Logger) {
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
+      const hasAccess = await alpha.checkPermission("replica:read:all")
 
-      const loadedAlpha = await alpha.data.$jazz.ensureLoaded({
-        resolve: {
-          replicas: { $onError: "catch" },
-        },
-      })
-
-      if (!loadedAlpha.replicas.$isLoaded) {
-        await ctx.reply("У вас нету доступа к списку реплик.")
+      if (!hasAccess) {
+        await ctx.reply("Доступ к репликам запрещен!")
         return
       }
 
@@ -42,6 +37,12 @@ export function createComposer(alphaAccountId: string, _logger: Logger) {
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
+      const hasAccess = await alpha.checkPermission("replica:read:all")
+
+      if (!hasAccess) {
+        await ctx.answerCallbackQuery({ text: "Доступ к репликам запрещен!", show_alert: true })
+        return
+      }
 
       const replicaId = Number(ctx.match[1])
       const replica = await getReplicaById(alpha.data, replicaId)
@@ -73,6 +74,12 @@ export function createComposer(alphaAccountId: string, _logger: Logger) {
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
       const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
+      const hasAccess = await alpha.checkPermission("replica:read:all")
+
+      if (!hasAccess) {
+        await ctx.answerCallbackQuery({ text: "Доступ к репликам запрещен!", show_alert: true })
+        return
+      }
 
       const keyboard = await renderReplicaListKeyboard(alpha.data, ctx.from?.language_code)
       const graph = await drawReplicaGraph(alpha.data, ctx.from?.language_code)
