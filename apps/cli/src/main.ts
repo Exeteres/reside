@@ -6,6 +6,7 @@ import {
   buildCommand,
   clusterCommand,
   devCommand,
+  generateAvatarCommand,
   identityCommand,
   permissionCommand,
   replicaCommand,
@@ -28,6 +29,7 @@ const main = defineCommand({
     replica: replicaCommand,
     permission: permissionCommand,
     secret: secretCommand,
+    "generate-avatar": generateAvatarCommand,
   },
 })
 

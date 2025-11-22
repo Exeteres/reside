@@ -19,6 +19,7 @@ export const ReplicaManifest = z.object({
   displayInfo: z.z.record(z.string(), DisplayInfo),
   implementations: z.z.record(z.string(), SerializedImplementation),
   requirements: z.z.record(z.string(), SerializedRequirement),
+  avatarPrompt: z.string().optional(),
 })
 
 export const ContractManifest = z.object({
@@ -67,6 +68,8 @@ export type InputReplicaManifest = {
   type: "replica"
   // biome-ignore lint/suspicious/noExplicitAny: to simplify types
   replica: ReplicaDefinition<any, any, any>
+
+  avatarPrompt: string
 }
 
 export type CommonResideManifest = z.infer<typeof CommonResideManifest>
@@ -113,6 +116,7 @@ export function defineManifest(manifest: InputResideManifest): ResideManifest {
 
       packages: manifest.packages,
       testingPackages: manifest.testingPackages,
+      avatarPrompt: manifest.avatarPrompt,
     }
   }
 
