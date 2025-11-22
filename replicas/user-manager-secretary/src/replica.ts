@@ -37,21 +37,10 @@ export const UserManagerSecretaryReplica = defineReplica({
         TelegramRealm.permissions.read,
         TelegramRealm.permissions.readUsers,
         TelegramRealm.permissions.impersonateUsers,
-        {
-          name: "user:read:all",
-        },
-        {
-          name: "user:permission:manage:all",
-        },
       ],
     },
     alpha: {
       contract: AlphaContract,
-      permissions: [
-        {
-          name: "replica:read:all",
-        },
-      ],
     },
   },
 
