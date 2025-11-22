@@ -6,7 +6,7 @@
     "@contracts/alpha.v1": "workspace:*",
     "@contracts/secret.v1": "workspace:*",
     "@contracts/user-manager.v1": "workspace:*",
-    "@google/genai": "^1.30.0",
+    "@google/genai": "catalog:",
     "@inquirer/prompts": "^7.10.0",
     "@napi-rs/keyring": "^1.2.0",
     "@reside/shared": "workspace:*",
