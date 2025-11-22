@@ -63,47 +63,37 @@ export function createComposer(
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const userManager = await createRequirement(UserManagerContract, umAccountId, account)
       const telegram = await createRequirement(TelegramContract, telegramAccountId, account)
-
-      // try to load user manager users - access check
-      const loadedUserManager = await userManager.data.$jazz.ensureLoaded({
-        resolve: { users: { $each: { account: true } } },
-      })
-
-      if (!loadedUserManager.users.$isLoaded) {
-        await ctx.reply("У вас нет доступа к списку пользователей.")
-        return
-      }
 
       // try to load telegram users - access check
       const loadedTelegram = await telegram.data.$jazz.ensureLoaded({
         resolve: {
-          users: { $each: { user: { account: true } } },
+          users: { $each: { user: true } },
         },
       })
 
+      if (!loadedTelegram.users.$isLoaded) {
+        await ctx.reply("У вас нет доступа к списку пользователей.")
+        return
+      }
+
       const keyboard = new InlineKeyboard()
-      for (const user of loadedUserManager.users.values()) {
-        let displayName = `User ID ${user.id}`
-
-        // try to find matching telegram user for username
-        if (loadedTelegram.users.$isLoaded) {
-          const telegramUser = Array.from(loadedTelegram.users.values()).find(
-            tu =>
-              tu.$isLoaded &&
-              tu.user?.$isLoaded &&
-              tu.user.account.$jazz.id === user.account.$jazz.id,
-          )
-
-          if (telegramUser?.$isLoaded && telegramUser.info.username) {
-            displayName = `@${telegramUser.info.username}`
-          } else if (telegramUser?.$isLoaded) {
-            displayName = `${telegramUser.info.first_name} (ID ${user.id})`
-          }
+      for (const telegramUser of loadedTelegram.users.values()) {
+        if (!telegramUser.$isLoaded || !telegramUser.user.$isLoaded) {
+          continue
         }
 
-        keyboard.text(displayName, `grant:user:${user.id}`).row()
+        const userId = telegramUser.user.id
+        let displayName = `User ID ${userId}`
+
+        // use telegram username if available
+        if (telegramUser.info.username) {
+          displayName = `@${telegramUser.info.username}`
+        } else {
+          displayName = `${telegramUser.info.first_name} (ID ${userId})`
+        }
+
+        keyboard.text(displayName, `grant:user:${userId}`).row()
       }
 
       await ctx.reply("Выберите пользователя, которому хотите выдать разрешение:", {
