@@ -5,10 +5,10 @@ import { type Etcd3, EtcdLockFailedError } from "etcd3"
 import {
   type Account,
   type CoValueClassOrSchema,
-  JazzRequestError,
   type co,
   createJazzContextFromExistingCredentials,
   isControlledAccount,
+  JazzRequestError,
   randomSessionProvider,
 } from "jazz-tools"
 import pRetry from "p-retry"
