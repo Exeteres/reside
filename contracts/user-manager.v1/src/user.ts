@@ -122,11 +122,14 @@ export async function createGrantedPermissionSet(
   replicas: Replica[],
   permissions: GrantedPermission[],
 ): Promise<GrantedPermissionSet> {
-  const permissionSet = GrantedPermissionSet.create({
-    contract,
-    replicas,
-    permissions,
-  })
+  const permissionSet = GrantedPermissionSet.create(
+    {
+      contract,
+      replicas,
+      permissions,
+    },
+    collection.$jazz.owner,
+  )
 
   // ensure all permissions are readable by the parent
   for (const permission of permissions) {
@@ -171,13 +174,16 @@ export async function grantPermissionToUser(
     ps => ps.$isLoaded && ps.contract?.$isLoaded && ps.contract.id === contractEntity.id,
   )
 
-  const newPermission = GrantedPermission.create({
-    requestType: "manual",
-    status: "approved",
-    permission,
-    instanceId: undefined,
-    params: {},
-  })
+  const newPermission = GrantedPermission.create(
+    {
+      requestType: "manual",
+      status: "approved",
+      permission,
+      instanceId: undefined,
+      params: {},
+    },
+    user.permissionSets.$jazz.owner,
+  )
 
   if (existingPermissionSet?.$isLoaded) {
     // check if permission already exists

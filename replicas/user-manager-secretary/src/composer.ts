@@ -9,6 +9,7 @@ import {
 } from "@contracts/user-manager.v1"
 import { createRequirement, resolveDisplayInfo } from "@reside/shared"
 import { Composer, InlineKeyboard } from "grammy"
+import { Group } from "jazz-tools"
 import { GrantSession } from "./grant-session"
 import { UserProfile } from "./profile-ui"
 
@@ -120,10 +121,13 @@ export function createComposer(
       }
 
       // create grant session
-      const session = GrantSession.create({
-        targetUser,
-        step: "select-contract",
-      })
+      const session = GrantSession.create(
+        {
+          targetUser,
+          step: "select-contract",
+        },
+        Group.create(account),
+      )
 
       // check access to contracts list
       const loadedAlpha = await alpha.data.$jazz.ensureLoaded({
@@ -203,19 +207,13 @@ export function createComposer(
       })
 
       const keyboard = new InlineKeyboard()
-      for (const permName of Object.keys(loadedContract.permissions)) {
-        const permission = loadedContract.permissions[permName]
-        if (!permission) {
-          continue
-        }
-
+      let permIndex = 0
+      for (const [permName, permission] of Object.entries(loadedContract.permissions)) {
         const displayInfo = resolveDisplayInfo(permission.displayInfo, ctx.from?.language_code)
         const title = displayInfo?.title ?? permName
 
-        // encode permission name to handle special characters
-        const encodedPermName = Buffer.from(permName).toString("base64url")
-
-        keyboard.text(title, `grant:perm:${sessionId}:${encodedPermName}`).row()
+        keyboard.text(title, `grant:perm:${sessionId}:${permIndex}`).row()
+        permIndex += 1
       }
 
       await ctx.editMessageText("Выберите разрешение:", { reply_markup: keyboard })
@@ -224,17 +222,14 @@ export function createComposer(
   })
 
   // step 4: permission selected, grant it
-  composer.callbackQuery(/^grant:perm:([^:]+):([A-Za-z0-9_-]+=*)$/, async ctx => {
+  composer.callbackQuery(/^grant:perm:([^:]+):(\d+)$/, async ctx => {
     const sessionId = ctx.match[1]
-    const encodedPermissionName = ctx.match[2]
+    const permissionIndex = Number(ctx.match[2])
 
-    if (!sessionId || !encodedPermissionName) {
+    if (!sessionId || Number.isNaN(permissionIndex)) {
       await ctx.answerCallbackQuery({ text: "Неверные параметры запроса!", show_alert: true })
       return
     }
-
-    // decode permission name from base64url
-    const permissionName = Buffer.from(encodedPermissionName, "base64url").toString("utf-8")
 
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
 
@@ -255,6 +250,12 @@ export function createComposer(
 
       if (!loadedSession.contract || !loadedSession.contract.$isLoaded) {
         await ctx.answerCallbackQuery({ text: "Контракт не найден в сессии!", show_alert: true })
+        return
+      }
+
+      const permissionName = Object.keys(loadedSession.contract.permissions)[permissionIndex]
+      if (!permissionName) {
+        await ctx.answerCallbackQuery({ text: "Разрешение не найдено!", show_alert: true })
         return
       }
 
