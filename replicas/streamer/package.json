@@ -19,7 +19,6 @@
     "grammy": "catalog:",
     "jazz-tools": "catalog:",
     "pino": "catalog:",
-    "puppeteer": "^24.31.0",
     "puppeteer-stream": "^3.0.22"
   },
   "devDependencies": {

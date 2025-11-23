@@ -20,5 +20,6 @@ in {
     regctl
     libsecret
     ffmpeg
+    chromium
   ];
 }

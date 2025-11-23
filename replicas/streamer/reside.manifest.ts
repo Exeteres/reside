@@ -13,5 +13,5 @@ export default defineManifest({
     exuberant showrunner energy
   `,
 
-  packages: ["ffmpeg"],
+  packages: ["ffmpeg", "chromium"],
 })
