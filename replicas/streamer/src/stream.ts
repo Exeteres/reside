@@ -1,5 +1,5 @@
 import type { Stream } from "node:stream"
-import { launch, getStream } from "puppeteer-stream"
+import { getStream, launch } from "puppeteer-stream"
 
 export async function createStream(): Promise<Stream> {
   const chromiumPathProc = Bun.spawn(["which", "chromium"], { stdout: "pipe" })
