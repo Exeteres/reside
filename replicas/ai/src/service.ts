@@ -2,7 +2,7 @@ import type { GoogleGenAI } from "@google/genai"
 
 export class AIService {
   private client?: GoogleGenAI
-  private model?: string = "gemini-3-pro-preview"
+  private model?: string
 
   private getClient(): GoogleGenAI {
     if (!this.client) {
@@ -28,12 +28,10 @@ export class AIService {
     const client = this.getClient()
 
     const result = await client.models.generateContent({
-      model: this.model!,
-      contents: {
-        text: prompt,
-      },
+      model: this.model ?? "gemini-2.5-flash",
+      contents: prompt,
     })
 
-    return result.data ?? "no response from model"
+    return result.text ?? "no response from model"
   }
 }

@@ -12,4 +12,6 @@ export default defineManifest({
     stylus-ready posture,
     diplomatic support presence
   `,
+
+  packages: ["font-inter"],
 })

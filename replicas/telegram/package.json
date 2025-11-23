@@ -12,13 +12,14 @@
     "biome:check": "biome check --error-on-warnings"
   },
   "dependencies": {
-    "cojson": "catalog:",
-    "cojson-transport-ws": "catalog:",
     "@contracts/secret.v1": "workspace:*",
+    "@contracts/telegram-handler.v1": "workspace:*",
     "@contracts/telegram.v1": "workspace:*",
     "@contracts/user-manager.v1": "workspace:*",
-    "@contracts/telegram-handler.v1": "workspace:*",
+    "@grammyjs/runner": "^2.0.3",
     "@reside/shared": "workspace:*",
+    "cojson": "catalog:",
+    "cojson-transport-ws": "catalog:",
     "grammy": "catalog:",
     "jazz-run": "catalog:",
     "jazz-tools": "catalog:",

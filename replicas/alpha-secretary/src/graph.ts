@@ -27,7 +27,7 @@ export async function drawReplicaGraph(alphaData: AlphaData, locale?: string): P
     "  rankdir=LR;",
     "  node [shape=box];",
     "  edge [headport=w, tailport=e];",
-    '  node [fontname="Courier New"];',
+    '  node [fontname="Inter Sans"];',
     "  node [style=filled colorscheme=dark26];",
     "  ranksep=0.8;",
   ]

@@ -76,10 +76,5 @@ export async function setupTelegramBot(
     }
   })
 
-  bot.start().catch(err => {
-    logger.error({ err }, "bot polling failed")
-    throw err
-  })
-
   return bot
 }

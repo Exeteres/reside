@@ -15,7 +15,10 @@ export function createComposer(ai: AIService, logger: Logger): Composer<ResideTe
 
     const result = await ai.ask(ctx.msg.text)
 
-    await ctx.reply(result)
+    await ctx.reply(result, {
+      parse_mode: "Markdown",
+      reply_parameters: { message_id: ctx.msg.message_id },
+    })
   })
 
   return composer

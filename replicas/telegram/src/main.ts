@@ -2,6 +2,7 @@ import type { SecretValueBox } from "@contracts/secret.v1"
 import type { Bot } from "grammy"
 import type { ApiResponse } from "grammy/types"
 import { TelegramRealm } from "@contracts/telegram.v1"
+import { type RunnerHandle, run } from "@grammyjs/runner"
 import { singleConcurrencyFireAndForget, startReplica } from "@reside/shared"
 import { setupTelegramBot } from "./bot"
 import { config } from "./config"
@@ -24,22 +25,25 @@ if (!configBox) {
 }
 
 let currentBot: Bot | undefined
+let currentRunner: RunnerHandle | undefined
 
 const configHandler = singleConcurrencyFireAndForget(
   async (box: SecretValueBox<{ botToken?: string }>) => {
     if (currentBot) {
       logger.info("stopping existing Telegram bot instance")
 
-      await currentBot.stop()
+      await currentRunner!.stop()
     }
 
     if (!box.value.botToken) {
       logger.warn("bot token is not set in the config, bot will not be started")
       currentBot = undefined
+      currentRunner = undefined
       return
     }
 
     currentBot = await setupTelegramBot(telegram.data, box.value.botToken, logger)
+    currentRunner = run(currentBot)
   },
 )
 
