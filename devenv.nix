@@ -19,5 +19,6 @@ in {
     cloud-provider-kind
     regctl
     libsecret
+    ffmpeg
   ];
 }

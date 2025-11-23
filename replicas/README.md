@@ -58,6 +58,10 @@
 <td><img src="./ai/REPLICA.png" width="120" alt="AI Replica"/></td>
 <td><strong><a href="./ai/README.md">Нейросетевая Реплика</a></strong><br/><br/>Отвечает за интеграцию с языковыми моделями и другими AI-инструментами.</td>
 </tr>
+<tr>
+<td><img src="./streamer/REPLICA.png" width="120" alt="Streamer Replica"/></td>
+<td><strong><a href="./streamer/README.md">Реплика-стример</a></strong><br/><br/>Записывает происходящее безобразие и стримит в Telegram и на Youtube.</td>
+</tr>
 </tbody>
 </table>
 

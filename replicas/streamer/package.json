@@ -1,0 +1,28 @@
+{
+  "name": "@replicas/streamer",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "publish": "reside build --push",
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings"
+  },
+  "dependencies": {
+    "@contracts/secret.v1": "workspace:*",
+    "@contracts/telegram-handler.v1": "workspace:*",
+    "@contracts/telegram.v1": "workspace:*",
+    "@reside/shared": "workspace:*",
+    "grammy": "catalog:",
+    "jazz-tools": "catalog:",
+    "pino": "catalog:",
+    "puppeteer": "^24.31.0",
+    "puppeteer-stream": "^3.0.22"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:"
+  }
+}
