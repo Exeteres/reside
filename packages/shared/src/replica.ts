@@ -2,9 +2,9 @@
 
 import type { Contract } from "./contract"
 import type { ReplicaDefinition } from "./replica-definition"
-import { ok } from "node:assert"
 import { type BaseAccountShape, co } from "jazz-tools"
 import { z } from "zod"
+import { assert } from "./utils"
 
 export const CommonReplicaConfig = z.object({
   RESIDE_CONTROL_BLOCK_ID: z.string(),
@@ -97,7 +97,7 @@ export async function populateReplicaAccount<
     } as any,
   })
 
-  ok(
+  assert(
     loadedAccount.$isLoaded,
     `unexpected replica account state: ${loadedAccount.$jazz.loadingState}`,
   )
@@ -113,13 +113,13 @@ export async function populateReplicaAccount<
       contracts: {},
     } as any)
 
-    ok(loadedAccount.profile.$isLoaded)
+    assert(loadedAccount.profile.$isLoaded)
 
     // make profile public to allow lookups of contracts
     loadedAccount.profile.$jazz.owner.makePublic()
   }
 
-  ok(loadedAccount.profile.$isLoaded)
+  assert(loadedAccount.profile.$isLoaded)
 
   // update endpoints so consumers can reach this replica
   const externalEndpoint = process.env.RESIDE_EXTERNAL_ENDPOINT
@@ -141,7 +141,7 @@ export async function populateReplicaAccount<
     let contractData = (loadedAccount.profile!.contracts as any)[contract.identity]
 
     if (!contractData) {
-      ok(loadedAccount.profile.contracts.$isLoaded)
+      assert(loadedAccount.profile.contracts.$isLoaded)
 
       loadedAccount.profile!.contracts!.$jazz.set(contract.identity as any, {} as any)
 

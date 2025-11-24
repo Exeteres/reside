@@ -1,3 +1,4 @@
+import { AlphaContract } from "@contracts/alpha.v1"
 import { SecretContract } from "@contracts/secret.v1"
 import { TelegramContract } from "@contracts/telegram.v1"
 import { TelegramHandlerContract } from "@contracts/telegram-handler.v1"
@@ -31,6 +32,10 @@ export const StreamerReplica = defineReplica({
   },
 
   requirements: {
+    alpha: {
+      contract: AlphaContract,
+      permissions: [{ name: "replica:read:all" }],
+    },
     secret: {
       contract: SecretContract,
       permissions: [config.permissions.init, config.permissions.read],

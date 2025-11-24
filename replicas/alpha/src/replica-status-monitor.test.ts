@@ -6,7 +6,7 @@ import {
   createMockKubernetesSentinelData,
   type OptionalKubernetesManagedObjectCollection,
 } from "@contracts/kubernetes-sentinel.v1"
-import { testLogger } from "@reside/shared"
+import { testLogger } from "@reside/shared/node"
 import { co } from "jazz-tools"
 import { createJazzTestAccount, setupJazzTestSync } from "jazz-tools/testing"
 import { reconcileReplicaStatuses } from "./replica-status-monitor"

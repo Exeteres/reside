@@ -1,7 +1,7 @@
 import type { Stream } from "node:stream"
 import { getStream, launch } from "puppeteer-stream"
 
-export async function createStream(): Promise<Stream> {
+export async function createStream(endpoint: string): Promise<Stream> {
   const chromiumPathProc = Bun.spawn(["which", "chromium"], { stdout: "pipe" })
   const chromiumPathOutput = await chromiumPathProc.stdout!.text()
   const chromiumPath = chromiumPathOutput.trim()
@@ -17,7 +17,7 @@ export async function createStream(): Promise<Stream> {
   })
 
   const page = await browser.newPage()
-  page.goto("https://github.com/Exeteres/reside")
+  page.goto(endpoint)
 
   return await getStream(page, { audio: false, video: true })
 }

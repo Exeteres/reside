@@ -17,7 +17,8 @@ import {
   validateLoadRequest,
 } from "@replicas/alpha"
 import { ClusterAlpha, KubernetesSentinel, objectTypes } from "@replicas/kubernetes-sentinel"
-import { loadConfig, ReplicaControlBlock, startReplica } from "@reside/shared"
+import { loadConfig, ReplicaControlBlock } from "@reside/shared"
+import { startReplica } from "@reside/shared/node"
 import { type Account, co, Group } from "jazz-tools"
 import { setActiveAccount } from "jazz-tools/testing"
 import { pino } from "pino"

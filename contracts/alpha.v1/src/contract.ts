@@ -1,5 +1,4 @@
-import assert from "node:assert"
-import { defineContract, defineMethod } from "@reside/shared"
+import { assert, defineContract, defineMethod } from "@reside/shared"
 import { co, Group, z } from "jazz-tools"
 import { ContractEntity } from "./contract-entity"
 import { CreateLoadRequestInput, ReplicaLoadRequest } from "./load-request"

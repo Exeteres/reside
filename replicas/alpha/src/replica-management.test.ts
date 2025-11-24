@@ -9,7 +9,8 @@ import {
   ReplicaVersion,
 } from "@contracts/alpha.v1"
 import { createMockKubernetesSentinelData } from "@contracts/kubernetes-sentinel.v1"
-import { createReplicaTestAccount, loadBoxed } from "@reside/shared"
+import { loadBoxed } from "@reside/shared"
+import { createReplicaTestAccount } from "@reside/shared/node"
 import { createJazzTestAccount, setupJazzTestSync } from "jazz-tools/testing"
 import { AlphaReplica } from "./replica"
 import { createReplicaVersion } from "./replica-management"

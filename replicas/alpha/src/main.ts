@@ -1,5 +1,5 @@
 import { AlphaContract, getLoadRequestById } from "@contracts/alpha.v1"
-import { startReplica } from "@reside/shared"
+import { startReplica } from "@reside/shared/node"
 import { type Account, co, JazzRequestError } from "jazz-tools"
 import { syncControlBlockPermissions } from "./control-block"
 import { setupKubernetesDeploymentReconciliation } from "./kubernetes-monitor"

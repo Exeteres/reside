@@ -24,3 +24,11 @@ export async function runCommand(
     throw new Error(`"Command "${cmd.join(" ")}" failed with exit code ${exited}"`)
   }
 }
+
+export function assert(value: unknown, message?: string): asserts value {
+  if (!value) {
+    throw new Error(message ?? "Assertion failed")
+  }
+
+  return
+}

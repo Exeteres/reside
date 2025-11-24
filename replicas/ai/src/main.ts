@@ -1,6 +1,7 @@
 import type { SecretValueBox } from "@contracts/secret.v1"
 import { GoogleGenAI } from "@google/genai"
-import { singleConcurrencyFireAndForget, startReplica } from "@reside/shared"
+import { singleConcurrencyFireAndForget } from "@reside/shared"
+import { startReplica } from "@reside/shared/node"
 import { createComposer } from "./composer"
 import { config } from "./config"
 import { handler } from "./handler"

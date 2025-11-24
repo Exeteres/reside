@@ -15,11 +15,14 @@
     "@contracts/secret.v1": "workspace:*",
     "@contracts/telegram-handler.v1": "workspace:*",
     "@contracts/telegram.v1": "workspace:*",
+    "@contracts/alpha.v1": "workspace:*",
     "@reside/shared": "workspace:*",
     "grammy": "catalog:",
     "jazz-tools": "catalog:",
     "pino": "catalog:",
-    "puppeteer-stream": "^3.0.22"
+    "puppeteer-stream": "^3.0.22",
+    "get-port-please": "^3.2.0",
+    "@reside/statusboard": "workspace:*"
   },
   "devDependencies": {
     "@typescript/native-preview": "catalog:"

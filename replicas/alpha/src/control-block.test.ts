@@ -8,7 +8,7 @@ import {
   Replica,
 } from "@contracts/alpha.v1"
 import { KubernetesSentinelContract } from "@contracts/kubernetes-sentinel.v1"
-import { createReplicaTestAccount, testLogger } from "@reside/shared"
+import { createReplicaTestAccount, testLogger } from "@reside/shared/node"
 import { co } from "jazz-tools"
 import { createJazzTestAccount, setupJazzTestSync } from "jazz-tools/testing"
 import {

@@ -6,7 +6,8 @@ import {
   UserManagerContract,
 } from "@contracts/user-manager.v1"
 import { createPermissionSet, createSuperAdminPermissionSet } from "@replicas/alpha"
-import { CommonReplicaConfig, loadConfig, startReplica } from "@reside/shared"
+import { CommonReplicaConfig, loadConfig } from "@reside/shared"
+import { startReplica } from "@reside/shared/node"
 import { createWorkerAccount } from "jazz-run/createWorkerAccount"
 import { type Account, co, JazzRequestError } from "jazz-tools"
 import { setupPermissionSyncMonitor } from "./permission-sync-monitor"

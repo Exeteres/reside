@@ -1,20 +1,24 @@
 import type { SecretValueBox } from "@contracts/secret.v1"
-import { singleConcurrencyFireAndForget, startReplica } from "@reside/shared"
+import { singleConcurrencyFireAndForget } from "@reside/shared"
+import { startReplica } from "@reside/shared/node"
 import { createComposer } from "./composer"
 import { config } from "./config"
 import { handler } from "./handler"
 import { StreamerReplica } from "./replica"
 import { StreamerService } from "./service"
+import { startStatusBoard } from "./statusboard"
 import { createStream } from "./stream"
 
 const {
   implementations: { telegramHandler },
-  requirements: { secret, telegram },
+  requirements: { alpha, secret, telegram },
   replicaName,
   logger,
 } = await startReplica(StreamerReplica)
 
-const stream = await createStream()
+const endpoint = await startStatusBoard(alpha.accountId, logger)
+
+const stream = await createStream(endpoint)
 logger.info("stream started")
 
 const streamer = new StreamerService(stream, logger)

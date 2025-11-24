@@ -1,5 +1,5 @@
 import { TelegramRealm } from "@contracts/telegram.v1"
-import { startReplica } from "@reside/shared"
+import { startReplica } from "@reside/shared/node"
 import { createComposer } from "./composer"
 import { handler } from "./handler"
 import { AlphaSecretaryReplica } from "./replica"

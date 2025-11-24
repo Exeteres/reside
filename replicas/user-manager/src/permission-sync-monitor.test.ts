@@ -1,7 +1,7 @@
 import type { AlphaData } from "@contracts/alpha.v1"
 import type { Logger } from "pino"
 import { describe, expect, test } from "bun:test"
-import { testLogger } from "@reside/shared"
+import { testLogger } from "@reside/shared/node"
 import { runPermissionSync } from "./permission-sync-monitor"
 
 type UsersArg = Parameters<typeof runPermissionSync>[1]

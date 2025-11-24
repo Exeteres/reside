@@ -1,5 +1,6 @@
 import type { KubernetesManagedObjectCollection } from "@contracts/kubernetes-sentinel.v1"
-import { loadConfig, singleConcurrencyFireAndForget, startReplica } from "@reside/shared"
+import { loadConfig, singleConcurrencyFireAndForget } from "@reside/shared"
+import { startReplica } from "@reside/shared/node"
 import { ClusterAlpha } from "./cluster"
 import { Config } from "./config"
 import { type ObjectType, objectTypes } from "./object-type"
