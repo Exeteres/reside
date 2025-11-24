@@ -18,7 +18,7 @@ const {
 
 const endpoint = await startStatusBoard(alpha.accountId, logger)
 
-const stream = await createStream(endpoint)
+const stream = await createStream(endpoint, logger)
 logger.info("stream started")
 
 const streamer = new StreamerService(stream, logger)

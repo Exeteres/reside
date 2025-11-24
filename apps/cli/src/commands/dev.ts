@@ -28,6 +28,19 @@ export const devCommand = defineCommand({
         "The ID of the replica to impersonate. If not provided, will detect automatically by identity.",
       required: false,
     },
+    docker: {
+      type: "boolean",
+      description: "Launch the container of the replica instead of the replica itself.",
+      required: false,
+      default: false,
+    },
+    "keep-disabled": {
+      type: "boolean",
+      description:
+        "If set, the replica will remain disabled in the cluster after exiting dev mode.",
+      required: false,
+      default: false,
+    },
   },
 
   async run({ args }) {
@@ -164,26 +177,59 @@ export const devCommand = defineCommand({
     const url = await tunnel.getURL()
     logger.info(`started tunnel for RPC server at "%s"`, url)
 
-    logger.info(`launching replica locally...`)
-
     // 5. launch replica locally with impersonation env vars
 
+    const env = {
+      RESIDE_CONTROL_BLOCK_ID: rcbId,
+      RESIDE_ACCOUNT_ID: accountId,
+      RESIDE_AGENT_SECRET: agentSecret,
+      RESIDE_SYNC_SERVER_URL: getJazzEndpoint(cluster.endpoint),
+      RESIDE_INTERNAL_ENDPOINT: url, // to force other replicas to use local replica
+      RESIDE_EXTERNAL_ENDPOINT: url,
+      RESIDE_LISTEN_PORT: port.toString(),
+    }
+
     try {
-      const devCmd = Bun.spawn(["bash", "-c", "bun --watch src/main.ts | bunx pino-pretty"], {
-        cwd: process.cwd(),
-        env: {
-          ...process.env,
-          RESIDE_CONTROL_BLOCK_ID: rcbId,
-          RESIDE_ACCOUNT_ID: accountId,
-          RESIDE_AGENT_SECRET: agentSecret,
-          RESIDE_SYNC_SERVER_URL: getJazzEndpoint(cluster.endpoint),
-          RESIDE_INTERNAL_ENDPOINT: url, // to force other replicas to use local replica
-          RESIDE_EXTERNAL_ENDPOINT: url,
-          RESIDE_LISTEN_PORT: port.toString(),
-        },
-        stdin: "inherit",
-        stdout: "inherit",
-      })
+      let devCmd: Bun.Subprocess
+
+      if (args.docker) {
+        logger.info(`launching replica docker container...`)
+
+        const envArgs = Object.entries(env).flatMap(([key, value]) => ["-e", `${key}=${value}`])
+
+        devCmd = Bun.spawn(
+          [
+            "docker",
+            "run",
+            "--rm",
+            "-it",
+            "-p",
+            `${port}:8080`,
+            ...envArgs,
+            loadedReplica.currentVersion!.image,
+          ],
+          {
+            cwd: process.cwd(),
+            env: {
+              ...process.env,
+            },
+            stdin: "inherit",
+            stdout: "inherit",
+          },
+        )
+      } else {
+        logger.info(`launching replica locally...`)
+
+        devCmd = Bun.spawn(["bash", "-c", "bun --watch src/main.ts | bunx pino-pretty"], {
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            ...env,
+          },
+          stdin: "inherit",
+          stdout: "inherit",
+        })
+      }
 
       process.on("SIGINT", () => {
         // forward SIGINT to the replica process
@@ -196,11 +242,13 @@ export const devCommand = defineCommand({
         throw new Error(`Replica process exited with code ${devCmd.exitCode}`)
       }
     } finally {
-      logger.info(
-        `dev replica shutting down, re-enabling replica "%s" in the cluster...`,
-        loadedReplica.name,
-      )
-      loadedReplica.management.$jazz.set("enabled", true)
+      if (!args["keep-disabled"]) {
+        logger.info(
+          `dev replica shutting down, re-enabling replica "%s" in the cluster...`,
+          loadedReplica.name,
+        )
+        loadedReplica.management.$jazz.set("enabled", true)
+      }
 
       await logOut()
     }
