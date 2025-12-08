@@ -1,8 +1,9 @@
 import { defineCommand } from "citty"
-import { loadReplicaCommand } from "./load"
-import { listReplicasCommand } from "./list"
-import { enableReplicaCommand } from "./enable"
 import { disableReplicaCommand } from "./disable"
+import { enableReplicaCommand } from "./enable"
+import { listReplicasCommand } from "./list"
+import { loadReplicaCommand } from "./load"
+import { updateReplicaPlacementGroupCommand } from "./update-placement-group"
 
 export const replicaCommand = defineCommand({
   subCommands: {
@@ -10,5 +11,6 @@ export const replicaCommand = defineCommand({
     list: listReplicasCommand,
     enable: enableReplicaCommand,
     disable: disableReplicaCommand,
+    "update-placement-group": updateReplicaPlacementGroupCommand,
   },
 })
