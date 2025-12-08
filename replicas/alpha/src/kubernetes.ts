@@ -56,7 +56,9 @@ export async function syncReplicaVersionWorkload(
 
   const loadedVersion = await replicaVersion.$jazz.ensureLoaded({
     resolve: {
-      replica: true,
+      replica: {
+        management: true,
+      },
     },
   })
 
@@ -75,6 +77,10 @@ export async function syncReplicaVersionWorkload(
     metadata: { labels },
 
     spec: {
+      nodeSelector: loadedVersion.replica.management.placementGroup
+        ? { "reside.io/placement-group": loadedVersion.replica.management.placementGroup }
+        : undefined,
+
       serviceAccount:
         // attach sentinel SA if running Kubernetes Sentinel
         loadedVersion.replica.identity === kubernetesSentinelIdentity
@@ -97,6 +103,10 @@ export async function syncReplicaVersionWorkload(
                   {
                     name: "RESIDE_CLUSTER_ISSUER",
                     value: alphaConfig.RESIDE_CLUSTER_ISSUER ?? "",
+                  },
+                  {
+                    name: "RESIDE_DEFAULT_PLACEMENT_GROUP",
+                    value: alphaConfig.RESIDE_DEFAULT_PLACEMENT_GROUP ?? "",
                   },
                 ]
               : []),

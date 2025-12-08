@@ -21,6 +21,7 @@ import {
 import { WasmCrypto } from "cojson/crypto/WasmCrypto"
 import { createWebSocketPeer } from "cojson-transport-ws"
 import { Account, co, Group, type Peer } from "jazz-tools"
+import { Config } from "./config"
 import {
   createReplicaControlBlock,
   syncReplicaControlBlockPermissions,
@@ -263,6 +264,8 @@ async function createReplica(
     },
   })
 
+  const config = loadConfig(Config)
+
   const name = request.name
   const conflictReplica = await getReplicaByName(alpha, name)
 
@@ -282,7 +285,7 @@ async function createReplica(
       account,
       versions: [],
       management: ReplicaManagementBlock.create(
-        { enabled: true },
+        { enabled: true, placementGroup: config.RESIDE_DEFAULT_PLACEMENT_GROUP || undefined },
         Group.create(alpha.$jazz.loadedAs as Account),
       ),
     },

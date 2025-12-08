@@ -5,6 +5,9 @@ import { InlineKeyboard } from "grammy"
 import type { co } from "jazz-tools"
 
 const replicaResolve = {
+  management: {
+    placementGroup: true,
+  },
   currentVersion: {
     requirements: {
       $each: {
@@ -66,10 +69,16 @@ function ReplicaUI({
         <b>Класс:</b> <code>{replica.info.class}</code>
       </div>
       <div>
-        <b>Эксклюзивная:</b> <code>{replica.info.exclusive.toString()}</code>
+        <b>Эксклюзивная:</b> <code>{replica.info.exclusive ? "да" : "нет"}</code>
       </div>
       <div>
-        <b>Масштабируемая:</b> <code>{replica.info.scalable.toString()}</code>
+        <b>Масштабируемая:</b> <code>{replica.info.scalable ? "да" : "нет"}</code>
+      </div>
+      <div>
+        <b>Включена:</b> <code>{replica.management?.enabled ? "да" : "нет"}</code>
+      </div>
+      <div>
+        <b>Группа размещения:</b> <code>{replica.management?.placementGroup ?? "не задана"}</code>
       </div>
 
       {permissionTitles.length > 0 && (

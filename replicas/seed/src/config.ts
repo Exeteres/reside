@@ -19,6 +19,13 @@ export const Config = z.object({
    * Must be set if RESIDE_DOMAIN is set.
    */
   RESIDE_CLUSTER_ISSUER: z.string().optional(),
+
+  /**
+   * The default placement group for all components and replicas in the cluster.
+   *
+   * If not specified, components and replicas will be placed on any available nodes by default.
+   */
+  RESIDE_DEFAULT_PLACEMENT_GROUP: z.string().optional(),
 })
 
 export type Config = z.infer<typeof Config>

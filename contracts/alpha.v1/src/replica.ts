@@ -72,6 +72,13 @@ export const ReplicaManagementBlock = co.map({
    * Authorized accounts can update this field to enable or disable the replica.
    */
   enabled: z.boolean(),
+
+  /**
+   * The placement group for the replica.
+   *
+   * If not set, the replica will be placed on any available node.
+   */
+  placementGroup: z.string().optional(),
 })
 
 export const ReplicaVersionStatus = z.enum([

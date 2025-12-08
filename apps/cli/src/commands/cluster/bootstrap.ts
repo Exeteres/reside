@@ -75,6 +75,12 @@ export const bootstrapClusterCommand = defineCommand({
         "The cert-manager ClusterIssuer to use for generating TLS certificates for ingresses. Must be specified if --domain is set.",
       required: false,
     },
+    defaultPlacementGroup: {
+      type: "string",
+      description:
+        "The default placement group for all components and replicas in the cluster. If not specified, components and replicas will be placed on any available nodes by default.",
+      required: false,
+    },
   },
 
   async run({ args }) {
@@ -166,9 +172,11 @@ export const bootstrapClusterCommand = defineCommand({
       // biome-ignore lint/suspicious/noTemplateCurlyInString: it's intended
       .replace("${RESIDE_EXTERNAL_ENDPOINT}", args.endpoint)
       // biome-ignore lint/suspicious/noTemplateCurlyInString: it's intended
-      .replace("${RESIDE_DOMAIN}", args.domain)
+      .replace("${RESIDE_DOMAIN}", args.domain ?? "")
       // biome-ignore lint/suspicious/noTemplateCurlyInString: it's intended
-      .replace("${RESIDE_CLUSTER_ISSUER}", args.clusterIssuer)
+      .replace("${RESIDE_CLUSTER_ISSUER}", args.clusterIssuer ?? "")
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: it's intended
+      .replace("${RESIDE_DEFAULT_PLACEMENT_GROUP}", args.defaultPlacementGroup ?? "")
 
     const applyProc = Bun.spawn(
       ["kubectl", "--context", kubeContext, "apply", "-n", args.namespace, "-f", "-"],

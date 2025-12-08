@@ -40,6 +40,7 @@ export const listReplicasCommand = defineCommand({
               accountId: replica.account.$jazz.id,
               currentVersionId: replica.currentVersion?.id ?? "N/A",
               enabled: replica.management?.enabled ? "Yes" : "No",
+              placementGroup: replica.management?.placementGroup ?? "N/A",
             },
           ]
         }),

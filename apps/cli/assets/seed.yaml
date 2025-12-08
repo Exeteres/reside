@@ -61,6 +61,8 @@ spec:
               value: "${RESIDE_DOMAIN}"
             - name: RESIDE_CLUSTER_ISSUER
               value: "${RESIDE_CLUSTER_ISSUER}"
+            - name: RESIDE_DEFAULT_PLACEMENT_GROUP
+              value: "${RESIDE_DEFAULT_PLACEMENT_GROUP}"
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: "0"
       restartPolicy: Never

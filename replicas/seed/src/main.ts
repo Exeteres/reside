@@ -134,6 +134,10 @@ try {
   logger.info("PersistentVolumeClaim for jazz already exists")
 }
 
+const nodeSelector = config.RESIDE_DEFAULT_PLACEMENT_GROUP
+  ? { "reside.io/placement-group": config.RESIDE_DEFAULT_PLACEMENT_GROUP }
+  : undefined
+
 // 1.3. create Jazz StatefulSet with PVC if not exists
 const jazzExec: V1ExecAction = {
   command: ["wscat", "--connect", `ws://localhost:${jazzPort}`, "-x", "{}"],
@@ -153,6 +157,7 @@ const jazzStatefulSetBody: AppsV1ApiCreateNamespacedStatefulSetRequest["body"] =
         labels: jazzLabels,
       },
       spec: {
+        nodeSelector,
         containers: [
           {
             name: "jazz",
@@ -252,6 +257,7 @@ const etcdStatefulSetBody: AppsV1ApiCreateNamespacedStatefulSetRequest["body"] =
         labels: etcdLabels,
       },
       spec: {
+        nodeSelector,
         containers: [
           {
             name: "etcd",
