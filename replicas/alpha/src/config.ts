@@ -2,11 +2,6 @@ import { z } from "zod"
 
 export const Config = z.object({
   /**
-   * The name of the namespace where Seed Replica is located.
-   */
-  RESIDE_NAMESPACE: z.string().min(1),
-
-  /**
    * The domain to use for ingress resources.
    *
    * If not set, no TLS will be configured for ingresses.
@@ -20,5 +15,3 @@ export const Config = z.object({
    */
   RESIDE_CLUSTER_ISSUER: z.string().optional(),
 })
-
-export type Config = z.infer<typeof Config>

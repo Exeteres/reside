@@ -88,6 +88,7 @@ export async function createReplicaVersion(
   const loadedReplica = await replica.$jazz.ensureLoaded({
     resolve: {
       versions: true,
+      management: true,
     },
   })
 
@@ -110,6 +111,11 @@ export async function createReplicaVersion(
 
   // set as current version
   loadedReplica.$jazz.set("currentVersion", version)
+
+  // if replica is disabled, enable it
+  if (!loadedReplica.management.enabled) {
+    loadedReplica.management.$jazz.set("enabled", true)
+  }
 
   return version
 }

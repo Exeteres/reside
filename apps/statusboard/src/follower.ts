@@ -26,7 +26,7 @@ export class CameraFollower {
     private readonly api: ExcalidrawImperativeAPI,
     private readonly elements: ExcalidrawElement[],
   ) {
-    this.intervalId = window.setInterval(() => this.followTarget(), 20)
+    this.intervalId = window.setInterval(() => this.followTarget(), 50)
     this.updateTarget()
   }
 

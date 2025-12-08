@@ -6,8 +6,10 @@ import {
   updateManagedObjectManifest,
 } from "@contracts/kubernetes-sentinel.v1"
 import { CommonReplicaConfig, loadConfig } from "@reside/shared"
+import { Config } from "./config"
 import { getReplicaControlBlock } from "./control-block"
 
+const alphaIdentity = "ghcr.io/exeteres/reside/replicas/alpha"
 const kubernetesSentinelIdentity = "ghcr.io/exeteres/reside/replicas/kubernetes-sentinel"
 
 export async function createReplicaSecret(
@@ -59,6 +61,7 @@ export async function syncReplicaVersionWorkload(
   })
 
   const config = loadConfig(CommonReplicaConfig)
+  const alphaConfig = loadConfig(Config)
 
   const labels = {
     "reside.io/replica": loadedVersion.replica.name,
@@ -84,6 +87,19 @@ export async function syncReplicaVersionWorkload(
           image: `${loadedVersion.replica.identity}@${loadedVersion.digest}`,
           imagePullPolicy: "IfNotPresent" as const,
           env: [
+            ...(loadedVersion.replica.identity === alphaIdentity
+              ? // add some environment variables only for Alpha Replica
+                [
+                  {
+                    name: "RESIDE_DOMAIN",
+                    value: alphaConfig.RESIDE_DOMAIN ?? "",
+                  },
+                  {
+                    name: "RESIDE_CLUSTER_ISSUER",
+                    value: alphaConfig.RESIDE_CLUSTER_ISSUER ?? "",
+                  },
+                ]
+              : []),
             ...(loadedVersion.replica.identity === kubernetesSentinelIdentity
               ? // add some environment variables only for Kubernetes Sentinel
                 [
@@ -209,6 +225,8 @@ export async function syncReplicaVersionServiceAndIngress(
     },
   })
 
+  const config = loadConfig(Config)
+
   // do not set version here to allow service to match all versions
   const labels = {
     "reside.io/replica": loadedVersion.replica.name,
@@ -247,6 +265,12 @@ export async function syncReplicaVersionServiceAndIngress(
           apiVersion: "networking.k8s.io/v1",
           kind: "Ingress",
 
+          metadata: {
+            annotations: config.RESIDE_DOMAIN
+              ? { "cert-manager.io/cluster-issuer": config.RESIDE_CLUSTER_ISSUER! }
+              : undefined,
+          },
+
           spec: {
             rules: [
               {
@@ -268,6 +292,9 @@ export async function syncReplicaVersionServiceAndIngress(
                 },
               },
             ],
+            tls: config.RESIDE_DOMAIN
+              ? [{ hosts: [config.RESIDE_DOMAIN], secretName: "tls" }]
+              : undefined,
           },
         }
       : null,

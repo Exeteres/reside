@@ -78,7 +78,7 @@ const jazzServiceBody: CoreV1ApiCreateNamespacedServiceRequest["body"] = {
   },
   spec: {
     selector: jazzLabels,
-    type: config.RESIDE_BOOTSTRAP_JAZZ_SERVICE_TYPE,
+    type: "ClusterIP",
     ports: [
       {
         protocol: "TCP",
@@ -603,6 +603,12 @@ await clusterAlpha.syncManagedObjects(loadedK8sData.deployments, objectTypes.dep
 
 logger.info("synchronized global resources to Kubernetes cluster")
 
+if (config.RESIDE_DOMAIN && !config.RESIDE_CLUSTER_ISSUER) {
+  throw new Error(
+    "RESIDE_CLUSTER_ISSUER must be set in order to create ingresses with TLS certificates",
+  )
+}
+
 // create other global resources that will be synced by kubernetes-sentinel after restart
 loadedK8sData.ingresses.$jazz.set("jazz", {
   name: "jazz",
@@ -613,17 +619,15 @@ loadedK8sData.ingresses.$jazz.set("jazz", {
     kind: "Ingress",
 
     metadata: {
-      annotations: config.RESIDE_BOOTSTRAP_JAZZ_CLUSTER_ISSUER
-        ? {
-            "cert-alpha.io/cluster-issuer": config.RESIDE_BOOTSTRAP_JAZZ_CLUSTER_ISSUER,
-          }
+      annotations: config.RESIDE_DOMAIN
+        ? { "cert-manager.io/cluster-issuer": config.RESIDE_CLUSTER_ISSUER! }
         : undefined,
     },
 
     spec: {
       rules: [
         {
-          host: config.RESIDE_BOOTSTRAP_JAZZ_INGRESS_DOMAIN,
+          host: config.RESIDE_DOMAIN,
           http: {
             paths: [
               {
@@ -635,8 +639,8 @@ loadedK8sData.ingresses.$jazz.set("jazz", {
           },
         },
       ],
-      tls: config.RESIDE_BOOTSTRAP_JAZZ_INGRESS_DOMAIN
-        ? [{ hosts: [config.RESIDE_BOOTSTRAP_JAZZ_INGRESS_DOMAIN], secretName: "jazz-tls" }]
+      tls: config.RESIDE_DOMAIN
+        ? [{ hosts: [config.RESIDE_DOMAIN], secretName: "tls" }]
         : undefined,
     },
   },

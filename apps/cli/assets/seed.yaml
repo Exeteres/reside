@@ -57,6 +57,10 @@ spec:
                   fieldPath: metadata.namespace
             - name: RESIDE_EXTERNAL_ENDPOINT
               value: "${RESIDE_EXTERNAL_ENDPOINT}"
+            - name: RESIDE_DOMAIN
+              value: "${RESIDE_DOMAIN}"
+            - name: RESIDE_CLUSTER_ISSUER
+              value: "${RESIDE_CLUSTER_ISSUER}"
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: "0"
       restartPolicy: Never

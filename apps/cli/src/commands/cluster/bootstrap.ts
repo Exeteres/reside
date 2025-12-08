@@ -1,9 +1,9 @@
+import { readFile } from "node:fs/promises"
+import { resolve } from "node:path"
+import { runCommand } from "@reside/shared"
+import { sleep } from "bun"
 import { defineCommand } from "citty"
 import { loadLocalConfig, logger, saveLocalConfig } from "../../shared"
-import { runCommand } from "@reside/shared"
-import { resolve } from "node:path"
-import { sleep } from "bun"
-import { readFile } from "node:fs/promises"
 
 export const bootstrapClusterCommand = defineCommand({
   meta: {
@@ -62,6 +62,18 @@ export const bootstrapClusterCommand = defineCommand({
       description:
         "The endpoint of the Reside cluster to connect to sync server and replicas. Must not contain protocol or path: only host and optional port.",
       required: true,
+    },
+    domain: {
+      type: "string",
+      description:
+        "The domain to use to generate TLS certificates for ingresses. If not specified, no TLS will be configured.",
+      required: false,
+    },
+    clusterIssuer: {
+      type: "string",
+      description:
+        "The cert-manager ClusterIssuer to use for generating TLS certificates for ingresses. Must be specified if --domain is set.",
+      required: false,
     },
   },
 
@@ -146,9 +158,17 @@ export const bootstrapClusterCommand = defineCommand({
     const manifestPath = resolve(import.meta.dir, "../../../assets/seed.yaml")
     const manifestContent = await readFile(manifestPath, "utf-8")
 
+    if (args.domain && !args.clusterIssuer) {
+      throw new Error("If --domain is specified, --cluster-issuer must also be specified.")
+    }
+
     const renderedManifest = manifestContent
       // biome-ignore lint/suspicious/noTemplateCurlyInString: it's intended
       .replace("${RESIDE_EXTERNAL_ENDPOINT}", args.endpoint)
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: it's intended
+      .replace("${RESIDE_DOMAIN}", args.domain)
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: it's intended
+      .replace("${RESIDE_CLUSTER_ISSUER}", args.clusterIssuer)
 
     const applyProc = Bun.spawn(
       ["kubectl", "--context", kubeContext, "apply", "-n", args.namespace, "-f", "-"],

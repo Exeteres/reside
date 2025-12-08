@@ -11,6 +11,10 @@ in {
 
   scripts.reside.exec = "$DEVENV_ROOT/apps/cli/src/main.ts $@";
 
+  enterShell = ''
+    export KUBECONFIG="$HOME/.kube/reside.yaml"
+  '';
+
   packages = with pkgs; [
     biome
     kind
