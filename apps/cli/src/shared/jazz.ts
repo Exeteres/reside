@@ -1,16 +1,16 @@
-import { armor, Decrypter } from "age-encryption"
-import { resolveCurrentContextConfig } from "./config"
-import { getOrCreateAgeIdentity } from "./identity"
-import { createJazzContextForNewAccount } from "jazz-tools"
 import type { AgentSecret } from "cojson"
+import { AlphaContract } from "@contracts/alpha.v1"
+import { createRequirement } from "@reside/shared"
+import { armor, Decrypter } from "age-encryption"
 import { WasmCrypto } from "cojson/crypto/WasmCrypto"
 import { createWebSocketPeer } from "cojson-transport-ws"
-import { createRequirement } from "@reside/shared"
-import { AlphaContract } from "@contracts/alpha.v1"
+import { createJazzContextForNewAccount } from "jazz-tools"
+import { resolveCurrentContextConfig } from "./config"
+import { getOrCreateAgeIdentity } from "./identity"
 
 export function getJazzEndpoint(clusterEndpoint: string): string {
   return clusterEndpoint.startsWith("https://")
-    ? clusterEndpoint.replace("https://", "ws://")
+    ? clusterEndpoint.replace("https://", "wss://")
     : clusterEndpoint.startsWith("http://")
       ? clusterEndpoint.replace("http://", "ws://")
       : `ws://${clusterEndpoint}`

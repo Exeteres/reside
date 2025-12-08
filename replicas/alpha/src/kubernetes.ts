@@ -274,6 +274,7 @@ export async function syncReplicaVersionServiceAndIngress(
           spec: {
             rules: [
               {
+                host: config.RESIDE_DOMAIN,
                 http: {
                   paths: [
                     {
