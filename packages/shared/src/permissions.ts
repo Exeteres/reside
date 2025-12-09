@@ -235,7 +235,7 @@ export async function reconcileControlBlockPermissions<TContracts extends Record
   }
 
   for (const [accountId, targetAccount] of accountsToSync) {
-    const grantedPermissions: string[] = []
+    const grantedPermissions: GrantedPermissions = {}
 
     for (const permission of Object.values(loadedPermissions)) {
       if (!permission) {
@@ -251,11 +251,25 @@ export async function reconcileControlBlockPermissions<TContracts extends Record
         continue
       }
 
-      const permissionKey = permission.instanceId
-        ? `${permission.identity}:${permission.name}:${permission.instanceId}`
-        : `${permission.identity}:${permission.name}`
+      let contractPermissions = grantedPermissions[permission.identity]
 
-      grantedPermissions.push(permissionKey)
+      if (!contractPermissions) {
+        contractPermissions = {}
+        grantedPermissions[permission.identity] = contractPermissions
+      }
+
+      if (permission.instanceId) {
+        let permissionInstances = contractPermissions[permission.name]
+
+        if (!permissionInstances) {
+          permissionInstances = {}
+          contractPermissions[permission.name] = permissionInstances
+        }
+
+        permissionInstances[permission.instanceId] = state.params as Record<string, unknown>
+      } else {
+        contractPermissions[permission.name] = {}
+      }
     }
 
     await writeGrantedPermissions(profile, targetAccount, grantedPermissions)
@@ -277,43 +291,52 @@ function statesEqual(
   return JSON.stringify(a.params) === JSON.stringify(b.params)
 }
 
-export const GrantedPermissionList = co.map({
+export type GrantedPermissions = z.infer<typeof GrantedPermissionContainer.shape.permissions>
+
+export const GrantedPermissionContainer = co.map({
   /**
-   * The list of granted permissions keys in format "{contract}:{permission}" or "{contract}:{permission}:{instanceId}".
+   * The record of granted permissions.
+   *
+   * The key is "{contract}:{permission}".
+   *
+   * If permission is not instance-based, the value is empty object.
+   *
+   * If permission is instance-based, the value contains the object which key is instanceId and value is instance params.
    */
-  permissions: z.string().array(),
+  permissions: z.record(z.string(), z.record(z.string(), z.record(z.string(), z.z.unknown()))),
 })
 
 export async function getGrantedPermissions<TContracts extends Record<string, Contract>>(
   profile: ReplicaProfile<TContracts>,
-): Promise<string[]> {
-  const list = await GrantedPermissionList.loadUnique(
+): Promise<GrantedPermissions> {
+  const container = await GrantedPermissionContainer.loadUnique(
     `granted-permissions:for-account:${(profile.$jazz.loadedAs as Account).$jazz.id}`,
     profile.$jazz.owner.$jazz.id,
     { loadAs: profile.$jazz.loadedAs },
   )
 
-  return list.$isLoaded ? list.permissions : []
+  return container.$isLoaded ? container.permissions : {}
 }
 
 async function writeGrantedPermissions<TContracts extends Record<string, Contract>>(
   profile: ReplicaProfile<TContracts>,
   account: Account,
-  permissions: string[],
+  permissions: GrantedPermissions,
 ) {
-  const existing = await GrantedPermissionList.loadUnique(
+  const existing = await GrantedPermissionContainer.loadUnique(
     `granted-permissions:for-account:${account.$jazz.id}`,
     profile.$jazz.owner.$jazz.id,
     { loadAs: profile.$jazz.loadedAs },
   )
 
   if (existing.$isLoaded) {
-    existing.$jazz.set("permissions", permissions)
+    existing.$jazz.set("permissions", permissions as typeof existing.permissions)
     return
   }
 
-  const grantedPermissions = GrantedPermissionList.create(
-    { permissions },
+  const grantedPermissions = GrantedPermissionContainer.create(
+    // biome-ignore lint/suspicious/noExplicitAny: because jazz does not support "unknown" type
+    { permissions: permissions as any },
     {
       unique: `granted-permissions:for-account:${account.$jazz.id}`,
       owner: profile.$jazz.owner,

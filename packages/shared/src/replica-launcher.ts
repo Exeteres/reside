@@ -63,6 +63,15 @@ export type ReplicaContext<
   lockService: LockService
 
   /**
+   * Registers additional routes to the Bun server used by the replica.
+   *
+   * For now, this is only available if replica has at least one RPC method.
+   *
+   * All route paths will be prefixed with `/replicas/{replicaName}/`.
+   */
+  registerRoutes(routes: Bun.Serve.Routes<unknown, string>): void
+
+  /**
    * Shuts down the replica worker.
    */
   shutdownWorker: () => Promise<void>
@@ -271,5 +280,11 @@ export async function startReplica<
     logger,
     lockService: new EtcdLockService(etcd, logger) as LockService,
     shutdownWorker,
+
+    registerRoutes(routes: Bun.Serve.Routes<unknown, string>): void {
+      for (const [path, route] of Object.entries(routes)) {
+        rpcHandlers[`/replicas/${controlBlock.name}/${path}`] = route
+      }
+    },
   }
 }

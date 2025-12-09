@@ -201,6 +201,15 @@ export type Requirement<TContract extends Contract> = {
     permissionKey: keyof TContract["permissions"] & string,
     instanceId?: string,
   ): Promise<boolean>
+
+  /**
+   * Get the record of all granted permission instances for the given permission key.
+   *
+   * The key of the returned record is the instance ID and the value is params of that instance.
+   */
+  getPermissionInstances<TPermissionKey extends keyof TContract["permissions"] & string>(
+    permissionKey: TPermissionKey,
+  ): Promise<Record<string, z.infer<TContract["permissions"][TPermissionKey]["params"]>>>
 } & {
   [M in keyof TContract["methods"] & string]: ReturnType<
     TContract["methods"][M]["definition"]

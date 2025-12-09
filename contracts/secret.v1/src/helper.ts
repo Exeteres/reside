@@ -54,9 +54,9 @@ export type SecretContext<TSchema extends z.z.ZodType> = {
    *
    * Can be used to subscribe to secret value changes.
    *
-   * Returns null if the secret was not properly initialized or value is invalid.
+   * Throws an error if access is denied.
    */
-  getBox(): Promise<SecretValueBox<z.infer<TSchema>> | null>
+  getBox(): Promise<SecretValueBox<z.infer<TSchema>>>
 
   /**
    * The method to set the value of the secret.
@@ -93,6 +93,11 @@ export type SecretContext<TSchema extends z.z.ZodType> = {
     readWrite: PermissionRequirement<SecretConract, "value:read-write">
   }
 }
+
+export type SecretSchema<TContext> = TContext extends SecretContext<infer TSchema> ? TSchema : never
+
+export type SecretPayload<TContext> =
+  TContext extends SecretContext<infer TSchema> ? z.infer<TSchema> : never
 
 /**
  * Defines a secret with the given options.
@@ -169,21 +174,10 @@ export function defineSecret<TSchema extends z.z.ZodObject>(
 
       const secret = await getManagedSecretByName(_secretData, _secretName)
       if (!secret) {
-        return null
+        throw new Error(`Secret definition with name "${options.name}" not found`)
       }
 
       const loadedSecret = await secret.$jazz.ensureLoaded({ resolve: { value: true } })
-      const parsedValue = options.schema.safeParse(loadedSecret.value.value)
-
-      if (!parsedValue.success) {
-        _logger.warn(
-          `secret "%s" value does not conform to schema:\n%s`,
-          _secretName,
-          z.z.prettifyError(parsedValue.error),
-        )
-
-        return null
-      }
 
       return loadedSecret.value as SecretValueBox<z.infer<TSchema>>
     },

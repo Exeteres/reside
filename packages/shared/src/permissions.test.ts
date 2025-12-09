@@ -199,7 +199,11 @@ test("reconcile grants permissions when expected state is true", async () => {
   )
 
   const grantedPermissions = await getGrantedPermissions(targetReplicaProfile)
-  expect(grantedPermissions).toEqual([`${TestContract.identity}:${permissionEntry.name}`])
+  expect(grantedPermissions).toEqual({
+    [TestContract.identity]: {
+      [permissionEntry.name]: {},
+    },
+  })
 
   // write data on target account side
   const replicaOnTargetSide = await TestReplica.load(replicaAccount.$jazz.id, {
@@ -325,7 +329,11 @@ test("reconcile updates permission params when they change", async () => {
   )
 
   const grantedAfterGrant = await getGrantedPermissions(profileAfterGrant)
-  expect(grantedAfterGrant).toEqual([`${TestContract.identity}:${permissionEntry.name}`])
+  expect(grantedAfterGrant).toEqual({
+    [TestContract.identity]: {
+      [permissionEntry.name]: {},
+    },
+  })
 
   permissions[permissionKey]!.$jazz.set("expected", { granted: true, params: { scope: "write" } })
 
@@ -354,7 +362,11 @@ test("reconcile updates permission params when they change", async () => {
   )
 
   const grantedAfterUpdate = await getGrantedPermissions(profileAfterUpdate)
-  expect(grantedAfterUpdate).toEqual([`${TestContract.identity}:${permissionEntry.name}`])
+  expect(grantedAfterUpdate).toEqual({
+    [TestContract.identity]: {
+      [permissionEntry.name]: {},
+    },
+  })
 
   const loadedReplicaAccount = await replicaAccount.$jazz.ensureLoaded({
     resolve: { profile: { contracts: { test: { protectedMap: true } } } },
@@ -417,7 +429,11 @@ test("reconcile revokes permissions when expected state toggles to false", async
   )
 
   const grantedAfterInitialGrant = await getGrantedPermissions(profileAfterInitialGrant)
-  expect(grantedAfterInitialGrant).toEqual([`${TestContract.identity}:${permissionEntry.name}`])
+  expect(grantedAfterInitialGrant).toEqual({
+    [TestContract.identity]: {
+      [permissionEntry.name]: {},
+    },
+  })
 
   const grantedReplica = await TestReplica.load(replicaAccount.$jazz.id, {
     loadAs: targetAccount,
@@ -451,7 +467,7 @@ test("reconcile revokes permissions when expected state toggles to false", async
   )
 
   const grantedAfterRevoke = await getGrantedPermissions(profileAfterRevoke)
-  expect(grantedAfterRevoke).toEqual([])
+  expect(grantedAfterRevoke).toEqual({})
 
   // verify that consumer can no longer write to replica data
   const replicaAfterRevoke = await TestReplica.load(replicaAccount.$jazz.id, {
@@ -460,4 +476,113 @@ test("reconcile revokes permissions when expected state toggles to false", async
   })
 
   expect(replicaAfterRevoke.$jazz.loadingState).toBe("unauthorized")
+})
+
+test("reconcile handles instance-based permissions", async () => {
+  const { replicaAccount, replicaProfile, targetAccount, targetAccountOnReplicaSide } =
+    await setupReplicaAndTarget()
+
+  const permissionKey = `${targetAccountOnReplicaSide.$jazz.id}:test.permission:cluster-1`
+
+  const permissionEntry = ControlBlockPermission.create(
+    {
+      identity: TestContract.identity,
+      name: "test.permission",
+      account: targetAccountOnReplicaSide,
+      instanceId: "cluster-1",
+      expected: { granted: true, params: { scope: "cluster-1" } },
+      current: { granted: false, params: {} },
+    },
+    Group.create(),
+  )
+
+  const permissions = ControlBlockPermissions.create(
+    { [permissionKey]: permissionEntry },
+    Group.create(),
+  )
+
+  await reconcileControlBlockPermissions(
+    replicaAccount,
+    replicaProfile,
+    permissions,
+    contracts,
+    testLogger,
+  )
+
+  await replicaAccount.$jazz.waitForAllCoValuesSync({ timeout: 500 })
+
+  expect(handlerCalls).toEqual([{ type: "grant", params: { scope: "cluster-1" } }])
+
+  const profileAfterGrant = await loadReplicaProfileForAccount(
+    replicaAccount.$jazz.id,
+    targetAccount,
+  )
+
+  const grantedAfterGrant = await getGrantedPermissions(profileAfterGrant)
+  expect(grantedAfterGrant).toEqual({
+    [TestContract.identity]: {
+      [permissionEntry.name]: {
+        "cluster-1": {
+          scope: "cluster-1",
+        },
+      },
+    },
+  })
+
+  permissions[permissionKey]!.$jazz.set("expected", {
+    granted: true,
+    params: { scope: "cluster-2" },
+  })
+
+  await reconcileControlBlockPermissions(
+    replicaAccount,
+    replicaProfile,
+    permissions,
+    contracts,
+    testLogger,
+  )
+
+  await replicaAccount.$jazz.waitForAllCoValuesSync({ timeout: 500 })
+
+  expect(handlerCalls.slice(-1)).toEqual([
+    { type: "update", params: { scope: "cluster-2" }, oldParams: { scope: "cluster-1" } },
+  ])
+
+  const profileAfterUpdate = await loadReplicaProfileForAccount(
+    replicaAccount.$jazz.id,
+    targetAccount,
+  )
+
+  const grantedAfterUpdate = await getGrantedPermissions(profileAfterUpdate)
+  expect(grantedAfterUpdate).toEqual({
+    [TestContract.identity]: {
+      [permissionEntry.name]: {
+        "cluster-1": {
+          scope: "cluster-2",
+        },
+      },
+    },
+  })
+
+  permissions[permissionKey]!.$jazz.set("expected", { granted: false, params: { scope: "unused" } })
+
+  await reconcileControlBlockPermissions(
+    replicaAccount,
+    replicaProfile,
+    permissions,
+    contracts,
+    testLogger,
+  )
+
+  await replicaAccount.$jazz.waitForAllCoValuesSync({ timeout: 500 })
+
+  expect(handlerCalls.slice(-1)).toEqual([{ type: "revoke", params: { scope: "cluster-2" } }])
+
+  const profileAfterRevoke = await loadReplicaProfileForAccount(
+    replicaAccount.$jazz.id,
+    targetAccount,
+  )
+
+  const grantedAfterRevoke = await getGrantedPermissions(profileAfterRevoke)
+  expect(grantedAfterRevoke).toEqual({})
 })

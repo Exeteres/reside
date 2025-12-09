@@ -1,0 +1,21 @@
+{
+  "name": "@replicas/factory",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "publish": "reside build --push",
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings"
+  },
+  "dependencies": {
+    "@reside/shared": "workspace:*",
+    "jazz-tools": "catalog:"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:"
+  }
+}
