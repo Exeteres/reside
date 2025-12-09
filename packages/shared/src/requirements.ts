@@ -81,13 +81,25 @@ export async function createRequirement<TContract extends Contract>(
   })
 
   const checkPermission = async (permissionKey: string, instanceId?: string): Promise<boolean> => {
-    const fullKey = instanceId
-      ? `${contract.identity}:${permissionKey}:${instanceId}`
-      : `${contract.identity}:${permissionKey}`
-
     const permissions = await getGrantedPermissions(account.profile as any)
 
-    return permissions.includes(fullKey)
+    const fullKey = `${contract.identity}:${permissionKey}`
+    const permissionMap = permissions[fullKey]
+
+    if (instanceId) {
+      return permissionMap ? !!permissionMap[instanceId] : false
+    }
+
+    return !!permissionMap
+  }
+
+  const getPermissionInstances = async (permissionKey: string) => {
+    const permissions = await getGrantedPermissions(account.profile as any)
+
+    const fullKey = `${contract.identity}:${permissionKey}`
+    const permissionMap = permissions[fullKey] ?? {}
+
+    return permissionMap
   }
 
   return {
@@ -96,5 +108,6 @@ export async function createRequirement<TContract extends Contract>(
     accountId: account.$jazz.id,
     ...methods,
     checkPermission,
+    getPermissionInstances,
   } as Requirement<TContract>
 }
