@@ -113,19 +113,43 @@ function resolveInitialDocumentValue<T>(
   initialValue: T | undefined,
   schema?: Record<string, unknown>,
 ) {
-  if (initialValue !== undefined) {
-    return initialValue ?? null
+  const currentValue = isPlainObject(initialValue) ? initialValue : {} // always merge an object overlay
+
+  if (!schema) {
+    return currentValue
   }
 
-  if (schema) {
-    try {
-      return mock(schema)
-    } catch {
-      return {}
+  const template = mock(schema)
+
+  return mergeTemplateWithValue(template, currentValue)
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function mergeTemplateWithValue(template: unknown, value: unknown): unknown {
+  if (isPlainObject(template) && isPlainObject(value)) {
+    const templateRecord = template as Record<string, unknown>
+    const valueRecord = value as Record<string, unknown>
+    const result: Record<string, unknown> = { ...templateRecord }
+
+    for (const [key, child] of Object.entries(valueRecord)) {
+      if (child === undefined) {
+        continue
+      }
+
+      result[key] = mergeTemplateWithValue(templateRecord[key], child)
     }
+
+    return result
   }
 
-  return null
+  if (value === undefined) {
+    return template
+  }
+
+  return value
 }
 
 function serializeDocument(value: unknown): string {

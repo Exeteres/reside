@@ -2,6 +2,7 @@ import { z } from "jazz-tools"
 import { mapValues } from "remeda"
 import { toJSONSchema } from "zod"
 import { type Contract, DisplayInfo, SerializedContract } from "./contract"
+import { getPermissionInstanceId } from "./permissions"
 import {
   type ReplicaDefinition,
   ReplicaInfo,
@@ -107,9 +108,10 @@ export function defineManifest(manifest: InputResideManifest): ResideManifest {
 
           return {
             name: permission.name,
-            instanceId: contractPermission.getInstanceId
-              ? contractPermission.getInstanceId(params)
-              : undefined,
+            instanceId:
+              contractPermission.instanceKeys && contractPermission.instanceKeys.length > 0
+                ? getPermissionInstanceId(params, contractPermission.instanceKeys)
+                : undefined,
             params,
           }
         }),

@@ -6,7 +6,7 @@ import {
   type PermissionEntity,
   type Replica,
 } from "@contracts/alpha.v1"
-import { loadBoxed } from "@reside/shared"
+import { getPermissionInstanceId, loadBoxed } from "@reside/shared"
 import { type Account, co, Group, z } from "jazz-tools"
 import { Realm } from "./realm"
 
@@ -167,31 +167,7 @@ export async function grantPermissionToPermissionSetList(
   let instanceId: string | undefined
 
   if (instanceKeys.length > 0) {
-    const parts = instanceKeys.map(key => {
-      if (!(key in normalizedParams)) {
-        throw new Error(
-          `Permission "${permission.name}" requires parameter "${key}" to determine instance ID`,
-        )
-      }
-
-      const value = normalizedParams[key]
-
-      if (value === null || value === undefined) {
-        throw new Error(
-          `Permission "${permission.name}" parameter "${key}" must not be null or undefined to determine instance ID`,
-        )
-      }
-
-      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-        return String(value)
-      }
-
-      throw new Error(
-        `Permission "${permission.name}" parameter "${key}" must be a string, number, or boolean to determine instance ID`,
-      )
-    })
-
-    instanceId = parts.join(".")
+    instanceId = getPermissionInstanceId(normalizedParams, instanceKeys)
   }
 
   let existingPermissionSet: GrantedPermissionSet | undefined

@@ -346,3 +346,32 @@ async function writeGrantedPermissions<TContracts extends Record<string, Contrac
   // ensure account can read its granted permissions
   grantedPermissions.$jazz.owner.addMember(account, "reader")
 }
+
+export function getPermissionInstanceId(
+  params: Record<string, unknown>,
+  instanceKeys: string[],
+): string {
+  return instanceKeys
+    .map(key => {
+      if (!(key in params)) {
+        throw new Error(`Permission parameter "${key}" is required to determine instance ID`)
+      }
+
+      const value = params[key]
+
+      if (value === null || value === undefined) {
+        throw new Error(
+          `Permission parameter "${key}" must not be null or undefined to determine instance ID`,
+        )
+      }
+
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        return String(value)
+      }
+
+      throw new Error(
+        `Permission parameter "${key}" must be a string, number, or boolean to determine instance ID`,
+      )
+    })
+    .join(".")
+}
