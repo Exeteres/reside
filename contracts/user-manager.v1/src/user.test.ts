@@ -20,7 +20,7 @@ describe("grantPermissionToUser", () => {
 
     // should throw error when permission sets not loaded
     await expect(
-      grantPermissionToUser(mockUser, mockContract, mockPermission, mockReplicas),
+      grantPermissionToUser(mockUser, mockContract, mockPermission, mockReplicas, {}),
     ).rejects.toThrow("User's permission sets are not loaded")
   })
 })

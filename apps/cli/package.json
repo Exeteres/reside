@@ -22,6 +22,8 @@
     "get-port-please": "^3.2.0",
     "jazz-tools": "catalog:",
     "log-update": "^7.0.1",
+    "mock": "^0.1.1",
+    "mock-json-schema": "^1.1.2",
     "ora": "^9.0.0",
     "pino": "catalog:",
     "pino-pretty": "catalog:",

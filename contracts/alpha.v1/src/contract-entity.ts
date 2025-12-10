@@ -19,6 +19,20 @@ export const PermissionEntity = co.map({
    * The key is BCP 47 language tag (e.g., "en", "fr", "de") and the value is the display information in that language.
    */
   displayInfo: LocalizedDisplayInfo,
+
+  /**
+   * The list of keys in the params that uniquely identify the permission instance.
+   *
+   * Will be undefined if the permission does not support multiple instances.
+   */
+  instanceKeys: z.string().array().optional(),
+
+  /**
+   * The JSON schema of the params of this permission.
+   *
+   * Will be undefined if the permission does not accept any parameters.
+   */
+  params: z.json().optional(),
 })
 
 /**

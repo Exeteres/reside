@@ -29,6 +29,20 @@ export const SerializedPermission = z.object({
    * The display information for the permission.
    */
   displayInfo: LocalizedDisplayInfo,
+
+  /**
+   * The list of keys in the params that uniquely identify the permission instance.
+   *
+   * Will be undefined if the permission does not support multiple instances.
+   */
+  instanceKeys: z.string().array().optional(),
+
+  /**
+   * The JSON schema of the params of this permission.
+   *
+   * Will be undefined if the permission does not accept any parameters.
+   */
+  params: z.json().optional(),
 })
 
 export const SerializedMethod = z.object({
@@ -62,7 +76,7 @@ export const SerializedContract = z.object({
 
 export type Permission<
   TData extends CoValueClassOrSchema = CoValueClassOrSchema,
-  TParams extends z.z.ZodType = z.z.ZodType,
+  TParams extends z.z.ZodObject = z.z.ZodObject,
 > = {
   /**
    * The schema of the parameters that must be provided when requesting the permission.
@@ -77,15 +91,11 @@ export type Permission<
   displayInfo: LocalizedDisplayInfo
 
   /**
-   * Gets the ID of the permission instance based on the provided parameters.
+   * Gets the list of keys in the params that uniquely identify the permission instance.
    *
-   * The total permission instance ID will be calculated as `<permission-key>:<instance-id>` or just `<permission-key>` if empty string is returned.
-   *
-   * If the `getInstanceId` is not provided, the permission will have a single global instance with ID equal to the permission key.
-   *
-   * @param params The parameters provided when requesting the permission.
+   * If not provided, the permission will not support multiple instances.
    */
-  getInstanceId?: (params: z.infer<TParams>) => string
+  instanceKeys?: readonly (keyof z.infer<TParams> & string)[]
 
   /**
    * The handler to be invoked when the permission is granted for an account.
@@ -135,7 +145,7 @@ export type Permission<
 export type Contract<
   TIdentity extends string = string,
   TData extends CoValueClassOrSchema = any,
-  TPermissions extends Record<string, z.z.ZodType> = Record<string, z.z.ZodType>,
+  TPermissions extends Record<string, z.z.ZodObject> = Record<string, z.z.ZodObject>,
   TMethods extends Record<string, RpcMethod> = Record<string, RpcMethod>,
 > = {
   /**
@@ -233,7 +243,7 @@ export type Implementation<TContract extends Contract> = {
 export function defineContract<
   TIdentity extends string,
   TData extends CoValueClassOrSchema,
-  TPermissions extends { [key: string]: z.z.ZodType },
+  TPermissions extends { [key: string]: z.z.ZodObject },
   TMethods extends Record<string, RpcMethod>,
 >(
   contract: SetOptional<

@@ -83,23 +83,18 @@ export async function createRequirement<TContract extends Contract>(
   const checkPermission = async (permissionKey: string, instanceId?: string): Promise<boolean> => {
     const permissions = await getGrantedPermissions(account.profile as any)
 
-    const fullKey = `${contract.identity}:${permissionKey}`
-    const permissionMap = permissions[fullKey]
-
-    if (instanceId) {
-      return permissionMap ? !!permissionMap[instanceId] : false
+    const permissionMap = permissions[contract.identity]
+    if (!instanceId) {
+      return !!permissionMap?.[permissionKey]
     }
 
-    return !!permissionMap
+    return !!permissionMap?.[permissionKey]?.[instanceId]
   }
 
   const getPermissionInstances = async (permissionKey: string) => {
     const permissions = await getGrantedPermissions(account.profile as any)
 
-    const fullKey = `${contract.identity}:${permissionKey}`
-    const permissionMap = permissions[fullKey] ?? {}
-
-    return permissionMap
+    return permissions[contract.identity]?.[permissionKey] ?? {}
   }
 
   return {

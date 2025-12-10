@@ -3,6 +3,7 @@ import {
   getIssueById,
   Issue,
   IssueInfo,
+  type IssueStatus,
   type Repository,
 } from "@contracts/github.v1"
 import { box } from "@reside/shared"
@@ -24,6 +25,7 @@ export async function syncIssueEntity(
   data: GitHubData,
   repository: Repository,
   id: number,
+  status: IssueStatus,
   title: string,
   body?: string,
 ): Promise<Issue> {
@@ -43,6 +45,7 @@ export async function syncIssueEntity(
   const newIssue = Issue.create(
     {
       id,
+      status,
       // create separate group for issue info to allow write permission on it
       info: IssueInfo.create({
         title,

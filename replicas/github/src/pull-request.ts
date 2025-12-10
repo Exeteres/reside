@@ -3,6 +3,7 @@ import {
   getPullRequestById,
   PullRequest,
   PullRequestInfo,
+  type PullRequestStatus,
   type Repository,
 } from "@contracts/github.v1"
 import { box } from "@reside/shared"
@@ -24,6 +25,7 @@ export async function syncPullRequestEntity(
   data: GitHubData,
   repository: Repository,
   id: number,
+  status: PullRequestStatus,
   title: string,
   body?: string,
 ): Promise<PullRequest> {
@@ -45,6 +47,7 @@ export async function syncPullRequestEntity(
   const newPullRequest = PullRequest.create(
     {
       id,
+      status,
       // create separate group for pull request info to allow write permission on it
       info: PullRequestInfo.create({
         title,

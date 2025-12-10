@@ -1,4 +1,5 @@
 import type { Logger } from "pino"
+import type { GitHubService } from "./service"
 import {
   GitHubContract,
   getRepositoryById,
@@ -15,6 +16,11 @@ import {
   renderPullRequestList,
   renderPullRequestListKeyboard,
 } from "./pull-request-ui"
+import {
+  renderRepository,
+  renderRepositoryList,
+  renderRepositoryListKeyboard,
+} from "./repository-ui"
 
 type RepositoryPermissionKey = "issue:read:repository" | "pull-request:read:repository"
 
@@ -26,6 +32,7 @@ type RepositorySummary = {
 
 export function createComposer(
   githubReplicaAccountId: string,
+  getGitHubService: () => GitHubService | undefined,
   logger: Logger,
 ): Composer<ResideTelegramContext> {
   const composer = new Composer<ResideTelegramContext>()
@@ -42,16 +49,25 @@ export function createComposer(
 
   const collectAccessibleRepositories = async (
     ctx: ResideTelegramContext,
-    permissionKey: RepositoryPermissionKey,
+    permissionKey: RepositoryPermissionKey | RepositoryPermissionKey[],
+    options: { includeReadAll?: boolean } = {},
   ): Promise<RepositorySummary[]> => {
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-    const repositories: RepositorySummary[] = []
+    const repositories = new Map<number, RepositorySummary>()
+    const permissionKeys = Array.isArray(permissionKey) ? permissionKey : [permissionKey]
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
       const requirement = await createRequirement(GitHubContract, githubReplicaAccountId, account)
-      const instances = await requirement.getPermissionInstances(permissionKey)
+      const hasReadAll = options.includeReadAll
+        ? await requirement.checkPermission("repository:read:all")
+        : false
+      const instancesList = await Promise.all(
+        permissionKeys.map(async key => {
+          return await requirement.getPermissionInstances(key)
+        }),
+      )
 
-      if (Object.keys(instances).length === 0) {
+      if (!hasReadAll && instancesList.every(instances => Object.keys(instances).length === 0)) {
         return
       }
 
@@ -65,11 +81,17 @@ export function createComposer(
 
       for (const repository of loadedData.repositories.values()) {
         const instanceId = getRepositoryInstanceId(repository)
-        if (!(instanceId in instances)) {
-          continue
+        if (!hasReadAll) {
+          const hasAccess = instancesList.some(instances => {
+            return instanceId in instances
+          })
+
+          if (!hasAccess) {
+            continue
+          }
         }
 
-        repositories.push({
+        repositories.set(repository.id, {
           id: repository.id,
           owner: repository.owner,
           name: repository.name,
@@ -77,7 +99,8 @@ export function createComposer(
       }
     })
 
-    repositories.sort((a, b) => {
+    const sortedRepositories = Array.from(repositories.values())
+    sortedRepositories.sort((a, b) => {
       const ownerComparison = a.owner.localeCompare(b.owner)
       if (ownerComparison !== 0) {
         return ownerComparison
@@ -86,19 +109,23 @@ export function createComposer(
       return a.name.localeCompare(b.name)
     })
 
-    return repositories
+    return sortedRepositories
   }
 
   const buildRepositoryKeyboard = (
     repositories: RepositorySummary[],
-    action: "issues" | "pull-requests",
+    action: "issues" | "pull-requests" | "repositories",
   ): InlineKeyboard => {
     const keyboard = new InlineKeyboard()
 
     for (const repository of repositories) {
       const label = `${repository.owner}/${repository.name}`
       const callbackPrefix =
-        action === "issues" ? "github:issues:list" : "github:pull-requests:list"
+        action === "issues"
+          ? "github:issues:list"
+          : action === "pull-requests"
+            ? "github:pull-requests:list"
+            : "github:repositories:detail"
 
       keyboard.text(label, `${callbackPrefix}:${repository.id}`).row()
     }
@@ -108,7 +135,7 @@ export function createComposer(
 
   const showRepositorySelection = async (
     ctx: ResideTelegramContext,
-    permissionKey: RepositoryPermissionKey,
+    permissionKey: RepositoryPermissionKey | RepositoryPermissionKey[],
     action: "issues" | "pull-requests",
     makeMessage: (count: number) => string,
     respond: (message: string, keyboard: InlineKeyboard) => Promise<unknown>,
@@ -127,19 +154,37 @@ export function createComposer(
   const withRepositoryAccess = async (
     ctx: ResideTelegramContext,
     repository: Repository,
-    permissionKey: RepositoryPermissionKey,
+    permissionKey: RepositoryPermissionKey | RepositoryPermissionKey[],
     onDenied: () => Promise<void>,
     onGranted: () => Promise<void>,
+    options: { allowRepositoryReadAll?: boolean } = {},
   ): Promise<void> => {
     const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
     let allowed = false
 
     await TelegramRealm.impersonate(loadedUser.user, async account => {
       const requirement = await createRequirement(GitHubContract, githubReplicaAccountId, account)
-      allowed = await requirement.checkPermission(
-        permissionKey,
-        getRepositoryInstanceId(repository),
-      )
+      if (options.allowRepositoryReadAll) {
+        const hasReadAll = await requirement.checkPermission("repository:read:all")
+        if (hasReadAll) {
+          allowed = true
+          return
+        }
+      }
+
+      const permissionKeys = Array.isArray(permissionKey) ? permissionKey : [permissionKey]
+
+      for (const key of permissionKeys) {
+        const hasPermission = await requirement.checkPermission(
+          key,
+          getRepositoryInstanceId(repository),
+        )
+
+        if (hasPermission) {
+          allowed = true
+          break
+        }
+      }
     })
 
     if (!allowed) {
@@ -148,6 +193,36 @@ export function createComposer(
     }
 
     await onGranted()
+  }
+
+  const showRepositoryOverview = async (
+    ctx: ResideTelegramContext,
+    respond: (message: string, keyboard: InlineKeyboard) => Promise<unknown>,
+  ): Promise<void> => {
+    const repositorySummaries = await collectAccessibleRepositories(
+      ctx,
+      ["issue:read:repository", "pull-request:read:repository"],
+      { includeReadAll: true },
+    )
+
+    if (repositorySummaries.length === 0) {
+      await respond("Доступных репозиториев не найдено.", new InlineKeyboard())
+      return
+    }
+
+    const repositories = (
+      await Promise.all(repositorySummaries.map(summary => loadRepository(summary.id)))
+    ).filter((repository): repository is Repository => repository !== null)
+
+    if (repositories.length === 0) {
+      await respond("Не удалось загрузить информацию о репозиториях.", new InlineKeyboard())
+      return
+    }
+
+    const rendered = await renderRepositoryList(repositories)
+    const keyboard = renderRepositoryListKeyboard(repositorySummaries)
+
+    await respond(rendered.value, keyboard)
   }
 
   composer.command("issues", async ctx => {
@@ -253,6 +328,38 @@ export function createComposer(
         return await ctx.reply(message, { reply_markup: keyboard })
       },
     )
+  })
+
+  composer.command("repositories", async ctx => {
+    await showRepositoryOverview(ctx, async (message, keyboard) => {
+      return await ctx.reply(message, {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      })
+    })
+  })
+
+  composer.command("connect_repository", async ctx => {
+    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
+
+    await TelegramRealm.impersonate(loadedUser.user, async account => {
+      const github = await createRequirement(GitHubContract, githubReplicaAccountId, account)
+      const hasAccess = await github.checkPermission("repository:connect")
+
+      if (!hasAccess) {
+        await ctx.reply("Нет доступа для подключения репозиториев.")
+        return
+      }
+
+      const service = getGitHubService()
+      if (!service) {
+        await ctx.reply("Гитхабовое не настроено.")
+        return
+      }
+
+      const connectionUrl = await service.app.getInstallationUrl()
+      await ctx.reply(`Для подключения репозитория перейдите по ссылке: ${connectionUrl}`)
+    })
   })
 
   composer.callbackQuery(/^github:pull-requests:list:(\d+)$/, async ctx => {
@@ -368,6 +475,52 @@ export function createComposer(
         await ctx.answerCallbackQuery()
       },
     )
+  })
+
+  composer.callbackQuery(/^github:repositories:detail:(\d+)$/, async ctx => {
+    const repositoryId = Number(ctx.match[1])
+    const repository = await loadRepository(repositoryId)
+
+    if (!repository) {
+      await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
+      return
+    }
+
+    await withRepositoryAccess(
+      ctx,
+      repository,
+      ["issue:read:repository", "pull-request:read:repository"],
+      async () => {
+        await ctx.answerCallbackQuery({ text: "Доступ к репозиторию запрещен!", show_alert: true })
+      },
+      async () => {
+        const message = await renderRepository(repository)
+        const keyboard = new InlineKeyboard()
+
+        keyboard.text("⬅️ К репозиториям", "github:repositories:list").row()
+        keyboard.text("➡️ Задачи", `github:issues:list:${repositoryId}`).row()
+        keyboard.text("➡️ Pull request'ы", `github:pull-requests:list:${repositoryId}`).row()
+
+        await ctx.editMessageText(message.value, {
+          parse_mode: "HTML",
+          reply_markup: keyboard,
+        })
+
+        await ctx.answerCallbackQuery()
+      },
+      { allowRepositoryReadAll: true },
+    )
+  })
+
+  composer.callbackQuery("github:repositories:list", async ctx => {
+    await showRepositoryOverview(ctx, async (message, keyboard) => {
+      await ctx.editMessageText(message, {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      })
+
+      await ctx.answerCallbackQuery()
+    })
   })
 
   return composer

@@ -297,7 +297,7 @@ export const GrantedPermissionContainer = co.map({
   /**
    * The record of granted permissions.
    *
-   * The key is "{contract}:{permission}".
+   * The key is the contract identity, the value is a record of permission names to their instances.
    *
    * If permission is not instance-based, the value is empty object.
    *

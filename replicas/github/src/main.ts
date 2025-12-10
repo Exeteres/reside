@@ -1,4 +1,5 @@
 import { getRepositoryById } from "@contracts/github.v1"
+import { TelegramRealm } from "@contracts/telegram.v1"
 import { startReplica } from "@reside/shared/node"
 import { JazzRequestError } from "jazz-tools"
 import { createComposer } from "./composer"
@@ -12,17 +13,20 @@ const {
   account,
   replicaName,
   implementations: { github, telegramHandler },
-  requirements: { secret, telegram },
+  requirements: { secret, telegram, userManager },
   registerRoutes,
   logger,
 } = await startReplica(GithubReplica)
 
 let service: GitHubService | undefined
 
-const composer = createComposer(account.$jazz.id, logger)
+const composer = createComposer(account.$jazz.id, () => service, logger)
 
 await config.init(secret.data, replicaName, logger)
 await handler.init(telegram, telegramHandler, replicaName, composer, logger)
+await TelegramRealm.init(userManager, logger)
+
+const loadedAccount = await account.$jazz.ensureLoaded({ resolve: { profile: true } })
 
 const configBox = await config.getBox()
 
@@ -34,6 +38,9 @@ configBox.$jazz.subscribe(async ({ value }) => {
   }
 
   service = new GitHubService(github.data, value.app, logger)
+  logger.info("GitHub service configured successfully")
+
+  await service.ensureWebhookConfigured(loadedAccount.profile)
 })
 
 github.handleConnectRepository(async (_, account) => {
@@ -86,6 +93,7 @@ github.handleCreateIssue(async (request, account) => {
     github.data,
     repository,
     response.data.id,
+    "open",
     response.data.title,
     response.data.body ?? undefined,
   )

@@ -190,7 +190,7 @@ export const UserManagerContract = defineContract({
 
     "user:read:realm": {
       params: z.object({ realmName: z.string() }),
-      getInstanceId: params => params.realmName,
+      instanceKeys: ["realmName"],
 
       displayInfo: {
         ru: {
@@ -220,7 +220,7 @@ export const UserManagerContract = defineContract({
 
     "user:create:realm": {
       params: z.object({ realmName: z.string() }),
-      getInstanceId: params => params.realmName,
+      instanceKeys: ["realmName"],
 
       displayInfo: {
         ru: {
@@ -359,7 +359,7 @@ export const UserManagerContract = defineContract({
 
     "realm:read": {
       params: z.object({ name: z.string() }),
-      getInstanceId: params => params.name,
+      instanceKeys: ["name"],
 
       displayInfo: {
         ru: {
@@ -387,7 +387,7 @@ export const UserManagerContract = defineContract({
 
     "realm:manage": {
       params: z.object({ name: z.string() }),
-      getInstanceId: params => params.name,
+      instanceKeys: ["name"],
 
       displayInfo: {
         ru: {
@@ -417,7 +417,7 @@ export const UserManagerContract = defineContract({
 
     "user:impersonate:realm": {
       params: z.object({ realmName: z.string() }),
-      getInstanceId: params => params.realmName,
+      instanceKeys: ["realmName"],
 
       displayInfo: {
         ru: {

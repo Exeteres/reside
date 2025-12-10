@@ -21,6 +21,8 @@ export async function upsertContractEntity(
   const mappedPermissions = mapValues(contract.permissions, (permission, name) => ({
     name,
     displayInfo: permission.displayInfo,
+    instanceKeys: permission.instanceKeys,
+    params: permission.params,
   }))
 
   const mappedMethods = mapValues(contract.methods, (method, name) => ({

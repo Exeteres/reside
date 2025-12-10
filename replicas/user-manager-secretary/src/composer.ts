@@ -343,6 +343,7 @@ export function createComposer(
         loadedSession.contract,
         permission,
         replicas,
+        {},
       )
 
       // update session

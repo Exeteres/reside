@@ -108,7 +108,7 @@ export const TelegramContract = defineContract({
         }),
       }),
 
-      getInstanceId: params => params.name,
+      instanceKeys: ["name"],
 
       displayInfo: {
         ru: {

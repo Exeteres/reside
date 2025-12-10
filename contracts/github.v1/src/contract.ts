@@ -6,6 +6,15 @@ import { getOrCreateRepository, Repository } from "./repository"
 export type GitHubData = co.loaded<typeof GitHubContract.data>
 export type GitHubContract = typeof GitHubContract
 
+const permissionPermission = {
+  params: z.object({
+    owner: z.string(),
+    name: z.string(),
+  }),
+
+  instanceKeys: ["owner", "name"] as const,
+}
+
 export const GitHubContract = defineContract({
   identity: "ghcr.io/exeteres/reside/contracts/github.v1",
 
@@ -151,12 +160,7 @@ export const GitHubContract = defineContract({
         },
       },
 
-      getInstanceId: ({ owner, name }) => `${owner}.${name}`,
-
-      params: z.object({
-        owner: z.string(),
-        name: z.string(),
-      }),
+      ...permissionPermission,
 
       async onGranted(data, account, params) {
         const repository = await getOrCreateRepository(data, params.owner, params.name)
@@ -178,12 +182,7 @@ export const GitHubContract = defineContract({
         },
       },
 
-      getInstanceId: ({ owner, name }) => `${owner}.${name}`,
-
-      params: z.object({
-        owner: z.string(),
-        name: z.string(),
-      }),
+      ...permissionPermission,
     },
 
     "pull-request:read:repository": {
@@ -198,12 +197,7 @@ export const GitHubContract = defineContract({
         },
       },
 
-      getInstanceId: ({ owner, name }) => `${owner}.${name}`,
-
-      params: z.object({
-        owner: z.string(),
-        name: z.string(),
-      }),
+      ...permissionPermission,
 
       async onGranted(data, account, params) {
         const repository = await getOrCreateRepository(data, params.owner, params.name)

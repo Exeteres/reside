@@ -1,8 +1,8 @@
-import { defineCommand } from "citty"
 import { discoverRequirement } from "@contracts/alpha.v1"
-import { grantPermissionToUser, getUserById, UserManagerContract } from "@contracts/user-manager.v1"
+import { getUserById, grantPermissionToUser, UserManagerContract } from "@contracts/user-manager.v1"
+import { defineCommand } from "citty"
 import { contextArgs, createJazzContextForCurrentContext, logger } from "../../shared"
-import { logGrantResult, resolveContractGrantContext } from "./utils"
+import { logGrantResult, promptForPermissionParams, resolveContractGrantContext } from "./utils"
 
 export const grantPermissionCommand = defineCommand({
   meta: {
@@ -60,7 +60,15 @@ export const grantPermissionCommand = defineCommand({
       },
     })
 
-    const result = await grantPermissionToUser(loadedUser, contractEntity, permission, replicas)
+    const params = await promptForPermissionParams(permission, logger)
+
+    const result = await grantPermissionToUser(
+      loadedUser,
+      contractEntity,
+      permission,
+      replicas,
+      params,
+    )
 
     logGrantResult(logger, result, {
       contractIdentity: args.contractIdentity,

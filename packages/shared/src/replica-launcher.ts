@@ -265,10 +265,12 @@ export async function startReplica<
     }
   }
 
+  let server: Bun.Server<unknown> | undefined
+
   if (hasMethods) {
     const port = config.RESIDE_LISTEN_PORT ? parseInt(config.RESIDE_LISTEN_PORT, 10) : 8080
 
-    startRpcServer(port, logger)
+    server = startRpcServer(port, logger)
   }
 
   return {
@@ -283,7 +285,15 @@ export async function startReplica<
 
     registerRoutes(routes: Bun.Serve.Routes<unknown, string>): void {
       for (const [path, route] of Object.entries(routes)) {
-        rpcHandlers[`/replicas/${controlBlock.name}/${path}`] = route
+        const fullPath = `/replicas/${controlBlock.name}/${path}`
+
+        logger.info(`registering extra route "%s"`, fullPath)
+        rpcHandlers[fullPath] = route
+      }
+
+      if (server) {
+        server.reload({ routes: rpcHandlers })
+        logger.info("RPC server routes reloaded")
       }
     },
   }

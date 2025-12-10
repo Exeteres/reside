@@ -5,21 +5,24 @@ import { getOrCreateManagedSecret, ManagedSecret } from "./secret"
 export type SecretConract = typeof SecretContract
 export type SecretData = co.loaded<typeof SecretContract.data>
 
-const permissionParams = z.object({
-  /**
-   * The name of the secret to read value for.
-   */
-  name: z.string().meta({
-    displayInfo: {
-      ru: {
-        title: "Имя секрета",
+const permissionBase = {
+  params: z.object({
+    /**
+     * The name of the secret to read value for.
+     */
+    name: z.string().meta({
+      displayInfo: {
+        ru: {
+          title: "Имя секрета",
+        },
+        en: {
+          title: "Secret Name",
+        },
       },
-      en: {
-        title: "Secret Name",
-      },
-    },
+    }),
   }),
-})
+  instanceKeys: ["name"] as const,
+}
 
 export const SecretContract = defineContract({
   identity: "ghcr.io/exeteres/reside/contracts/secret.v1",
@@ -66,8 +69,7 @@ export const SecretContract = defineContract({
 
   permissions: {
     "definition:manage": {
-      params: permissionParams,
-      getInstanceId: params => params.name,
+      ...permissionBase,
 
       displayInfo: {
         ru: {
@@ -123,8 +125,7 @@ export const SecretContract = defineContract({
     },
 
     "value:read": {
-      params: permissionParams,
-      getInstanceId: params => params.name,
+      ...permissionBase,
 
       displayInfo: {
         ru: {
@@ -180,8 +181,7 @@ export const SecretContract = defineContract({
     },
 
     "value:read-write": {
-      params: permissionParams,
-      getInstanceId: params => params.name,
+      ...permissionBase,
 
       displayInfo: {
         ru: {

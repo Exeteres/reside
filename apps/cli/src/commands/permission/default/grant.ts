@@ -1,7 +1,7 @@
-import { defineCommand } from "citty"
+import type { Account } from "jazz-tools"
 import { discoverRequirement } from "@contracts/alpha.v1"
 import { grantPermissionToPermissionSetList, UserManagerContract } from "@contracts/user-manager.v1"
-import type { Account } from "jazz-tools"
+import { defineCommand } from "citty"
 import { contextArgs, createJazzContextForCurrentContext, logger } from "../../../shared"
 import { logGrantResult, resolveContractGrantContext } from "../utils"
 
@@ -57,6 +57,7 @@ export const grantDefaultPermissionCommand = defineCommand({
       permission,
       replicas,
       ownerAccount,
+      {},
     )
 
     logGrantResult(logger, result, {

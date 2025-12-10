@@ -1,8 +1,8 @@
-import { getContractEntityByIdentity, getReplicasImplementingContract } from "@contracts/alpha.v1"
 import type { AlphaData } from "@contracts/alpha.v1"
-import type { GrantedPermissionSetList } from "@contracts/user-manager.v1"
+import type { GrantedPermissionSetList, PermissionGrantResult } from "@contracts/user-manager.v1"
 import type { Logger } from "pino"
-import type { PermissionGrantResult } from "@contracts/user-manager.v1"
+import { getContractEntityByIdentity, getReplicasImplementingContract } from "@contracts/alpha.v1"
+import { editYamlWithSchema } from "../../shared"
 
 export async function resolveContractGrantContext(
   alphaData: AlphaData,
@@ -33,6 +33,36 @@ export async function resolveContractGrantContext(
   }
 
   return { contractEntity, permission, replicas }
+}
+
+export async function promptForPermissionParams(
+  permission: { name: string; params?: unknown; instanceKeys?: string[] },
+  logger: Logger,
+): Promise<Record<string, unknown>> {
+  const rawSchema = permission.params
+  if (!rawSchema || typeof rawSchema !== "object" || Array.isArray(rawSchema)) {
+    return {}
+  }
+
+  logger.info(`opening editor to configure parameters for permission "%s"`, permission.name)
+
+  const fileSafeName = permission.name.replace(/[^a-zA-Z0-9_-]+/g, "-") || "params"
+
+  const { value } = await editYamlWithSchema<unknown>({
+    tempDirPrefix: "reside-permission",
+    fileName: `${fileSafeName}.yaml`,
+    schema: rawSchema as Record<string, unknown>,
+  })
+
+  if (value === null || value === undefined) {
+    return {}
+  }
+
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Permission "${permission.name}" parameters must be provided as a YAML object`)
+  }
+
+  return value as Record<string, unknown>
 }
 
 export function logPermissionSets(

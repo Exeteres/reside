@@ -152,9 +152,46 @@ export async function grantPermissionToPermissionSetList(
   permission: co.loaded<typeof PermissionEntity>,
   replicas: Replica[],
   ownerAccount: Account,
+  params: Record<string, unknown> = {},
 ): Promise<PermissionGrantResult> {
   if (!permissionSets.$isLoaded) {
     throw new Error("Permission sets collection is not loaded")
+  }
+
+  if (typeof params !== "object" || params === null || Array.isArray(params)) {
+    throw new Error("Permission params must be a plain object")
+  }
+
+  const normalizedParams = params
+  const instanceKeys = permission.instanceKeys ?? []
+  let instanceId: string | undefined
+
+  if (instanceKeys.length > 0) {
+    const parts = instanceKeys.map(key => {
+      if (!(key in normalizedParams)) {
+        throw new Error(
+          `Permission "${permission.name}" requires parameter "${key}" to determine instance ID`,
+        )
+      }
+
+      const value = normalizedParams[key]
+
+      if (value === null || value === undefined) {
+        throw new Error(
+          `Permission "${permission.name}" parameter "${key}" must not be null or undefined to determine instance ID`,
+        )
+      }
+
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        return String(value)
+      }
+
+      throw new Error(
+        `Permission "${permission.name}" parameter "${key}" must be a string, number, or boolean to determine instance ID`,
+      )
+    })
+
+    instanceId = parts.join(".")
   }
 
   let existingPermissionSet: GrantedPermissionSet | undefined
@@ -179,8 +216,9 @@ export async function grantPermissionToPermissionSetList(
       requestType: "manual",
       status: "approved",
       permission,
-      instanceId: undefined,
-      params: {},
+      instanceId,
+      // biome-ignore lint/suspicious/noExplicitAny: idk why
+      params: normalizedParams as any,
     },
     Group.create(ownerAccount),
   )
@@ -197,8 +235,17 @@ export async function grantPermissionToPermissionSetList(
       }
 
       if (granted.permission?.$isLoaded && granted.permission.name === permission.name) {
-        alreadyExists = true
-        break
+        const existingInstanceId = granted.instanceId ?? undefined
+
+        if (instanceKeys.length === 0) {
+          alreadyExists = !existingInstanceId
+        } else {
+          alreadyExists = existingInstanceId === instanceId
+        }
+
+        if (alreadyExists) {
+          break
+        }
       }
     }
 
@@ -235,6 +282,7 @@ export async function grantPermissionToUser(
   contractEntity: ContractEntity,
   permission: co.loaded<typeof PermissionEntity>,
   replicas: Replica[],
+  params: Record<string, unknown> = {},
 ): Promise<PermissionGrantResult> {
   // verify permission sets are loaded
   if (!user.permissionSets.$isLoaded) {
@@ -247,5 +295,6 @@ export async function grantPermissionToUser(
     permission,
     replicas,
     user.$jazz.loadedAs as Account,
+    params,
   )
 }

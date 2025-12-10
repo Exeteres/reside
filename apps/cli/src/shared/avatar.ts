@@ -1,10 +1,10 @@
-import { z } from "zod"
-import type { ResideConfig } from "./package-config"
-import { loadConfig } from "@reside/shared"
-import { GoogleGenAI } from "@google/genai"
-import path from "node:path"
-import { writeFile } from "node:fs/promises"
 import type { Logger } from "pino"
+import type { ResideConfig } from "./package-config"
+import { writeFile } from "node:fs/promises"
+import path from "node:path"
+import { GoogleGenAI } from "@google/genai"
+import { loadConfig } from "@reside/shared"
+import { z } from "zod"
 
 function createAvatarPrompt(replicaPrompt: string): string {
   return `
@@ -40,6 +40,10 @@ export async function generateReplicaAvatar(config: ResideConfig, logger: Logger
 
   const geminiConfig = loadConfig(GeminiConfig)
   const client = new GoogleGenAI({ apiKey: geminiConfig.GEMINI_API_KEY })
+
+  if (!config.manifest.avatarPrompt) {
+    throw new Error("No avatar prompt specified in replica manifest")
+  }
 
   const fullPrompt = createAvatarPrompt(config.manifest.avatarPrompt)
   logger.debug(`generating avatar with prompt: "%s"`, fullPrompt)

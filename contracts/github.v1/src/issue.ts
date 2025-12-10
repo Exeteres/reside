@@ -3,6 +3,9 @@ import { Repository } from "./repository"
 
 export type Issue = co.loaded<typeof Issue>
 export type IssueInfo = co.loaded<typeof IssueInfo>
+export type IssueStatus = z.infer<typeof IssueStatus>
+
+export const IssueStatus = z.enum(["open", "completed", "closed"])
 
 export const IssueInfo = co.map({
   /**
@@ -27,6 +30,11 @@ export const Issue = co.map({
    * Will be the same as the GitHub issue number.
    */
   id: z.number(),
+
+  /**
+   * The status of the issue.
+   */
+  status: IssueStatus,
 
   /**
    * The repository this issue belongs to.

@@ -1,5 +1,6 @@
 import { z } from "jazz-tools"
 import { mapValues } from "remeda"
+import { toJSONSchema } from "zod"
 import { type Contract, DisplayInfo, SerializedContract } from "./contract"
 import {
   type ReplicaDefinition,
@@ -127,6 +128,15 @@ export function defineManifest(manifest: InputResideManifest): ResideManifest {
 
     permissions: mapValues(manifest.contract.permissions, permission => ({
       displayInfo: permission.displayInfo,
+      instanceKeys:
+        permission.instanceKeys && permission.instanceKeys.length > 0
+          ? [...permission.instanceKeys]
+          : undefined,
+      params:
+        Object.keys(permission.params.shape).length > 0
+          ? // biome-ignore lint/suspicious/noExplicitAny: to simplify types
+            (toJSONSchema(permission.params) as any)
+          : undefined,
     })),
 
     methods: mapValues(manifest.contract.methods, method => ({
