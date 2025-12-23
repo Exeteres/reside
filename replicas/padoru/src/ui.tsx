@@ -1,26 +1,41 @@
 import type { OutMessage } from "@reside/telegram"
 import type { PadoruConfig } from "./config"
 import { formatRemaining } from "./date"
+import { hoursInMs, newYearDate } from "./shared"
 
-export const hoursInMs = 60 * 60 * 1000
+function formatOffsetHours(offsetHours: number): string {
+  return `UTC${offsetHours >= 0 ? "+" : ""}${offsetHours}`
+}
+
+function formatPadoruRemaining(remainingMs: number, offsetHours: number): string {
+  const remainingWithTZ = remainingMs - offsetHours * hoursInMs
+
+  if (remainingWithTZ <= 0) {
+    return "PADORU PROTOCOL ACTIVATED!"
+  }
+
+  return formatRemaining(remainingWithTZ, { locale: "ru" })
+}
 
 export function renderPadoruMessage(config: PadoruConfig): OutMessage {
-  const newYearDate = new Date(new Date().getFullYear(), 0, 1)
   const remainingMs = newYearDate.getTime() - Date.now()
-  const remainingWithTZ = remainingMs + config.defaultOffsetHours * hoursInMs
+  const remaining = formatPadoruRemaining(remainingMs, config.defaultOffsetHours)
 
-  const remaining = formatRemaining(remainingWithTZ, { locale: "ru" })
-  let baseText = config.template.replace("{remaining}", remaining) + "\n\n"
+  const header =
+    remaining === "PADORU PROTOCOL ACTIVATED!"
+      ? remaining
+      : config.template.replace("{remaining}", remaining)
+
+  let text = header + "\n\n"
 
   for (const [username, celebrant] of Object.entries(config.celebrants)) {
-    const celebrantRemainingWithTZ = remainingMs + celebrant.offsetHours * hoursInMs
-    const celebrantRemaining = formatRemaining(celebrantRemainingWithTZ, { locale: "ru" })
-    const formattedOffset = `UTC${celebrant.offsetHours >= 0 ? "+" : ""}${celebrant.offsetHours}`
+    const celebrantRemaining = formatPadoruRemaining(remainingMs, celebrant.offsetHours)
+    const formattedOffset = formatOffsetHours(celebrant.offsetHours)
 
-    baseText += `${username} (${formattedOffset}): ${celebrantRemaining}\n`
+    text += `${username} (${formattedOffset}): ${celebrantRemaining}\n`
   }
 
   return {
-    text: <code>{baseText.trim()}</code>,
+    text: <code>{text.trim()}</code>,
   }
 }

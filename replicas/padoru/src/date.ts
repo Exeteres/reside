@@ -6,7 +6,7 @@ type UnitForms = {
 }
 
 type Unit = {
-  key: "day" | "hour" | "minute" | "second"
+  key: "day" | "hour" | "minute"
   ms: number
   forms: UnitForms
 }
@@ -36,14 +36,6 @@ const units: readonly Unit[] = [
       ru: ["минута", "минуты", "минут"],
     },
   },
-  {
-    key: "second",
-    ms: 1_000,
-    forms: {
-      en: ["second", "seconds"],
-      ru: ["секунда", "секунды", "секунд"],
-    },
-  },
 ] as const
 
 export type FormatRemainingOptions = {
@@ -55,6 +47,10 @@ export function formatRemaining(durationMs: number, options?: FormatRemainingOpt
   const locale = options?.locale ?? "ru"
   const maxParts = options?.maxParts ?? Number.POSITIVE_INFINITY
   const duration = Number.isFinite(durationMs) ? Math.max(0, Math.floor(durationMs)) : 0
+
+  if (duration < 60_000) {
+    return locale === "en" ? "less than a minute" : "меньше минуты"
+  }
 
   let remaining = duration
   const parts: Array<{ value: number; unit: Unit }> = units.map(unit => {

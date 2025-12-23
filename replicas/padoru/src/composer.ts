@@ -14,7 +14,6 @@ export function createComposer(root: PadoruRoot, logger: Logger): Composer<Resid
 
   composer.command("padoru", async ctx => {
     const config = await getOrCreatePadoruConfig(root, ctx.chat.id)
-    const padoruMessage = renderPadoruMessage(config)
 
     const newTemplate = ctx.message?.text?.split(" ").slice(1).join(" ")
     if (newTemplate) {
@@ -22,6 +21,8 @@ export function createComposer(root: PadoruRoot, logger: Logger): Composer<Resid
 
       config.$jazz.set("template", newTemplate)
     }
+
+    const padoruMessage = renderPadoruMessage(config)
 
     if (config.message) {
       logger.info("recreating live message for chat %s", ctx.chat.id)

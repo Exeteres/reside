@@ -2,8 +2,9 @@ import type { Api } from "grammy"
 import type { Logger } from "pino"
 import type { PadoruRoot } from "./config"
 import { updateLiveMessage } from "@contracts/telegram.v1"
+import { hoursInMs, newYearDate } from "./shared"
 import { stickers } from "./stickers"
-import { hoursInMs, renderPadoruMessage } from "./ui"
+import { renderPadoruMessage } from "./ui"
 
 export async function startCountdown(root: PadoruRoot, api: Api, logger: Logger): Promise<void> {
   const loadedRoot = await root.$jazz.ensureLoaded({
@@ -22,8 +23,6 @@ export async function startCountdown(root: PadoruRoot, api: Api, logger: Logger)
       return
     }
 
-    const newYearDate = new Date(new Date().getFullYear(), 0, 1)
-
     for (const [chatId, config] of Object.entries(currentConfigs ?? {})) {
       if (!config.message) {
         logger.warn(`no live message for chat %s`, chatId)
@@ -37,17 +36,10 @@ export async function startCountdown(root: PadoruRoot, api: Api, logger: Logger)
 
       // send boom for all celebrants at new year with matching timezone
       const matchingCelebrants = Object.entries(config.celebrants).filter(([, celebrant]) => {
-        const celebrantOffsetMs = celebrant.offsetHours
-          ? celebrant.offsetHours * hoursInMs
-          : config.defaultOffsetHours * hoursInMs
+        const remainingMs = newYearDate.getTime() - Date.now()
+        const remainingWithTZ = remainingMs - celebrant.offsetHours * hoursInMs
 
-        const celebrantNow = new Date(now.getTime() + celebrantOffsetMs)
-        return (
-          celebrantNow.getMonth() === newYearDate.getMonth() &&
-          celebrantNow.getDate() === newYearDate.getDate() &&
-          celebrantNow.getHours() === 0 &&
-          celebrantNow.getMinutes() === 0
-        )
+        return remainingWithTZ <= 0 && remainingWithTZ > -60_000
       })
 
       if (!matchingCelebrants.length) {
@@ -57,12 +49,13 @@ export async function startCountdown(root: PadoruRoot, api: Api, logger: Logger)
       logger.info(`sending boom for ${matchingCelebrants.length} celebrants in chat %s`, chatId)
 
       // send message and stickers
-      let message = matchingCelebrants.map(([username]) => username).join(", ")
-      message += " IT'S PADORU TIME! 🎉🎉🎉"
+      let message = matchingCelebrants.map(([username]) => `@${username}`).join(", ")
+      message += ", IT'S PADORU TIME! 🎉🎉🎉"
 
       await api.sendMessage(Number(chatId), message)
 
       for (const stickerId of stickers.boom) {
+        await new Promise(resolve => setTimeout(resolve, 2000))
         await api.sendSticker(Number(chatId), stickerId)
       }
     }

@@ -102,7 +102,10 @@ export async function populateReplicaAccount<
     `unexpected replica account state: ${loadedAccount.$jazz.loadingState}`,
   )
 
-  if (replicaDef.privateData && loadedAccount.root.$jazz.loadingState === "unavailable") {
+  if (
+    replicaDef.privateData &&
+    (!loadedAccount.root || loadedAccount.root.$jazz.loadingState === "unavailable")
+  ) {
     loadedAccount.$jazz.set("root", {} as any)
   }
 

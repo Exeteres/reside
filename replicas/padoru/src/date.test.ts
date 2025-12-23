@@ -41,11 +41,11 @@ describe("formatRemaining", () => {
     const duration = 15 * second
     const result = formatRemaining(duration, { locale: "ru" })
 
-    expect(result).toBe("15 секунд")
+    expect(result).toBe("меньше минуты")
   })
 
   test("clamps negative or invalid durations to zero", () => {
-    expect(formatRemaining(-100, { locale: "en" })).toBe("0 seconds")
-    expect(formatRemaining(Number.NaN, { locale: "ru" })).toBe("0 секунд")
+    expect(formatRemaining(-100, { locale: "en" })).toBe("less than a minute")
+    expect(formatRemaining(Number.NaN, { locale: "ru" })).toBe("меньше минуты")
   })
 })
