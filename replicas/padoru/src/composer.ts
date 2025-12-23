@@ -6,8 +6,8 @@ import {
 } from "@contracts/telegram.v1"
 import { Composer } from "grammy"
 import { getOrCreatePadoruConfig, type PadoruRoot } from "./config"
-import { renderPadoruMessage } from "./ui"
 import { stickers } from "./stickers"
+import { renderPadoruMessage } from "./ui"
 
 export function createComposer(root: PadoruRoot, logger: Logger): Composer<ResideTelegramContext> {
   const composer = new Composer<ResideTelegramContext>()

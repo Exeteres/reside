@@ -2,8 +2,8 @@ import type { Api } from "grammy"
 import type { Logger } from "pino"
 import type { PadoruRoot } from "./config"
 import { updateLiveMessage } from "@contracts/telegram.v1"
-import { hoursInMs, renderPadoruMessage } from "./ui"
 import { stickers } from "./stickers"
+import { hoursInMs, renderPadoruMessage } from "./ui"
 
 export async function startCountdown(root: PadoruRoot, api: Api, logger: Logger): Promise<void> {
   const loadedRoot = await root.$jazz.ensureLoaded({

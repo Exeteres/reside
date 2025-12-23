@@ -16,7 +16,7 @@ const {
   logger,
 } = await startReplica(StreamerReplica)
 
-const endpoint = await startStatusBoard(alpha.accountId, logger)
+const endpoint = await startStatusBoard(alpha.account.$jazz.id, logger)
 
 const stream = await createStream(endpoint, logger)
 logger.info("stream started")
