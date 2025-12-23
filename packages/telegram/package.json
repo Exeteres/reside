@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@reside/shared": "workspace:*",
-    "grammy": "catalog:"
+    "grammy": "catalog:",
+    "pino": "catalog:"
   },
   "devDependencies": {
     "@typescript/native-preview": "catalog:"

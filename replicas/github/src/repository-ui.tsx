@@ -57,7 +57,7 @@ function RepositoryView({ repository }: { repository: LoadedRepository }): Messa
   return (
     <div>
       <div>
-        <b>Репозиторий:</b>{" "}
+        <b>Репозиторий:</b>
         <code>
           {repository.owner}/{repository.name}
         </code>

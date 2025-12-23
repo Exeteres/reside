@@ -1,20 +1,17 @@
+import type { Requirement } from "@reside/shared"
 import type { Logger } from "pino"
-import { AlphaContract, getReplicaById } from "@contracts/alpha.v1"
-import { type ResideTelegramContext, TelegramRealm } from "@contracts/telegram.v1"
-import { createRequirement } from "@reside/shared"
+import { type AlphaContract, getReplicaById } from "@contracts/alpha.v1"
+import { impersonateContext, type ResideTelegramContext } from "@contracts/telegram.v1"
 import { Composer, InlineKeyboard } from "grammy"
 import { drawReplicaGraph } from "./graph"
 import { renderReplica, renderReplicaListKeyboard } from "./replica-ui"
 
-export function createComposer(alphaAccountId: string, _logger: Logger) {
+export function createComposer(alpha: Requirement<AlphaContract>, _logger: Logger) {
   const composer = new Composer<ResideTelegramContext>()
 
   composer.command("replicas", async ctx => {
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
-      const hasAccess = await alpha.checkPermission("replica:read:all")
+    await impersonateContext(ctx, { alpha }, async ({ alpha }) => {
+      const hasAccess = await alpha.checkMyPermission("replica:read:all")
 
       if (!hasAccess) {
         await ctx.reply("Доступ к репликам запрещен!")
@@ -33,11 +30,8 @@ export function createComposer(alphaAccountId: string, _logger: Logger) {
   })
 
   composer.callbackQuery(/^alpha:replica:(\d+)$/, async ctx => {
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
-      const hasAccess = await alpha.checkPermission("replica:read:all")
+    await impersonateContext(ctx, { alpha }, async ({ alpha }) => {
+      const hasAccess = await alpha.checkMyPermission("replica:read:all")
 
       if (!hasAccess) {
         await ctx.answerCallbackQuery({ text: "Доступ к репликам запрещен!", show_alert: true })
@@ -70,11 +64,8 @@ export function createComposer(alphaAccountId: string, _logger: Logger) {
   })
 
   composer.callbackQuery("alpha:replicas", async ctx => {
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
-      const hasAccess = await alpha.checkPermission("replica:read:all")
+    await impersonateContext(ctx, { alpha }, async ({ alpha }) => {
+      const hasAccess = await alpha.checkMyPermission("replica:read:all")
 
       if (!hasAccess) {
         await ctx.answerCallbackQuery({ text: "Доступ к репликам запрещен!", show_alert: true })

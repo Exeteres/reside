@@ -20,7 +20,7 @@ const {
 
 let service: GitHubService | undefined
 
-const composer = createComposer(account.$jazz.id, () => service, logger)
+const composer = createComposer(github, () => service, logger)
 
 await config.init(secret.data, replicaName, logger)
 await handler.init(telegram, telegramHandler, replicaName, composer, logger)

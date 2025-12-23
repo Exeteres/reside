@@ -1,0 +1,10 @@
+{
+  "extends": ["../../tsconfig.base.json"],
+  "include": ["src/**/*.ts", "reside.manifest.ts", "src/ui.tsx"],
+
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@reside/telegram",
+    "types": ["@reside/telegram/globals"]
+  }
+}

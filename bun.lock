@@ -162,6 +162,7 @@
         "@contracts/telegram-handler.v1": "workspace:*",
         "@contracts/user-manager.v1": "workspace:*",
         "@reside/shared": "workspace:*",
+        "@reside/telegram": "workspace:*",
         "grammy": "catalog:",
         "jazz-tools": "catalog:",
         "pino": "catalog:",
@@ -209,6 +210,7 @@
       "dependencies": {
         "@reside/shared": "workspace:*",
         "grammy": "catalog:",
+        "pino": "catalog:",
       },
       "devDependencies": {
         "@typescript/native-preview": "catalog:",
@@ -321,6 +323,21 @@
         "pino": "^10.0.0",
         "remeda": "catalog:",
         "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@typescript/native-preview": "catalog:",
+      },
+    },
+    "replicas/padoru": {
+      "name": "@replicas/padoru",
+      "dependencies": {
+        "@contracts/telegram-handler.v1": "workspace:*",
+        "@contracts/telegram.v1": "workspace:*",
+        "@reside/shared": "workspace:*",
+        "@reside/telegram": "workspace:*",
+        "grammy": "catalog:",
+        "jazz-tools": "catalog:",
+        "pino": "catalog:",
       },
       "devDependencies": {
         "@typescript/native-preview": "catalog:",
@@ -1022,6 +1039,8 @@
     "@replicas/github": ["@replicas/github@workspace:replicas/github"],
 
     "@replicas/kubernetes-sentinel": ["@replicas/kubernetes-sentinel@workspace:replicas/kubernetes-sentinel"],
+
+    "@replicas/padoru": ["@replicas/padoru@workspace:replicas/padoru"],
 
     "@replicas/secret": ["@replicas/secret@workspace:replicas/secret"],
 

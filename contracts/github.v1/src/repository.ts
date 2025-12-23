@@ -125,12 +125,12 @@ export async function getOrCreateRepository(
   // create indexes
   box(Repository).create(
     { value: newRepository },
-    { unique: `repository.by-id.${newRepository.id}` },
+    { unique: `repository.by-id.${newRepository.id}`, owner: data.$jazz.owner },
   )
 
   box(Repository).create(
     { value: newRepository },
-    { unique: `repository.by-owner-and-name.${owner}.${name}` },
+    { unique: `repository.by-owner-and-name.${owner}.${name}`, owner: data.$jazz.owner },
   )
 
   return newRepository

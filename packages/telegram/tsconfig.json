@@ -1,4 +1,4 @@
 {
   "extends": ["../../tsconfig.base.json"],
-  "include": ["src/**/*.ts", "reside.manifest.ts"]
+  "include": ["src/**/*.ts", "reside.manifest.ts", "../../contracts/telegram.v1/src/view.ts"]
 }

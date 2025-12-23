@@ -11,7 +11,7 @@ const {
   logger,
 } = await startReplica(AlphaSecretaryReplica)
 
-const composer = createComposer(alpha.accountId, logger)
+const composer = createComposer(alpha, logger)
 
 await handler.init(telegram, telegramHandler, replicaName, composer, logger)
 await TelegramRealm.init(userManager, logger)

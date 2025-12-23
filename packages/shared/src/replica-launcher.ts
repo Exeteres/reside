@@ -15,7 +15,7 @@ import { EtcdLockService, type LockService } from "./lock"
 import { reconcileControlBlockPermissions } from "./permissions"
 import singleConcurrencyFireAndForget from "./queue-handler"
 import { CommonReplicaConfig, populateReplicaAccount, ReplicaAccount } from "./replica"
-import { createRequirement } from "./requirements"
+import { createRequirement, createRequirementCore } from "./requirements"
 import { type MethodHandler, type RpcMethod, rpcHandlers, startRpcServer } from "./rpc"
 
 export type ReplicaContext<
@@ -143,8 +143,10 @@ export function createImplementations<TImplementations extends Record<string, Co
       return rcb.permissions.$jazz.has(fullKey)
     }
 
+    const requirement = createRequirementCore(contract, account as ReplicaAccount<any, any>)
+
     implementations[key] = {
-      data: (account.profile.contracts as any)[contract.identity],
+      ...requirement,
       checkPermission,
       ...methods,
     }

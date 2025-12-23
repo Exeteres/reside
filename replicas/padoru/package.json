@@ -1,9 +1,8 @@
 {
-  "name": "@contracts/telegram.v1",
+  "name": "@replicas/padoru",
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts",
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -15,10 +14,10 @@
   "dependencies": {
     "@reside/shared": "workspace:*",
     "@reside/telegram": "workspace:*",
-    "@contracts/telegram-handler.v1": "workspace:*",
-    "@contracts/user-manager.v1": "workspace:*",
-    "grammy": "catalog:",
     "jazz-tools": "catalog:",
+    "@contracts/telegram-handler.v1": "workspace:*",
+    "@contracts/telegram.v1": "workspace:*",
+    "grammy": "catalog:",
     "pino": "catalog:"
   },
   "devDependencies": {

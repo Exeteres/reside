@@ -190,14 +190,19 @@ export type Contract<
 
 export type Requirement<TContract extends Contract> = {
   /**
+   * The contract being required.
+   */
+  contract: TContract
+
+  /**
    * The ID of the replica implementing the requirement.
    */
   replicaId: number
 
   /**
-   * The ID of the replica account implementing the requirement.
+   * The account of the replica implementing the requirement.
    */
-  accountId: string
+  account: Account
 
   /**
    * The data managed by the contract.
@@ -207,7 +212,7 @@ export type Requirement<TContract extends Contract> = {
   /**
    * Checks whether the permission is granted for the current account.
    */
-  checkPermission(
+  checkMyPermission(
     permissionKey: keyof TContract["permissions"] & string,
     instanceId?: string,
   ): Promise<boolean>
@@ -226,9 +231,7 @@ export type Requirement<TContract extends Contract> = {
   >["send"]
 }
 
-export type Implementation<TContract extends Contract> = {
-  data: co.loaded<TContract["data"]>
-
+export type Implementation<TContract extends Contract> = Requirement<TContract> & {
   checkPermission(
     account: Account,
     permissionKey: keyof TContract["permissions"] & string,

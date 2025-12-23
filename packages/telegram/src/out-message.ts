@@ -1,5 +1,6 @@
 import type { InlineKeyboardMarkup, InputFile, Message, ReplyKeyboardMarkup } from "grammy/types"
-import { type Api, type Context, InlineKeyboard } from "grammy"
+import type { Logger } from "pino"
+import { type Api, type Context, GrammyError, InlineKeyboard } from "grammy"
 import { isMessageElement, type MessageElement } from "./jsx-runtime"
 
 /**
@@ -45,7 +46,7 @@ export function replyToMessage(ctx: Context, message: OutMessage): Promise<Messa
   )
 }
 
-function sendMessageInternal(
+export function sendMessageInternal(
   api: Api,
   chatId: number,
   topicId: number | undefined,
@@ -116,4 +117,134 @@ function resolveReplyMarkup(
 
 export type EditOutMessage = Omit<OutMessage, "buttons"> & {
   buttons?: InlineKeyboard | ReplyKeyboardMarkup | "remove" | null
+}
+
+export function editMessageInChat(
+  chatId: number,
+  oldMessage: number | Message,
+  message: EditOutMessage,
+  api: Api,
+  logger: Logger,
+): Promise<Message> {
+  return editMessageInternal(
+    api,
+    logger,
+    chatId,
+    typeof oldMessage === "number" ? oldMessage : oldMessage.message_id,
+    message,
+    typeof oldMessage === "number" ? undefined : oldMessage,
+  )
+}
+
+/**
+ * Removes all HTML tags from the text replcaing them with the plain text.
+ */
+function unwrapHtml(text: string): string {
+  return text.replace(/<[^>]+>/g, "")
+}
+
+function unescapeHtml(text: string): string {
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&#x27;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+}
+
+function cleanText(text: string): string {
+  return unescapeHtml(unwrapHtml(text)).trim()
+}
+
+async function editMessageInternal(
+  api: Api,
+  logger: Logger,
+  chatId: number,
+  messageId: number,
+  message: EditOutMessage,
+  oldMessage?: Message,
+): Promise<Message> {
+  const replyMarkup = resolveReplyMarkup(message)
+  const inlineReplyMarkup =
+    replyMarkup && "inline_keyboard" in replyMarkup ? replyMarkup : undefined
+  const text = isMessageElement(message.text) ? message.text.value : message.text
+
+  try {
+    if (
+      oldMessage &&
+      (text ? oldMessage.text?.trim() === cleanText(text) : !oldMessage.text) &&
+      JSON.stringify(oldMessage.reply_markup) === JSON.stringify(replyMarkup)
+    ) {
+      // prevent editing the message if it's not changed
+      return oldMessage
+    }
+
+    if (message.photo) {
+      const result = await api.editMessageMedia(chatId, messageId, {
+        type: "photo",
+        media: message.photo,
+        caption: text,
+        parse_mode: "HTML",
+      })
+
+      if (inlineReplyMarkup) {
+        await api.editMessageReplyMarkup(chatId, messageId, {
+          reply_markup: inlineReplyMarkup,
+        })
+      }
+
+      return result as Message
+    }
+
+    if (message.video) {
+      const result = await api.editMessageMedia(chatId, messageId, {
+        type: "video",
+        media: message.video,
+        caption: text,
+        parse_mode: "HTML",
+      })
+
+      if (inlineReplyMarkup) {
+        await api.editMessageReplyMarkup(chatId, messageId, {
+          reply_markup: inlineReplyMarkup,
+        })
+      }
+
+      return result as Message
+    }
+
+    if (!text) {
+      if (inlineReplyMarkup) {
+        const result = await api.editMessageReplyMarkup(chatId, messageId, {
+          reply_markup: inlineReplyMarkup,
+        })
+
+        return result as Message
+      }
+
+      throw new Error("Text is required if no attachments are provided")
+    }
+
+    const result = await api.editMessageText(chatId, messageId, text, {
+      parse_mode: "HTML",
+      reply_markup: inlineReplyMarkup,
+    })
+
+    return result as Message
+  } catch (error) {
+    if (error instanceof GrammyError && error.description.includes("message is not modified")) {
+      logger.error(
+        {
+          messageId: messageId,
+          text: message.text,
+          buttons: message.buttons,
+          oldText: oldMessage?.text,
+          oldButtons: oldMessage?.reply_markup,
+        },
+        "failed to edit message: message is not modified",
+      )
+    }
+
+    throw error
+  }
 }

@@ -1,32 +1,37 @@
 import type { Logger } from "pino"
-import { AlphaContract, getReplicasImplementingContract } from "@contracts/alpha.v1"
-import { type ResideTelegramContext, TelegramContract, TelegramRealm } from "@contracts/telegram.v1"
+import { type AlphaContract, getReplicasImplementingContract } from "@contracts/alpha.v1"
+import {
+  impersonateContext,
+  type ResideTelegramContext,
+  type TelegramContract,
+} from "@contracts/telegram.v1"
 import {
   getMe,
   getUserById,
   grantPermissionToUser,
-  UserManagerContract,
+  type UserManagerContract,
 } from "@contracts/user-manager.v1"
-import { createRequirement, resolveDisplayInfo } from "@reside/shared"
+import {
+  assertLoaded,
+  createSubstitutor,
+  type Requirement,
+  resolveDisplayInfo,
+} from "@reside/shared"
 import { Composer, InlineKeyboard } from "grammy"
 import { Group } from "jazz-tools"
 import { GrantSession } from "./grant-session"
 import { UserProfile } from "./profile-ui"
 
 export function createComposer(
-  umAccountId: string,
-  alphaAccountId: string,
-  telegramAccountId: string,
+  userManager: Requirement<UserManagerContract>,
+  alpha: Requirement<AlphaContract>,
+  telegram: Requirement<TelegramContract>,
   _logger: Logger,
 ) {
   const composer = new Composer<ResideTelegramContext>()
 
   composer.command("profile", async ctx => {
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const userManager = await createRequirement(UserManagerContract, umAccountId, account)
-
+    await impersonateContext(ctx, { userManager }, async ({ userManager }) => {
       const loadedUm = await userManager.data.$jazz.ensureLoaded({
         resolve: {
           defaultPermissionSets: { $each: { permissions: { $each: { permission: true } } } },
@@ -46,11 +51,20 @@ export function createComposer(
       const allPermissions = [
         ...loadedUm.defaultPermissionSets,
         ...loadedMe.permissionSets,
-      ].flatMap(ps => ps.permissions.map(p => p.permission))
+      ].flatMap(ps => ps.permissions)
 
-      const permissionTitles = allPermissions.map(
-        p => resolveDisplayInfo(p.displayInfo, ctx.from?.language_code)?.title ?? p.name,
-      )
+      const permissionTitles = allPermissions.map(p => {
+        if (!p.$isLoaded || !p.permission.$isLoaded) {
+          return "Unknown Permission"
+        }
+
+        const substitutor = createSubstitutor(p.params as Record<string, string>)
+
+        return substitutor(
+          resolveDisplayInfo(p.permission.displayInfo, ctx.from?.language_code)?.title ??
+            p.permission.name,
+        )
+      })
 
       const profileMessage = UserProfile({
         telegramUser: ctx.user!,
@@ -66,14 +80,14 @@ export function createComposer(
     ctx.reply(JSON.stringify(ctx.from, null, 2))
   })
 
+  composer.command("debug", async ctx => {
+    await ctx.reply(JSON.stringify(ctx.update, null, 2))
+  })
+
   // step 1: show user selection
   composer.command("grant", async ctx => {
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const telegram = await createRequirement(TelegramContract, telegramAccountId, account)
-
-      const canReadTelegramUsers = await telegram.checkPermission("user:read:all")
+    await impersonateContext(ctx, { telegram }, async ({ telegram }) => {
+      const canReadTelegramUsers = await telegram.checkMyPermission("user:read:all")
       if (!canReadTelegramUsers) {
         await ctx.reply("У вас нет доступа к списку пользователей.")
         return
@@ -111,72 +125,71 @@ export function createComposer(
   composer.callbackQuery(/^grant:user:(\d+)$/, async ctx => {
     const userId = Number(ctx.match[1])
 
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
+    await impersonateContext(
+      ctx,
+      { alpha, userManager },
+      async ({ alpha, userManager }, account) => {
+        const canReadUsers = await userManager.checkMyPermission("user:read:all")
+        if (!canReadUsers) {
+          await ctx.answerCallbackQuery({
+            text: "У вас нет доступа к пользователям!",
+            show_alert: true,
+          })
+          return
+        }
 
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
-      const userManager = await createRequirement(UserManagerContract, umAccountId, account)
+        const canManageUserPermissions = await userManager.checkMyPermission(
+          "user:permission:manage:all",
+        )
+        if (!canManageUserPermissions) {
+          await ctx.answerCallbackQuery({
+            text: "У вас нет доступа к управлению разрешениями пользователей!",
+            show_alert: true,
+          })
+          return
+        }
 
-      const canReadUsers = await userManager.checkPermission("user:read:all")
-      if (!canReadUsers) {
-        await ctx.answerCallbackQuery({
-          text: "У вас нет доступа к пользователям!",
-          show_alert: true,
+        const canViewContracts = await alpha.checkMyPermission("replica:read:all")
+
+        // get target user
+        const targetUser = await getUserById(userManager.data, userId)
+        if (!targetUser) {
+          await ctx.answerCallbackQuery({ text: "Пользователь не найден!", show_alert: true })
+          return
+        }
+
+        // check access to contracts list
+        const loadedAlpha = await alpha.data.$jazz.ensureLoaded({
+          resolve: { contracts: { $each: true } },
         })
-        return
-      }
 
-      const canManageUserPermissions = await userManager.checkPermission(
-        "user:permission:manage:all",
-      )
-      if (!canManageUserPermissions) {
-        await ctx.answerCallbackQuery({
-          text: "У вас нет доступа к управлению разрешениями пользователей!",
-          show_alert: true,
-        })
-        return
-      }
+        if (!canViewContracts) {
+          await ctx.answerCallbackQuery({ text: "У вас нет доступа к списку контрактов!" })
+          return
+        }
 
-      const canViewContracts = await alpha.checkPermission("replica:read:all")
+        // create grant session
+        const session = GrantSession.create(
+          {
+            targetUser,
+            step: "select-contract",
+          },
+          Group.create(account),
+        )
 
-      // get target user
-      const targetUser = await getUserById(userManager.data, userId)
-      if (!targetUser) {
-        await ctx.answerCallbackQuery({ text: "Пользователь не найден!", show_alert: true })
-        return
-      }
+        const keyboard = new InlineKeyboard()
+        for (const contract of loadedAlpha.contracts.values()) {
+          const displayInfo = resolveDisplayInfo(contract.displayInfo, ctx.from?.language_code)
+          const title = displayInfo?.title ?? contract.identity
 
-      // check access to contracts list
-      const loadedAlpha = await alpha.data.$jazz.ensureLoaded({
-        resolve: { contracts: { $each: true } },
-      })
+          // use session ID instead of encoding data in callback
+          keyboard.text(title, `grant:contract:${session.$jazz.id}:${contract.id}`).row()
+        }
 
-      if (!canViewContracts) {
-        await ctx.answerCallbackQuery({ text: "У вас нет доступа к списку контрактов!" })
-        return
-      }
-
-      // create grant session
-      const session = GrantSession.create(
-        {
-          targetUser,
-          step: "select-contract",
-        },
-        Group.create(account),
-      )
-
-      const keyboard = new InlineKeyboard()
-      for (const contract of loadedAlpha.contracts.values()) {
-        const displayInfo = resolveDisplayInfo(contract.displayInfo, ctx.from?.language_code)
-        const title = displayInfo?.title ?? contract.identity
-
-        // use session ID instead of encoding data in callback
-        keyboard.text(title, `grant:contract:${session.$jazz.id}:${contract.id}`).row()
-      }
-
-      await ctx.editMessageText("Выберите контракт:", { reply_markup: keyboard })
-      await ctx.answerCallbackQuery()
-    })
+        await ctx.editMessageText("Выберите контракт:", { reply_markup: keyboard })
+        await ctx.answerCallbackQuery()
+      },
+    )
   })
 
   // step 3: contract selected, show permission selection
@@ -189,12 +202,8 @@ export function createComposer(
       return
     }
 
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
-
-      const canViewContracts = await alpha.checkPermission("replica:read:all")
+    await impersonateContext(ctx, { alpha }, async ({ alpha }, account) => {
+      const canViewContracts = await alpha.checkMyPermission("replica:read:all")
       if (!canViewContracts) {
         await ctx.answerCallbackQuery({ text: "Нет доступа к контрактам!", show_alert: true })
         return
@@ -229,9 +238,16 @@ export function createComposer(
 
       const keyboard = new InlineKeyboard()
       let permIndex = 0
-      for (const [permName, permission] of Object.entries(loadedContract.permissions)) {
+      for (const permissionName of Object.keys(loadedContract.permissions)) {
+        const permission = loadedContract.permissions[permissionName]
+        if (!permission) {
+          continue
+        }
+
+        assertLoaded(permission)
+
         const displayInfo = resolveDisplayInfo(permission.displayInfo, ctx.from?.language_code)
-        const title = displayInfo?.title ?? permName
+        const title = displayInfo?.title ?? permissionName
 
         keyboard.text(title, `grant:perm:${sessionId}:${permIndex}`).row()
         permIndex += 1
@@ -252,119 +268,123 @@ export function createComposer(
       return
     }
 
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
+    await impersonateContext(
+      ctx,
+      { userManager, alpha },
+      async ({ userManager, alpha }, account) => {
+        // load session
+        const session = await GrantSession.load(sessionId, { loadAs: account })
+        if (!session || !session.$isLoaded) {
+          await ctx.answerCallbackQuery({ text: "Сессия не найдена!", show_alert: true })
+          return
+        }
 
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const alpha = await createRequirement(AlphaContract, alphaAccountId, account)
-      const userManager = await createRequirement(UserManagerContract, umAccountId, account)
-
-      // load session
-      const session = await GrantSession.load(sessionId, { loadAs: account })
-      if (!session || !session.$isLoaded) {
-        await ctx.answerCallbackQuery({ text: "Сессия не найдена!", show_alert: true })
-        return
-      }
-
-      const loadedSession = await session.$jazz.ensureLoaded({
-        resolve: { targetUser: true, contract: { permissions: { $each: true } } },
-      })
-
-      if (!loadedSession.contract || !loadedSession.contract.$isLoaded) {
-        await ctx.answerCallbackQuery({ text: "Контракт не найден в сессии!", show_alert: true })
-        return
-      }
-
-      const permissionName = Object.keys(loadedSession.contract.permissions)[permissionIndex]
-      if (!permissionName) {
-        await ctx.answerCallbackQuery({ text: "Разрешение не найдено!", show_alert: true })
-        return
-      }
-
-      const permission = loadedSession.contract.permissions[permissionName]
-      if (!permission) {
-        await ctx.answerCallbackQuery({ text: "Разрешение не найдено!", show_alert: true })
-        return
-      }
-
-      // load target user with permissions
-      const targetUser = await getUserById(userManager.data, loadedSession.targetUser.id)
-      if (!targetUser) {
-        await ctx.answerCallbackQuery({
-          text: "Пользователь не найден в системе!",
-          show_alert: true,
+        const loadedSession = await session.$jazz.ensureLoaded({
+          resolve: { targetUser: true, contract: { permissions: { $each: true } } },
         })
-        return
-      }
 
-      const canReadUsers = await userManager.checkPermission("user:read:all")
-      if (!canReadUsers) {
-        await ctx.answerCallbackQuery({
-          text: "У вас нет доступа к пользователям!",
-          show_alert: true,
-        })
-        return
-      }
+        if (!loadedSession.contract || !loadedSession.contract.$isLoaded) {
+          await ctx.answerCallbackQuery({ text: "Контракт не найден в сессии!", show_alert: true })
+          return
+        }
 
-      const canManageUserPermissions = await userManager.checkPermission(
-        "user:permission:manage:all",
-      )
-      if (!canManageUserPermissions) {
-        await ctx.answerCallbackQuery({
-          text: "У вас нет доступа к управлению разрешениями пользователей!",
-          show_alert: true,
-        })
-        return
-      }
+        const permissionName = Object.keys(loadedSession.contract.permissions)[permissionIndex]
+        if (!permissionName) {
+          await ctx.answerCallbackQuery({ text: "Разрешение не найдено!", show_alert: true })
+          return
+        }
 
-      const loadedTargetUser = await targetUser.$jazz.ensureLoaded({
-        resolve: {
-          permissionSets: {
-            $each: {
-              contract: true,
-              replicas: { $each: true },
-              permissions: { $each: { permission: true } },
+        const permission = loadedSession.contract.permissions[permissionName]
+        if (!permission) {
+          await ctx.answerCallbackQuery({ text: "Разрешение не найдено!", show_alert: true })
+          return
+        }
+
+        assertLoaded(permission)
+
+        // load target user with permissions
+        const targetUser = await getUserById(userManager.data, loadedSession.targetUser.id)
+        if (!targetUser) {
+          await ctx.answerCallbackQuery({
+            text: "Пользователь не найден в системе!",
+            show_alert: true,
+          })
+          return
+        }
+
+        const canReadUsers = await userManager.checkMyPermission("user:read:all")
+        if (!canReadUsers) {
+          await ctx.answerCallbackQuery({
+            text: "У вас нет доступа к пользователям!",
+            show_alert: true,
+          })
+          return
+        }
+
+        const canManageUserPermissions = await userManager.checkMyPermission(
+          "user:permission:manage:all",
+        )
+        if (!canManageUserPermissions) {
+          await ctx.answerCallbackQuery({
+            text: "У вас нет доступа к управлению разрешениями пользователей!",
+            show_alert: true,
+          })
+          return
+        }
+
+        const loadedTargetUser = await targetUser.$jazz.ensureLoaded({
+          resolve: {
+            permissionSets: {
+              $each: {
+                contract: true,
+                replicas: { $each: true },
+                permissions: { $each: { permission: true } },
+              },
             },
           },
-        },
-      })
-
-      const replicas = await getReplicasImplementingContract(alpha.data, loadedSession.contract.id)
-
-      if (replicas.length === 0) {
-        await ctx.answerCallbackQuery({
-          text: "Нет реплик, реализующих этот контракт!",
-          show_alert: true,
         })
-        return
-      }
 
-      const result = await grantPermissionToUser(
-        loadedTargetUser,
-        loadedSession.contract,
-        permission,
-        replicas,
-        {},
-      )
-
-      // update session
-      session.$jazz.set("step", "completed")
-
-      if (result.action === "duplicate") {
-        await ctx.editMessageText(
-          `⚠️ Разрешение "${permissionName}" уже существует в наборе разрешений для пользователя ID ${loadedSession.targetUser.id}.`,
+        const replicas = await getReplicasImplementingContract(
+          alpha.data,
+          loadedSession.contract.id,
         )
-      } else if (result.action === "added") {
-        await ctx.editMessageText(
-          `✅ Разрешение "${permissionName}" добавлено в существующий набор разрешений для пользователя ID ${loadedSession.targetUser.id}.`,
-        )
-      } else {
-        await ctx.editMessageText(
-          `✅ Создан новый набор разрешений и выдано разрешение "${permissionName}" пользователю ID ${loadedSession.targetUser.id}.`,
-        )
-      }
 
-      await ctx.answerCallbackQuery()
-    })
+        if (replicas.length === 0) {
+          await ctx.answerCallbackQuery({
+            text: "Нет реплик, реализующих этот контракт!",
+            show_alert: true,
+          })
+          return
+        }
+
+        const result = await grantPermissionToUser(
+          loadedTargetUser,
+          loadedSession.contract,
+          permission,
+          replicas,
+          {},
+        )
+
+        // update session
+        session.$jazz.set("step", "completed")
+
+        if (result.action === "duplicate") {
+          await ctx.editMessageText(
+            `⚠️ Разрешение "${permissionName}" уже существует в наборе разрешений для пользователя ID ${loadedSession.targetUser.id}.`,
+          )
+        } else if (result.action === "added") {
+          await ctx.editMessageText(
+            `✅ Разрешение "${permissionName}" добавлено в существующий набор разрешений для пользователя ID ${loadedSession.targetUser.id}.`,
+          )
+        } else {
+          await ctx.editMessageText(
+            `✅ Создан новый набор разрешений и выдано разрешение "${permissionName}" пользователю ID ${loadedSession.targetUser.id}.`,
+          )
+        }
+
+        await ctx.answerCallbackQuery()
+      },
+    )
   })
 
   return composer

@@ -81,18 +81,15 @@ function IssueListView({
 }: {
   repository: co.loaded<typeof Repository, typeof repositoryIssuesResolve>
 }): MessageElement {
-  const issues = Array.from(repository.issues.values()) as Issue[]
+  const issues = Array.from(repository.issues.values())
 
   return (
     <div>
       <div>
-        <b>Репозиторий:</b>{" "}
+        <b>Репозиторий:</b>
         <code>
           {repository.owner}/{repository.name}
         </code>
-      </div>
-      <div>
-        <b>Количество задач:</b> <code>{issues.length}</code>
       </div>
       {issues.length === 0 ? (
         <div>Задачи отсутствуют.</div>

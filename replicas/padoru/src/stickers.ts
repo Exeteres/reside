@@ -1,0 +1,9 @@
+export const stickers = {
+  soon: "CAACAgIAAxkBAAEQEdJpSdN3W3ngCCk_KAVDLj5xiz2SnAAC_gADqVW7DiRd1J4HAt__NgQ",
+  boom: [
+    "CAACAgIAAxkBAAEQEdNpSdN3zkQxGytJgrVRUd5lgSxoIgAC-AADqVW7DoqRg2BOf2PONgQ",
+    "CAACAgIAAxkBAAEQEdRpSdN34-AVB7YZvvacrGewQPt3wQAC-QADqVW7DhnuCLL1ZVptNgQ",
+    "CAACAgIAAxkBAAEQEdVpSdN3CsFkm_IE9sXLul4JIVy1LAAC-gADqVW7DkeMZufyLwayNgQ",
+    "CAACAgIAAxkBAAEQEdZpSdN3KaBv3vvy8uIMdBftQ1s1dwAC_QADqVW7DtfZ1ypIi6LkNgQ",
+  ],
+}

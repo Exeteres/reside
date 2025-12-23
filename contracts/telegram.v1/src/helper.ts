@@ -1,6 +1,6 @@
 import type { TelegramHandlerContract } from "@contracts/telegram-handler.v1"
 import type { Update } from "grammy/types"
-import type { z } from "jazz-tools"
+import type { Account, z } from "jazz-tools"
 import type { Logger } from "pino"
 import type { TelegramContract } from "./contract"
 import { Readable } from "node:stream"
@@ -47,6 +47,21 @@ export type HandlerFunction<TAllowedUpdate extends z.z.ZodType> = (
 
 export type HandlerContext = {
   /**
+   * The ID of the handler.
+   */
+  id: number
+
+  /**
+   * The account of the Telegram Replica consuming this handler.
+   */
+  telegramReplicaAccount: Account
+
+  /**
+   * The api instance to interact with Telegram Bot API.
+   */
+  api: Api
+
+  /**
    * The method to update the handler definition based on the options provided.
    * Also starts the handler processing loop using the provided composer.
    *
@@ -81,10 +96,38 @@ export type HandlerContext = {
 export function defineHandler(options: HandlerOptions): HandlerContext {
   const handlerNamePattern = options.name ?? "{replica.name}"
 
+  let id: number | undefined
+  let telegramReplicaAccount: Account | undefined
+  let api: Api | undefined
+
   return {
+    get id() {
+      if (id === undefined) {
+        throw new Error("Handler ID is not initialized yet")
+      }
+
+      return id
+    },
+
+    get telegramReplicaAccount() {
+      if (telegramReplicaAccount === undefined) {
+        throw new Error("Telegram Replica account ID is not initialized yet")
+      }
+
+      return telegramReplicaAccount
+    },
+
+    get api() {
+      if (api === undefined) {
+        throw new Error("API instance is not initialized yet")
+      }
+
+      return api
+    },
+
     init: async (telegram, telegramHandler, replicaName, composer, logger) => {
       // create proxy for api calls
-      const api = new Api("", {
+      api = new Api("", {
         // @ts-expect-error: maybe fix later
         fetch: async (url, init) => {
           const parsedUrl = new URL(url as string)
@@ -135,12 +178,16 @@ export function defineHandler(options: HandlerOptions): HandlerContext {
 
       // setup the handler
       telegramHandler.handleHandleUpdate(async ({ update, user }, madeBy) => {
-        if (madeBy.$jazz.id !== telegram.accountId) {
+        if (madeBy.$jazz.id !== telegram.account.$jazz.id) {
           throw new Error("Unathorized: update request made by unknown account")
         }
 
         if (!telegram.data.me) {
           throw new Error("Telegram bot is not initialized: bot info is missing")
+        }
+
+        if (!api) {
+          throw new Error("API instance is not initialized")
         }
 
         const context = new ResideTelegramContext(update, api, telegram.data.me, user)
@@ -197,6 +244,9 @@ export function defineHandler(options: HandlerOptions): HandlerContext {
           loadedHandler.definition.$jazz.set("enabled", false)
         }
       })
+
+      id = loadedHandler.id
+      telegramReplicaAccount = telegram.account
 
       logger.info(`telegram handler "%s" initialized`, handlerName)
     },

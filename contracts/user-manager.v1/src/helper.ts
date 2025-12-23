@@ -34,7 +34,9 @@ export type RealmOptions = {
   displayInfo: LocalizedDisplayInfo
 }
 
-export type ImpersonationHandler<TAccount extends Account> = (account: TAccount) => Promise<void>
+export type ImpersonationHandler<TAccount extends Account, TResult> = (
+  account: TAccount,
+) => TResult | Promise<TResult>
 
 export type RealmContext = {
   /**
@@ -61,11 +63,11 @@ export type RealmContext = {
    * @param user The user to impersonate.
    * @param handler The handler to execute while impersonating the user. Passed the impersonated account context.
    */
-  impersonate<TAccount extends AnyAccountSchema>(
+  impersonate<TAccount extends AnyAccountSchema, TResult>(
     accountSchema: TAccount,
     user: User,
-    handler: ImpersonationHandler<InstanceOfSchema<TAccount>>,
-  ): Promise<void>
+    handler: ImpersonationHandler<InstanceOfSchema<TAccount>, TResult>,
+  ): Promise<TResult>
 
   /**
    * Impersonates the given user.
@@ -75,7 +77,10 @@ export type RealmContext = {
    * @param user The user to impersonate.
    * @param handler The handler to execute while impersonating the user.
    */
-  impersonate(user: User, handler: ImpersonationHandler<Account>): Promise<void>
+  impersonate<TResult>(
+    user: User,
+    handler: ImpersonationHandler<Account, TResult>,
+  ): Promise<TResult>
 
   /**
    * The static permission requirements that must be passed to user manager contract requirement.
@@ -212,12 +217,16 @@ export function defineRealm(options: RealmOptions): RealmContext {
 
     async impersonate(
       ...args:
-        | [AnyAccountSchema, User, ImpersonationHandler<InstanceOfSchema<AnyAccountSchema>>]
-        | [User, ImpersonationHandler<Account>]
+        | [
+            AnyAccountSchema,
+            User,
+            ImpersonationHandler<InstanceOfSchema<AnyAccountSchema>, unknown>,
+          ]
+        | [User, ImpersonationHandler<Account, unknown>]
     ) {
       let accountSchema: AnyAccountSchema
       let user: User
-      let handler: ImpersonationHandler<Account>
+      let handler: ImpersonationHandler<Account, unknown>
 
       if (args.length === 2) {
         accountSchema = co.account()
@@ -275,7 +284,7 @@ export function defineRealm(options: RealmOptions): RealmContext {
       })
 
       try {
-        await handler(context.account)
+        return await handler(context.account)
       } finally {
         await context.account.$jazz.waitForAllCoValuesSync()
         await context.logOut()

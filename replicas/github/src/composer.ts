@@ -1,14 +1,9 @@
+import type { GitHubContract, Repository } from "@contracts/github.v1"
+import type { Requirement } from "@reside/shared"
 import type { Logger } from "pino"
 import type { GitHubService } from "./service"
-import {
-  GitHubContract,
-  getRepositoryById,
-  type Issue,
-  type PullRequest,
-  type Repository,
-} from "@contracts/github.v1"
-import { type ResideTelegramContext, TelegramRealm } from "@contracts/telegram.v1"
-import { createRequirement } from "@reside/shared"
+import { getRepositoryById, getRepositoryByOwnerAndName } from "@contracts/github.v1"
+import { impersonateContext, type ResideTelegramContext } from "@contracts/telegram.v1"
 import { Composer, InlineKeyboard } from "grammy"
 import { renderIssue, renderIssueList, renderIssueListKeyboard } from "./issue-ui"
 import {
@@ -31,20 +26,35 @@ type RepositorySummary = {
 }
 
 export function createComposer(
-  githubReplicaAccountId: string,
+  github: Requirement<GitHubContract>,
   getGitHubService: () => GitHubService | undefined,
   logger: Logger,
 ): Composer<ResideTelegramContext> {
   const composer = new Composer<ResideTelegramContext>()
 
   logger.debug("github composer initialized")
-  const loadRepository = async (repositoryId: number): Promise<Repository | null> => {
-    const requirement = await createRequirement(GitHubContract, githubReplicaAccountId)
-    return await getRepositoryById(requirement.data, repositoryId)
-  }
 
   const getRepositoryInstanceId = (repository: Repository): string => {
     return `${repository.owner}.${repository.name}`
+  }
+
+  const extractRepositoryParams = (value: unknown): { owner: string; name: string } | null => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return null
+    }
+
+    const owner = (value as Record<string, unknown>).owner
+    const name = (value as Record<string, unknown>).name
+
+    if (typeof owner !== "string" || typeof name !== "string") {
+      return null
+    }
+
+    return { owner, name }
+  }
+
+  const normalizeRepositoryKey = (owner: string, name: string): string => {
+    return `${owner.toLowerCase()}::${name.toLowerCase()}`
   }
 
   const collectAccessibleRepositories = async (
@@ -52,64 +62,85 @@ export function createComposer(
     permissionKey: RepositoryPermissionKey | RepositoryPermissionKey[],
     options: { includeReadAll?: boolean } = {},
   ): Promise<RepositorySummary[]> => {
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-    const repositories = new Map<number, RepositorySummary>()
-    const permissionKeys = Array.isArray(permissionKey) ? permissionKey : [permissionKey]
+    return await impersonateContext(ctx, { github }, async ({ github }) => {
+      const repositories = new Map<number, RepositorySummary>()
+      const permissionKeys = Array.isArray(permissionKey) ? permissionKey : [permissionKey]
 
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const requirement = await createRequirement(GitHubContract, githubReplicaAccountId, account)
       const hasReadAll = options.includeReadAll
-        ? await requirement.checkPermission("repository:read:all")
+        ? await github.checkMyPermission("repository:read:all")
         : false
-      const instancesList = await Promise.all(
-        permissionKeys.map(async key => {
-          return await requirement.getPermissionInstances(key)
-        }),
-      )
 
-      if (!hasReadAll && instancesList.every(instances => Object.keys(instances).length === 0)) {
-        return
-      }
-
-      const loadedData = await requirement.data.$jazz.ensureLoaded({
-        resolve: {
-          repositories: {
-            $each: true,
+      if (hasReadAll) {
+        const loadedData = await github.data.$jazz.ensureLoaded({
+          resolve: {
+            repositories: {
+              $each: true,
+            },
           },
-        },
-      })
+        })
 
-      for (const repository of loadedData.repositories.values()) {
-        const instanceId = getRepositoryInstanceId(repository)
-        if (!hasReadAll) {
-          const hasAccess = instancesList.some(instances => {
-            return instanceId in instances
-          })
-
-          if (!hasAccess) {
+        for (const repository of loadedData.repositories.values()) {
+          if (!repository) {
             continue
+          }
+
+          repositories.set(repository.id, {
+            id: repository.id,
+            owner: repository.owner,
+            name: repository.name,
+          })
+        }
+      } else {
+        const instancesList = await Promise.all(
+          permissionKeys.map(async key => await github.getPermissionInstances(key)),
+        )
+
+        const requestedRepositories = new Map<string, { owner: string; name: string }>()
+
+        for (const instances of instancesList) {
+          for (const params of Object.values(instances)) {
+            const repositoryParams = extractRepositoryParams(params)
+            if (!repositoryParams) {
+              continue
+            }
+
+            const key = normalizeRepositoryKey(repositoryParams.owner, repositoryParams.name)
+            if (!requestedRepositories.has(key)) {
+              requestedRepositories.set(key, repositoryParams)
+            }
           }
         }
 
-        repositories.set(repository.id, {
-          id: repository.id,
-          owner: repository.owner,
-          name: repository.name,
-        })
+        if (requestedRepositories.size === 0) {
+          return []
+        }
+
+        for (const { owner, name } of requestedRepositories.values()) {
+          const repository = await getRepositoryByOwnerAndName(github.data, owner, name)
+          if (!repository) {
+            continue
+          }
+
+          repositories.set(repository.id, {
+            id: repository.id,
+            owner: repository.owner,
+            name: repository.name,
+          })
+        }
       }
+
+      const sortedRepositories = Array.from(repositories.values())
+      sortedRepositories.sort((a, b) => {
+        const ownerComparison = a.owner.localeCompare(b.owner)
+        if (ownerComparison !== 0) {
+          return ownerComparison
+        }
+
+        return a.name.localeCompare(b.name)
+      })
+
+      return sortedRepositories
     })
-
-    const sortedRepositories = Array.from(repositories.values())
-    sortedRepositories.sort((a, b) => {
-      const ownerComparison = a.owner.localeCompare(b.owner)
-      if (ownerComparison !== 0) {
-        return ownerComparison
-      }
-
-      return a.name.localeCompare(b.name)
-    })
-
-    return sortedRepositories
   }
 
   const buildRepositoryKeyboard = (
@@ -151,48 +182,33 @@ export function createComposer(
     await respond(makeMessage(repositories.length), keyboard)
   }
 
-  const withRepositoryAccess = async (
-    ctx: ResideTelegramContext,
+  const ensureRepositoryAccess = async (
+    requirement: Requirement<GitHubContract>,
     repository: Repository,
     permissionKey: RepositoryPermissionKey | RepositoryPermissionKey[],
-    onDenied: () => Promise<void>,
-    onGranted: () => Promise<void>,
     options: { allowRepositoryReadAll?: boolean } = {},
-  ): Promise<void> => {
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-    let allowed = false
-
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const requirement = await createRequirement(GitHubContract, githubReplicaAccountId, account)
-      if (options.allowRepositoryReadAll) {
-        const hasReadAll = await requirement.checkPermission("repository:read:all")
-        if (hasReadAll) {
-          allowed = true
-          return
-        }
+  ): Promise<boolean> => {
+    if (options.allowRepositoryReadAll) {
+      const hasReadAll = await requirement.checkMyPermission("repository:read:all")
+      if (hasReadAll) {
+        return true
       }
-
-      const permissionKeys = Array.isArray(permissionKey) ? permissionKey : [permissionKey]
-
-      for (const key of permissionKeys) {
-        const hasPermission = await requirement.checkPermission(
-          key,
-          getRepositoryInstanceId(repository),
-        )
-
-        if (hasPermission) {
-          allowed = true
-          break
-        }
-      }
-    })
-
-    if (!allowed) {
-      await onDenied()
-      return
     }
 
-    await onGranted()
+    const permissionKeys = Array.isArray(permissionKey) ? permissionKey : [permissionKey]
+
+    for (const key of permissionKeys) {
+      const hasPermission = await requirement.checkMyPermission(
+        key,
+        getRepositoryInstanceId(repository),
+      )
+
+      if (hasPermission) {
+        return true
+      }
+    }
+
+    return false
   }
 
   const showRepositoryOverview = async (
@@ -210,9 +226,18 @@ export function createComposer(
       return
     }
 
-    const repositories = (
-      await Promise.all(repositorySummaries.map(summary => loadRepository(summary.id)))
-    ).filter((repository): repository is Repository => repository !== null)
+    const repositories = await impersonateContext(ctx, { github }, async ({ github }) => {
+      const loadedRepositories: Repository[] = []
+
+      for (const summary of repositorySummaries) {
+        const repository = await getRepositoryById(github.data, summary.id)
+        if (repository) {
+          loadedRepositories.push(repository)
+        }
+      }
+
+      return loadedRepositories
+    })
 
     if (repositories.length === 0) {
       await respond("Не удалось загрузить информацию о репозиториях.", new InlineKeyboard())
@@ -239,83 +264,82 @@ export function createComposer(
 
   composer.callbackQuery(/^github:issues:list:(\d+)$/, async ctx => {
     const repositoryId = Number(ctx.match[1])
-    const repository = await loadRepository(repositoryId)
 
-    if (!repository) {
-      await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
-      return
-    }
+    await impersonateContext(ctx, { github }, async ({ github }) => {
+      const repository = await getRepositoryById(github.data, repositoryId)
+      if (!repository) {
+        await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
+        return
+      }
 
-    await withRepositoryAccess(
-      ctx,
-      repository,
-      "issue:read:repository",
-      async () => {
+      const allowed = await ensureRepositoryAccess(github, repository, "issue:read:repository")
+      if (!allowed) {
         await ctx.answerCallbackQuery({ text: "Доступ к задачам запрещен!", show_alert: true })
-      },
-      async () => {
-        const [message, keyboard] = await Promise.all([
-          renderIssueList(repository),
-          (async () => {
-            const repoKeyboard = await renderIssueListKeyboard(repository)
-            repoKeyboard.text("⬅️ К репозиториям", "github:issues:repos").row()
-            return repoKeyboard
-          })(),
-        ])
+        return
+      }
 
-        await ctx.editMessageText(message.value, {
-          parse_mode: "HTML",
-          reply_markup: keyboard,
-        })
+      const [message, keyboard] = await Promise.all([
+        renderIssueList(repository),
+        (async () => {
+          const repoKeyboard = await renderIssueListKeyboard(repository)
+          repoKeyboard.text("⬅️ К репозиториям", "github:issues:repos").row()
+          return repoKeyboard
+        })(),
+      ])
 
-        await ctx.answerCallbackQuery()
-      },
-    )
+      await ctx.editMessageText(message.value, {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      })
+
+      await ctx.answerCallbackQuery()
+    })
   })
 
   composer.callbackQuery(/^github:issue:(\d+):(\d+)$/, async ctx => {
     const repositoryId = Number(ctx.match[1])
     const issueId = Number(ctx.match[2])
-    const repository = await loadRepository(repositoryId)
 
-    if (!repository) {
-      await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
-      return
-    }
+    await impersonateContext(ctx, { github }, async ({ github }) => {
+      const repository = await getRepositoryById(github.data, repositoryId)
+      if (!repository) {
+        await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
+        return
+      }
 
-    const loadedRepository = await repository.$jazz.ensureLoaded({ resolve: { issues: true } })
-    const issues = Array.from(loadedRepository.issues.values()) as Issue[]
-    const issue = issues.find(current => current.id === issueId)
-
-    if (!issue) {
-      await ctx.answerCallbackQuery({ text: "Задача не найдена!", show_alert: true })
-      return
-    }
-
-    await withRepositoryAccess(
-      ctx,
-      repository,
-      "issue:read:repository",
-      async () => {
+      const allowed = await ensureRepositoryAccess(github, repository, "issue:read:repository")
+      if (!allowed) {
         await ctx.answerCallbackQuery({ text: "Доступ к задачам запрещен!", show_alert: true })
-      },
-      async () => {
-        const [message, keyboard] = await Promise.all([
-          renderIssue(issue, repository),
-          renderIssueListKeyboard(repository),
-        ])
+        return
+      }
 
-        keyboard.text("⬅️ К списку", `github:issues:list:${repositoryId}`).row()
-        keyboard.text("⬅️ К репозиториям", "github:issues:repos").row()
+      const loadedRepository = await repository.$jazz.ensureLoaded({
+        resolve: { issues: { $each: true } },
+      })
+      const issue = Array.from(loadedRepository.issues.values()).find(
+        current => current.id === issueId,
+      )
 
-        await ctx.editMessageText(message.value, {
-          parse_mode: "HTML",
-          reply_markup: keyboard,
-        })
+      if (!issue) {
+        await ctx.answerCallbackQuery({ text: "Задача не найдена!", show_alert: true })
+        return
+      }
 
-        await ctx.answerCallbackQuery()
-      },
-    )
+      const [message, keyboard] = await Promise.all([
+        renderIssue(issue, repository),
+        renderIssueListKeyboard(repository),
+      ])
+
+      keyboard.text("⬅️ К списку", `github:issues:list:${repositoryId}`).row()
+      keyboard.text("⬅️ К репозиториям", "github:issues:repos").row()
+
+      await ctx.editMessageText(message.value, {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      })
+
+      await ctx.answerCallbackQuery()
+    })
   })
 
   composer.command("pull_requests", async ctx => {
@@ -340,11 +364,8 @@ export function createComposer(
   })
 
   composer.command("connect_repository", async ctx => {
-    const loadedUser = await ctx.user!.$jazz.ensureLoaded({ resolve: { user: true } })
-
-    await TelegramRealm.impersonate(loadedUser.user, async account => {
-      const github = await createRequirement(GitHubContract, githubReplicaAccountId, account)
-      const hasAccess = await github.checkPermission("repository:connect")
+    await impersonateContext(ctx, { github }, async ({ github }) => {
+      const hasAccess = await github.checkMyPermission("repository:connect")
 
       if (!hasAccess) {
         await ctx.reply("Нет доступа для подключения репозиториев.")
@@ -364,91 +385,97 @@ export function createComposer(
 
   composer.callbackQuery(/^github:pull-requests:list:(\d+)$/, async ctx => {
     const repositoryId = Number(ctx.match[1])
-    const repository = await loadRepository(repositoryId)
 
-    if (!repository) {
-      await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
-      return
-    }
+    await impersonateContext(ctx, { github }, async ({ github }) => {
+      const repository = await getRepositoryById(github.data, repositoryId)
+      if (!repository) {
+        await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
+        return
+      }
 
-    await withRepositoryAccess(
-      ctx,
-      repository,
-      "pull-request:read:repository",
-      async () => {
+      const allowed = await ensureRepositoryAccess(
+        github,
+        repository,
+        "pull-request:read:repository",
+      )
+
+      if (!allowed) {
         await ctx.answerCallbackQuery({
           text: "Доступ к pull request'ам запрещен!",
           show_alert: true,
         })
-      },
-      async () => {
-        const [message, keyboard] = await Promise.all([
-          renderPullRequestList(repository),
-          (async () => {
-            const repoKeyboard = await renderPullRequestListKeyboard(repository)
-            repoKeyboard.text("⬅️ К репозиториям", "github:pull-requests:repos").row()
-            return repoKeyboard
-          })(),
-        ])
+        return
+      }
 
-        await ctx.editMessageText(message.value, {
-          parse_mode: "HTML",
-          reply_markup: keyboard,
-        })
+      const [message, keyboard] = await Promise.all([
+        renderPullRequestList(repository),
+        (async () => {
+          const repoKeyboard = await renderPullRequestListKeyboard(repository)
+          repoKeyboard.text("⬅️ К репозиториям", "github:pull-requests:repos").row()
+          return repoKeyboard
+        })(),
+      ])
 
-        await ctx.answerCallbackQuery()
-      },
-    )
+      await ctx.editMessageText(message.value, {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      })
+
+      await ctx.answerCallbackQuery()
+    })
   })
 
   composer.callbackQuery(/^github:pull-request:(\d+):(\d+)$/, async ctx => {
     const repositoryId = Number(ctx.match[1])
     const pullRequestId = Number(ctx.match[2])
-    const repository = await loadRepository(repositoryId)
+    await impersonateContext(ctx, { github }, async ({ github }) => {
+      const repository = await getRepositoryById(github.data, repositoryId)
+      if (!repository) {
+        await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
+        return
+      }
 
-    if (!repository) {
-      await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
-      return
-    }
+      const allowed = await ensureRepositoryAccess(
+        github,
+        repository,
+        "pull-request:read:repository",
+      )
 
-    const loadedRepository = await repository.$jazz.ensureLoaded({
-      resolve: { pullRequests: true },
-    })
-    const pullRequests = Array.from(loadedRepository.pullRequests.values()) as PullRequest[]
-    const pullRequest = pullRequests.find(current => current.id === pullRequestId)
-
-    if (!pullRequest) {
-      await ctx.answerCallbackQuery({ text: "Pull request не найден!", show_alert: true })
-      return
-    }
-
-    await withRepositoryAccess(
-      ctx,
-      repository,
-      "pull-request:read:repository",
-      async () => {
+      if (!allowed) {
         await ctx.answerCallbackQuery({
           text: "Доступ к pull request'ам запрещен!",
           show_alert: true,
         })
-      },
-      async () => {
-        const [message, keyboard] = await Promise.all([
-          renderPullRequest(pullRequest, repository),
-          renderPullRequestListKeyboard(repository),
-        ])
+        return
+      }
 
-        keyboard.text("⬅️ К списку", `github:pull-requests:list:${repositoryId}`).row()
-        keyboard.text("⬅️ К репозиториям", "github:pull-requests:repos").row()
+      const loadedRepository = await repository.$jazz.ensureLoaded({
+        resolve: { pullRequests: { $each: true } },
+      })
+      const pullRequest = Array.from(loadedRepository.pullRequests.values()).find(
+        current => current.id === pullRequestId,
+      )
 
-        await ctx.editMessageText(message.value, {
-          parse_mode: "HTML",
-          reply_markup: keyboard,
-        })
+      if (!pullRequest) {
+        await ctx.answerCallbackQuery({ text: "Pull request не найден!", show_alert: true })
+        return
+      }
 
-        await ctx.answerCallbackQuery()
-      },
-    )
+      const [message, keyboard] = await Promise.all([
+        renderPullRequest(pullRequest, repository),
+        renderPullRequestListKeyboard(repository),
+      ])
+
+      keyboard.text("⬅️ К списку", `github:pull-requests:list:${repositoryId}`).row()
+      keyboard.text("⬅️ К репозиториям", "github:pull-requests:repos").row()
+
+      await ctx.editMessageText(message.value, {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      })
+
+      await ctx.answerCallbackQuery()
+    })
   })
 
   composer.callbackQuery("github:issues:repos", async ctx => {
@@ -479,37 +506,39 @@ export function createComposer(
 
   composer.callbackQuery(/^github:repositories:detail:(\d+)$/, async ctx => {
     const repositoryId = Number(ctx.match[1])
-    const repository = await loadRepository(repositoryId)
+    await impersonateContext(ctx, { github }, async ({ github }) => {
+      const repository = await getRepositoryById(github.data, repositoryId)
+      if (!repository) {
+        await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
+        return
+      }
 
-    if (!repository) {
-      await ctx.answerCallbackQuery({ text: "Репозиторий не найден!", show_alert: true })
-      return
-    }
+      const allowed = await ensureRepositoryAccess(
+        github,
+        repository,
+        ["issue:read:repository", "pull-request:read:repository"],
+        { allowRepositoryReadAll: true },
+      )
 
-    await withRepositoryAccess(
-      ctx,
-      repository,
-      ["issue:read:repository", "pull-request:read:repository"],
-      async () => {
+      if (!allowed) {
         await ctx.answerCallbackQuery({ text: "Доступ к репозиторию запрещен!", show_alert: true })
-      },
-      async () => {
-        const message = await renderRepository(repository)
-        const keyboard = new InlineKeyboard()
+        return
+      }
 
-        keyboard.text("⬅️ К репозиториям", "github:repositories:list").row()
-        keyboard.text("➡️ Задачи", `github:issues:list:${repositoryId}`).row()
-        keyboard.text("➡️ Pull request'ы", `github:pull-requests:list:${repositoryId}`).row()
+      const message = await renderRepository(repository)
+      const keyboard = new InlineKeyboard()
 
-        await ctx.editMessageText(message.value, {
-          parse_mode: "HTML",
-          reply_markup: keyboard,
-        })
+      keyboard.text("⬅️ К репозиториям", "github:repositories:list").row()
+      keyboard.text("➡️ Задачи", `github:issues:list:${repositoryId}`).row()
+      keyboard.text("➡️ Pull request'ы", `github:pull-requests:list:${repositoryId}`).row()
 
-        await ctx.answerCallbackQuery()
-      },
-      { allowRepositoryReadAll: true },
-    )
+      await ctx.editMessageText(message.value, {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      })
+
+      await ctx.answerCallbackQuery()
+    })
   })
 
   composer.callbackQuery("github:repositories:list", async ctx => {
