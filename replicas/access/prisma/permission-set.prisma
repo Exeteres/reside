@@ -1,0 +1,60 @@
+/// Represents a managed permission set for a subject.
+model PermissionSet {
+  /// The unique identifier of the permission set.
+  id Int @id @default(autoincrement())
+
+  /// The unique identifier of the subject managed by this set (in format "{realm}:{name}").
+  subjectId String
+
+  /// The unique identifier of the subject managing this set (in format "{realm}:{name}").
+  managedBySubjectId String
+
+  /// The unique name of this permission set scoped to (subjectId, managedBySubjectId).
+  name String
+
+  /// The timestamp when this permission set was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this permission set was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The permissions currently tracked by this set.
+  items PermissionSetItem[]
+
+  /// The permission bindings managed by this set.
+  bindings PermissionBinding[]
+
+  /// The historical request sets linked to this permission set.
+  requestSets PermissionRequestSet[]
+
+  @@unique([subjectId, managedBySubjectId, name])
+  @@index([subjectId, managedBySubjectId])
+}
+
+/// Represents a permission currently observed in a managed permission set.
+model PermissionSetItem {
+  /// The unique identifier of the permission set item.
+  id BigInt @id @default(autoincrement())
+
+  /// The identifier of the parent permission set.
+  permissionSetId Int
+
+  /// The identifier of the permission tracked by this item.
+  permissionId Int
+
+  /// The optional descriptor of the tracked scope.
+  scope String?
+
+  /// The timestamp when this item was created.
+  createdAt DateTime @default(now())
+
+  /// The parent permission set metadata.
+  permissionSet PermissionSet @relation(fields: [permissionSetId], references: [id], onDelete: Cascade)
+
+  /// The tracked permission metadata.
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Restrict)
+
+  @@unique([permissionSetId, permissionId, scope])
+  @@index([permissionSetId])
+  @@index([permissionId])
+}

@@ -1,0 +1,63 @@
+enum OperationType {
+  PROVISION_POSTGRES_DATABASE
+  PROVISION_TEMPORAL_NAMESPACE
+}
+
+enum OperationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+/// Represents a workflow-backed operation for a Temporal namespace or PostgreSQL database.
+model Operation {
+  /// The unique numeric identifier of the operation record.
+  id Int @id @default(autoincrement())
+
+  /// The user-facing operation title.
+  title String
+
+  /// The user-facing operation description.
+  description String?
+
+  /// The status of the operation.
+  status OperationStatus
+
+  /// The machine-readable failure reason.
+  failureReason String?
+
+  /// The human-readable failure message.
+  failureMessage String?
+
+  /// Optional callback endpoint for completion notifications.
+  callbackEndpoint String?
+
+  /// Optional custom payload for completion notifications.
+  customData Json?
+
+  /// The type of operation being performed.
+  type OperationType
+
+  /// The ID of the Temporal namespace associated with this operation, if applicable.
+  temporalNamespaceId Int?
+
+  /// The ID of the PostgreSQL database associated with this operation, if applicable.
+  postgresDatabaseId Int?
+
+  /// The Temporal namespace record associated with this operation, if applicable.
+  temporalNamespace TemporalNamespace? @relation(fields: [temporalNamespaceId], references: [id], onDelete: Cascade)
+
+  /// The PostgreSQL database record associated with this operation, if applicable.
+  postgresDatabase PostgresDatabase? @relation(fields: [postgresDatabaseId], references: [id], onDelete: Cascade)
+
+  /// The timestamp when this operation record was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this operation record was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The timestamp when this operation was resolved (succeeded or failed).
+  resolvedAt DateTime?
+
+  @@index([createdAt])
+}

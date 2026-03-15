@@ -1,0 +1,35 @@
+/// Represents a permission definition that can be granted to subjects.
+model Permission {
+  /// The unique numeric identifier of the permission.
+  id Int @id @default(autoincrement())
+
+  /// The unique permission name.
+  name String @unique
+
+  /// The human-readable title of the permission.
+  title String
+
+  /// The optional detailed description of the permission.
+  description String?
+
+  /// Whether the permission is scoped and requires a scope descriptor.
+  scoped Boolean @default(false)
+
+  /// The timestamp when the permission was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when the permission was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The bindings that grant this permission to subjects.
+  bindings PermissionBinding[]
+
+  /// The explicit restrictions for this permission.
+  restrictions PermissionRestriction[]
+
+  /// The request set items made for this permission.
+  requestSetItems PermissionRequestSetItem[]
+
+  /// The managed permission set items for this permission.
+  permissionSetItems PermissionSetItem[]
+}

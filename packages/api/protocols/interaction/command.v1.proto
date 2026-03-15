@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package reside.interaction.command.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+import "interaction/definition.v1.proto";
+import "interaction/context.v1.proto";
+
+// The context of a command invocation passed to the command handler.
+message CommandInvocation {
+  // The unique ID of the command invocation opaque to the handler.
+  string invocation_id = 1;
+
+  // The command being invoked.
+  reside.interaction.definition.v1.Command command = 2;
+
+  // The interaction context where the command is being invoked.
+  reside.interaction.context.v1.InteractionContext context = 3;
+
+  // The parameters for the command invocation as JSON record where keys are parameter names.
+  google.protobuf.Struct parameters = 4;
+
+  // The ID of the subject invoking the command.
+  string subject_id = 5;
+}
+
+// The service implemented by the command handler to receive command invocations.
+service CommandHandlerService {
+  // Invokes the command handler with the specified command invocation.
+  rpc InvokeCommand(CommandInvocation) returns (google.protobuf.Empty);
+}

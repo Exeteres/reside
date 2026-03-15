@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package reside.interaction.context.v1;
+
+// The interaction context represents the contextual information associated with an interaction.
+message InteractionContext {
+  // The unique identifier of the interaction context.
+  int32 id = 1;
+
+  // The human-readable name of the interaction context.
+  string title = 2;
+}

@@ -1,0 +1,8 @@
+Dockerfile
+.dockerignore
+node_modules
+**/node_modules
+_old_reside3_for_reference
+.nx
+.direnv
+.devenv

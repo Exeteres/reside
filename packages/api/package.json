@@ -1,0 +1,44 @@
+{
+  "name": "@reside/api",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json",
+    "./access/authz.v1": "./src/_generated/access/authz.v1.ts",
+    "./access/binding.v1": "./src/_generated/access/binding.v1.ts",
+    "./access/definition.v1": "./src/_generated/access/definition.v1.ts",
+    "./access/request.v1": "./src/_generated/access/request.v1.ts",
+    "./alpha/load.v1": "./src/_generated/alpha/load.v1.ts",
+    "./alpha/registration.v1": "./src/_generated/alpha/registration.v1.ts",
+    "./common/approval.v1": "./src/_generated/common/approval.v1.ts",
+    "./common/file.v1": "./src/_generated/common/file.v1.ts",
+    "./common/operation.v1": "./src/_generated/common/operation.v1.ts",
+    "./common/subject.v1": "./src/_generated/common/subject.v1.ts",
+    "./database/provision.v1": "./src/_generated/database/provision.v1.ts",
+    "./google/protobuf/duration": "./src/_generated/google/protobuf/duration.ts",
+    "./google/protobuf/empty": "./src/_generated/google/protobuf/empty.ts",
+    "./google/protobuf/struct": "./src/_generated/google/protobuf/struct.ts",
+    "./google/protobuf/timestamp": "./src/_generated/google/protobuf/timestamp.ts",
+    "./google/protobuf/wrappers": "./src/_generated/google/protobuf/wrappers.ts",
+    "./google/rpc/error_details": "./src/_generated/google/rpc/error_details.ts",
+    "./google/type/datetime": "./src/_generated/google/type/datetime.ts",
+    "./interaction/command.v1": "./src/_generated/interaction/command.v1.ts",
+    "./interaction/context.v1": "./src/_generated/interaction/context.v1.ts",
+    "./interaction/definition.v1": "./src/_generated/interaction/definition.v1.ts",
+    "./interaction/notification.v1": "./src/_generated/interaction/notification.v1.ts"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "catalog:",
+    "@reside/utils": "workspace:*",
+    "nice-grpc": "catalog:",
+    "nice-grpc-client-middleware-retry": "catalog:",
+    "nice-grpc-common": "catalog:"
+  },
+  "scripts": {
+    "generate": "bun scripts/generate.ts"
+  },
+  "devDependencies": {
+    "google-proto-files": "catalog:",
+    "grpc-tools": "catalog:",
+    "ts-proto": "catalog:"
+  }
+}

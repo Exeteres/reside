@@ -1,0 +1,4 @@
+{
+  "name": "@reside/utils",
+  "main": "./src/index.ts"
+}

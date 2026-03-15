@@ -1,0 +1,106 @@
+/// The status of a permission request set lifecycle.
+enum PermissionRequestSetStatus {
+  /// The request set is submitted and awaiting review.
+  PENDING
+
+  /// The request set is approved and permissions are granted.
+  APPROVED
+
+  /// The request set is reviewed and denied.
+  DENIED
+
+  /// The request set expired before being reviewed.
+  EXPIRED
+
+  /// The request set was superseded by a newer request set.
+  SUPERSEDED
+
+  /// The request set was cancelled.
+  CANCELLED
+}
+
+/// Represents a request set for one or more permissions.
+model PermissionRequestSet {
+  /// The unique identifier of the permission request set.
+  id Int @id @default(autoincrement())
+
+  /// The unique identifier of the subject that will be granted permissions (in format "{realm}:{name}").
+  subjectId String
+
+  /// The unique identifier of the subject that requested this set (in format "{realm}:{name}").
+  requestedBySubjectId String
+
+  /// The unique identifier of the subject that resolved this set (in format "{realm}:{name}").
+  resolvedBySubjectId String?
+
+  /// The permission set this request set belongs to.
+  permissionSetId Int
+
+  /// The permission set name used to identify and supersede active request sets.
+  /// Scoped to (subjectId, requestedBySubjectId).
+  permissionSetName String
+
+  /// The requester-provided reason for this request set.
+  reason String
+
+  /// The resolution note provided by the reviewer when approving or denying the request set.
+  resolution String?
+
+  /// The current status of the request set.
+  status PermissionRequestSetStatus @default(PENDING)
+
+  /// The request set that superseded this one, if any.
+  supersededByRequestSetId Int?
+
+  /// The timestamp when the request set was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when the request set was resolved.
+  resolvedAt DateTime?
+
+  /// The item entries included in this request set.
+  items PermissionRequestSetItem[]
+
+  /// The permission set metadata associated with this request set.
+  permissionSet PermissionSet @relation(fields: [permissionSetId], references: [id], onDelete: Cascade)
+
+  /// The request set that superseded this one.
+  supersededByRequestSet PermissionRequestSet? @relation("PermissionRequestSetSupersede", fields: [supersededByRequestSetId], references: [id], onDelete: SetNull)
+
+  /// The request sets superseded by this request set.
+  supersededRequestSets PermissionRequestSet[] @relation("PermissionRequestSetSupersede")
+
+  /// The operation associated with creating this request set.
+  operation Operation?
+
+  @@index([permissionSetId, status])
+  @@index([subjectId, status])
+  @@index([requestedBySubjectId, status])
+  @@index([status, createdAt])
+  @@index([supersededByRequestSetId])
+}
+
+/// Represents a requested permission item inside a permission request set.
+model PermissionRequestSetItem {
+  /// The unique identifier of the request set item.
+  id BigInt @id @default(autoincrement())
+
+  /// The request set that owns this item.
+  requestSetId Int
+
+  /// The requested permission identifier.
+  permissionId Int
+
+  /// The optional descriptor of the requested scope.
+  scope String?
+
+  /// The parent request set metadata.
+  requestSet PermissionRequestSet @relation(fields: [requestSetId], references: [id], onDelete: Cascade)
+
+  /// The requested permission metadata.
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Restrict)
+
+  @@unique([requestSetId, permissionId, scope])
+  @@index([permissionId])
+  @@index([requestSetId])
+}

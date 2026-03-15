@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package reside.alpha.load.v1;
+
+import "google/protobuf/empty.proto";
+
+// The request message to load the new replica in the cluster or update the existing one.
+message LoadReplicaRequest {
+  // The name of the replica to load or update.
+  string name = 1;
+
+  // The image of the replica.
+  string image = 2;
+}
+
+// The service that must be used to initiate loading of a new replica or update the existing one in the cluster.
+service LoadService {
+  // Requests the Alpha Replica to load a new replica or update the existing one in the cluster.
+  rpc LoadReplica(LoadReplicaRequest) returns (google.protobuf.Empty);
+}

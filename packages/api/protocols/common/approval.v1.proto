@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package reside.common.approval.v1;
+
+import "common/operation.v1.proto";
+
+// The request to approve or reject something in ReSide.
+message ApprovalRequest {
+  // The title of the approval request, describing what is being approved.
+  string title = 1;
+
+  // The content of the approval request, providing more details about what is being approved.
+  string content = 2;
+}
+
+// The result of an approval request, indicating whether it was approved or rejected.
+enum ApprovalResult {
+  // The approval request was escalated to the next approval by priority.
+  ESCALATED = 0;
+
+  // The approval request was approved.
+  APPROVED = 1;
+
+  // The approval request was rejected.
+  REJECTED = 2;
+}
+
+// The result of an approval request, indicating whether it was approved or rejected.
+message ApprovalResponse {
+  // The result of the approval request.
+  ApprovalResult result = 1;
+
+  // The required resultion note provided by the approver describing the reason for result.
+  string resolution = 2;
+}
+
+// The service that must be implemented by the approver of an approval request.
+service ApprovalService {
+  // The Approve method is called to approve or reject an approval request.
+  rpc Approve(ApprovalRequest) returns (reside.common.operation.v1.Operation);
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@reside/cli",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "reside": "./src/main.ts"
+  },
+  "scripts": {
+    "build": "bun src/main.ts build",
+    "generate": "bun src/main.ts generate",
+    "publish": "bun src/main.ts build --push",
+    "typecheck": "bunx tsc -p tsconfig.json --noEmit",
+    "biome": "bunx biome check --write --unsafe --error-on-warnings src",
+    "biome:check": "bunx biome check --error-on-warnings src",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "catalog:",
+    "@listr2/prompt-adapter-inquirer": "catalog:",
+    "@reside/common": "workspace:*",
+    "@reside/topology": "workspace:*",
+    "citty": "catalog:",
+    "consola": "catalog:",
+    "listr2": "catalog:",
+    "pino": "catalog:",
+    "pino-pretty": "catalog:",
+    "pkg-types": "catalog:",
+    "remeda": "catalog:",
+    "yaml": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "build-temporal-workflow": "^0.4.0"
+  }
+}

@@ -1,0 +1,20 @@
+model Task {
+  id        Int      @id @default(autoincrement())
+  subjectId String
+  issueId   Int?     @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prompts TaskPrompt[]
+}
+
+model TaskPrompt {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  prompt    String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+}

@@ -1,0 +1,17 @@
+/// Represents a Temporal namespace owned by a replica.
+model TemporalNamespace {
+  /// The unique numeric identifier of the Temporal namespace record.
+  id Int @id @default(autoincrement())
+
+  /// The provisioned Temporal namespace.
+  namespace String @unique
+
+  /// The timestamp when this record was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this record was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The operations associated with this Temporal namespace.
+  operations Operation[]
+}

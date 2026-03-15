@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package reside.common.subject.v1;
+
+import "google/protobuf/wrappers.proto";
+
+// Display information for a subject.
+message SubjectDisplayInfo {
+  // The required human-readable title of the subject.
+  string title = 1;
+
+  // The optional avatar URL of the subject.
+  google.protobuf.StringValue avatar_url = 2;
+}
+
+// Request to fetch display info for a subject.
+message GetSubjectDisplayInfoRequest {
+  // The unique subject identifier in format "{realm}:{name}".
+  string subject_id = 1;
+}
+
+// Service that provides display information for subjects.
+service SubjectService {
+  // Returns display information for the provided subject identifier.
+  rpc GetSubjectDisplayInfo(GetSubjectDisplayInfoRequest) returns (SubjectDisplayInfo);
+}

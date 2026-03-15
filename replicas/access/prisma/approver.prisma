@@ -1,0 +1,30 @@
+/// Represents an approval handler used to review permission request sets.
+model Approver {
+  /// The unique numeric identifier of the approver.
+  id Int @id @default(autoincrement())
+
+  /// The unique stable approver name.
+  name String @unique
+
+  /// The approver priority.
+  /// Lower values are evaluated first.
+  priority Int
+
+  /// The list of realms this approver can review.
+  realms Realm[]
+
+  /// The human-readable title of the approver.
+  title String
+
+  /// The optional detailed description of the approver.
+  description String?
+
+  /// The callback endpoint implementing common.approval.v1.ApprovalService.
+  callbackEndpoint String
+
+  /// The timestamp when the approver was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when the approver was last updated.
+  updatedAt DateTime @updatedAt
+}

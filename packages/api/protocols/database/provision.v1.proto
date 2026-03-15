@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package reside.database.provision.v1;
+
+import "google/protobuf/empty.proto";
+import "common/operation.v1.proto";
+
+// The object describing the credentials for a provisioned PostgreSQL database.
+message PostgresDatabaseCredentials {
+  string host     = 1;
+  int32  port     = 2;
+  string database = 3;
+  string username = 4;
+  string password = 5;
+}
+
+// The object describing the credentials for a provisioned temporal namespace.
+message TemporalNamespaceCredentials {
+  string address   = 1;
+  string namespace = 2;
+}
+
+// The response for a GetTemporalNamespaceCredentials request,
+// which may contain either the credentials or an operation if the namespace is not yet ready.
+// The result of the operation, once completed, will be the TemporalNamespaceCredentials.
+// Clients should poll the operation using reside.common.operation.v1.OperationService.
+message GetTemporalNamespaceCredentialsResponse {
+  oneof credentials {
+    TemporalNamespaceCredentials         result    = 1;
+    reside.common.operation.v1.Operation operation = 2;
+  }
+}
+
+// The response for a GetPostgresDatabaseCredentialsRequest,
+// which may contain either the credentials or an operation if the credentials are not yet ready.
+// The result of the operation, once completed, will be the PostgresDatabaseCredentials.
+// Clients should poll the operation using reside.common.operation.v1.OperationService.
+message GetPostgresDatabaseCredentialsResponse {
+  oneof credentials {
+    PostgresDatabaseCredentials          result    = 1;
+    reside.common.operation.v1.Operation operation = 2;
+  }
+}
+
+// The service responsible for provisioning personal PostgreSQL databases for replicas.
+service ProvisionService {
+  // Gets credentials for the caller's personal PostgreSQL database.
+  rpc GetPostgresDatabaseCredentials(google.protobuf.Empty)
+  returns (GetPostgresDatabaseCredentialsResponse);
+
+  // Gets credentials for the caller's personal temporal namespace.
+  rpc GetTemporalNamespaceCredentials(google.protobuf.Empty) returns (GetTemporalNamespaceCredentialsResponse);
+}

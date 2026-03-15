@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package reside.access.binding.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+// The PermissionBinding message represents the association between a permission and a subject (e.g., user, service account) that has been granted that permission.
+// The binding is identified by the combination of permission_id, subject_id, and an optional scope descriptor.
+message PermissionBinding {
+  // The unique identifier of the permission.
+  int32 permission_id = 1;
+
+  // The unique identifier of the subject (in format "{realm}:{name}") that is bound to the permission.
+  string subject_id = 2;
+
+  // The optional scope descriptor for which the permission is granted.
+  // If not provided, the permission is granted globally.
+  google.protobuf.StringValue scope = 3;
+
+  // The timestamp when the permission binding was last created.
+  // If a binding is removed and then re-created, the created_at timestamp will reflect the most recent creation time of the binding.
+  google.protobuf.Timestamp created_at = 4;
+}
+
+// The explicit restriction of some subject from having a permission.
+// Used to prevent requesting permissions that we previously denied in other requests.
+message PermissionRestriction {
+  // The unique identifier of the permission.
+  int32 permission_id = 1;
+
+  // The unique identifier of the subject (in format "{realm}:{name}") that is restricted from the permission.
+  string subject_id = 2;
+
+  // The optional scope descriptor for which the permission is restricted.
+  // If not provided, the restriction applies globally.
+  google.protobuf.StringValue scope = 3;
+
+  // The timestamp when the permission restriction was created.
+  // If a restriction is removed and then re-created, the created_at timestamp will reflect the most recent creation time of the restriction.
+  google.protobuf.Timestamp created_at = 4;
+}
+
+// The request message to list all permission bindings for a specific subject.
+message ListPermissionBindingsRequest {
+  // The unique identifier of the subject (in format "{realm}:{name}") for which to list permission bindings.
+  string subject_id = 1;
+}
+
+// The response message containing the list of permission bindings.
+message ListPermissionBindingsResponse {
+  // The list of permission bindings that match the request filters.
+  repeated PermissionBinding bindings = 1;
+}
+
+// The request message to list all permission restrictions for a specific subject.
+message ListPermissionRestrictionsRequest {
+  // The unique identifier of the subject (in format "{realm}:{name}") for which to list permission restrictions.
+  string subject_id = 1;
+}
+
+// The response message containing the list of permission restrictions.
+message ListPermissionRestrictionsResponse {
+  // The list of permission restrictions that match the request filters.
+  repeated PermissionRestriction restrictions = 1;
+}
+
+// The service for querying permission bindings in the access control system.
+service BindingService {
+  // Lists permission bindings for the given subject.
+  rpc ListPermissionBindings(ListPermissionBindingsRequest) returns (ListPermissionBindingsResponse);
+
+  // Lists permission restrictions for the given subject.
+  rpc ListPermissionRestrictions(ListPermissionRestrictionsRequest) returns (ListPermissionRestrictionsResponse);
+}

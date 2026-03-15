@@ -1,0 +1,87 @@
+/// The concrete kind of response submitted by a user.
+enum NotificationResponseType {
+  /// The user selected one of the predefined actions.
+  ACTION
+
+  /// The user submitted free text.
+  TEXT
+}
+
+/// Represents a user response to a notification.
+model NotificationResponse {
+  /// The operation identifier resolved by this response.
+  operationId Int @id
+
+  /// The kind of response.
+  type NotificationResponseType
+
+  /// The action name when the response kind is ACTION.
+  actionName String?
+
+  /// The text value when the response kind is TEXT.
+  textResponse String?
+
+  /// The timestamp when the response was created.
+  createdAt DateTime @default(now())
+
+  /// The operation associated with this response.
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+}
+
+/// Represents a sent notification tracked by the replica.
+model Notification {
+  /// The unique numeric identifier of the notification.
+  id Int @id @default(autoincrement())
+
+  /// The optional operation associated with this notification response tracking.
+  operationId Int? @unique
+
+  /// The operation associated with this notification payload.
+  operation Operation? @relation(fields: [operationId], references: [id], onDelete: SetNull)
+
+  /// The ID of the interaction context expecting the user response.
+  contextId Int
+
+  /// The interaction context associated with this notification.
+  context InteractionContext @relation(fields: [contextId], references: [id])
+
+  /// The ID of the notification channel associated with this operation.
+  channelId Int
+
+  /// The notification channel associated with this notification.
+  channel NotificationChannel @relation(fields: [channelId], references: [id])
+
+  /// The message identifier this notification is associated with.
+  messageId Int
+
+  /// The subject that called notification sending API.
+  callingSubjectId String?
+
+  /// The effective subject on behalf of which notification was sent.
+  sendAsSubjectId String?
+
+  /// The stored title of this notification.
+  title String
+
+  /// The stored content of this notification.
+  content String
+
+  /// The list of allowed action names for this notification.
+  allowedActions String[]
+
+  /// Whether this notification requires text response tracking.
+  requiresTextResponse Boolean @default(false)
+
+  /// Whether interaction with this notification requires permission checks.
+  isProtected Boolean @default(false)
+
+  /// The timestamp when this notification was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this notification was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@index([messageId])
+  @@index([channelId])
+  @@index([contextId])
+}

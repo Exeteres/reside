@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package reside.access.definition.v1;
+
+import "google/protobuf/wrappers.proto";
+
+// The Permission that can be checked against a subject to determine if the subject has the necessary access rights to perform an action on a scope.
+message Permission {
+  // The unique numeric identifier of the permission.
+  int32 id = 1;
+
+  // The unique name of the permission.
+  string name = 2;
+
+  // The required human-readable name of the permission.
+  string title = 3;
+
+  // The optional description of the permission.
+  google.protobuf.StringValue description = 4;
+
+  // Whether the permission is scoped and requires a scope descriptor to be checked against and granted on.
+  bool scoped = 5;
+}
+
+// The Realm represents a logical grouping of users.
+message Realm {
+  // The unique numeric identifier of the realm.
+  int32 id = 1;
+
+  // The unique name of the realm.
+  string name = 2;
+
+  // The required human-readable name of the realm.
+  string title = 3;
+
+  // The optional description of the realm.
+  google.protobuf.StringValue description = 4;
+
+  // The optional endpoint of reside.common.subject.v1.SubjectService used to resolve subject display info for this realm.
+  google.protobuf.StringValue subject_service_endpoint = 5;
+}
+
+// The input message to create or update a permission in the system.
+message PermissionInput {
+  // The unique name of the permission.
+  string name = 1;
+
+  // The required human-readable name of the permission.
+  string title = 2;
+
+  // The optional description of the permission.
+  google.protobuf.StringValue description = 3;
+
+  // Whether the permission is scoped and requires a scope descriptor to be checked against and granted on.
+  bool scoped = 4;
+}
+
+// The request message to create or update multiple permissions in the system in a batch operation.
+message PutPermissionsRequest {
+  // A list of permissions to create or update in the system.
+  // Each permission in the list should have a unique name.
+  repeated PermissionInput permissions = 1;
+}
+
+// The response message for PutPermissionsRequest, containing the list of created or updated permissions.
+message PutPermissionsResponse {
+  // A list of permissions that were created or updated as a result of the PutPermissionsRequest.
+  repeated Permission permissions = 1;  
+}
+
+// The request message to create or update a realm in the system.
+message PutRealmRequest {
+  // The name of the realm, which is unique across the system.
+  string name = 1;
+
+  // The required human-readable name of the realm.
+  string title = 2;
+
+  // The optional description of the realm.
+  google.protobuf.StringValue description = 3;
+
+  // The optional endpoint of reside.common.subject.v1.SubjectService used to resolve subject display info for this realm.
+  google.protobuf.StringValue subject_service_endpoint = 4;
+}
+
+// The Approver that can approve or deny permission request sets in the system.
+message Approver {
+  // The unique numeric identifier of the approver.
+  int32 id = 1;
+
+  // The unique stable name of the approver.
+  string name = 2;
+
+  // The approver priority.
+  // Approvers with lower priority numbers are evaluated before approvers with higher priority numbers.
+  int32 priority = 3;
+
+  // The list of realms this approver can review.
+  // If request subject realm is not in this list, the approver is skipped.
+  repeated Realm realms = 4;
+
+  // The required human-readable name of the approver.
+  string title = 5;
+
+  // The optional description of the approver.
+  google.protobuf.StringValue description = 6;
+
+  // The callback endpoint to send approve requests.
+  // Must implement io.reside.common.approval.v1.ApprovalService.
+  string callback_endpoint = 7;
+}
+
+// The request to create or update approver in the system.
+message PutApproverRequest {
+  // The unique name of the approver.
+  string name = 1;
+
+  // The approver priority.
+  int32 priority = 2;
+
+  // The list of realm names this approver can review.
+  repeated string realms = 3;
+
+  // The required human-readable name of the approver.
+  string title = 4;
+
+  // The optional description of the approver.
+  google.protobuf.StringValue description = 5;
+
+  // The callback endpoint to send approve requests.
+  // Must implement io.reside.common.approval.v1.ApprovalService.
+  string callback_endpoint = 6;
+}
+
+// The service for managing permissions and roles in the access control system.
+service DefinitionService {
+  // Creates or updates permissions in the system.
+  // This method is idempotent.
+  rpc PutPermissions(PutPermissionsRequest) returns (PutPermissionsResponse);
+
+  // Creates or updates a realm in the system.
+  // This method is idempotent.
+  rpc PutRealm(PutRealmRequest) returns (Realm);
+
+  // Creates or updates an approver in the system.
+  // This method is idempotent.
+  rpc PutApprover(PutApproverRequest) returns (Approver);
+}

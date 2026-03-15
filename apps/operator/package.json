@@ -1,0 +1,13 @@
+{
+  "name": "@reside/operator",
+  "scripts": {
+    "publish-image": "cd ../.. && docker build -t ghcr.io/exeteres/reside/operator:latest -f apps/operator/Dockerfile . --push",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "catalog:",
+    "@reside/utils": "workspace:*",
+    "pino": "catalog:",
+    "zod": "catalog:"
+  }
+}

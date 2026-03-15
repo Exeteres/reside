@@ -1,0 +1,249 @@
+import { describe, expect, test } from "bun:test"
+import { CommandParameterType } from "@reside/api/interaction/definition.v1"
+import { strings } from "../locale"
+import { parseCommandInvocation, parseCommandParameters, parseStoredCommandParameters } from "./bot"
+
+describe("parseCommandInvocation", () => {
+  test("returns null for non-command text", () => {
+    expect(parseCommandInvocation("hello world")).toBeNull()
+  })
+
+  test("parses command name and parameters", () => {
+    expect(parseCommandInvocation("/create_task one two")).toEqual({
+      name: "create_task",
+      parameters: ["one", "two"],
+    })
+  })
+
+  test("trims spaces and strips bot mention", () => {
+    expect(parseCommandInvocation("   /create_task@reside_bot   one   two   ")).toEqual({
+      name: "create_task",
+      parameters: ["one", "two"],
+    })
+  })
+
+  test("returns null when slash command has no command name", () => {
+    expect(parseCommandInvocation("/")).toBeNull()
+  })
+})
+
+describe("parseStoredCommandParameters", () => {
+  test("returns empty list for non-array input", () => {
+    expect(parseStoredCommandParameters({})).toEqual([])
+  })
+
+  test("normalizes parameter records and filters invalid entries", () => {
+    const parsed = parseStoredCommandParameters([
+      {
+        name: "task",
+        title: "Task",
+        description: "Task description",
+        type: CommandParameterType.STRING,
+        required: true,
+        rest: true,
+      },
+      {
+        name: "broken",
+        type: CommandParameterType.INTEGER,
+      },
+      "invalid",
+      null,
+    ])
+
+    expect(parsed).toEqual([
+      {
+        name: "task",
+        title: "Task",
+        description: "Task description",
+        type: CommandParameterType.STRING,
+        required: true,
+        rest: true,
+      },
+    ])
+  })
+})
+
+describe("parseCommandParameters", () => {
+  test("returns empty object for invalid parameter schema", () => {
+    expect(parseCommandParameters(null, ["value"])).toEqual({})
+  })
+
+  test("parses string, integer and boolean parameters", () => {
+    const parameters = [
+      {
+        name: "name",
+        title: "Name",
+        type: CommandParameterType.STRING,
+      },
+      {
+        name: "count",
+        title: "Count",
+        type: CommandParameterType.INTEGER,
+      },
+      {
+        name: "enabled",
+        title: "Enabled",
+        type: CommandParameterType.BOOLEAN,
+      },
+    ]
+
+    expect(parseCommandParameters(parameters, ["alice", "42", "true"])).toEqual({
+      name: "alice",
+      count: 42,
+      enabled: true,
+    })
+  })
+
+  test("parses boolean values from 1 and 0", () => {
+    const parameters = [
+      {
+        name: "enabled",
+        title: "Enabled",
+        type: CommandParameterType.BOOLEAN,
+      },
+    ]
+
+    expect(parseCommandParameters(parameters, ["1"])).toEqual({ enabled: true })
+    expect(parseCommandParameters(parameters, ["0"])).toEqual({ enabled: false })
+  })
+
+  test("skips optional parameters when values are missing", () => {
+    const parameters = [
+      {
+        name: "name",
+        title: "Name",
+        type: CommandParameterType.STRING,
+      },
+      {
+        name: "description",
+        title: "Description",
+        type: CommandParameterType.STRING,
+      },
+    ]
+
+    expect(parseCommandParameters(parameters, ["alice"])).toEqual({
+      name: "alice",
+    })
+  })
+
+  test("throws when required non-rest parameter is missing", () => {
+    const parameters = [
+      {
+        name: "name",
+        title: "Name",
+        type: CommandParameterType.STRING,
+        required: true,
+      },
+    ]
+
+    expect(() => parseCommandParameters(parameters, [])).toThrow(
+      strings.worker.bot.parameterRequired("name"),
+    )
+  })
+
+  test("captures all remaining arguments into rest parameter", () => {
+    const parameters = [
+      {
+        name: "target",
+        title: "Target",
+        type: CommandParameterType.STRING,
+      },
+      {
+        name: "task",
+        title: "Task",
+        type: CommandParameterType.STRING,
+        rest: true,
+      },
+    ]
+
+    expect(parseCommandParameters(parameters, ["room-1", "make", "coffee", "please"])).toEqual({
+      target: "room-1",
+      task: "make coffee please",
+    })
+  })
+
+  test("throws when required rest parameter is missing", () => {
+    const parameters = [
+      {
+        name: "task",
+        title: "Task",
+        type: CommandParameterType.STRING,
+        required: true,
+        rest: true,
+      },
+    ]
+
+    expect(() => parseCommandParameters(parameters, [])).toThrow(
+      strings.worker.bot.parameterRequired("task"),
+    )
+  })
+
+  test("throws for invalid integer value", () => {
+    const parameters = [
+      {
+        name: "count",
+        title: "Count",
+        type: CommandParameterType.INTEGER,
+      },
+    ]
+
+    expect(() => parseCommandParameters(parameters, ["abc"])).toThrow(
+      strings.worker.bot.parameterMustBeInteger("count"),
+    )
+  })
+
+  test("throws for invalid boolean value", () => {
+    const parameters = [
+      {
+        name: "enabled",
+        title: "Enabled",
+        type: CommandParameterType.BOOLEAN,
+      },
+    ]
+
+    expect(() => parseCommandParameters(parameters, ["yes"])).toThrow(
+      strings.worker.bot.parameterMustBeBoolean("enabled"),
+    )
+  })
+
+  test("throws when rest parameter is not last", () => {
+    const parameters = [
+      {
+        name: "task",
+        title: "Task",
+        type: CommandParameterType.STRING,
+        rest: true,
+      },
+      {
+        name: "count",
+        title: "Count",
+        type: CommandParameterType.INTEGER,
+      },
+    ]
+
+    expect(() => parseCommandParameters(parameters, ["one", "2"])).toThrow(
+      strings.worker.bot.commandExecutionFailed,
+    )
+  })
+
+  test("throws when multiple rest parameters are defined", () => {
+    const parameters = [
+      {
+        name: "task",
+        title: "Task",
+        type: CommandParameterType.STRING,
+        rest: true,
+      },
+      {
+        name: "comment",
+        title: "Comment",
+        type: CommandParameterType.STRING,
+        rest: true,
+      },
+    ]
+
+    expect(() => parseCommandParameters(parameters, ["one", "two"])).toThrow(
+      strings.worker.bot.commandExecutionFailed,
+    )
+  })
+})

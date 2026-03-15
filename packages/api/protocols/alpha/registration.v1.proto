@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package reside.alpha.registration.v1;
+
+import "google/protobuf/wrappers.proto";
+import "common/operation.v1.proto";
+
+// The message describing the dependency slot for the replica dependency.
+message ReplicaDependencySlot {
+  // The name of the dependency slot.
+  string name = 1;
+
+  // The default name of the replica that occupies this slot.
+  google.protobuf.StringValue default_replica_name = 2;
+}
+
+// The message describing the dependency slot for the replica endpoint.
+message ReplicaEndpointDependencySlot {
+  // The name of the dependency slot.
+  string name = 1;
+
+  // The default value of the endpoint.
+  google.protobuf.StringValue default_endpoint = 2;
+}
+
+// The request message for registering a new replica in Alpha Replica.
+// Must be auhenticated with Kubernetes SA.
+message RegisterReplicaRequest {
+  // The required human-readable name of the replica.
+  string title = 1;
+
+  // The optional description of the replica.
+  string description = 2;
+
+  // The url of the replica avatar if any.
+  google.protobuf.StringValue avatar_url = 3;
+
+  // The current internal endpoint of the replica.
+  string internal_endpoint = 4;
+
+  // The current public endpoint of the replica if any.
+  google.protobuf.StringValue public_endpoint = 5;
+
+  // The list of dependency slots for other replicas that this replica requires to function properly.
+  repeated ReplicaDependencySlot replica_dependencies = 6;
+
+  // The list of dependency slots for endpoints that this replica requires to function properly.
+  // If endpoint value is not provided or overriden and matching resolved replica dependency slot is occupied,
+  // the endpoint value from the occupied replica will be used.
+  repeated ReplicaEndpointDependencySlot endpoint_dependencies = 7;
+}
+
+// The service that must be used by all replicas to register themselves in the cluster.
+message RegisterReplicaResponse {
+  // The operation that should be awaited if registration requires reconciliation before becoming ready.
+  reside.common.operation.v1.Operation operation = 1;
+}
+
+// The service that must be used by all replicas to register themselves in the cluster.
+service RegistrationService {
+  // RegisterReplica registers a new replica and its identity in Alpha.
+  rpc RegisterReplica(RegisterReplicaRequest) returns (RegisterReplicaResponse);
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@reside/common",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json",
+    "./workflow": "./src/workflow/index.ts",
+    "./prisma": "./src/prisma/index.ts"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "catalog:",
+    "@kubernetes/client-node": "catalog:",
+    "@prisma/adapter-pg": "catalog:",
+    "@prisma/client": "catalog:",
+    "@reside/api": "workspace:*",
+    "@reside/topology": "workspace:*",
+    "@reside/utils": "workspace:*",
+    "@temporalio/client": "catalog:",
+    "@temporalio/common": "catalog:",
+    "@temporalio/worker": "catalog:",
+    "@temporalio/workflow": "catalog:",
+    "jose": "catalog:",
+    "nice-grpc": "catalog:",
+    "nice-grpc-common": "catalog:",
+    "pg": "catalog:",
+    "pino": "catalog:",
+    "prisma": "catalog:",
+    "type-fest": "^5.4.4",
+    "webpack": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/pg": "catalog:"
+  }
+}

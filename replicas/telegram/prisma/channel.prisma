@@ -1,0 +1,17 @@
+/// Represents a logical channel used to group notifications.
+model NotificationChannel {
+  /// The unique numeric identifier of the channel.
+  id Int @id @default(autoincrement())
+
+  /// The globally unique channel name.
+  name String @unique
+
+  /// The human-readable channel title.
+  title String
+
+  /// The optional detailed channel description.
+  description String?
+
+  /// The notifications linked to this channel.
+  notifications Notification[]
+}

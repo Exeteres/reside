@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package reside.interaction.definition.v1;
+
+import "google/protobuf/wrappers.proto";
+
+// The channel that scopes notifications.
+// Each channel can be muted.
+message NotificationChannel {
+  // The unique identifier of the channel.
+  int32 id = 1;
+
+  // The unique name of the channel.
+  string name = 2;
+
+  // The required human-readable name of the channel.
+  string title = 3;
+
+  // The optional description of the channel.
+  google.protobuf.StringValue description = 4;
+}
+
+// The input message for creating or updating a notification channel.
+message ChannelInput {
+  // The unique name of the channel.
+  string name = 1;
+
+  // The required human-readable name of the channel.
+  string title = 2;
+
+  // The optional description of the channel.
+  google.protobuf.StringValue description = 3;
+}
+
+// The request to create or update multiple notification channels in the system at once.
+message PutChannelsRequest {
+  // The list of channels to create or update. Each channel in the list must have a unique name.
+  repeated ChannelInput channels = 1;
+}
+
+// The response message for PutChannelsRequest, containing the list of created or updated channels.
+message PutChannelsResponse {
+  // The list of channels that were created or updated as a result of the PutChannelsRequest.
+  repeated NotificationChannel channels = 1;
+}
+
+// The command provides a structured representation of an executable action that can be triggered within the system.
+message Command {
+  // The unique numeric identifier of the command.
+  int32 id = 1;
+
+  // The unique name of the command.
+  string name = 2;
+
+  // The required human-readable name of the command.
+  string title = 3;
+
+  // The optional description of the command.
+  google.protobuf.StringValue description = 4;
+
+  // The list of parameters that can be passed to the command when executing it.
+  repeated CommandParameter parameters = 5;
+
+  // Whether invoking this command requires explicit permission checks.
+  // If false (default), any user may invoke this command.
+  google.protobuf.BoolValue protected = 6;
+
+  // The gRPC endpoint of the command handler service for this command.
+  string callback_endpoint = 7;
+}
+
+// The CommandParameterType enum defines the possible types of parameters that can be passed to a command when executing it.
+enum CommandParameterType {
+  // The command parameter is a string value.
+  COMMAND_PARAMETER_TYPE_STRING = 0;
+
+  // The command parameter is an integer value.
+  COMMAND_PARAMETER_TYPE_INTEGER = 1;
+
+  // The command parameter is a boolean value.
+  COMMAND_PARAMETER_TYPE_BOOLEAN = 2;
+}
+
+// The CommandParameter represents a single parameter that can be passed to a command when executing it.
+message CommandParameter {
+  // The unique name of the parameter within the command, used to identify the parameter when executing the command.
+  string name = 1;
+
+  // The human-readable title of the parameter, used in the UI to label input fields for the parameter.
+  string title = 2;
+
+  // The optional description of the parameter.
+  google.protobuf.StringValue description = 3;
+
+  // The type of the parameter, which determines the expected format of the parameter value when executing the command.
+  CommandParameterType type = 4;
+
+  // Whether the parameter is required when invoking the command.
+  bool required = 5;
+
+  // Whether this parameter captures the rest of the command arguments as a single value.
+  bool rest = 6;
+}
+
+// The input to create or update a command in the system.
+message CommandInput {
+  // The unique name of the command.
+  string name = 1;
+
+  // The required human-readable name of the command.
+  string title = 2;
+
+  // The optional description of the command.
+  google.protobuf.StringValue description = 3;
+
+  // The list of parameters that can be passed to the command when executing it.
+  repeated CommandParameter parameters = 4;
+
+  // Whether invoking this command requires explicit permission checks.
+  // If false (default), any user may invoke this command.
+  google.protobuf.BoolValue protected = 5;
+
+  // The gRPC endpoint of the command handler service for this command.
+  string callback_endpoint = 6;
+}
+
+// The request to create or update multiple commands in the system at once.
+message PutCommandsRequest {
+  // The list of commands to create or update. Each command in the list must have a unique name.
+  repeated CommandInput commands = 1;
+}
+
+// The response message for PutCommandsRequest, containing the list of created or updated commands.
+message PutCommandsResponse {
+  // The list of commands that were created or updated as a result of the PutCommandsRequest.
+  repeated Command commands = 1;  
+}
+
+// The definition service for notification-related operations, such as creating notification channels.
+service DefinitionService {
+  // The request to create or update a notification channel in the system.
+  rpc PutChannels(PutChannelsRequest) returns (PutChannelsResponse);
+
+  // The request to create or update a command in the system.
+  rpc PutCommands(PutCommandsRequest) returns (PutCommandsResponse);
+}

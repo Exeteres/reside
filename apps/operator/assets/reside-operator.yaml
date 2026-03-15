@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: reside-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reside-operator
+  namespace: reside-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: reside-operator
+rules:
+  - apiGroups: ["reside.io"]
+    resources: ["replicas"]
+    verbs: ["get", "list", "watch"]
+
+  - apiGroups: ["reside.io"]
+    resources: ["replicas/status"]
+    verbs: ["patch"]
+
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "create", "delete"]
+
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get", "create"]
+
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    verbs: ["get", "create", "bind", "escalate"]
+
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["get", "create"]
+
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "create", "delete"]
+
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: reside-operator
+subjects:
+  - kind: ServiceAccount
+    name: reside-operator
+    namespace: reside-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: reside-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reside-operator
+  namespace: reside-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reside-operator
+  template:
+    metadata:
+      labels:
+        app: reside-operator
+    spec:
+      serviceAccountName: reside-operator
+      containers:
+        - name: operator
+          image: ghcr.io/exeteres/reside/operator:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RESIDE_SYSTEM_NAMESPACE
+              value: reside-system
+            - name: NODE_EXTRA_CA_CERTS
+              value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt

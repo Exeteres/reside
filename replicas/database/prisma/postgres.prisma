@@ -1,0 +1,20 @@
+/// Represents PostgreSQL credentials for a replica database.
+model PostgresDatabase {
+  /// The unique numeric identifier of the PostgreSQL database record.
+  id Int @id @default(autoincrement())
+
+  /// The name of the database and user to be created for the replica.
+  database String @unique
+
+  /// The generated password for the dedicated PostgreSQL user.
+  password String
+
+  /// The timestamp when this record was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this record was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The operations associated with this PostgreSQL database.
+  operations Operation[]
+}

@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package reside.common.operation.v1;
+
+import "google/rpc/error_details.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+import "google/type/datetime.proto";
+
+// The generic status of a long-running operation.
+enum OperationStatus {
+  // The status of the operation is unspecified.
+  // Can be transitioned to any other status.
+  OPERATION_STATUS_UNSPECIFIED = 0;
+
+  // The operation is pending and has not yet started.
+  // Can only transition to IN_PROGRESS, COMPLETED, or FAILED.
+  OPERATION_STATUS_PENDING = 1;
+
+  // The operation is currently in progress.
+  // Can only transition to COMPLETED or FAILED.
+  OPERATION_STATUS_IN_PROGRESS = 2;
+
+  // The operation has completed successfully.
+  // This is a terminal state and cannot transition to any other status.
+  OPERATION_STATUS_COMPLETED = 3;
+
+  // The operation has failed.
+  // This is a terminal state and cannot transition to any other status.
+  OPERATION_STATUS_FAILED = 4;
+}
+
+// The Operation message represents the status and result of a long-running operation.
+message Operation {
+  // The unique identifier of the operation.
+  int32 id = 1;
+
+  // The user-friendly title of the operation.
+  string title = 2;
+
+  // The detailed description of the operation.
+  google.protobuf.StringValue description = 3;
+
+  // The current status of the operation.
+  OperationStatus status = 4;
+
+  oneof resolution {
+    // The result of the successful completion of the operation, if applicable.
+    // This field is only set if the operation has completed successfully.
+    google.protobuf.Value result = 5;
+
+    // The error details if the operation has failed.
+    // This field is only set if the operation has failed.
+    google.rpc.ErrorInfo error = 6;
+  }
+
+  // The timestamp when the operation was resolved (succeeded or failed).
+  google.protobuf.StringValue resolved_at = 7;
+
+  // The timestamp when the operation was created.
+  google.type.DateTime created_at = 8;
+
+  // The timestamp when the operation was last updated.
+  google.type.DateTime updated_at = 9;
+}
+
+// The request message to get the status of a long-running operation.
+message GetOperationRequest {
+  // The unique identifier of the operation to retrieve.
+  int32 operation_id = 1;
+}
+
+// The response message containing the details of the requested operation.
+message GetOperationResponse {
+  // The details of the requested operation.
+  Operation operation = 1;
+}
+
+// The request message to subscribe to the completion of a long-running operation.
+message SubscribeToOperationCompletionRequest {
+  // The unique identifier of the operation to subscribe to.
+  int32 operation_id = 1;
+
+  // The endpoint to which the completion notification should be sent.
+  // It must implement the OperationSubscriptionService.NotifyOperationCompletion RPC method to receive the notification.
+  string callback_endpoint = 2;
+
+  // The custom data to be included in the completion notification.
+  // This can be used by the client to correlate the notification with the original request or for any other purpose.
+  google.protobuf.Struct custom_data = 3;
+}
+
+// The response message for the SubscribeToOperationCompletion RPC method.
+message SubscribeToOperationCompletionResponse {
+  oneof response {
+    // Acknowledgement that the subscription has been successfully created.
+    google.protobuf.Empty ack = 1;
+
+    // The completed operation details if the operation has already completed at the time of subscription.
+    Operation completed_operation = 2;
+  }
+}
+
+// The notification message sent to the subscribed endpoint when a long-running operation is completed.
+message OperationCompletionNotification {
+  // The details of the completed operation.
+  Operation operation = 1;
+
+  // The custom data that was included in the subscription request, if any.
+  google.protobuf.Struct custom_data = 2;
+}
+
+// The request message to cancel a long-running operation.o
+message CancelOperationRequest {
+  // The unique identifier of the operation to cancel.
+  int32 operation_id = 1;
+}
+
+// The generic service for checking the status of long-running operations.
+service OperationService {
+  // Gets the current status of a long-running operation by its unique identifier.
+  rpc GetOperation(GetOperationRequest) returns (GetOperationResponse);
+
+  // Subscribes to notifications about the completion of a long-running operation.
+  // If the operation has already completed, the server will immediately respond with the final status and result of the operation.
+  rpc SubscribeToOperationCompletion(SubscribeToOperationCompletionRequest) returns (SubscribeToOperationCompletionResponse);
+
+  // Requests the cancellation of a long-running operation.
+  // The server will attempt to cancel the operation, but cancellation is not guaranteed and depends on the implementation of the operation.
+  rpc CancelOperation(CancelOperationRequest) returns (google.protobuf.Empty);
+}
+
+// The service for receiving notifications about the completion of long-running operations.
+service OperationSubscriptionService {
+  // Handles the operation completion notification, which includes the final status and result of the operation.
+  rpc NotifyOperationCompletion(OperationCompletionNotification) returns (google.protobuf.Empty);
+}
