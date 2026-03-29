@@ -12,7 +12,20 @@ function formatSoapDate(date: Date): string {
  * Builds the SOAP request body for the KeyRate operation.
  */
 function buildKeyRateSoapBody(fromDate: Date, toDate: Date): string {
-  return `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><KeyRate xmlns="http://web.cbr.ru/"><fromDate>${formatSoapDate(fromDate)}</fromDate><ToDate>${formatSoapDate(toDate)}</ToDate></KeyRate></soap:Body></soap:Envelope>`
+  return (
+    `<?xml version="1.0" encoding="utf-8"?>` +
+    `<soap:Envelope` +
+    ` xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"` +
+    ` xmlns:xsd="http://www.w3.org/2001/XMLSchema"` +
+    ` xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">` +
+    `<soap:Body>` +
+    `<KeyRate xmlns="http://web.cbr.ru/">` +
+    `<fromDate>${formatSoapDate(fromDate)}</fromDate>` +
+    `<ToDate>${formatSoapDate(toDate)}</ToDate>` +
+    `</KeyRate>` +
+    `</soap:Body>` +
+    `</soap:Envelope>`
+  )
 }
 
 /**
