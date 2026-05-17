@@ -271,6 +271,7 @@ export async function createTelegramBot(args: {
         chatId,
         userId,
         repliedMessageId,
+        responseMessageId: message.message_id,
         textResponse,
         isSuperAdminUser: candidateUserId =>
           args.superAdminUserId !== undefined && String(candidateUserId) === args.superAdminUserId,
@@ -778,7 +779,7 @@ function renderStoredNotificationMessage(input: {
 }): MessageElement {
   const content = input.content.trim()
   if (content.length > 0) {
-    return block(bold(input.title), { html: content })
+    return block(bold(input.title), "", { html: content })
   }
 
   return block(bold(input.title))

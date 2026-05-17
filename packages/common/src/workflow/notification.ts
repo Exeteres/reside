@@ -18,6 +18,10 @@ import type { InteractionActivities } from "../temporal"
 import type { MessageContent } from "../telegram"
 import { html } from "../telegram"
 
+type NotificationResponseResult = NotificationResponseJson & {
+  contextToken?: string
+}
+
 export type NotificationActionInput = {
   /**
    * The title of the action to be displayed to the user.
@@ -62,11 +66,13 @@ type NotificationResponsePayload<
   TRequiresTextResponse extends boolean,
 > = [CallbackActionNames<TActions>] extends [never]
   ? TRequiresTextResponse extends true
-    ? { type: "text"; text: string }
+    ? { type: "text"; text: string; contextToken?: string }
     : Record<never, never>
   : TRequiresTextResponse extends true
-    ? { type: "action"; actionName: CallbackActionNames<TActions> } | { type: "text"; text: string }
-    : { type: "action"; actionName: CallbackActionNames<TActions> }
+    ?
+        | { type: "action"; actionName: CallbackActionNames<TActions>; contextToken?: string }
+        | { type: "text"; text: string; contextToken?: string }
+    : { type: "action"; actionName: CallbackActionNames<TActions>; contextToken?: string }
 
 type NotificationCancelledPayload = {
   type: "cancelled"
@@ -394,7 +400,7 @@ async function waitNotificationOutput<
     },
   })
 
-  const operation = await waitForOperationResult<NotificationResponseJson>(
+  const operation = await waitForOperationResult<NotificationResponseResult>(
     operationId,
     subscribeToOperationCompletion,
   )
@@ -404,6 +410,7 @@ async function waitNotificationOutput<
       notificationId,
       type: "action",
       actionName: operation.actionName as keyof TActions,
+      contextToken: operation.contextToken,
     } as unknown as NotificationOutput<TActions, TRequiresTextResponse>
   }
 
@@ -412,6 +419,7 @@ async function waitNotificationOutput<
       notificationId,
       type: "text",
       text: operation.textResponse,
+      contextToken: operation.contextToken,
     } as unknown as NotificationOutput<TActions, TRequiresTextResponse>
   }
 

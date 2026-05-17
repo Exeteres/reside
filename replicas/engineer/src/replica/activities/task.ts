@@ -3,7 +3,7 @@ import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { PrismaClient } from "../../database"
 import type { EngineerAiRuntime } from "../ai-runtime"
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3"
 import { type CopilotSession, defineTool, type SessionConfig } from "@github/copilot-sdk"
@@ -19,6 +19,7 @@ const ENGINEER_SESSION_ARCHIVE_EXTENSION = "tgz"
 const ENGINEER_SESSION_ARCHIVE_PREFIX = "sessions"
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = ".engineer-session"
+const ENGINEER_SESSION_STATE_DIR = "session-state"
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
@@ -1280,6 +1281,10 @@ async function createCopilotEnvironment(
   iterationId: number,
 ): Promise<CopilotEnvironment> {
   const repository = await runtime.getRepositoryTarget()
+  const authenticatedCloneUrl = await createAuthenticatedCloneUrl(
+    runtime.getOctokit(),
+    repository.cloneUrl,
+  )
   const tempRoot = join("/tmp", `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`)
   const worktreePath = join(tempRoot, "workspace")
   const repositoryPath = join(worktreePath, repository.name)
@@ -1295,7 +1300,7 @@ async function createCopilotEnvironment(
     "--branch",
     "main",
     "--single-branch",
-    repository.cloneUrl,
+    authenticatedCloneUrl,
     repositoryPath,
   ])
   await runCommand(["git", "-C", repositoryPath, "checkout", "-b", branchName])
@@ -1308,7 +1313,7 @@ async function createCopilotEnvironment(
     "user.email",
     "2441612+reside-agent[bot]@users.noreply.github.com",
   ])
-  await runCommand(["bun", "--cwd", repositoryPath, "install", "--frozen-lockfile"])
+  await runCommand(["bun", "install", "--frozen-lockfile"], { cwd: repositoryPath })
 
   await mkdir(sessionDirPath, { recursive: true })
   const environment: CopilotEnvironment = {
@@ -1380,7 +1385,17 @@ async function restoreSessionArchive(
       return undefined
     }
 
-    await runCommand(["tar", "-xzf", archivePath, "-C", sessionDirPath, "--strip-components=1"])
+    const restoredSessionPath = getSessionStatePath(sessionDirPath, sessionId)
+    await rm(restoredSessionPath, { recursive: true, force: true })
+    await mkdir(restoredSessionPath, { recursive: true })
+    await runCommand([
+      "tar",
+      "-xzf",
+      archivePath,
+      "-C",
+      restoredSessionPath,
+      "--strip-components=1",
+    ])
     await rm(archivePath, { force: true })
     return sessionId
   } catch {
@@ -1394,14 +1409,25 @@ async function uploadSessionArchive(
   taskId: number,
   sessionId: string,
 ): Promise<void> {
+  const sessionStatePath = getSessionStatePath(sessionDirPath, sessionId)
+  try {
+    await access(sessionStatePath)
+  } catch {
+    return
+  }
+
   const archiveKey = getSessionArchiveKey(taskId)
-  const archivePath = join(sessionDirPath, `session.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`)
+  const archivePath = join(
+    "/tmp",
+    `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`,
+    `session-upload.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`,
+  )
   await runCommand([
     "tar",
     "-czf",
     archivePath,
     "-C",
-    sessionDirPath,
+    sessionStatePath,
     "--transform",
     `s,^,${sessionId}/,`,
     ".",
@@ -1422,6 +1448,10 @@ async function uploadSessionArchive(
 
 function getSessionArchiveKey(taskId: number): string {
   return `${ENGINEER_SESSION_ARCHIVE_PREFIX}/task-${taskId}.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`
+}
+
+function getSessionStatePath(sessionDirPath: string, sessionId: string): string {
+  return join(sessionDirPath, ENGINEER_SESSION_STATE_DIR, sessionId)
 }
 
 async function readSessionIdFromArchive(archivePath: string): Promise<string | undefined> {
@@ -1657,11 +1687,16 @@ function registerRealtimeSessionLogs(
 ): () => void {
   const unsubscribers = [
     session.on("assistant.message", event => {
+      const content = event.data.content.trim()
+      if (content.length === 0) {
+        return
+      }
+
       logger.info(
         'engineer copilot assistant message context="%s" message_id="%s" content="%s"',
         context,
         event.data.messageId,
-        event.data.content,
+        content,
       )
     }),
     session.on("tool.execution_start", event => {
@@ -1705,7 +1740,7 @@ function summarizeToolArguments(toolName: string, argumentsValue: unknown): stri
 
   if (toolName === "bash") {
     const command = typeof typedArguments.command === "string" ? typedArguments.command : ""
-    return `command=${truncateOneLine(command, 180)}`
+    return `command=${truncateOneLine(command, 1000)}`
   }
 
   const pathKeys = [
@@ -1995,24 +2030,29 @@ function watchRequestedCancellation({
   }
 }
 
-async function runCommand(command: string[]): Promise<void> {
-  const result = await runCommandWithOutput(command)
+async function runCommand(command: string[], options?: { cwd?: string }): Promise<void> {
+  const result = await runCommandWithOutput(command, options)
   if (result.exitCode === 0) {
     return
   }
 }
 
-async function runCommandWithOutput(command: string[]): Promise<{
+async function runCommandWithOutput(
+  command: string[],
+  options?: { cwd?: string },
+): Promise<{
   stdout: string
   stderr: string
   exitCode: number
 }> {
-  const commandText = truncateOneLine(command.join(" "), 300)
-  logger.info('engineer command started command="%s"', commandText)
+  const commandText = sanitizeSensitiveLogText(truncateOneLine(command.join(" "), 300))
+  const cwdText = options?.cwd ? truncateOneLine(options.cwd, 180) : ""
+  logger.info('engineer command started command="%s" cwd="%s"', commandText, cwdText)
 
   const process = Bun.spawn(command, {
     stdout: "pipe",
     stderr: "pipe",
+    cwd: options?.cwd,
   })
 
   const [stdout, stderr, exitCode] = await Promise.all([
@@ -2022,7 +2062,7 @@ async function runCommandWithOutput(command: string[]): Promise<{
   ])
 
   if (exitCode === 0) {
-    logger.info('engineer command completed command="%s"', commandText)
+    logger.info('engineer command completed command="%s" cwd="%s"', commandText, cwdText)
     return {
       stdout,
       stderr,
@@ -2030,11 +2070,12 @@ async function runCommandWithOutput(command: string[]): Promise<{
     }
   }
 
-  const stdoutText = truncateOneLine(stdout.trim(), 800)
-  const stderrText = truncateOneLine(stderr.trim(), 800)
+  const stdoutText = sanitizeSensitiveLogText(truncateOneLine(stdout.trim(), 800))
+  const stderrText = sanitizeSensitiveLogText(truncateOneLine(stderr.trim(), 800))
   logger.error(
-    'engineer command failed command="%s" exit_code="%s" stdout="%s" stderr="%s"',
+    'engineer command failed command="%s" cwd="%s" exit_code="%s" stdout="%s" stderr="%s"',
     commandText,
+    cwdText,
     String(exitCode),
     stdoutText,
     stderrText,
@@ -2043,6 +2084,34 @@ async function runCommandWithOutput(command: string[]): Promise<{
   throw new Error(
     `Command failed (exit ${exitCode}): ${commandText}; stdout: ${stdoutText || "<empty>"}; stderr: ${stderrText || "<empty>"}`,
   )
+}
+
+async function createAuthenticatedCloneUrl(
+  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
+  cloneUrl: string,
+): Promise<string> {
+  const authResult = await octokit.auth({
+    type: "installation",
+  })
+
+  const token =
+    typeof authResult === "object" && authResult !== null && "token" in authResult
+      ? String(authResult.token ?? "").trim()
+      : ""
+
+  if (token.length === 0) {
+    throw new Error("GitHub installation token is empty")
+  }
+
+  const encodedToken = encodeURIComponent(token)
+  return cloneUrl.replace(
+    "https://github.com/",
+    `https://x-access-token:${encodedToken}@github.com/`,
+  )
+}
+
+function sanitizeSensitiveLogText(value: string): string {
+  return value.replace(/x-access-token:[^@\s]+@github\.com/gi, "x-access-token:***@github.com")
 }
 
 function describeToolError(error: unknown): string {

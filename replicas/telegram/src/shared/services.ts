@@ -3,10 +3,7 @@ import { status as GrpcStatus } from "@grpc/grpc-js"
 import { OperationService } from "@reside/api/common/operation.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
 import { DefinitionService as InteractionDefinitionService } from "@reside/api/interaction/definition.v1"
-import {
-  type NotificationResponseJson,
-  NotificationService,
-} from "@reside/api/interaction/notification.v1"
+import { NotificationService } from "@reside/api/interaction/notification.v1"
 import {
   createClient,
   createCommonServices,
@@ -63,15 +60,26 @@ export async function createServices() {
         return {}
       }
 
-      const response = await prisma.notificationResponse.findUnique({
+      const operation = await prisma.operation.findUnique({
         where: {
-          operationId,
+          id: operationId,
+        },
+        select: {
+          customData: true,
+          notificationResponse: true,
         },
       })
 
+      if (operation === null) {
+        throw new Error(`Operation "${operationId}" is not found`)
+      }
+
+      const response = operation.notificationResponse
       if (response === null) {
         throw new Error(`Operation "${operationId}" has no notification response result`)
       }
+
+      const contextToken = readNotificationResponseContextToken(operation.customData)
 
       if (response.type === "ACTION") {
         if (!response.actionName) {
@@ -80,7 +88,8 @@ export async function createServices() {
 
         return {
           actionName: response.actionName,
-        } satisfies NotificationResponseJson
+          contextToken,
+        }
       }
 
       if (!response.textResponse) {
@@ -89,7 +98,8 @@ export async function createServices() {
 
       return {
         textResponse: response.textResponse,
-      } satisfies NotificationResponseJson
+        contextToken,
+      }
     },
 
     cancelOperation: async operationId => {
@@ -133,4 +143,18 @@ export async function createServices() {
     interactionOperationService,
     subjectService,
   }
+}
+
+function readNotificationResponseContextToken(customData: unknown): string | undefined {
+  if (typeof customData !== "object" || customData === null) {
+    return undefined
+  }
+
+  if (!("notificationResponseContextToken" in customData)) {
+    return undefined
+  }
+
+  const value = (customData as { notificationResponseContextToken?: unknown })
+    .notificationResponseContextToken
+  return typeof value === "string" && value.length > 0 ? value : undefined
 }

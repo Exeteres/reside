@@ -2,6 +2,7 @@ import type { GenericOperationService } from "@reside/common"
 import type { Operation, PrismaClient } from "../database"
 import { logger } from "@reside/common"
 import { isRecord } from "@reside/utils"
+import { createInteractionContextToken } from "../shared"
 
 export type CallbackCompletionResult =
   | { accepted: true; unauthorized: false; reason: "accepted" }
@@ -17,6 +18,7 @@ export async function completeOperationFromTextReply(args: {
   chatId: number
   userId: number
   repliedMessageId: number
+  responseMessageId: number
   textResponse: string
   canInteractWithChannel: (userId: number, channelName: string | null) => Promise<boolean>
   isSuperAdminUser: (userId: number) => boolean
@@ -43,12 +45,41 @@ export async function completeOperationFromTextReply(args: {
   }
 
   try {
+    const responseContextToken = await createInteractionContextToken({
+      chat_id: String(args.chatId),
+      message_id: args.responseMessageId,
+    })
+
     await args.prisma.notificationResponse.create({
       data: {
         operationId: operation.id,
         type: "TEXT",
         actionName: null,
         textResponse: args.textResponse,
+      },
+    })
+
+    const operationRecord = await args.prisma.operation.findUnique({
+      where: {
+        id: operation.id,
+      },
+      select: {
+        customData: true,
+      },
+    })
+
+    const existingCustomData =
+      operationRecord && isRecord(operationRecord.customData) ? operationRecord.customData : {}
+
+    await args.prisma.operation.update({
+      where: {
+        id: operation.id,
+      },
+      data: {
+        customData: {
+          ...existingCustomData,
+          notificationResponseContextToken: responseContextToken,
+        },
       },
     })
   } catch (error) {

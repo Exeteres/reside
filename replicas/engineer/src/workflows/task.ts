@@ -106,10 +106,12 @@ export const createTaskCommandHandler = defineCommandHandler({
     }
 
     let implementationPrompt = strings.notifications.taskExecution.initialPrompt
+    let implementationContextToken: string | undefined
     const taskId = planning.result.taskId
 
     while (true) {
       const implementationNotification = await sendNotification({
+        contextToken: implementationContextToken,
         channel: EngineerNotificationChannels.TASKS,
         title: strings.notifications.taskExecution.inProgressTitle,
         message: block(strings.notifications.taskExecution.inProgressMessage),
@@ -167,50 +169,67 @@ export const createTaskCommandHandler = defineCommandHandler({
       const implementationResult = finished ?? (await runPromise)
 
       if (implementationResult.status === "COMPLETED") {
-        await updateNotification({
+        const terminalReply = await updateNotification({
           notificationId: implementationNotification.notificationId,
           title: strings.notifications.taskExecution.doneTitle,
           content: renderMarkdownAsTelegramHtml(
             implementationResult.resultSummary ??
               strings.notifications.taskExecution.defaultSummary,
           ),
+          actions: {
+            cancel: {
+              title: strings.notifications.taskExecution.actions.cancel,
+            },
+          },
+          requiresTextResponse: true,
         })
+
+        if (terminalReply.type === "action") {
+          await activities.requestCancellation({ taskId })
+
+          await updateNotification({
+            notificationId: implementationNotification.notificationId,
+            title: strings.notifications.taskExecution.doneTitle,
+            content: block(strings.notifications.taskExecution.cancelledSummary),
+          })
+
+          return
+        }
+
+        await activities.reviveTaskFromFeedback({ taskId })
+        implementationPrompt = terminalReply.text
+        implementationContextToken = terminalReply.contextToken
       } else {
-        await updateNotification({
+        const terminalReply = await updateNotification({
           notificationId: implementationNotification.notificationId,
           title: strings.notifications.taskExecution.failedTitle,
           content: block(
             implementationResult.errorMessage ?? strings.notifications.taskExecution.defaultFailure,
           ),
-        })
-      }
-
-      const terminalReply = await sendNotification({
-        channel: EngineerNotificationChannels.TASKS,
-        title: strings.notifications.taskExecution.awaitingNextActionTitle,
-        message: block(strings.notifications.taskExecution.awaitingNextActionMessage),
-        actions: {
-          cancel: {
-            title: strings.notifications.taskExecution.actions.cancel,
+          actions: {
+            cancel: {
+              title: strings.notifications.taskExecution.actions.cancel,
+            },
           },
-        },
-        requiresTextResponse: true,
-      })
-
-      if (terminalReply.type === "action") {
-        await activities.requestCancellation({ taskId })
-
-        await updateNotification({
-          notificationId: terminalReply.notificationId,
-          title: strings.notifications.taskExecution.doneTitle,
-          content: block(strings.notifications.taskExecution.cancelledSummary),
+          requiresTextResponse: true,
         })
 
-        return
-      }
+        if (terminalReply.type === "action") {
+          await activities.requestCancellation({ taskId })
 
-      await activities.reviveTaskFromFeedback({ taskId })
-      implementationPrompt = terminalReply.text
+          await updateNotification({
+            notificationId: implementationNotification.notificationId,
+            title: strings.notifications.taskExecution.doneTitle,
+            content: block(strings.notifications.taskExecution.cancelledSummary),
+          })
+
+          return
+        }
+
+        await activities.reviveTaskFromFeedback({ taskId })
+        implementationPrompt = terminalReply.text
+        implementationContextToken = terminalReply.contextToken
+      }
     }
   },
 })
