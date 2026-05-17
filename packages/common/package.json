@@ -32,6 +32,7 @@
     "@temporalio/interceptors-opentelemetry": "^1.16.0",
     "@temporalio/worker": "catalog:",
     "@temporalio/workflow": "catalog:",
+    "fastify": "catalog:",
     "jose": "catalog:",
     "pg": "catalog:",
     "pino": "catalog:",
