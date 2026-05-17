@@ -21,6 +21,7 @@ export async function assertLoadApi(
   loadService: LoadServiceClient,
   permissionRequestService: PermissionRequestServiceClient,
   accessOperationService: OperationServiceClient,
+  alphaOperationService: OperationServiceClient,
   prisma: PrismaClient,
   customObjectsApi: CustomObjectsApi,
   scope: AlphaE2EScope,
@@ -45,9 +46,17 @@ export async function assertLoadApi(
       })
     }
 
-    await loadService.loadReplica({
+    const loadResponse = await loadService.loadReplica({
       name: scope.loadReplicaName,
       image: scope.loadReplicaImage,
+    })
+
+    if (!loadResponse.operation) {
+      throw new Error("Load replica response is missing operation")
+    }
+
+    await waitForOperationSuccess(loadResponse.operation, {
+      operationService: alphaOperationService,
     })
 
     await waitForReplicaCrdImage(customObjectsApi, scope.loadReplicaName, scope.loadReplicaImage)

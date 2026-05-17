@@ -20,6 +20,7 @@ try {
     services.loadService,
     services.permissionRequestService,
     services.accessOperationService,
+    services.alphaOperationService,
     services.prisma,
     customObjectsApi,
     scope,

@@ -4,15 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "@bufbuild/protobuf/wkt";
-import { file_google_protobuf_empty } from "@bufbuild/protobuf/wkt";
+import type { Operation, OperationJson } from "../common/operation.v1_pb";
+import { file_common_operation_v1 } from "../common/operation.v1_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file alpha/load.v1.proto.
  */
 export const file_alpha_load_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChNhbHBoYS9sb2FkLnYxLnByb3RvEhRyZXNpZGUuYWxwaGEubG9hZC52MSIxChJMb2FkUmVwbGljYVJlcXVlc3QSDAoEbmFtZRgBIAEoCRINCgVpbWFnZRgCIAEoCTJeCgtMb2FkU2VydmljZRJPCgtMb2FkUmVwbGljYRIoLnJlc2lkZS5hbHBoYS5sb2FkLnYxLkxvYWRSZXBsaWNhUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_empty]);
+  fileDesc("ChNhbHBoYS9sb2FkLnYxLnByb3RvEhRyZXNpZGUuYWxwaGEubG9hZC52MSIxChJMb2FkUmVwbGljYVJlcXVlc3QSDAoEbmFtZRgBIAEoCRINCgVpbWFnZRgCIAEoCSJPChNMb2FkUmVwbGljYVJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbjJxCgtMb2FkU2VydmljZRJiCgtMb2FkUmVwbGljYRIoLnJlc2lkZS5hbHBoYS5sb2FkLnYxLkxvYWRSZXBsaWNhUmVxdWVzdBopLnJlc2lkZS5hbHBoYS5sb2FkLnYxLkxvYWRSZXBsaWNhUmVzcG9uc2ViBnByb3RvMw", [file_common_operation_v1]);
 
 /**
  * The request message to load the new replica in the cluster or update the existing one.
@@ -64,6 +64,41 @@ export const LoadReplicaRequestSchema: GenMessage<LoadReplicaRequest, {jsonType:
   messageDesc(file_alpha_load_v1, 0);
 
 /**
+ * The response message for initiating replica loading.
+ *
+ * @generated from message reside.alpha.load.v1.LoadReplicaResponse
+ */
+export type LoadReplicaResponse = Message<"reside.alpha.load.v1.LoadReplicaResponse"> & {
+  /**
+   * The operation tracking CRD reconciliation and readiness.
+   *
+   * @generated from field: reside.common.operation.v1.Operation operation = 1;
+   */
+  operation?: Operation;
+};
+
+/**
+ * The response message for initiating replica loading.
+ *
+ * @generated from message reside.alpha.load.v1.LoadReplicaResponse
+ */
+export type LoadReplicaResponseJson = {
+  /**
+   * The operation tracking CRD reconciliation and readiness.
+   *
+   * @generated from field: reside.common.operation.v1.Operation operation = 1;
+   */
+  operation?: OperationJson;
+};
+
+/**
+ * Describes the message reside.alpha.load.v1.LoadReplicaResponse.
+ * Use `create(LoadReplicaResponseSchema)` to create a new message.
+ */
+export const LoadReplicaResponseSchema: GenMessage<LoadReplicaResponse, {jsonType: LoadReplicaResponseJson}> = /*@__PURE__*/
+  messageDesc(file_alpha_load_v1, 1);
+
+/**
  * The service that must be used to initiate loading of a new replica or update the existing one in the cluster.
  *
  * @generated from service reside.alpha.load.v1.LoadService
@@ -77,7 +112,7 @@ export const LoadService: GenService<{
   loadReplica: {
     methodKind: "unary";
     input: typeof LoadReplicaRequestSchema;
-    output: typeof EmptySchema;
+    output: typeof LoadReplicaResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_alpha_load_v1, 0);

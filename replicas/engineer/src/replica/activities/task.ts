@@ -1,12 +1,13 @@
 import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
+import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { PrismaClient } from "../../database"
 import type { EngineerAiRuntime } from "../ai-runtime"
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3"
 import { type CopilotSession, defineTool, type SessionConfig } from "@github/copilot-sdk"
+import { waitForOperationSuccess } from "@reside/api"
 import { logger, type StorageBucketService } from "@reside/common"
 import { toError } from "@reside/utils"
 import { z } from "zod"
@@ -14,9 +15,10 @@ import { strings } from "../../locale"
 
 const COPILOT_SESSION_TIMEOUT_MS = 20 * 60 * 1000
 const PROGRESS_NOTIFICATION_HISTORY_LIMIT = 5
-const ENGINEER_SESSION_ARCHIVE_NAME = "session.tar"
+const ENGINEER_SESSION_ARCHIVE_EXTENSION = "tgz"
+const ENGINEER_SESSION_ARCHIVE_PREFIX = "sessions"
+const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = ".engineer-session"
-const ENGINEER_SESSION_ID_FILE = "session-id"
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
@@ -90,8 +92,9 @@ type CopilotEnvironment = {
   workingDirectory: string
   repositoryPath: string
   sessionDirPath: string
-  readSessionId: () => Promise<string | undefined>
-  writeSessionId: (sessionId: string) => Promise<void>
+  taskId: number
+  storageBucketService: StorageBucketService
+  sessionId: string | undefined
   dispose: () => Promise<void>
 }
 
@@ -100,12 +103,14 @@ export function createCreateTaskActivities({
   prisma,
   notificationService,
   loadService,
+  alphaOperationService,
   storageBucketService,
 }: {
   runtime: EngineerAiRuntime
   prisma: PrismaClient
   notificationService: NotificationServiceClient
   loadService: LoadServiceClient
+  alphaOperationService: OperationServiceClient
   storageBucketService: StorageBucketService
 }) {
   return {
@@ -487,6 +492,7 @@ export function createCreateTaskActivities({
             createDeployReplicaTool({
               runtime,
               loadService,
+              alphaOperationService,
               owner,
               repo,
               branchName: `replica/task-${dbTaskId}/${iteration.id}`,
@@ -750,6 +756,7 @@ export function createCreateTaskActivities({
 function createDeployReplicaTool({
   runtime,
   loadService,
+  alphaOperationService,
   owner,
   repo,
   branchName,
@@ -757,6 +764,7 @@ function createDeployReplicaTool({
 }: {
   runtime: EngineerAiRuntime
   loadService: LoadServiceClient
+  alphaOperationService: OperationServiceClient
   owner: string
   repo: string
   branchName: string
@@ -768,71 +776,103 @@ function createDeployReplicaTool({
     parameters: z.object({
       replicaName: z.string().min(1),
     }),
-    handler: async _args => {
-      const input = z.object({ replicaName: z.string().min(1) }).parse(_args)
-      const octokit = runtime.getOctokit()
-      const startedAt = new Date()
-
-      const mergedPullRequest = await getMergedPullRequestForBranch({
-        octokit,
-        owner,
-        repo,
+    handler: async ({ replicaName }) => {
+      logger.info(
+        'engineer deploy_replica started replica="%s" branch="%s"',
+        replicaName,
         branchName,
-      })
+      )
 
-      if (!mergedPullRequest) {
-        throw new Error(
-          `deploy_replica requires a merged pull request for branch "${branchName}". Create and merge PR first.`,
-        )
-      }
+      try {
+        const octokit = runtime.getOctokit()
+        const startedAt = new Date()
 
-      if (mergedPullRequest.title.trim().length === 0) {
-        throw new Error(
-          `Merged pull request for branch "${branchName}" has empty title. Use a descriptive PR title and retry.`,
-        )
-      }
-
-      if (
-        issueNumber &&
-        !isIssueLinkedInPullRequest({
-          issueNumber,
-          title: mergedPullRequest.title,
-          body: mergedPullRequest.body,
+        const mergedPullRequest = await getMergedPullRequestForBranch({
+          octokit,
+          owner,
+          repo,
+          branchName,
         })
-      ) {
-        throw new Error(
-          `Merged pull request #${mergedPullRequest.number} must link issue #${issueNumber} in title/body (e.g. "Closes #${issueNumber}").`,
+
+        if (!mergedPullRequest) {
+          throw new Error(
+            `deploy_replica requires a merged pull request for branch "${branchName}". Create and merge PR first.`,
+          )
+        }
+
+        if (mergedPullRequest.title.trim().length === 0) {
+          throw new Error(
+            `Merged pull request for branch "${branchName}" has empty title. Use a descriptive PR title and retry.`,
+          )
+        }
+
+        if (
+          issueNumber &&
+          !isIssueLinkedInPullRequest({
+            issueNumber,
+            title: mergedPullRequest.title,
+            body: mergedPullRequest.body,
+          })
+        ) {
+          throw new Error(
+            `Merged pull request #${mergedPullRequest.number} must link issue #${issueNumber} in title/body (e.g. "Closes #${issueNumber}").`,
+          )
+        }
+
+        await octokit.rest.actions.createWorkflowDispatch({
+          owner,
+          repo,
+          workflow_id: "build-replica.yml",
+          ref: "main",
+          inputs: {
+            replica_name: replicaName,
+          },
+        })
+
+        const run = await waitForWorkflowRun({
+          octokit,
+          owner,
+          repo,
+          startedAt,
+        })
+        if (run.conclusion !== "success") {
+          throw new Error(
+            `Replica build workflow failed with conclusion "${run.conclusion}" (run: ${run.url}).`,
+          )
+        }
+
+        const loadReplicaResponse = await loadService.loadReplica({
+          name: replicaName,
+          image: `ghcr.io/exeteres/reside/replicas/${replicaName}:latest`,
+        })
+
+        if (!loadReplicaResponse.operation) {
+          throw new Error("Alpha load operation was not returned")
+        }
+
+        await waitForOperationSuccess(loadReplicaResponse.operation, {
+          operationService: alphaOperationService,
+        })
+
+        logger.info(
+          'engineer deploy_replica completed replica="%s" branch="%s"',
+          replicaName,
+          branchName,
         )
-      }
 
-      await octokit.rest.actions.createWorkflowDispatch({
-        owner,
-        repo,
-        workflow_id: "build-replica.yml",
-        ref: "main",
-        inputs: {
-          replica_name: input.replicaName,
-        },
-      })
-
-      const run = await waitForWorkflowRun({
-        octokit,
-        owner,
-        repo,
-        startedAt,
-      })
-      if (run.conclusion !== "success") {
-        throw new Error(
-          `Replica build workflow failed with conclusion "${run.conclusion}" (run: ${run.url}).`,
+        return `Replica ${replicaName} deployed successfully`
+      } catch (error) {
+        const errorDetails = describeToolError(error)
+        logger.error(
+          { error: toError(error) },
+          'engineer deploy_replica failed replica="%s" branch="%s" details="%s"',
+          replicaName,
+          branchName,
+          errorDetails,
         )
+
+        throw new Error(`deploy_replica failed: ${errorDetails}`)
       }
-
-      await loadService.loadReplica({
-        name: input.replicaName,
-        image: `ghcr.io/exeteres/reside/replicas/${input.replicaName}:latest`,
-      })
-
-      return `Replica ${input.replicaName} deployed successfully`
     },
   })
 }
@@ -859,74 +899,94 @@ function createPullRequestTool({
       title: z.string().min(1),
       body: z.string().min(1),
     }),
-    handler: async _args => {
-      const input = z.object({ title: z.string().min(1), body: z.string().min(1) }).parse(_args)
-      const octokit = runtime.getOctokit()
-
-      if (
-        issueNumber &&
-        !isIssueLinkedInPullRequest({ issueNumber, title: input.title, body: input.body })
-      ) {
-        throw new Error(
-          `Pull request body must link issue #${issueNumber} (for example: "Closes #${issueNumber}").`,
-        )
-      }
-
-      await runCommand([
-        "git",
-        "-C",
-        repositoryPath,
-        "push",
-        "--set-upstream",
-        "origin",
+    handler: async ({ title, body }) => {
+      logger.info(
+        'engineer create_pull_request started branch="%s" title="%s"',
         branchName,
-      ])
+        truncateOneLine(title, 160),
+      )
 
-      const existingPullRequests = await octokit.rest.pulls.list({
-        owner,
-        repo,
-        state: "open",
-        head: `${owner}:${branchName}`,
-      })
+      try {
+        const octokit = runtime.getOctokit()
 
-      const existingPullRequest = existingPullRequests.data[0]
-      const pullRequest = existingPullRequest
-        ? (
-            await octokit.rest.pulls.update({
-              owner,
-              repo,
-              pull_number: existingPullRequest.number,
-              title: input.title,
-              body: input.body,
-            })
-          ).data
-        : (
-            await octokit.rest.pulls.create({
-              owner,
-              repo,
-              base: "main",
-              head: branchName,
-              title: input.title,
-              body: input.body,
-            })
-          ).data
+        if (issueNumber && !isIssueLinkedInPullRequest({ issueNumber, title, body })) {
+          throw new Error(
+            `Pull request body must link issue #${issueNumber} (for example: "Closes #${issueNumber}").`,
+          )
+        }
 
-      await octokit.rest.pulls.merge({
-        owner,
-        repo,
-        pull_number: pullRequest.number,
-        merge_method: "rebase",
-      })
+        await runCommand([
+          "git",
+          "-C",
+          repositoryPath,
+          "push",
+          "--set-upstream",
+          "origin",
+          branchName,
+        ])
 
-      await octokit.rest.git
-        .deleteRef({
+        const existingPullRequests = await octokit.rest.pulls.list({
           owner,
           repo,
-          ref: `heads/${branchName}`,
+          state: "open",
+          head: `${owner}:${branchName}`,
         })
-        .catch(() => undefined)
 
-      return `Pull request #${pullRequest.number} merged: ${pullRequest.html_url}`
+        const existingPullRequest = existingPullRequests.data[0]
+        const pullRequest = existingPullRequest
+          ? (
+              await octokit.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: existingPullRequest.number,
+                title,
+                body,
+              })
+            ).data
+          : (
+              await octokit.rest.pulls.create({
+                owner,
+                repo,
+                base: "main",
+                head: branchName,
+                title,
+                body,
+              })
+            ).data
+
+        await octokit.rest.pulls.merge({
+          owner,
+          repo,
+          pull_number: pullRequest.number,
+          merge_method: "rebase",
+        })
+
+        await octokit.rest.git
+          .deleteRef({
+            owner,
+            repo,
+            ref: `heads/${branchName}`,
+          })
+          .catch(() => undefined)
+
+        logger.info(
+          'engineer create_pull_request completed branch="%s" pr_number="%s"',
+          branchName,
+          String(pullRequest.number),
+        )
+
+        return `Pull request #${pullRequest.number} merged: ${pullRequest.html_url}`
+      } catch (error) {
+        const errorDetails = describeToolError(error)
+        logger.error(
+          { error: toError(error) },
+          'engineer create_pull_request failed branch="%s" details="%s"',
+          branchName,
+          errorDetails,
+        )
+
+        throw new Error(`create_pull_request failed: ${errorDetails}`)
+      }
     },
   })
 }
@@ -1142,8 +1202,7 @@ function createSubmitIssueDraftTool(
   return defineTool("submit_issue_draft", {
     description: "Submit final GitHub issue draft title and body",
     parameters: issueDraftSchema,
-    handler: async (_args, context) => {
-      const parsedDraft = issueDraftSchema.parse(_args)
+    handler: async (parsedDraft, context) => {
       const existing = draftStatesBySessionId.get(context.sessionId) ?? {}
       existing.submittedDraft = parsedDraft
       draftStatesBySessionId.set(context.sessionId, existing)
@@ -1167,11 +1226,13 @@ async function createOrResumeSession({
   taskId: number
   iterationId?: number
 }): Promise<CopilotSession> {
-  const previousSessionId = await environment.readSessionId()
+  const previousSessionId = environment.sessionId
 
   if (previousSessionId) {
     try {
       const resumedSession = await copilotClient.resumeSession(previousSessionId, sessionConfig)
+      environment.sessionId = resumedSession.sessionId
+      await saveEnvironmentSessionArchive(environment)
 
       logger.info(
         'engineer copilot session resumed flow="%s" task_id="%s" iteration_id="%s" session_id="%s"',
@@ -1197,7 +1258,8 @@ async function createOrResumeSession({
   }
 
   const newSession = await copilotClient.createSession(sessionConfig)
-  await environment.writeSessionId(newSession.sessionId)
+  environment.sessionId = newSession.sessionId
+  await saveEnvironmentSessionArchive(environment)
 
   logger.info(
     'engineer copilot session created flow="%s" task_id="%s" iteration_id="%s" session_id="%s" source="%s"',
@@ -1218,12 +1280,14 @@ async function createCopilotEnvironment(
   iterationId: number,
 ): Promise<CopilotEnvironment> {
   const repository = await runtime.getRepositoryTarget()
-  const tempRoot = await mkdtemp(join(tmpdir(), "reside-engineer-"))
+  const tempRoot = join("/tmp", `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`)
   const worktreePath = join(tempRoot, "workspace")
   const repositoryPath = join(worktreePath, repository.name)
   const branchName = `replica/task-${taskId}/${iterationId}`
   const sessionDirPath = join(repositoryPath, ENGINEER_SESSION_DIR)
-  const sessionIdPath = join(sessionDirPath, ENGINEER_SESSION_ID_FILE)
+
+  await rm(tempRoot, { recursive: true, force: true })
+  await mkdir(worktreePath, { recursive: true })
 
   await runCommand([
     "git",
@@ -1244,77 +1308,145 @@ async function createCopilotEnvironment(
     "user.email",
     "2441612+reside-agent[bot]@users.noreply.github.com",
   ])
+  await runCommand(["bun", "--cwd", repositoryPath, "install", "--frozen-lockfile"])
 
   await mkdir(sessionDirPath, { recursive: true })
-  await restoreSessionArchive(storageBucketService, sessionDirPath)
-
-  return {
+  const environment: CopilotEnvironment = {
     workingDirectory: worktreePath,
     repositoryPath,
     sessionDirPath,
-    readSessionId: async () => {
-      try {
-        const sessionId = await readFile(sessionIdPath, "utf-8")
-        return sessionId.trim() || undefined
-      } catch {
-        return undefined
-      }
-    },
-    writeSessionId: async sessionId => {
-      await writeFile(sessionIdPath, sessionId, "utf-8")
-      await uploadSessionArchive(storageBucketService, sessionDirPath)
-    },
+    taskId,
+    storageBucketService,
+    sessionId: await restoreSessionArchive(storageBucketService, sessionDirPath, taskId),
     dispose: async () => {
-      await uploadSessionArchive(storageBucketService, sessionDirPath)
+      if (environment.sessionId) {
+        await uploadSessionArchive(
+          environment.storageBucketService,
+          environment.sessionDirPath,
+          environment.taskId,
+          environment.sessionId,
+        )
+      }
+
       await rm(tempRoot, { recursive: true, force: true })
     },
   }
+
+  return environment
+}
+
+async function saveEnvironmentSessionArchive(environment: CopilotEnvironment): Promise<void> {
+  const sessionId = environment.sessionId?.trim()
+  if (!sessionId) {
+    return
+  }
+
+  environment.sessionId = sessionId
+  await uploadSessionArchive(
+    environment.storageBucketService,
+    environment.sessionDirPath,
+    environment.taskId,
+    sessionId,
+  )
 }
 
 async function restoreSessionArchive(
   storageBucketService: StorageBucketService,
   sessionDirPath: string,
-): Promise<void> {
+  taskId: number,
+): Promise<string | undefined> {
+  const archiveKey = getSessionArchiveKey(taskId)
+  const archivePath = join(sessionDirPath, `session.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`)
+
   try {
     const object = await storageBucketService.client.send(
       new GetObjectCommand({
         Bucket: storageBucketService.bucket,
-        Key: ENGINEER_SESSION_ARCHIVE_NAME,
+        Key: archiveKey,
       }),
     )
 
     if (!object.Body) {
-      return
+      return undefined
     }
 
-    const archivePath = join(sessionDirPath, ENGINEER_SESSION_ARCHIVE_NAME)
     const bytes = await object.Body.transformToByteArray()
     await writeFile(archivePath, Buffer.from(bytes))
-    await runCommand(["tar", "-xf", archivePath, "-C", sessionDirPath])
+
+    const sessionId = await readSessionIdFromArchive(archivePath)
+    if (!sessionId) {
+      logger.warn('engineer session archive "%s" has invalid layout', archiveKey)
+      await rm(archivePath, { force: true })
+      return undefined
+    }
+
+    await runCommand(["tar", "-xzf", archivePath, "-C", sessionDirPath, "--strip-components=1"])
     await rm(archivePath, { force: true })
+    return sessionId
   } catch {
-    return
+    return undefined
   }
 }
 
 async function uploadSessionArchive(
   storageBucketService: StorageBucketService,
   sessionDirPath: string,
+  taskId: number,
+  sessionId: string,
 ): Promise<void> {
-  const archivePath = join(sessionDirPath, ENGINEER_SESSION_ARCHIVE_NAME)
-  await runCommand(["tar", "-cf", archivePath, "-C", sessionDirPath, "."])
+  const archiveKey = getSessionArchiveKey(taskId)
+  const archivePath = join(sessionDirPath, `session.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`)
+  await runCommand([
+    "tar",
+    "-czf",
+    archivePath,
+    "-C",
+    sessionDirPath,
+    "--transform",
+    `s,^,${sessionId}/,`,
+    ".",
+  ])
   const bytes = await readFile(archivePath)
 
   await storageBucketService.client.send(
     new PutObjectCommand({
       Bucket: storageBucketService.bucket,
-      Key: ENGINEER_SESSION_ARCHIVE_NAME,
+      Key: archiveKey,
       Body: bytes,
       ContentType: "application/x-tar",
     }),
   )
 
   await rm(archivePath, { force: true })
+}
+
+function getSessionArchiveKey(taskId: number): string {
+  return `${ENGINEER_SESSION_ARCHIVE_PREFIX}/task-${taskId}.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`
+}
+
+async function readSessionIdFromArchive(archivePath: string): Promise<string | undefined> {
+  const { stdout } = await runCommandWithOutput(["tar", "-tzf", archivePath])
+  const topLevelEntries = stdout
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => line.split("/")[0])
+    .filter((entry): entry is string => typeof entry === "string" && entry.length > 0)
+
+  const uniqueEntries = [...new Set(topLevelEntries)]
+  if (uniqueEntries.length !== 1) {
+    return undefined
+  }
+
+  const [candidate] = uniqueEntries
+  if (
+    !candidate ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)
+  ) {
+    return undefined
+  }
+
+  return candidate
 }
 
 async function upsertTaskIssue({
@@ -1864,18 +1996,118 @@ function watchRequestedCancellation({
 }
 
 async function runCommand(command: string[]): Promise<void> {
+  const result = await runCommandWithOutput(command)
+  if (result.exitCode === 0) {
+    return
+  }
+}
+
+async function runCommandWithOutput(command: string[]): Promise<{
+  stdout: string
+  stderr: string
+  exitCode: number
+}> {
+  const commandText = truncateOneLine(command.join(" "), 300)
+  logger.info('engineer command started command="%s"', commandText)
+
   const process = Bun.spawn(command, {
     stdout: "pipe",
     stderr: "pipe",
   })
 
-  const exitCode = await process.exited
+  const [stdout, stderr, exitCode] = await Promise.all([
+    process.stdout.text(),
+    process.stderr.text(),
+    process.exited,
+  ])
+
   if (exitCode === 0) {
-    return
+    logger.info('engineer command completed command="%s"', commandText)
+    return {
+      stdout,
+      stderr,
+      exitCode,
+    }
   }
 
-  const stderr = await process.stderr.text()
-  throw new Error(`Command failed: ${command.join(" ")} (${stderr.trim()})`)
+  const stdoutText = truncateOneLine(stdout.trim(), 800)
+  const stderrText = truncateOneLine(stderr.trim(), 800)
+  logger.error(
+    'engineer command failed command="%s" exit_code="%s" stdout="%s" stderr="%s"',
+    commandText,
+    String(exitCode),
+    stdoutText,
+    stderrText,
+  )
+
+  throw new Error(
+    `Command failed (exit ${exitCode}): ${commandText}; stdout: ${stdoutText || "<empty>"}; stderr: ${stderrText || "<empty>"}`,
+  )
+}
+
+function describeToolError(error: unknown): string {
+  const message =
+    typeof error === "object" && error !== null && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : String(error)
+
+  const status =
+    typeof error === "object" && error !== null && "status" in error
+      ? String((error as { status?: unknown }).status ?? "")
+      : ""
+
+  const response =
+    typeof error === "object" && error !== null && "response" in error
+      ? (error as { response?: unknown }).response
+      : undefined
+
+  const responseStatus =
+    response && typeof response === "object" && "status" in response
+      ? String((response as { status?: unknown }).status ?? "")
+      : ""
+  const responseMessage =
+    response && typeof response === "object" && "data" in response
+      ? extractResponseMessage((response as { data?: unknown }).data)
+      : ""
+
+  const parts = [message]
+  if (status.length > 0) {
+    parts.push(`status=${status}`)
+  }
+
+  if (responseStatus.length > 0) {
+    parts.push(`response_status=${responseStatus}`)
+  }
+
+  if (responseMessage.length > 0) {
+    parts.push(`response_message=${responseMessage}`)
+  }
+
+  return truncateOneLine(parts.filter(Boolean).join("; "), 1500)
+}
+
+function extractResponseMessage(value: unknown): string {
+  if (typeof value === "string") {
+    return value
+  }
+
+  if (!value || typeof value !== "object") {
+    return ""
+  }
+
+  if ("message" in value) {
+    return String((value as { message?: unknown }).message ?? "")
+  }
+
+  if ("error" in value) {
+    return String((value as { error?: unknown }).error ?? "")
+  }
+
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return ""
+  }
 }
 
 async function sleep(ms: number): Promise<void> {

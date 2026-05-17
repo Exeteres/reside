@@ -26,6 +26,12 @@ export const ru = {
     },
     load: {
       unknownReplicaTitle: "Неизвестная реплика",
+      operations: {
+        reconcileReplica: {
+          title: "Ожидание загрузки реплики",
+          description: "Ожидает применения CRD и готовности загруженной реплики.",
+        },
+      },
     },
   },
 }

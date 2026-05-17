@@ -38,24 +38,9 @@ export const ru = {
     },
     taskPlanning: {
       readyTitle: "План готов",
-      readyMessage: (
-        repositoryUrl: string,
-        issueUrl: string,
-        issueTitle: string,
-        resultSummary: string,
-      ) =>
-        [
-          `Репозиторий: ${repositoryUrl}`,
-          `Issue: ${issueUrl}`,
-          `Заголовок: ${issueTitle}`,
-          "",
-          "Резюме:",
-          resultSummary,
-          "",
-          "Подтвердите запуск реализации, отмените задачу или отправьте текстом правки к плану.",
-        ].join("\n"),
       actions: {
-        approve: "Запустить реализацию",
+        issue: "Открытьв GitHub",
+        approve: "Начать реализацию",
         cancel: "Отменить задачу",
       },
     },

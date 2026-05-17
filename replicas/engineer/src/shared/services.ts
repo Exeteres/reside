@@ -1,4 +1,5 @@
 import { LoadService } from "@reside/api/alpha/load.v1"
+import { OperationService } from "@reside/api/common/operation.v1"
 import {
   createClient,
   createCommonServices,
@@ -17,6 +18,7 @@ export async function createServices() {
   const temporalClient = await createTemporalClient(services)
   const storageBucketService = await createStorageBucketService(services)
   const alphaLoadService = createClient(LoadService, services.channels.alpha)
+  const alphaOperationService = createClient(OperationService, services.channels.alpha)
 
   return {
     ...services,
@@ -25,5 +27,6 @@ export async function createServices() {
     temporalClient,
     storageBucketService,
     alphaLoadService,
+    alphaOperationService,
   }
 }

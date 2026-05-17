@@ -1,5 +1,6 @@
 import { LoadService } from "@reside/api/alpha/load.v1"
 import { RegistrationService } from "@reside/api/alpha/registration.v1"
+import { OperationService } from "@reside/api/common/operation.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
 import {
   createClient,
@@ -27,6 +28,7 @@ export async function createServices() {
 
   const loadService = createClient(LoadService, services.channels.self)
   const registrationService = createClient(RegistrationService, services.channels.self)
+  const alphaOperationService = createClient(OperationService, services.channels.self)
   const subjectService = createClient(SubjectService, services.channels.self)
 
   return {
@@ -37,6 +39,7 @@ export async function createServices() {
     temporalClient,
     loadService,
     registrationService,
+    alphaOperationService,
     subjectService,
   }
 }

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package reside.alpha.load.v1;
 
-import "google/protobuf/empty.proto";
+import "common/operation.v1.proto";
 
 // The request message to load the new replica in the cluster or update the existing one.
 message LoadReplicaRequest {
@@ -16,5 +16,11 @@ message LoadReplicaRequest {
 // The service that must be used to initiate loading of a new replica or update the existing one in the cluster.
 service LoadService {
   // Requests the Alpha Replica to load a new replica or update the existing one in the cluster.
-  rpc LoadReplica(LoadReplicaRequest) returns (google.protobuf.Empty);
+  rpc LoadReplica(LoadReplicaRequest) returns (LoadReplicaResponse);
+}
+
+// The response message for initiating replica loading.
+message LoadReplicaResponse {
+  // The operation tracking CRD reconciliation and readiness.
+  reside.common.operation.v1.Operation operation = 1;
 }
