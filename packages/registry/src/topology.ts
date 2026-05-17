@@ -136,10 +136,22 @@ export const engineerReplica = defineReplica({
   },
 })
 
+export const helloReplica = defineReplica({
+  name: "hello",
+  dependencies: {
+    replicas: {
+      infra: infraReplica,
+      access: accessReplica,
+      interaction: telegramReplica,
+    },
+  },
+})
+
 export const topology = sortReplicasByDependencies([
   accessReplica,
   infraReplica,
   telegramReplica,
   engineerReplica,
   alphaReplica,
+  helloReplica,
 ])

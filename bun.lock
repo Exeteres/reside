@@ -95,6 +95,7 @@
         "@temporalio/interceptors-opentelemetry": "^1.16.0",
         "@temporalio/worker": "catalog:",
         "@temporalio/workflow": "catalog:",
+        "fastify": "catalog:",
         "jose": "catalog:",
         "pg": "catalog:",
         "pino": "catalog:",
@@ -177,6 +178,23 @@
         "@typescript/native-preview": "catalog:",
         "octokit": "catalog:",
         "zod": "catalog:",
+      },
+    },
+    "replicas/hello": {
+      "name": "@replicas/hello",
+      "dependencies": {
+        "@connectrpc/connect": "catalog:",
+        "@connectrpc/connect-fastify": "catalog:",
+        "@temporalio/client": "catalog:",
+        "@temporalio/worker": "catalog:",
+        "@temporalio/workflow": "catalog:",
+        "fastify": "catalog:",
+      },
+      "devDependencies": {
+        "@reside/api": "workspace:*",
+        "@reside/common": "workspace:*",
+        "@reside/registry": "workspace:*",
+        "@typescript/native-preview": "catalog:",
       },
     },
     "replicas/infra": {
@@ -884,6 +902,8 @@
     "@replicas/alpha": ["@replicas/alpha@workspace:replicas/alpha"],
 
     "@replicas/engineer": ["@replicas/engineer@workspace:replicas/engineer"],
+
+    "@replicas/hello": ["@replicas/hello@workspace:replicas/hello"],
 
     "@replicas/infra": ["@replicas/infra@workspace:replicas/infra"],
 
