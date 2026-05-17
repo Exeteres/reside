@@ -13,7 +13,7 @@ import { z } from "zod"
 import { strings } from "../../locale"
 
 const COPILOT_SESSION_TIMEOUT_MS = 20 * 60 * 1000
-const GRAPHQL_FEATURES_HEADER = "issues_copilot_assignment_api_support"
+const PROGRESS_NOTIFICATION_HISTORY_LIMIT = 5
 const ENGINEER_SESSION_ARCHIVE_NAME = "session.tar"
 const ENGINEER_SESSION_DIR = ".engineer-session"
 const ENGINEER_SESSION_ID_FILE = "session-id"
@@ -210,6 +210,14 @@ export function createCreateTaskActivities({
           },
         })
 
+        await syncTaskIssueState({
+          runtime,
+          prisma,
+          taskId: task.id,
+          state: "CLOSED",
+          stateReason: "NOT_PLANNED",
+        })
+
         throw error
       } finally {
         if (environment) {
@@ -322,6 +330,15 @@ export function createCreateTaskActivities({
             status: "FAILED",
           },
         })
+
+        await syncTaskIssueState({
+          runtime,
+          prisma,
+          taskId: dbTaskId,
+          state: "CLOSED",
+          stateReason: "NOT_PLANNED",
+        })
+
         throw error
       } finally {
         await environment.dispose()
@@ -340,6 +357,13 @@ export function createCreateTaskActivities({
           phase: "IMPLEMENTATION",
           status: "IN_PROGRESS",
         },
+      })
+
+      await syncTaskIssueState({
+        runtime,
+        prisma,
+        taskId: dbTaskId,
+        state: "OPEN",
       })
     },
 
@@ -377,6 +401,14 @@ export function createCreateTaskActivities({
         data: {
           status: "CANCELLED",
         },
+      })
+
+      await syncTaskIssueState({
+        runtime,
+        prisma,
+        taskId: dbTaskId,
+        state: "CLOSED",
+        stateReason: "NOT_PLANNED",
       })
     },
 
@@ -424,6 +456,18 @@ export function createCreateTaskActivities({
 
       let summary = ""
       let failureMessage = ""
+      const reportImplementationProgress = createProgressReporter({
+        notificationService,
+        notificationId: parsedInput.progressNotificationId,
+        title: strings.notifications.taskExecution.inProgressTitle,
+        prefix: strings.notifications.taskExecution.runningAwaitingInput,
+        actions: [
+          {
+            name: "cancel",
+            title: strings.notifications.taskExecution.actions.cancel,
+          },
+        ],
+      })
 
       try {
         const sessionConfig: SessionConfig = {
@@ -431,9 +475,35 @@ export function createCreateTaskActivities({
           workingDirectory: environment.repositoryPath,
           configDir: environment.sessionDirPath,
           onPermissionRequest: async () => ({ kind: "approved" as const }),
-          tools: [createDeployReplicaTool({ runtime, loadService, owner, repo })],
+          tools: [
+            createPullRequestTool({
+              runtime,
+              owner,
+              repo,
+              repositoryPath: environment.repositoryPath,
+              branchName: `replica/task-${dbTaskId}/${iteration.id}`,
+              issueNumber: task.issueId ?? undefined,
+            }),
+            createDeployReplicaTool({
+              runtime,
+              loadService,
+              owner,
+              repo,
+              branchName: `replica/task-${dbTaskId}/${iteration.id}`,
+              issueNumber: task.issueId ?? undefined,
+            }),
+          ],
           hooks: {
-            onPreToolUse: async () => {
+            onPreToolUse: async toolInvocation => {
+              const bashCommand = extractBashCommand(toolInvocation)
+              if (isForbiddenImplementationGitCommand(bashCommand)) {
+                return {
+                  permissionDecision: "deny" as const,
+                  permissionDecisionReason:
+                    "Use git add/git commit only. Do not run git push or branch-manipulation commands; use create_pull_request tool.",
+                }
+              }
+
               return {
                 permissionDecision: "allow" as const,
               }
@@ -453,19 +523,7 @@ export function createCreateTaskActivities({
         const unsubscribeRealtimeLogs = registerRealtimeSessionLogs(
           session,
           "implementation",
-          async progressLine => {
-            const normalizedProgressLine = normalizeProgressLine(progressLine)
-            if (!normalizedProgressLine) {
-              return
-            }
-
-            await updateProgressNotification(
-              notificationService,
-              parsedInput.progressNotificationId,
-              strings.notifications.taskExecution.inProgressTitle,
-              normalizedProgressLine,
-            )
-          },
+          reportImplementationProgress,
         )
 
         const cancellationWatcher = watchRequestedCancellation({
@@ -482,11 +540,19 @@ export function createCreateTaskActivities({
               prompt: [
                 `Repository: ${owner}/${repo}`,
                 `Branch: replica/task-${dbTaskId}/${iteration.id}`,
+                task.issueId
+                  ? `Issue: #${task.issueId}`
+                  : "Issue: create and link one before deploy.",
                 "You are in implementation phase.",
-                "You can edit code, run commands, make commits, and use create_pull_request.",
+                "Git environment is already configured for commits on the provided branch.",
+                "Do not run git push and do not manipulate branches (no checkout/switch/branch/rebase/cherry-pick/reset).",
+                "Use only git add/git commit on the provided branch.",
+                "Use create_pull_request tool to push commits, create PR, merge with rebase, and delete source branch.",
+                "Before calling deploy_replica, you MUST commit your changes, then call create_pull_request with your own descriptive title.",
+                "PR body MUST link the issue (for example: Closes #<issue-number>).",
                 "Pull requests must use rebase merge and delete source branch.",
-                "If PR conflicts, rebase on latest main, resolve conflicts, commit, and retry create_pull_request.",
-                "Use deploy_replica tool to perform full deploy sequence once implementation is complete.",
+                "Use deploy_replica tool only after merged PR exists on this branch.",
+                "If deploy_replica fails, report the exact failure reason and continue by fixing the root cause.",
                 "Finish with a short 3-5 sentence summary in russian.",
                 `Current user request: ${parsedInput.prompt}`,
               ].join("\n"),
@@ -531,6 +597,14 @@ export function createCreateTaskActivities({
             },
           })
 
+          await syncTaskIssueState({
+            runtime,
+            prisma,
+            taskId: dbTaskId,
+            state: "CLOSED",
+            stateReason: "NOT_PLANNED",
+          })
+
           await environment.dispose()
 
           return implementationResultSchema.parse({
@@ -558,6 +632,14 @@ export function createCreateTaskActivities({
           data: {
             resultSummary: finalSummary,
           },
+        })
+
+        await syncTaskIssueState({
+          runtime,
+          prisma,
+          taskId: dbTaskId,
+          state: "CLOSED",
+          stateReason: "COMPLETED",
         })
 
         await environment.dispose()
@@ -588,6 +670,14 @@ export function createCreateTaskActivities({
           },
         })
 
+        await syncTaskIssueState({
+          runtime,
+          prisma,
+          taskId: dbTaskId,
+          state: "CLOSED",
+          stateReason: "NOT_PLANNED",
+        })
+
         await environment.dispose()
 
         return implementationResultSchema.parse({
@@ -609,6 +699,13 @@ export function createCreateTaskActivities({
           phase: "IMPLEMENTATION",
           status: "IN_PROGRESS",
         },
+      })
+
+      await syncTaskIssueState({
+        runtime,
+        prisma,
+        taskId: dbTaskId,
+        state: "OPEN",
       })
     },
 
@@ -655,11 +752,15 @@ function createDeployReplicaTool({
   loadService,
   owner,
   repo,
+  branchName,
+  issueNumber,
 }: {
   runtime: EngineerAiRuntime
   loadService: LoadServiceClient
   owner: string
   repo: string
+  branchName: string
+  issueNumber?: number
 }) {
   return defineTool("deploy_replica", {
     description:
@@ -670,6 +771,39 @@ function createDeployReplicaTool({
     handler: async _args => {
       const input = z.object({ replicaName: z.string().min(1) }).parse(_args)
       const octokit = runtime.getOctokit()
+      const startedAt = new Date()
+
+      const mergedPullRequest = await getMergedPullRequestForBranch({
+        octokit,
+        owner,
+        repo,
+        branchName,
+      })
+
+      if (!mergedPullRequest) {
+        throw new Error(
+          `deploy_replica requires a merged pull request for branch "${branchName}". Create and merge PR first.`,
+        )
+      }
+
+      if (mergedPullRequest.title.trim().length === 0) {
+        throw new Error(
+          `Merged pull request for branch "${branchName}" has empty title. Use a descriptive PR title and retry.`,
+        )
+      }
+
+      if (
+        issueNumber &&
+        !isIssueLinkedInPullRequest({
+          issueNumber,
+          title: mergedPullRequest.title,
+          body: mergedPullRequest.body,
+        })
+      ) {
+        throw new Error(
+          `Merged pull request #${mergedPullRequest.number} must link issue #${issueNumber} in title/body (e.g. "Closes #${issueNumber}").`,
+        )
+      }
 
       await octokit.rest.actions.createWorkflowDispatch({
         owner,
@@ -681,9 +815,16 @@ function createDeployReplicaTool({
         },
       })
 
-      const run = await waitForWorkflowRun(octokit, owner, repo, input.replicaName)
+      const run = await waitForWorkflowRun({
+        octokit,
+        owner,
+        repo,
+        startedAt,
+      })
       if (run.conclusion !== "success") {
-        throw new Error(`Replica build workflow failed with conclusion "${run.conclusion}"`)
+        throw new Error(
+          `Replica build workflow failed with conclusion "${run.conclusion}" (run: ${run.url}).`,
+        )
       }
 
       await loadService.loadReplica({
@@ -696,25 +837,121 @@ function createDeployReplicaTool({
   })
 }
 
-async function waitForWorkflowRun(
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  owner: string,
-  repo: string,
-  replicaName: string,
-): Promise<{ conclusion: string | null }> {
+function createPullRequestTool({
+  runtime,
+  owner,
+  repo,
+  repositoryPath,
+  branchName,
+  issueNumber,
+}: {
+  runtime: EngineerAiRuntime
+  owner: string
+  repo: string
+  repositoryPath: string
+  branchName: string
+  issueNumber?: number
+}) {
+  return defineTool("create_pull_request", {
+    description:
+      "Pushes committed changes from current branch, creates pull request, merges it with rebase and deletes source branch",
+    parameters: z.object({
+      title: z.string().min(1),
+      body: z.string().min(1),
+    }),
+    handler: async _args => {
+      const input = z.object({ title: z.string().min(1), body: z.string().min(1) }).parse(_args)
+      const octokit = runtime.getOctokit()
+
+      if (
+        issueNumber &&
+        !isIssueLinkedInPullRequest({ issueNumber, title: input.title, body: input.body })
+      ) {
+        throw new Error(
+          `Pull request body must link issue #${issueNumber} (for example: "Closes #${issueNumber}").`,
+        )
+      }
+
+      await runCommand([
+        "git",
+        "-C",
+        repositoryPath,
+        "push",
+        "--set-upstream",
+        "origin",
+        branchName,
+      ])
+
+      const existingPullRequests = await octokit.rest.pulls.list({
+        owner,
+        repo,
+        state: "open",
+        head: `${owner}:${branchName}`,
+      })
+
+      const existingPullRequest = existingPullRequests.data[0]
+      const pullRequest = existingPullRequest
+        ? (
+            await octokit.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: existingPullRequest.number,
+              title: input.title,
+              body: input.body,
+            })
+          ).data
+        : (
+            await octokit.rest.pulls.create({
+              owner,
+              repo,
+              base: "main",
+              head: branchName,
+              title: input.title,
+              body: input.body,
+            })
+          ).data
+
+      await octokit.rest.pulls.merge({
+        owner,
+        repo,
+        pull_number: pullRequest.number,
+        merge_method: "rebase",
+      })
+
+      await octokit.rest.git
+        .deleteRef({
+          owner,
+          repo,
+          ref: `heads/${branchName}`,
+        })
+        .catch(() => undefined)
+
+      return `Pull request #${pullRequest.number} merged: ${pullRequest.html_url}`
+    },
+  })
+}
+
+async function waitForWorkflowRun(input: {
+  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
+  owner: string
+  repo: string
+  startedAt: Date
+}): Promise<{ conclusion: string | null; url: string }> {
+  const minCreatedAt = input.startedAt.getTime() - 15_000
+
   for (let attempt = 0; attempt < 180; attempt += 1) {
-    const runs = await octokit.rest.actions.listWorkflowRuns({
-      owner,
-      repo,
+    const runs = await input.octokit.rest.actions.listWorkflowRuns({
+      owner: input.owner,
+      repo: input.repo,
       workflow_id: "build-replica.yml",
       branch: "main",
       event: "workflow_dispatch",
       per_page: 10,
     })
 
-    const run = runs.data.workflow_runs.find(candidate => {
-      return candidate.display_title.includes(replicaName)
-    })
+    const run = runs.data.workflow_runs.find(
+      candidate => new Date(candidate.created_at).getTime() >= minCreatedAt,
+    )
 
     if (!run) {
       await sleep(2000)
@@ -728,10 +965,60 @@ async function waitForWorkflowRun(
 
     return {
       conclusion: run.conclusion,
+      url: run.html_url,
     }
   }
 
-  throw new Error("Timed out waiting for deploy workflow completion")
+  throw new Error("Timed out waiting for build-replica workflow completion")
+}
+
+async function getMergedPullRequestForBranch({
+  octokit,
+  owner,
+  repo,
+  branchName,
+}: {
+  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
+  owner: string
+  repo: string
+  branchName: string
+}): Promise<{ number: number; title: string; body: string } | undefined> {
+  const pulls = await octokit.rest.pulls.list({
+    owner,
+    repo,
+    state: "closed",
+    head: `${owner}:${branchName}`,
+    per_page: 20,
+    sort: "updated",
+    direction: "desc",
+  })
+
+  const mergedPullRequest = pulls.data.find(pull => {
+    return Boolean(pull.merged_at)
+  })
+
+  if (!mergedPullRequest) {
+    return undefined
+  }
+
+  return {
+    number: mergedPullRequest.number,
+    title: mergedPullRequest.title ?? "",
+    body: mergedPullRequest.body ?? "",
+  }
+}
+
+function isIssueLinkedInPullRequest({
+  issueNumber,
+  title,
+  body,
+}: {
+  issueNumber: number
+  title: string
+  body: string
+}): boolean {
+  const combined = `${title}\n${body}`.toLowerCase()
+  return combined.includes(`#${issueNumber}`)
 }
 
 async function runPlanningSession({
@@ -801,22 +1088,16 @@ async function runPlanningSession({
     taskId,
   })
 
+  const reportPlanningProgress = createProgressReporter({
+    notificationService,
+    notificationId: progressNotificationId,
+    title: strings.notifications.taskAnalysis.title,
+  })
+
   const unsubscribeRealtimeLogs = registerRealtimeSessionLogs(
     session,
     "planning",
-    async progressLine => {
-      const normalizedProgressLine = normalizeProgressLine(progressLine)
-      if (!normalizedProgressLine) {
-        return
-      }
-
-      await updateProgressNotification(
-        notificationService,
-        progressNotificationId,
-        strings.notifications.taskAnalysis.title,
-        normalizedProgressLine,
-      )
-    },
+    reportPlanningProgress,
   )
 
   let finalSummary = ""
@@ -828,6 +1109,7 @@ async function runPlanningSession({
           `Repository: ${repository.owner}/${repository.name}`,
           `Task id: ${taskId}`,
           "Planning phase: produce issue draft update only.",
+          "Issue title, issue body, and plan summary MUST be in russian.",
           "Use submit_issue_draft exactly once.",
           "End assistant response with short 3-5 sentence russian summary.",
           `User prompt: ${prompt}`,
@@ -953,6 +1235,15 @@ async function createCopilotEnvironment(
     repositoryPath,
   ])
   await runCommand(["git", "-C", repositoryPath, "checkout", "-b", branchName])
+  await runCommand(["git", "-C", repositoryPath, "config", "user.name", "reside-agent"])
+  await runCommand([
+    "git",
+    "-C",
+    repositoryPath,
+    "config",
+    "user.email",
+    "2441612+reside-agent[bot]@users.noreply.github.com",
+  ])
 
   await mkdir(sessionDirPath, { recursive: true })
   await restoreSessionArchive(storageBucketService, sessionDirPath)
@@ -1099,79 +1390,19 @@ async function createIssueWithoutAssignee(
   title: string,
   body: string,
 ): Promise<RepositoryIssue> {
-  const repositoryInfo = await executeGraphqlWithFeatures<{
-    repository: {
-      id: string
-    } | null
-  }>(
-    octokit,
-    `
-      query($owner: String!, $name: String!) {
-        repository(owner: $owner, name: $name) {
-          id
-        }
-      }
-    `,
-    {
-      owner,
-      name: repo,
-    },
-  )
-
-  const repositoryId = repositoryInfo.repository?.id
-  if (!repositoryId) {
-    throw new Error(`Repository "${owner}/${repo}" was not found in GitHub response`)
-  }
-
-  const createdIssue = await executeGraphqlWithFeatures<{
-    createIssue: {
-      issue: {
-        id: string
-        number: number
-        title: string
-        body: string | null
-        url: string
-      } | null
-    } | null
-  }>(
-    octokit,
-    `
-      mutation($repositoryId: ID!, $title: String!, $body: String!) {
-        createIssue(
-          input: {
-            repositoryId: $repositoryId
-            title: $title
-            body: $body
-          }
-        ) {
-          issue {
-            id
-            number
-            title
-            body
-            url
-          }
-        }
-      }
-    `,
-    {
-      repositoryId,
-      title,
-      body,
-    },
-  )
-
-  const issue = createdIssue.createIssue?.issue
-  if (!issue) {
-    throw new Error("GitHub issue creation did not return created issue")
-  }
+  const createdIssue = await octokit.rest.issues.create({
+    owner,
+    repo,
+    title,
+    body,
+  })
 
   return {
-    id: issue.id,
-    number: issue.number,
-    title: issue.title,
-    body: issue.body ?? "",
-    url: issue.url,
+    id: String(createdIssue.data.id),
+    number: createdIssue.data.number,
+    title: createdIssue.data.title,
+    body: createdIssue.data.body ?? "",
+    url: createdIssue.data.html_url,
   }
 }
 
@@ -1181,49 +1412,18 @@ async function getRepositoryIssueByNumber(
   repo: string,
   issueNumber: number,
 ): Promise<RepositoryIssue> {
-  const result = await executeGraphqlWithFeatures<{
-    repository: {
-      issue: {
-        id: string
-        number: number
-        title: string
-        body: string | null
-        url: string
-      } | null
-    } | null
-  }>(
-    octokit,
-    `
-      query($owner: String!, $name: String!, $number: Int!) {
-        repository(owner: $owner, name: $name) {
-          issue(number: $number) {
-            id
-            number
-            title
-            body
-            url
-          }
-        }
-      }
-    `,
-    {
-      owner,
-      name: repo,
-      number: issueNumber,
-    },
-  )
-
-  const issue = result.repository?.issue
-  if (!issue) {
-    throw new Error(`Issue "${owner}/${repo}#${issueNumber}" was not found in GitHub response`)
-  }
+  const issue = await octokit.rest.issues.get({
+    owner,
+    repo,
+    issue_number: issueNumber,
+  })
 
   return {
-    id: issue.id,
-    number: issue.number,
-    title: issue.title,
-    body: issue.body ?? "",
-    url: issue.url,
+    id: String(issue.data.id),
+    number: issue.data.number,
+    title: issue.data.title,
+    body: issue.data.body ?? "",
+    url: issue.data.html_url,
   }
 }
 
@@ -1238,66 +1438,84 @@ async function updateRepositoryIssue(
     state?: "OPEN" | "CLOSED"
   },
 ): Promise<RepositoryIssue> {
-  const issue = await getRepositoryIssueByNumber(octokit, owner, repo, issueNumber)
-
-  const updateResult = await executeGraphqlWithFeatures<{
-    updateIssue: {
-      issue: {
-        id: string
-        number: number
-        title: string
-        body: string | null
-        url: string
-      } | null
-    } | null
-  }>(
-    octokit,
-    `
-      mutation($id: ID!, $title: String, $body: String, $state: IssueState) {
-        updateIssue(input: { id: $id, title: $title, body: $body, state: $state }) {
-          issue {
-            id
-            number
-            title
-            body
-            url
-          }
-        }
-      }
-    `,
-    {
-      id: issue.id,
-      title: updates.title,
-      body: updates.body,
-      state: updates.state,
-    },
-  )
-
-  const updatedIssue = updateResult.updateIssue?.issue
-  if (!updatedIssue) {
-    throw new Error(`Issue "${owner}/${repo}#${issueNumber}" was not updated in GitHub response`)
-  }
+  const updatedIssue = await octokit.rest.issues.update({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    title: updates.title,
+    body: updates.body,
+    state: updates.state?.toLowerCase() as "open" | "closed" | undefined,
+  })
 
   return {
-    id: updatedIssue.id,
-    number: updatedIssue.number,
-    title: updatedIssue.title,
-    body: updatedIssue.body ?? "",
-    url: updatedIssue.url,
+    id: String(updatedIssue.data.id),
+    number: updatedIssue.data.number,
+    title: updatedIssue.data.title,
+    body: updatedIssue.data.body ?? "",
+    url: updatedIssue.data.html_url,
   }
 }
 
-function executeGraphqlWithFeatures<TResponse>(
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  query: string,
-  variables?: Record<string, unknown>,
-): Promise<TResponse> {
-  return octokit.graphql<TResponse>(query, {
-    ...variables,
-    headers: {
-      "GraphQL-Features": GRAPHQL_FEATURES_HEADER,
+async function syncTaskIssueState({
+  runtime,
+  prisma,
+  taskId,
+  state,
+  stateReason,
+}: {
+  runtime: EngineerAiRuntime
+  prisma: PrismaClient
+  taskId: number
+  state: "OPEN" | "CLOSED"
+  stateReason?: "COMPLETED" | "NOT_PLANNED"
+}): Promise<void> {
+  const task = await prisma.task.findUnique({
+    where: {
+      id: taskId,
+    },
+    select: {
+      issueId: true,
     },
   })
+
+  if (!task?.issueId) {
+    return
+  }
+
+  const repository = await runtime.getRepositoryTarget()
+  await updateRepositoryIssueState(runtime.getOctokit(), {
+    owner: repository.owner,
+    repo: repository.name,
+    issueNumber: task.issueId,
+    state,
+    stateReason,
+  })
+}
+
+async function updateRepositoryIssueState(
+  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
+  input: {
+    owner: string
+    repo: string
+    issueNumber: number
+    state: "OPEN" | "CLOSED"
+    stateReason?: "COMPLETED" | "NOT_PLANNED"
+  },
+): Promise<void> {
+  await octokit.rest.issues.update({
+    owner: input.owner,
+    repo: input.repo,
+    issue_number: input.issueNumber,
+    state: input.state.toLowerCase() as "open" | "closed",
+    state_reason:
+      input.state === "CLOSED" && input.stateReason
+        ? mapIssueStateReason(input.stateReason)
+        : undefined,
+  })
+}
+
+function mapIssueStateReason(reason: "COMPLETED" | "NOT_PLANNED"): "completed" | "not_planned" {
+  return reason === "COMPLETED" ? "completed" : "not_planned"
 }
 
 function registerRealtimeSessionLogs(
@@ -1315,11 +1533,14 @@ function registerRealtimeSessionLogs(
       )
     }),
     session.on("tool.execution_start", event => {
+      const argumentSummary = summarizeToolArguments(event.data.toolName, event.data.arguments)
+
       logger.info(
-        'engineer copilot tool execution started context="%s" tool_name="%s" tool_call_id="%s"',
+        'engineer copilot tool execution started context="%s" tool_name="%s" tool_call_id="%s" args="%s"',
         context,
         event.data.toolName,
         event.data.toolCallId,
+        argumentSummary,
       )
 
       if (event.data.toolName === "report_intent") {
@@ -1343,18 +1564,188 @@ function registerRealtimeSessionLogs(
   }
 }
 
+function summarizeToolArguments(toolName: string, argumentsValue: unknown): string {
+  if (!argumentsValue || typeof argumentsValue !== "object") {
+    return "{}"
+  }
+
+  const typedArguments = argumentsValue as Record<string, unknown>
+
+  if (toolName === "bash") {
+    const command = typeof typedArguments.command === "string" ? typedArguments.command : ""
+    return `command=${truncateOneLine(command, 180)}`
+  }
+
+  const pathKeys = [
+    "filePath",
+    "path",
+    "dirPath",
+    "workspaceRoot",
+    "workingDirectory",
+    "includePattern",
+    "query",
+  ]
+
+  const pathParts = pathKeys
+    .map(key => {
+      const value = typedArguments[key]
+      if (typeof value !== "string" || value.length === 0) {
+        return undefined
+      }
+
+      return `${key}=${truncateOneLine(value, 180)}`
+    })
+    .filter((value): value is string => Boolean(value))
+
+  if (pathParts.length > 0) {
+    return pathParts.join(" ")
+  }
+
+  const summary = Object.entries(typedArguments)
+    .filter(([key]) => !["content", "newCode", "codeSnippet", "prompt"].includes(key))
+    .map(([key, value]) => {
+      if (typeof value === "string") {
+        return `${key}=${truncateOneLine(value, 120)}`
+      }
+
+      if (typeof value === "number" || typeof value === "boolean") {
+        return `${key}=${String(value)}`
+      }
+
+      if (Array.isArray(value)) {
+        return `${key}=[${value.length}]`
+      }
+
+      if (value && typeof value === "object") {
+        return `${key}={...}`
+      }
+
+      return `${key}=null`
+    })
+    .join(" ")
+
+  return summary.length > 0 ? summary : "{}"
+}
+
+function extractBashCommand(toolInvocation: unknown): string {
+  if (!toolInvocation || typeof toolInvocation !== "object") {
+    return ""
+  }
+
+  const invocation = toolInvocation as {
+    toolName?: string
+    arguments?: unknown
+    input?: unknown
+  }
+  if (invocation.toolName !== "bash") {
+    return ""
+  }
+
+  const candidates = [invocation.arguments, invocation.input]
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") {
+      continue
+    }
+
+    const command = (candidate as { command?: unknown }).command
+    if (typeof command === "string") {
+      return command
+    }
+  }
+
+  return ""
+}
+
+function isForbiddenImplementationGitCommand(command: string): boolean {
+  if (command.trim().length === 0) {
+    return false
+  }
+
+  const normalizedCommand = command.replace(/\s+/g, " ").trim().toLowerCase()
+  const forbiddenPatterns = [
+    /(^|\s)git\s+push(\s|$)/,
+    /(^|\s)git\s+checkout(\s|$)/,
+    /(^|\s)git\s+switch(\s|$)/,
+    /(^|\s)git\s+branch(\s|$)/,
+    /(^|\s)git\s+rebase(\s|$)/,
+    /(^|\s)git\s+cherry-pick(\s|$)/,
+    /(^|\s)git\s+reset(\s|$)/,
+  ]
+
+  return forbiddenPatterns.some(pattern => pattern.test(normalizedCommand))
+}
+
+function truncateOneLine(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+
+  return `${normalized.slice(0, maxLength)}...`
+}
+
 async function updateProgressNotification(
   notificationService: NotificationServiceClient,
   notificationId: string,
-  title: string,
-  progressLine: string,
+  update: {
+    title: string
+    progressLines: string[]
+    prefix?: string
+    actions?: Array<{
+      name: string
+      title: string
+    }>
+  },
 ): Promise<void> {
-  const content = [title, "", `> ${progressLine}`].join("\n")
+  const progressLines = update.progressLines
+    .slice(-PROGRESS_NOTIFICATION_HISTORY_LIMIT)
+    .map(line => `> ${line}`)
+  const content = [update.prefix, progressLines.length > 0 ? "" : undefined, ...progressLines]
+    .filter((line): line is string => typeof line === "string")
+    .join("\n")
+
   await notificationService.updateNotification({
     notificationId,
-    title,
+    title: update.title,
     content,
+    actions: update.actions ?? [],
   })
+}
+
+function createProgressReporter(input: {
+  notificationService: NotificationServiceClient
+  notificationId: string
+  title: string
+  prefix?: string
+  actions?: Array<{
+    name: string
+    title: string
+  }>
+}): (progressLine: string) => Promise<void> {
+  const progressLines: string[] = []
+
+  return async progressLine => {
+    const normalizedProgressLine = normalizeProgressLine(progressLine)
+    if (!normalizedProgressLine) {
+      return
+    }
+
+    await updateProgressNotification(input.notificationService, input.notificationId, {
+      title: input.title,
+      prefix: input.prefix,
+      actions: input.actions,
+      progressLines: appendProgressLine(progressLines, normalizedProgressLine),
+    })
+  }
+}
+
+function appendProgressLine(progressLines: string[], progressLine: string): string[] {
+  progressLines.push(progressLine)
+  if (progressLines.length > PROGRESS_NOTIFICATION_HISTORY_LIMIT) {
+    progressLines.splice(0, progressLines.length - PROGRESS_NOTIFICATION_HISTORY_LIMIT)
+  }
+
+  return progressLines
 }
 
 function extractReportIntentProgress(argumentsValue: unknown): string {

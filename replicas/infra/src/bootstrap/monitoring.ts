@@ -223,6 +223,34 @@ async function createSignozValuesFile(_signozCredentials: SignozCredentials): Pr
     postgresql: {
       enabled: false,
     },
+    clickhouse: {
+      clickhouseOperator: {
+        zookeeperLog: {
+          ttl: 7,
+          flushInterval: 7500,
+        },
+        queryLog: {
+          ttl: 7,
+          flushInterval: 7500,
+        },
+        partLog: {
+          ttl: 7,
+          flushInterval: 7500,
+        },
+        traceLog: {
+          ttl: 7,
+          flushInterval: 7500,
+        },
+        metricLog: {
+          ttl: 15,
+          flushInterval: 7500,
+        },
+        sessionLog: {
+          ttl: 15,
+          flushInterval: 7500,
+        },
+      },
+    },
     signoz: {
       env: {
         signoz_sqlstore_provider: "postgres",

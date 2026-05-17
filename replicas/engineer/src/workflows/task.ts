@@ -57,13 +57,7 @@ export const createTaskCommandHandler = defineCommandHandler({
     })
 
     while (true) {
-      const planningReply = await updateNotification<
-        {
-          approve: { title: string }
-          cancel: { title: string }
-        },
-        true
-      >({
+      const planningReply = await updateNotification({
         notificationId: planning.notificationId,
         title: strings.notifications.taskPlanning.readyTitle,
         content: block(
@@ -136,13 +130,7 @@ export const createTaskCommandHandler = defineCommandHandler({
         })
 
       while (!finished) {
-        const runningReply = await updateNotification<
-          {
-            cancel: { title: string }
-          },
-          true,
-          () => boolean
-        >({
+        const runningReply = await updateNotification({
           notificationId: implementationNotification.notificationId,
           title: strings.notifications.taskExecution.inProgressTitle,
           content: block(strings.notifications.taskExecution.runningAwaitingInput),
@@ -199,15 +187,10 @@ export const createTaskCommandHandler = defineCommandHandler({
         })
       }
 
-      const terminalReply = await updateNotification<
-        {
-          cancel: { title: string }
-        },
-        true
-      >({
-        notificationId: implementationNotification.notificationId,
+      const terminalReply = await sendNotification({
+        channel: EngineerNotificationChannels.TASKS,
         title: strings.notifications.taskExecution.awaitingNextActionTitle,
-        content: block(strings.notifications.taskExecution.awaitingNextActionMessage),
+        message: block(strings.notifications.taskExecution.awaitingNextActionMessage),
         actions: {
           cancel: {
             title: strings.notifications.taskExecution.actions.cancel,
@@ -218,7 +201,14 @@ export const createTaskCommandHandler = defineCommandHandler({
 
       if (terminalReply.type === "action") {
         await activities.requestCancellation({ taskId })
-        continue
+
+        await updateNotification({
+          notificationId: terminalReply.notificationId,
+          title: strings.notifications.taskExecution.doneTitle,
+          content: block(strings.notifications.taskExecution.cancelledSummary),
+        })
+
+        return
       }
 
       await activities.reviveTaskFromFeedback({ taskId })
