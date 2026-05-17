@@ -39,11 +39,14 @@ model Notification {
   /// The operation associated with this notification payload.
   operation Operation? @relation(fields: [operationId], references: [id], onDelete: SetNull)
 
-  /// The ID of the interaction context expecting the user response.
-  contextId Int
+  /// The Telegram chat identifier where this notification was sent.
+  targetChatId String
 
-  /// The interaction context associated with this notification.
-  context InteractionContext @relation(fields: [contextId], references: [id])
+  /// The Telegram chat entity where this notification was sent.
+  chat Chat @relation("NotificationTargetChat", fields: [targetChatId], references: [telegramId])
+
+  /// Optional Telegram message identifier this notification replies to.
+  replyToMessageId Int?
 
   /// The ID of the notification channel associated with this operation.
   channelId Int
@@ -75,6 +78,9 @@ model Notification {
   /// Whether interaction with this notification requires permission checks.
   isProtected Boolean @default(false)
 
+  /// The avatar provisioning request that references this notification.
+  avatarProvisionRequest AvatarProvisionRequest?
+
   /// The timestamp when this notification was created.
   createdAt DateTime @default(now())
 
@@ -83,5 +89,5 @@ model Notification {
 
   @@index([messageId])
   @@index([channelId])
-  @@index([contextId])
+  @@index([targetChatId])
 }

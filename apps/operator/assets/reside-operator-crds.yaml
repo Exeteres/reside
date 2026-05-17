@@ -42,10 +42,6 @@ spec:
               properties:
                 image:
                   type: string
-                endpoints:
-                  type: object
-                  additionalProperties:
-                    type: string
             status:
               type: object
               properties:

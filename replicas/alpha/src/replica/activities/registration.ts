@@ -8,11 +8,9 @@ import {
   loadReplicaForRegistrationReadiness,
 } from "../../shared/registration-readiness"
 
-type AlphaOperationService = GenericOperationService<Operation>
-
 export function createRegistrationActivities(
   prisma: PrismaClient,
-  operationService: AlphaOperationService,
+  operationService: GenericOperationService<Operation>,
 ) {
   const customObjectsApi = kubeConfig.makeApiClient(CustomObjectsApi)
 

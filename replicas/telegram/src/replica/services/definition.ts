@@ -3,25 +3,26 @@ import type {
   Command,
   DefinitionServiceImplementation,
   NotificationChannel,
-  PutChannelsRequest,
-  PutChannelsResponse,
-  PutCommandsRequest,
-  PutCommandsResponse,
 } from "@reside/api/interaction/definition.v1"
 import type { PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
-import { authenticateReplica, logger, WellKnownPermissions } from "@reside/common"
-import { type CallContext, ServerError } from "nice-grpc"
+import { create } from "@bufbuild/protobuf"
+import { Code, ConnectError } from "@connectrpc/connect"
+import {
+  CommandParameterSchema,
+  CommandSchema,
+  NotificationChannelSchema,
+} from "@reside/api/interaction/definition.v1"
+import { authenticateReplica, type CommonServices, logger } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 
-export function createDefinitionService(
-  prisma: PrismaClient,
-  authzService: AuthzServiceClient,
-): DefinitionServiceImplementation {
+export function createDefinitionService({
+  prisma,
+  authzService,
+}: CommonServices<"access"> & {
+  prisma: PrismaClient
+}): DefinitionServiceImplementation {
   return {
-    async putChannels(
-      request: PutChannelsRequest,
-      context: CallContext,
-    ): Promise<PutChannelsResponse> {
+    async putChannels(request, context) {
       const { name: replicaName } = await authenticateReplica(context)
       logger.info(
         "putChannels requested by replica %s for %d channels",
@@ -72,10 +73,7 @@ export function createDefinitionService(
       }
     },
 
-    async putCommands(
-      request: PutCommandsRequest,
-      context: CallContext,
-    ): Promise<PutCommandsResponse> {
+    async putCommands(request, context) {
       const { name: replicaName } = await authenticateReplica(context)
       logger.info(
         "putCommands requested by replica %s for %d commands",
@@ -114,9 +112,9 @@ export function createDefinitionService(
         request.commands.map(async command => {
           const callbackEndpoint = command.callbackEndpoint.trim()
           if (callbackEndpoint.length === 0) {
-            throw new ServerError(
-              status.INVALID_ARGUMENT,
+            throw new ConnectError(
               `Command "${command.name}" must provide non-empty callback_endpoint`,
+              Code.InvalidArgument,
             )
           }
 
@@ -175,9 +173,9 @@ async function assertAllowedToManage(
     return
   }
 
-  throw new ServerError(
-    status.PERMISSION_DENIED,
+  throw new ConnectError(
     `Subject "${subjectId}" is not allowed to manage resource with permission "${permissionName}" and scope "${scope}"`,
+    Code.PermissionDenied,
   )
 }
 
@@ -194,22 +192,24 @@ function toCommand(input: {
     ? (input.parameters as Command["parameters"])
     : ([] as Command["parameters"])
 
-  return {
+  return create(CommandSchema, {
     id: input.id,
     name: input.name,
     title: input.title,
     description: input.description ?? undefined,
-    parameters: parameters.map(parameter => ({
-      name: parameter.name,
-      title: parameter.title,
-      description: parameter.description,
-      type: parameter.type,
-      required: parameter.required === true,
-      rest: parameter.rest === true,
-    })),
+    parameters: parameters.map(parameter =>
+      create(CommandParameterSchema, {
+        name: parameter.name,
+        title: parameter.title,
+        description: parameter.description,
+        type: parameter.type,
+        required: parameter.required === true,
+        rest: parameter.rest === true,
+      }),
+    ),
     protected: input.isProtected,
     callbackEndpoint: input.callbackEndpoint,
-  }
+  })
 }
 
 function assertUniqueNames(names: string[], fieldName: string): void {
@@ -218,13 +218,13 @@ function assertUniqueNames(names: string[], fieldName: string): void {
   for (const rawName of names) {
     const name = rawName.trim()
     if (name.length === 0) {
-      throw new ServerError(status.INVALID_ARGUMENT, `Field "${fieldName}" contains empty name`)
+      throw new ConnectError(`Field "${fieldName}" contains empty name`, Code.InvalidArgument)
     }
 
     if (knownNames.has(name)) {
-      throw new ServerError(
-        status.INVALID_ARGUMENT,
+      throw new ConnectError(
         `Field "${fieldName}" contains duplicate name "${name}"`,
+        Code.InvalidArgument,
       )
     }
 
@@ -249,17 +249,17 @@ function assertCommandRestParameterShape(
   }
 
   if (restIndexes.length > 1) {
-    throw new ServerError(
-      status.INVALID_ARGUMENT,
+    throw new ConnectError(
       `Command "${commandName}" must have at most one rest parameter`,
+      Code.InvalidArgument,
     )
   }
 
   const restIndex = restIndexes[0]!
   if (restIndex !== parameters.length - 1) {
-    throw new ServerError(
-      status.INVALID_ARGUMENT,
+    throw new ConnectError(
       `Command "${commandName}" must declare rest parameter as the last parameter`,
+      Code.InvalidArgument,
     )
   }
 }
@@ -270,10 +270,10 @@ function toNotificationChannel(channel: {
   title: string
   description: string | null
 }): NotificationChannel {
-  return {
+  return create(NotificationChannelSchema, {
     id: channel.id,
     name: channel.name,
     title: channel.title,
     description: channel.description ?? undefined,
-  }
+  })
 }

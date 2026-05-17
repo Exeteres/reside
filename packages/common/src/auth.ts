@@ -1,5 +1,4 @@
-import { status } from "@grpc/grpc-js"
-import { type CallOptions, ServerError } from "nice-grpc"
+import { type CallOptions, Code, ConnectError, type HandlerContext } from "@connectrpc/connect"
 import { authenticateToken, type AuthenticationResult } from "./jwks"
 import { logger } from "./logger"
 
@@ -16,19 +15,21 @@ export type ReplicaAuthenticationResult = AuthenticationResult<"replica"> & {
  * @param callOptions The gRPC call options with metadata.
  * @return The authentication result containing the subject identifier, realm, and name.
  */
-export async function authenticate(callOptions: CallOptions): Promise<AuthenticationResult> {
+export async function authenticate(
+  callOptions: CallOptions | HandlerContext,
+): Promise<AuthenticationResult> {
   try {
     const token = getBearerTokenFromMetadata(callOptions)
 
     return await authenticateToken(token)
   } catch (error) {
-    if (error instanceof ServerError) {
+    if (error instanceof ConnectError) {
       throw error
     }
 
     logger.warn({ error }, "invalid authentication token")
 
-    throw new ServerError(status.UNAUTHENTICATED, "Invalid authentication token")
+    throw new ConnectError("Invalid authentication token", Code.Unauthenticated)
   }
 }
 
@@ -40,14 +41,14 @@ export async function authenticate(callOptions: CallOptions): Promise<Authentica
  * @returns The authentication result containing the subject identifier, realm, name, and namespace.
  */
 export async function authenticateReplica(
-  callOptions: CallOptions,
+  callOptions: HandlerContext,
 ): Promise<ReplicaAuthenticationResult> {
   const subject = await authenticate(callOptions)
 
   if (subject.realm !== "replica") {
-    throw new ServerError(
-      status.UNAUTHENTICATED,
+    throw new ConnectError(
       `Invalid token realm: expected "replica", got "${subject.realm}"`,
+      Code.Unauthenticated,
     )
   }
 
@@ -57,26 +58,52 @@ export async function authenticateReplica(
   } as ReplicaAuthenticationResult
 }
 
-function getBearerTokenFromMetadata(callOptions: CallOptions): string {
-  const authorization =
-    callOptions.metadata?.get("authorization") ?? callOptions.metadata?.get("Authorization")
+function getBearerTokenFromMetadata(callOptions: CallOptions | HandlerContext): string {
+  const metadata = "metadata" in callOptions ? callOptions.metadata : undefined
+  const requestHeader = "requestHeader" in callOptions ? callOptions.requestHeader : undefined
+
+  const metadataAuthorization = getHeaderValue(metadata, "authorization")
+  const requestAuthorization = getHeaderValue(requestHeader, "authorization")
+
+  const authorization = metadataAuthorization ?? requestAuthorization
 
   if (typeof authorization !== "string") {
-    throw new ServerError(
-      status.UNAUTHENTICATED,
+    throw new ConnectError(
       'Missing "authorization" metadata for authentication',
+      Code.Unauthenticated,
     )
   }
 
   return getBearerToken(authorization)
 }
 
+function getHeaderValue(container: unknown, name: string): string | undefined {
+  if (
+    !container ||
+    typeof container !== "object" ||
+    !("get" in container) ||
+    typeof container.get !== "function"
+  ) {
+    return undefined
+  }
+
+  const lowercaseValue = container.get(name)
+  if (typeof lowercaseValue === "string") {
+    return lowercaseValue
+  }
+
+  const capitalizedName = `${name[0]?.toUpperCase() ?? ""}${name.slice(1)}`
+  const capitalizedValue = container.get(capitalizedName)
+
+  return typeof capitalizedValue === "string" ? capitalizedValue : undefined
+}
+
 function getBearerToken(authorization: string): string {
   const [scheme, token] = authorization.split(" ")
   if (scheme !== "Bearer" || !token) {
-    throw new ServerError(
-      status.UNAUTHENTICATED,
+    throw new ConnectError(
       'Invalid "authorization" metadata format, expected "Bearer <token>"',
+      Code.Unauthenticated,
     )
   }
 

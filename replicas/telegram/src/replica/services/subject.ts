@@ -1,25 +1,26 @@
 import type {
   GetSubjectDisplayInfoRequest,
-  SubjectDisplayInfo,
   SubjectServiceImplementation,
 } from "@reside/api/common/subject.v1"
 import type { PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
+import { create } from "@bufbuild/protobuf"
+import { Code, ConnectError, type HandlerContext } from "@connectrpc/connect"
+import { SubjectDisplayInfoSchema } from "@reside/api/common/subject.v1"
 import { authenticateReplica, logger } from "@reside/common"
-import { type CallContext, ServerError } from "nice-grpc"
 import { strings } from "../../locale"
 
-export function createSubjectService(prisma: PrismaClient): SubjectServiceImplementation {
+export function createSubjectService({
+  prisma,
+}: {
+  prisma: PrismaClient
+}): SubjectServiceImplementation {
   return {
-    async getSubjectDisplayInfo(
-      request: GetSubjectDisplayInfoRequest,
-      context: CallContext,
-    ): Promise<SubjectDisplayInfo> {
+    async getSubjectDisplayInfo(request: GetSubjectDisplayInfoRequest, context: HandlerContext) {
       const identity = await authenticateReplica(context)
       if (identity.name !== "access" && identity.name !== "telegram") {
-        throw new ServerError(
-          status.PERMISSION_DENIED,
+        throw new ConnectError(
           `Replica "${identity.name}" is not allowed to query telegram subject display info`,
+          Code.PermissionDenied,
         )
       }
 
@@ -27,9 +28,9 @@ export function createSubjectService(prisma: PrismaClient): SubjectServiceImplem
 
       const parsedSubject = parseTelegramSubjectId(request.subjectId)
       if (!parsedSubject) {
-        throw new ServerError(
-          status.INVALID_ARGUMENT,
+        throw new ConnectError(
           'Subject ID must match format "telegram:{userId}"',
+          Code.InvalidArgument,
         )
       }
 
@@ -44,15 +45,15 @@ export function createSubjectService(prisma: PrismaClient): SubjectServiceImplem
       })
 
       if (!user) {
-        throw new ServerError(status.NOT_FOUND, `Subject "${request.subjectId}" was not found`)
+        throw new ConnectError(`Subject "${request.subjectId}" was not found`, Code.NotFound)
       }
 
       logger.debug("resolved subject display info for subjectId %s", request.subjectId)
 
-      return {
+      return create(SubjectDisplayInfoSchema, {
         title: toTelegramUserTitle(user.telegramId, user.data as PrismaJson.UserData),
         avatarUrl: undefined,
-      }
+      })
     },
   }
 }

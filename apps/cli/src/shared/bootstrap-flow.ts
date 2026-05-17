@@ -5,8 +5,10 @@ import { Listr } from "listr2"
 import {
   applyReplica,
   buildE2EImage,
+  buildLatestImage,
   createKubernetesClusterAccess,
   createPinoPrettyStdoutWriter,
+  deleteReplicaBootstrapClusterRole,
   dumpJobFailureDiagnostics,
   ensureKindCluster,
   getConfigMapData,
@@ -18,15 +20,19 @@ import {
   installResideOperator,
   type KubernetesClusterAccess,
   recreateE2EJob,
+  recreateReplicas,
   resetFailedBootstrapJob,
+  setResideOperatorClusterDomain,
   streamPodLogs,
   upsertConfigMap,
+  upsertReplicaBootstrapClusterRole,
   upsertReplicaClusterRole,
   upsertSecret,
   waitForJobCompletion,
   waitForJobPod,
   waitForKnativeServing,
   waitForKourier,
+  waitForReplicaNamespace,
   waitForReplicaReady,
   waitForResideOperator,
 } from "./kubernetes"
@@ -43,10 +49,14 @@ import {
 
 export type ProvisionFlowOptions = {
   ask?: boolean
+  build?: boolean
+  clusterDomain: string
   context?: string
   clusterName?: string
+  installGatewayApi?: boolean
   only?: boolean
   skipBase?: boolean
+  grantBootstrapRole?: boolean
   recreate?: boolean
   requestedReplicas: string[]
   runE2E: boolean
@@ -57,6 +67,7 @@ export type ProvisionFlowOptions = {
 
 type ProvisionFlowContext = {
   access?: KubernetesClusterAccess
+  allReplicas: TopologyReplica[]
   selectedReplicas: TopologyReplica[]
   topologyPath: string
 }
@@ -228,6 +239,8 @@ export function readRequestedReplicas(args: object): string[] {
  */
 export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<void> {
   const skipBase = (options.skipBase ?? false) || (options.only ?? false)
+  const shouldInstallGatewayApi = options.runE2E || (options.installGatewayApi ?? false)
+  const clusterDomain = options.clusterDomain
 
   const variableValues = new Map<string, string>()
   const pendingVariableValues = new Map<string, Promise<string>>()
@@ -340,6 +353,7 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
             includeDependencies: !(options.only ?? false),
           })
 
+          ctx.allReplicas = topology
           ctx.selectedReplicas = selectedReplicas
           ctx.topologyPath = topologyPath
 
@@ -368,6 +382,44 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
                 const commandLog = createTaskCommandLog(taskLogger, "docker build")
 
                 replica.image = await buildE2EImage(replica, {
+                  commandLog,
+                  logger: taskLogger,
+                })
+                taskLogger.info("image: %s", replica.image)
+              },
+              rendererOptions: {
+                bottomBar: 6,
+              },
+            })),
+            {
+              concurrent: 1,
+              exitOnError: true,
+              rendererOptions: {
+                collapseSubtasks: true,
+                collapseErrors: false,
+              },
+            },
+          )
+        },
+      },
+      {
+        title: "build latest images",
+        enabled: () => !options.runE2E && (options.build ?? false),
+        task: (ctx, task) => {
+          return task.newListr(
+            ctx.selectedReplicas.map(replica => ({
+              title: `prepare image for ${replica.name}`,
+              task: async (_, imageTask) => {
+                const taskLogger = createTaskLogger(
+                  value => {
+                    imageTask.output = value
+                  },
+                  `prepare image for ${replica.name}`,
+                  { silent: options.silent },
+                )
+                const commandLog = createTaskCommandLog(taskLogger, "docker build")
+
+                replica.image = await buildLatestImage(replica, {
                   commandLog,
                   logger: taskLogger,
                 })
@@ -443,6 +495,30 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
         },
       },
       {
+        title: "recreate replicas",
+        enabled: () => !options.runE2E && (options.recreate ?? false),
+        task: async (ctx, task) => {
+          const access = ctx.access
+          if (!access) {
+            throw new Error("cluster access is not initialized")
+          }
+
+          const taskLogger = createTaskLogger(
+            value => {
+              task.output = value
+            },
+            "replicas",
+            { silent: options.silent },
+          )
+          const commandLog = createTaskCommandLog(taskLogger, "kubectl")
+
+          await recreateReplicas(access, { commandLog })
+        },
+        rendererOptions: {
+          bottomBar: 6,
+        },
+      },
+      {
         title: "install cluster prerequisites",
         enabled: () => !skipBase,
         task: (ctx, task) => {
@@ -455,6 +531,7 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
             [
               {
                 title: "apply gateway api",
+                enabled: () => shouldInstallGatewayApi,
                 task: async (_, manifestTask) => {
                   const taskLogger = createTaskLogger(
                     value => {
@@ -524,7 +601,7 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
                           )
                           const commandLog = createTaskCommandLog(taskLogger, "kubectl")
 
-                          await installResideOperator(access, { commandLog })
+                          await installResideOperator(access, clusterDomain, { commandLog })
                         },
                         rendererOptions: {
                           bottomBar: 6,
@@ -622,6 +699,30 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
         },
       },
       {
+        title: "configure reside operator cluster domain",
+        enabled: () => skipBase,
+        task: async (ctx, task) => {
+          const access = ctx.access
+          if (!access) {
+            throw new Error("cluster access is not initialized")
+          }
+
+          const taskLogger = createTaskLogger(
+            value => {
+              task.output = value
+            },
+            "reside operator",
+            { silent: options.silent },
+          )
+          const commandLog = createTaskCommandLog(taskLogger, "kubectl")
+
+          await setResideOperatorClusterDomain(access, clusterDomain, { commandLog })
+        },
+        rendererOptions: {
+          bottomBar: 6,
+        },
+      },
+      {
         title: "provision replicas",
         task: (ctx, task) => {
           const access = ctx.access
@@ -636,247 +737,366 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
                 return replicaTask.newListr(
                   [
                     {
-                      title: "apply replica resource",
-                      task: async (_, applyTask) => {
-                        const taskLogger = createTaskLogger(
-                          value => {
-                            applyTask.output = value
-                          },
-                          `apply replica ${replica.name}`,
-                          { silent: options.silent },
-                        )
-                        const commandLog = createTaskCommandLog(taskLogger, "kubectl")
-
-                        await applyReplica(access, replica, { commandLog })
-                      },
-                      rendererOptions: {
-                        bottomBar: 6,
-                      },
-                    },
-                    {
-                      title: "wait for ready condition",
-                      task: async (_, readyTask) => {
-                        const reset = await resetFailedBootstrapJob(access, replica.name)
-                        if (reset) {
-                          readyTask.output = "deleted stale failed bootstrap job before waiting"
-                        }
-
-                        try {
-                          await waitForReplicaReady(access, replica.name)
-                        } catch (error) {
-                          const replicaNamespace = getReplicaNamespace(replica.name)
-                          const bootstrapJobName = `${replica.name}-bootstrap`
-
-                          await writeFailureDump(replica.name, async writeLine => {
-                            await writeLine("failure diagnostics begin")
-
-                            try {
-                              const bootstrapPodName = await waitForJobPod(
-                                access,
-                                replicaNamespace,
-                                bootstrapJobName,
-                              )
-
-                              await dumpJobFailureDiagnostics(
-                                access,
-                                replicaNamespace,
-                                bootstrapPodName,
-                                bootstrapJobName,
-                                "bootstrap",
-                                async line => {
-                                  await writeLine(line)
-                                },
-                              )
-                            } catch (diagnosticsError) {
-                              const message =
-                                diagnosticsError instanceof Error
-                                  ? diagnosticsError.message
-                                  : String(diagnosticsError)
-
-                              await writeLine(`failed to collect bootstrap diagnostics: ${message}`)
-                            }
-
-                            await writeLine("failure diagnostics end")
-                          })
-
-                          throw error
-                        }
-                      },
-                      rendererOptions: {
-                        bottomBar: 3,
-                      },
-                    },
-                    {
-                      title: "populate cluster role rules",
-                      task: async (_, rbacTask) => {
-                        const clusterRoleRules = replica.clusterRoleRules
-
-                        if (clusterRoleRules.length === 0) {
-                          rbacTask.skip("no cluster role rules defined")
-                          return
-                        }
-
-                        const taskLogger = createTaskLogger(
-                          value => {
-                            rbacTask.output = value
-                          },
-                          `populate cluster role rules for ${replica.name}`,
-                          { silent: options.silent },
-                        )
-                        const commandLog = createTaskCommandLog(taskLogger, "kubectl")
-
-                        await upsertReplicaClusterRole(access, replica.name, clusterRoleRules, {
-                          commandLog,
-                        })
-                      },
-                      rendererOptions: {
-                        bottomBar: 6,
-                      },
-                    },
-                    {
-                      title: "populate secrets",
-                      task: async (_, secretTask) => {
-                        const secrets = getReplicaSecrets(replica)
-
-                        if (secrets.length === 0) {
-                          secretTask.skip("no secrets defined")
-                          return
-                        }
-
-                        const taskLogger = createTaskLogger(
-                          value => {
-                            secretTask.output = value
-                          },
-                          `populate secrets for ${replica.name}`,
-                          { silent: options.silent },
-                        )
-                        const commandLog = createTaskCommandLog(taskLogger, "kubectl")
-                        const promptMissingVariable = createMissingVariablePrompt(secretTask)
-                        const replicaNamespace = getReplicaNamespace(replica.name)
-
-                        for (const secret of secrets) {
-                          const existingData = await getSecretData(
-                            access,
-                            replicaNamespace,
-                            secret.name,
-                          )
-                          const promptFieldOverride = createFieldOverridePrompt(
-                            secretTask,
-                            "secret",
-                            secret.name,
-                          )
-                          const promptFieldValue = createFieldValuePrompt(
-                            secretTask,
-                            "secret",
-                            secret.name,
-                          )
-                          const resolvedSecret = await resolveResourceData({
-                            askForOverrides: options.ask ?? false,
-                            existingData,
-                            promptFieldOverride,
-                            promptFieldValue,
-                            resolveVariable: variableName => {
-                              return resolveVariable(variableName, promptMissingVariable)
-                            },
-                            templateData: secret.data,
-                          })
-
-                          if (!resolvedSecret.shouldApply) {
-                            taskLogger.info(
-                              'skip secret "%s": all values already defined',
-                              secret.name,
-                            )
-                            continue
-                          }
-
-                          await upsertSecret(
-                            access,
-                            replicaNamespace,
+                      title: "create replica",
+                      task: (_, createTask) => {
+                        return createTask.newListr(
+                          [
                             {
-                              ...secret,
-                              data: resolvedSecret.data,
+                              title: "populate bootstrap cluster role rules",
+                              task: async (_, rbacTask) => {
+                                const bootstrapClusterRoleRules = replica.bootstrapClusterRoleRules
+
+                                if (bootstrapClusterRoleRules.length === 0) {
+                                  rbacTask.skip("no bootstrap cluster role rules defined")
+                                  return
+                                }
+
+                                if (!(options.grantBootstrapRole ?? false)) {
+                                  rbacTask.skip(
+                                    "bootstrap cluster roles are disabled (pass --grant-bootstrap-role)",
+                                  )
+                                  return
+                                }
+
+                                const taskLogger = createTaskLogger(
+                                  value => {
+                                    rbacTask.output = value
+                                  },
+                                  `populate bootstrap cluster role rules for ${replica.name}`,
+                                  { silent: options.silent },
+                                )
+                                const commandLog = createTaskCommandLog(taskLogger, "kubectl")
+
+                                await upsertReplicaBootstrapClusterRole(
+                                  access,
+                                  replica.name,
+                                  bootstrapClusterRoleRules,
+                                  {
+                                    commandLog,
+                                  },
+                                )
+                              },
+                              rendererOptions: {
+                                bottomBar: 6,
+                              },
                             },
-                            { commandLog },
-                          )
-                        }
-                      },
-                      rendererOptions: {
-                        bottomBar: 6,
+                            {
+                              title: "apply replica resource",
+                              task: async (_, applyTask) => {
+                                const taskLogger = createTaskLogger(
+                                  value => {
+                                    applyTask.output = value
+                                  },
+                                  `apply replica ${replica.name}`,
+                                  { silent: options.silent },
+                                )
+                                const commandLog = createTaskCommandLog(taskLogger, "kubectl")
+
+                                await applyReplica(access, replica, { commandLog })
+                              },
+                              rendererOptions: {
+                                bottomBar: 6,
+                              },
+                            },
+                            {
+                              title: "wait for ready condition",
+                              task: async (_, readyTask) => {
+                                const reset = await resetFailedBootstrapJob(access, replica.name)
+                                if (reset) {
+                                  readyTask.output =
+                                    "deleted stale failed bootstrap job before waiting"
+                                }
+
+                                try {
+                                  await waitForReplicaReady(access, replica.name)
+                                } catch (error) {
+                                  const replicaNamespace = getReplicaNamespace(replica.name)
+                                  const bootstrapJobName = `${replica.name}-bootstrap`
+
+                                  await writeFailureDump(replica.name, async writeLine => {
+                                    await writeLine("failure diagnostics begin")
+
+                                    try {
+                                      const bootstrapPodName = await waitForJobPod(
+                                        access,
+                                        replicaNamespace,
+                                        bootstrapJobName,
+                                      )
+
+                                      await dumpJobFailureDiagnostics(
+                                        access,
+                                        replicaNamespace,
+                                        bootstrapPodName,
+                                        bootstrapJobName,
+                                        "bootstrap",
+                                        async line => {
+                                          await writeLine(line)
+                                        },
+                                      )
+                                    } catch (diagnosticsError) {
+                                      const message =
+                                        diagnosticsError instanceof Error
+                                          ? diagnosticsError.message
+                                          : String(diagnosticsError)
+
+                                      await writeLine(
+                                        `failed to collect bootstrap diagnostics: ${message}`,
+                                      )
+                                    }
+
+                                    await writeLine("failure diagnostics end")
+                                  })
+
+                                  throw error
+                                }
+                              },
+                              rendererOptions: {
+                                bottomBar: 3,
+                              },
+                            },
+                          ],
+                          {
+                            rendererOptions: {
+                              collapseSubtasks: true,
+                              collapseErrors: false,
+                            },
+                          },
+                        )
                       },
                     },
                     {
-                      title: "populate config maps",
-                      task: async (_, configTask) => {
-                        const configMaps = getReplicaConfigMaps(replica)
-
-                        if (configMaps.length === 0) {
-                          configTask.skip("no config maps defined")
-                          return
-                        }
-
-                        const taskLogger = createTaskLogger(
+                      title: "populate namespace resources",
+                      task: async (_, resourcesTask) => {
+                        const replicaNamespace = getReplicaNamespace(replica.name)
+                        const waitLogger = createTaskLogger(
                           value => {
-                            configTask.output = value
+                            resourcesTask.output = value
                           },
-                          `populate config maps for ${replica.name}`,
+                          `wait for namespace ${replica.name}`,
                           { silent: options.silent },
                         )
-                        const commandLog = createTaskCommandLog(taskLogger, "kubectl")
-                        const promptMissingVariable = createMissingVariablePrompt(configTask)
-                        const replicaNamespace = getReplicaNamespace(replica.name)
+                        const waitCommandLog = createTaskCommandLog(waitLogger, "kubectl")
 
-                        for (const configMap of configMaps) {
-                          const existingData = await getConfigMapData(
-                            access,
-                            replicaNamespace,
-                            configMap.name,
-                          )
-                          const promptFieldOverride = createFieldOverridePrompt(
-                            configTask,
-                            "config map",
-                            configMap.name,
-                          )
-                          const promptFieldValue = createFieldValuePrompt(
-                            configTask,
-                            "config map",
-                            configMap.name,
-                          )
-                          const resolvedConfigMap = await resolveResourceData({
-                            askForOverrides: options.ask ?? false,
-                            existingData,
-                            promptFieldOverride,
-                            promptFieldValue,
-                            resolveVariable: variableName => {
-                              return resolveVariable(variableName, promptMissingVariable)
-                            },
-                            templateData: configMap.data,
-                          })
+                        await waitForReplicaNamespace(access, replica.name)
+                        waitCommandLog.onLine(`namespace ready: ${replicaNamespace}`)
 
-                          if (!resolvedConfigMap.shouldApply) {
-                            taskLogger.info(
-                              'skip config map "%s": all values already defined',
-                              configMap.name,
-                            )
-                            continue
-                          }
-
-                          await upsertConfigMap(
-                            access,
-                            replicaNamespace,
+                        return resourcesTask.newListr(
+                          [
                             {
-                              ...configMap,
-                              data: resolvedConfigMap.data,
+                              title: "populate namespaced resources",
+                              task: (_, namespacedTask) => {
+                                return namespacedTask.newListr(
+                                  [
+                                    {
+                                      title: "populate secrets",
+                                      task: async (_, secretTask) => {
+                                        const secrets = getReplicaSecrets(replica)
+
+                                        if (secrets.length === 0) {
+                                          secretTask.skip("no secrets defined")
+                                          return
+                                        }
+
+                                        const taskLogger = createTaskLogger(
+                                          value => {
+                                            secretTask.output = value
+                                          },
+                                          `populate secrets for ${replica.name}`,
+                                          { silent: options.silent },
+                                        )
+                                        const commandLog = createTaskCommandLog(
+                                          taskLogger,
+                                          "kubectl",
+                                        )
+                                        const promptMissingVariable =
+                                          createMissingVariablePrompt(secretTask)
+
+                                        for (const secret of secrets) {
+                                          const existingData = await getSecretData(
+                                            access,
+                                            replicaNamespace,
+                                            secret.name,
+                                          )
+                                          const promptFieldOverride = createFieldOverridePrompt(
+                                            secretTask,
+                                            "secret",
+                                            secret.name,
+                                          )
+                                          const promptFieldValue = createFieldValuePrompt(
+                                            secretTask,
+                                            "secret",
+                                            secret.name,
+                                          )
+                                          const resolvedSecret = await resolveResourceData({
+                                            askForOverrides: options.ask ?? false,
+                                            existingData,
+                                            promptFieldOverride,
+                                            promptFieldValue,
+                                            resolveVariable: variableName => {
+                                              return resolveVariable(
+                                                variableName,
+                                                promptMissingVariable,
+                                              )
+                                            },
+                                            templateData: secret.data,
+                                          })
+
+                                          if (!resolvedSecret.shouldApply) {
+                                            taskLogger.info(
+                                              'skip secret "%s": all values already defined',
+                                              secret.name,
+                                            )
+                                            continue
+                                          }
+
+                                          await upsertSecret(
+                                            access,
+                                            replicaNamespace,
+                                            {
+                                              ...secret,
+                                              data: resolvedSecret.data,
+                                            },
+                                            { commandLog },
+                                          )
+                                        }
+                                      },
+                                      rendererOptions: {
+                                        bottomBar: 6,
+                                      },
+                                    },
+                                    {
+                                      title: "populate config maps",
+                                      task: async (_, configTask) => {
+                                        const configMaps = getReplicaConfigMaps(replica)
+
+                                        if (configMaps.length === 0) {
+                                          configTask.skip("no config maps defined")
+                                          return
+                                        }
+
+                                        const taskLogger = createTaskLogger(
+                                          value => {
+                                            configTask.output = value
+                                          },
+                                          `populate config maps for ${replica.name}`,
+                                          { silent: options.silent },
+                                        )
+                                        const commandLog = createTaskCommandLog(
+                                          taskLogger,
+                                          "kubectl",
+                                        )
+                                        const promptMissingVariable =
+                                          createMissingVariablePrompt(configTask)
+
+                                        for (const configMap of configMaps) {
+                                          const existingData = await getConfigMapData(
+                                            access,
+                                            replicaNamespace,
+                                            configMap.name,
+                                          )
+                                          const promptFieldOverride = createFieldOverridePrompt(
+                                            configTask,
+                                            "config map",
+                                            configMap.name,
+                                          )
+                                          const promptFieldValue = createFieldValuePrompt(
+                                            configTask,
+                                            "config map",
+                                            configMap.name,
+                                          )
+                                          const resolvedConfigMap = await resolveResourceData({
+                                            askForOverrides: options.ask ?? false,
+                                            existingData,
+                                            promptFieldOverride,
+                                            promptFieldValue,
+                                            resolveVariable: variableName => {
+                                              return resolveVariable(
+                                                variableName,
+                                                promptMissingVariable,
+                                              )
+                                            },
+                                            templateData: configMap.data,
+                                          })
+
+                                          if (!resolvedConfigMap.shouldApply) {
+                                            taskLogger.info(
+                                              'skip config map "%s": all values already defined',
+                                              configMap.name,
+                                            )
+                                            continue
+                                          }
+
+                                          await upsertConfigMap(
+                                            access,
+                                            replicaNamespace,
+                                            {
+                                              ...configMap,
+                                              data: resolvedConfigMap.data,
+                                            },
+                                            { commandLog },
+                                          )
+                                        }
+                                      },
+                                      rendererOptions: {
+                                        bottomBar: 6,
+                                      },
+                                    },
+                                  ],
+                                  {
+                                    rendererOptions: {
+                                      collapseSubtasks: true,
+                                      collapseErrors: false,
+                                    },
+                                  },
+                                )
+                              },
                             },
-                            { commandLog },
-                          )
-                        }
-                      },
-                      rendererOptions: {
-                        bottomBar: 6,
+                            {
+                              title: "populate cluster role rules",
+                              task: async (_, rbacTask) => {
+                                const clusterRoleRules = replica.clusterRoleRules
+
+                                if (clusterRoleRules.length === 0) {
+                                  rbacTask.skip("no cluster role rules defined")
+                                  return
+                                }
+
+                                const taskLogger = createTaskLogger(
+                                  value => {
+                                    rbacTask.output = value
+                                  },
+                                  `populate cluster role rules for ${replica.name}`,
+                                  { silent: options.silent },
+                                )
+                                const commandLog = createTaskCommandLog(taskLogger, "kubectl")
+
+                                await upsertReplicaClusterRole(
+                                  access,
+                                  replica.name,
+                                  clusterRoleRules,
+                                  {
+                                    commandLog,
+                                  },
+                                )
+                              },
+                              rendererOptions: {
+                                bottomBar: 6,
+                              },
+                            },
+                          ],
+                          {
+                            rendererOptions: {
+                              collapseSubtasks: true,
+                              collapseErrors: false,
+                            },
+                          },
+                        )
                       },
                     },
                   ],
                   {
+                    concurrent: 2,
+                    exitOnError: true,
                     rendererOptions: {
                       collapseSubtasks: true,
                       collapseErrors: false,
@@ -916,7 +1136,7 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
                 )
                 const podLogLogger = createChildLogger(taskLogger, `[${replica.name}] `)
                 const replicaNamespace = getReplicaNamespace(replica.name)
-                const jobName = await recreateE2EJob(access, replica)
+                const jobName = await recreateE2EJob(access, replica, clusterDomain)
                 const podName = await waitForJobPod(access, replicaNamespace, jobName)
 
                 const logPromise = streamPodLogs(
@@ -970,6 +1190,54 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
           )
         },
       },
+      {
+        title: "cleanup bootstrap cluster roles",
+        task: (ctx, task) => {
+          const access = ctx.access
+          if (!access) {
+            throw new Error("cluster access is not initialized")
+          }
+
+          const replicasWithBootstrapRoles = ctx.allReplicas.filter(
+            replica => replica.bootstrapClusterRoleRules.length > 0,
+          )
+
+          if (replicasWithBootstrapRoles.length === 0) {
+            task.skip("no bootstrap cluster roles defined")
+            return
+          }
+
+          return task.newListr(
+            replicasWithBootstrapRoles.map(replica => ({
+              title: `cleanup bootstrap cluster role for ${replica.name}`,
+              task: async (_, cleanupTask) => {
+                const taskLogger = createTaskLogger(
+                  value => {
+                    cleanupTask.output = value
+                  },
+                  `cleanup bootstrap cluster role for ${replica.name}`,
+                  { silent: options.silent },
+                )
+                const commandLog = createTaskCommandLog(taskLogger, "kubectl")
+
+                await deleteReplicaBootstrapClusterRole(access, replica.name, {
+                  commandLog,
+                })
+              },
+              rendererOptions: {
+                bottomBar: 6,
+              },
+            })),
+            {
+              concurrent: 4,
+              rendererOptions: {
+                collapseSubtasks: true,
+                collapseErrors: false,
+              },
+            },
+          )
+        },
+      },
     ],
     {
       fallbackRenderer: "simple",
@@ -984,6 +1252,7 @@ export async function runProvisionFlow(options: ProvisionFlowOptions): Promise<v
   )
 
   await tasks.run({
+    allReplicas: [],
     selectedReplicas: [],
     topologyPath: "",
   })

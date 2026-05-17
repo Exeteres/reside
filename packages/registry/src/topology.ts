@@ -1,0 +1,145 @@
+import { defineReplica, type Replica } from "./shared"
+import { sortReplicasByDependencies } from "./sort"
+
+export const infraReplica = defineReplica({
+  name: "infra",
+  optionalDependencies: {
+    replicas: {
+      alpha: (): Replica => alphaReplica,
+      access: (): Replica => accessReplica,
+      interaction: (): Replica => telegramReplica,
+    },
+  },
+  configMaps: {
+    infa: {
+      gatewayClassName: "$INFRA_GATEWAY_CLASS_NAME",
+      gatewayHttpPort: "$INFRA_GATEWAY_HTTP_PORT",
+      gatewayHttpsPort: "$INFRA_GATEWAY_HTTPS_PORT",
+      clusterIssuerName: "$INFRA_CLUSTER_ISSUER_NAME",
+    },
+  },
+
+  bootstrapClusterRoleRules: [
+    // allow managing crds for clickhouse operator
+    {
+      apiGroups: ["apiextensions.k8s.io"],
+      resources: ["customresourcedefinitions"],
+      verbs: ["get", "list", "watch", "create"],
+    },
+    {
+      apiGroups: ["apiextensions.k8s.io"],
+      resources: ["customresourcedefinitions"],
+      resourceNames: [
+        "clickhouseinstallations.clickhouse.altinity.com",
+        "clickhouseinstallationtemplates.clickhouse.altinity.com",
+        "clickhouseoperatorconfigurations.clickhouse.altinity.com",
+      ],
+      verbs: ["get", "update", "patch", "delete"],
+    },
+    // allow managing cluster-level RBAC required by monitoring charts
+    {
+      apiGroups: ["rbac.authorization.k8s.io"],
+      resources: ["clusterroles", "clusterrolebindings"],
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "bind", "escalate"],
+    },
+  ],
+})
+
+export const accessReplica = defineReplica({
+  name: "access",
+  dependencies: {
+    replicas: {
+      infra: infraReplica,
+    },
+  },
+  optionalDependencies: {
+    replicas: {
+      alpha: (): Replica => alphaReplica,
+      interaction: (): Replica => telegramReplica,
+    },
+  },
+})
+
+export const telegramReplica = defineReplica({
+  name: "telegram",
+  dependencies: {
+    replicas: {
+      access: accessReplica,
+      infra: infraReplica,
+    },
+  },
+  optionalDependencies: {
+    replicas: {
+      alpha: (): Replica => alphaReplica,
+    },
+  },
+  secrets: {
+    telegram: {
+      bot_token: "$TELEGRAM_BOT_TOKEN",
+    },
+  },
+  configMaps: {
+    telegram: {
+      system_chat_id: "$TELEGRAM_SYSTEM_CHAT_ID",
+      super_admin_user_id: "$TELEGRAM_SUPER_ADMIN_USER_ID",
+    },
+  },
+})
+
+export const alphaReplica = defineReplica({
+  name: "alpha",
+  dependencies: {
+    replicas: {
+      access: accessReplica,
+      infra: infraReplica,
+      interaction: telegramReplica,
+    },
+  },
+
+  // allow alpha replica to manage reside-operator
+  clusterRoleRules: [
+    {
+      apiGroups: ["reside.io"],
+      resources: ["replicas"],
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"],
+    },
+  ],
+})
+
+export const engineerReplica = defineReplica({
+  name: "engineer",
+  dependencies: {
+    replicas: {
+      alpha: alphaReplica,
+      access: accessReplica,
+      infra: infraReplica,
+      interaction: telegramReplica,
+    },
+  },
+  secrets: {
+    "github-app": {
+      app_id: "$ENGINEER_GITHUB_APP_ID",
+      client_id: "$ENGINEER_GITHUB_APP_CLIENT_ID",
+      client_secret: "$ENGINEER_GITHUB_APP_CLIENT_SECRET",
+      private_key: "$file:ENGINEER_GITHUB_APP_PRIVATE_KEY",
+      installation_id: "$ENGINEER_GITHUB_APP_INSTALLATION_ID",
+    },
+    copilot: {
+      user_token: "$ENGINEER_COPILOT_USER_TOKEN",
+    },
+  },
+  configMaps: {
+    "github-repository": {
+      owner: "$ENGINEER_GITHUB_REPOSITORY_OWNER",
+      name: "$ENGINEER_GITHUB_REPOSITORY_NAME",
+    },
+  },
+})
+
+export const topology = sortReplicasByDependencies([
+  accessReplica,
+  infraReplica,
+  telegramReplica,
+  engineerReplica,
+  alphaReplica,
+])

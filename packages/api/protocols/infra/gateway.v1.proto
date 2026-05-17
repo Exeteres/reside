@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package reside.infra.gateway.v1;
+
+import "google/protobuf/empty.proto";
+import "common/operation.v1.proto";
+
+// The request for registering a gateway for the replica.
+message EnsureGatewayRequest {
+  // The unique name of the gateway.
+  // The final FQDN will be {name}.{cluster_domain}.
+  // The name must be a valid DNS label.
+  string name = 1;
+
+  // The human-readable title of the gateway to be shown in the UI.
+  string title = 2;
+
+  // The optional description of the gateway to be shown in the UI.
+  string description = 3;
+}
+
+// The response for registering a gateway for the replica.
+message EnsureGatewayResponse {
+  // The operation to track the progress of gateway provisioning.
+  // Will be empty if the gateway is already provisioned and ready for use.
+  reside.common.operation.v1.Operation operation = 1;
+}
+
+// The service for managing infrastructure-related definitions in the system, such as gateways.
+service GatewayService {
+  // Ensures that the gateway exists and ready for use.
+  rpc EnsureGateway(EnsureGatewayRequest) returns (EnsureGatewayResponse);
+}

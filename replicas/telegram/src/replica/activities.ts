@@ -1,36 +1,185 @@
-import type { OperationServiceClient } from "@reside/api/common/operation.v1"
-import type {
-  NotificationResponse,
-  NotificationServiceClient,
-} from "@reside/api/interaction/notification.v1"
 import type { Operation, PrismaClient } from "../database"
-import { createInteractionActivities, type GenericOperationService } from "@reside/common"
+import { createHash } from "node:crypto"
+import { CoreV1Api } from "@kubernetes/client-node"
+import { type GenericOperationService, getReplicaNamespace, kubeConfig } from "@reside/common"
 import { strings } from "../locale"
+import { createTelegramBotClient } from "./bot-client"
+import { createWebhookUrl } from "./bot-runtime"
+import { loadTelegramSecretState, TELEGRAM_SECRET_NAME } from "./secret"
 
-type TelegramOperationService = GenericOperationService<Operation>
+type ApprovalActionName = "approve" | "reject" | "escalate"
 
 export function createTelegramActivities(args: {
   prisma: PrismaClient
-  notificationService: NotificationServiceClient
-  operationService: OperationServiceClient
-  localOperationService: TelegramOperationService
+  operationService: GenericOperationService<Operation>
 }) {
+  const namespace = getReplicaNamespace()
+  const coreApi = kubeConfig.makeApiClient(CoreV1Api)
+
   return {
-    ...createInteractionActivities({
-      notificationService: args.notificationService,
-      operationService: args.operationService,
-    }),
+    async getAvatarProvisionRequest(operationId: number): Promise<{
+      operationId: number
+      subjectId: string
+      replicaName: string
+      replicaTitle: string
+      expectedPrefix: string
+    }> {
+      const request = await args.prisma.avatarProvisionRequest.findUnique({
+        where: {
+          operationId,
+        },
+        select: {
+          operationId: true,
+          subjectId: true,
+          replicaName: true,
+          replicaTitle: true,
+          expectedPrefix: true,
+        },
+      })
+
+      if (!request) {
+        throw new Error(`Avatar provisioning request for operation "${operationId}" was not found`)
+      }
+
+      return request
+    },
+
+    async getAvatarProvisioningPromptLink(input: { operationId: number }): Promise<string> {
+      const request = await args.prisma.avatarProvisionRequest.findUnique({
+        where: {
+          operationId: input.operationId,
+        },
+      })
+
+      if (!request) {
+        throw new Error(
+          `Avatar provisioning request for operation "${input.operationId}" was not found`,
+        )
+      }
+
+      const secretState = await loadTelegramSecretState(coreApi, namespace)
+      if (!secretState.botToken) {
+        throw new Error(`Secret "${TELEGRAM_SECRET_NAME}" must contain "bot_token"`)
+      }
+
+      const managerBot = createTelegramBotClient(secretState.botToken, {
+        role: "activity.manager",
+      })
+      const me = await managerBot.api.getMe()
+      const managerBotUsername = me.username?.trim()
+      if (!managerBotUsername) {
+        throw new Error("Manager bot username is not available")
+      }
+
+      const requestLink = createManagedBotLink(
+        managerBotUsername,
+        request.expectedPrefix,
+        request.replicaTitle,
+      )
+
+      return requestLink
+    },
+
+    async completeAvatarProvisionOperation(input: {
+      operationId: number
+      managedBotId: string
+      managedBotUsername: string
+    }): Promise<void> {
+      const request = await args.prisma.avatarProvisionRequest.findUnique({
+        where: {
+          operationId: input.operationId,
+        },
+      })
+
+      if (!request) {
+        throw new Error(
+          `Avatar provisioning request for operation "${input.operationId}" was not found`,
+        )
+      }
+
+      const secretState = await loadTelegramSecretState(coreApi, namespace)
+      if (!secretState.botToken) {
+        throw new Error(`Secret "${TELEGRAM_SECRET_NAME}" must contain "bot_token"`)
+      }
+
+      const managerBot = createTelegramBotClient(secretState.botToken, {
+        role: "activity.manager",
+      })
+      const managedBotId = parseManagedBotId(input.managedBotId)
+      const replacement = await managerBot.api.replaceManagedBotToken(managedBotId)
+
+      const avatarBot = createTelegramBotClient(replacement, {
+        role: "activity.avatar",
+      })
+
+      await avatarBot.api.setWebhook(createWebhookUrl(), {
+        secret_token: createWebhookSecret(replacement),
+        drop_pending_updates: false,
+        allowed_updates: ["callback_query"],
+      })
+
+      await args.prisma.$transaction(async tx => {
+        const avatar = await tx.avatar.upsert({
+          where: {
+            subjectId: request.subjectId,
+          },
+          create: {
+            subjectId: request.subjectId,
+            replicaName: request.replicaName,
+            replicaTitle: request.replicaTitle,
+            managedBotId: input.managedBotId,
+            managedBotUsername: input.managedBotUsername,
+            createdByUserId: request.createdByUserId,
+            token: replacement,
+          },
+          update: {
+            replicaTitle: request.replicaTitle,
+            managedBotId: input.managedBotId,
+            managedBotUsername: input.managedBotUsername,
+            createdByUserId: request.createdByUserId,
+            token: replacement,
+          },
+          select: {
+            id: true,
+          },
+        })
+
+        await tx.avatarProvisionRequest.update({
+          where: {
+            operationId: input.operationId,
+          },
+          data: {
+            avatarId: avatar.id,
+          },
+        })
+      })
+
+      await args.operationService.setCompleted(input.operationId)
+    },
+
+    async failAvatarProvisionOperation(input: {
+      operationId: number
+      reason: string
+      message: string
+    }): Promise<void> {
+      await args.prisma.operation.update({
+        where: {
+          id: input.operationId,
+        },
+        data: {
+          status: "FAILED",
+          failureReason: input.reason,
+          failureMessage: input.message,
+          resolvedAt: new Date(),
+        },
+      })
+    },
 
     async completeApprovalOperation(input: {
       operationId: number
-      notificationResponse: NotificationResponse
+      actionName: ApprovalActionName
     }): Promise<void> {
-      const response = input.notificationResponse.response
-      if (!response || response.$case !== "actionName") {
-        throw new Error("Approval notification response must be actionName")
-      }
-
-      const mappedResult = mapActionToResult(response.value)
+      const mappedResult = mapActionToResult(input.actionName)
 
       await args.prisma.$transaction(async tx => {
         await tx.approvalRequest.update({
@@ -45,7 +194,7 @@ export function createTelegramActivities(args: {
         })
       })
 
-      await args.localOperationService.setCompleted(input.operationId)
+      await args.operationService.setCompleted(input.operationId)
     },
 
     async failApprovalOperation(input: {
@@ -68,7 +217,25 @@ export function createTelegramActivities(args: {
   }
 }
 
-function mapActionToResult(actionName: string): {
+function parseManagedBotId(value: string): number {
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed)) {
+    throw new Error(`Invalid managed bot id "${value}"`)
+  }
+
+  return parsed
+}
+
+function createManagedBotLink(
+  managerBotUsername: string,
+  expectedPrefix: string,
+  suggestedBotName: string,
+): string {
+  const suggestedBotUsername = `${expectedPrefix}_bot`
+  return `https://t.me/newbot/${managerBotUsername}/${suggestedBotUsername}?name=${encodeURIComponent(suggestedBotName)}`
+}
+
+function mapActionToResult(actionName: ApprovalActionName): {
   result: "ESCALATED" | "APPROVED" | "REJECTED"
   resolution: string
 } {
@@ -88,7 +255,9 @@ function mapActionToResult(actionName: string): {
         result: "ESCALATED",
         resolution: strings.worker.activities.approvalResolutionEscalated,
       }
-    default:
-      throw new Error(`Unknown approval action: ${actionName}`)
   }
+}
+
+function createWebhookSecret(token: string): string {
+  return createHash("sha256").update(`telegram-webhook:${token}`).digest("hex")
 }

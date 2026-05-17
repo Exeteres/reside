@@ -1,9 +1,8 @@
 import { webcrypto } from "node:crypto"
-import { mkdir, stat } from "node:fs/promises"
-import { dirname, join } from "node:path"
 import { CopilotClient } from "@github/copilot-sdk"
 import { createAppAuth } from "@octokit/auth-app"
 import { logger, subscribeToConfigMap, subscribeToSecret } from "@reside/common"
+import { toError } from "@reside/utils"
 import { Octokit } from "octokit"
 import { z } from "zod"
 
@@ -27,13 +26,12 @@ const githubRepositoryConfigSchema = z.object({
 type GithubRepositoryTarget = {
   owner: string
   name: string
-  localPath: string
+  cloneUrl: string
 }
-
-const LOCAL_REPOSITORY_ROOT = "/tmp/engineer/repositories"
 
 export type EngineerAiRuntime = {
   getOctokit: () => Octokit
+  getCopilotOctokit: () => Octokit
   getCopilotClient: () => CopilotClient
   getRepositoryTarget: () => Promise<GithubRepositoryTarget>
   stop: () => Promise<void>
@@ -43,6 +41,7 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
   ensureWebCryptoGlobals()
 
   let currentOctokit: Octokit | undefined
+  let currentCopilotOctokit: Octokit | undefined
   let currentCopilotClient: CopilotClient | undefined
   let currentRepositoryTarget: GithubRepositoryTarget | undefined
   let lastOctokitError: string | undefined
@@ -54,12 +53,11 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
     async configMap => {
       try {
         const parsed = githubRepositoryConfigSchema.parse(configMap)
-        const localPath = await ensureReadonlyRepositoryClone(parsed.owner, parsed.name)
 
         currentRepositoryTarget = {
           owner: parsed.owner,
           name: parsed.name,
-          localPath,
+          cloneUrl: `https://github.com/${parsed.owner}/${parsed.name}.git`,
         }
 
         if (resolveRepositoryTargetPromise) {
@@ -67,14 +65,14 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
           resolveRepositoryTargetPromise = undefined
         }
 
-        logger.info(currentRepositoryTarget, "engineer github repository target updated")
-      } catch (error) {
-        logger.error(
-          {
-            error: error instanceof Error ? error.message : String(error),
-          },
-          "failed to configure engineer repository target",
+        logger.info(
+          'engineer github repository target updated owner="%s" name="%s" clone_url="%s"',
+          currentRepositoryTarget.owner,
+          currentRepositoryTarget.name,
+          currentRepositoryTarget.cloneUrl,
         )
+      } catch (error) {
+        logger.error({ error: toError(error) }, "failed to configure engineer repository target")
       }
     },
   )
@@ -101,16 +99,12 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
         lastOctokitError = undefined
         const appSlug = app.data?.slug ?? "unknown"
 
-        logger.info({ slug: appSlug }, "engineer github app client updated")
+        logger.info('engineer github app client updated slug="%s"', appSlug)
       } catch (error) {
-        lastOctokitError = error instanceof Error ? error.message : String(error)
+        const errorValue = toError(error)
+        lastOctokitError = errorValue.message
 
-        logger.error(
-          {
-            error: lastOctokitError,
-          },
-          "failed to configure engineer github app client",
-        )
+        logger.error({ error: errorValue }, "failed to configure engineer github app client")
       }
     },
   )
@@ -131,26 +125,23 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
       await client.start()
 
       const authStatus = await client.getAuthStatus()
+      currentCopilotOctokit = new Octokit({
+        auth: parsed.user_token,
+      })
       currentCopilotClient = client
       lastCopilotError = undefined
 
       logger.info(
-        {
-          isAuthenticated: authStatus.isAuthenticated,
-          authType: authStatus.authType,
-          login: authStatus.login,
-        },
-        "engineer copilot client updated",
+        'engineer copilot client updated is_authenticated="%s" auth_type="%s" login="%s"',
+        String(authStatus.isAuthenticated),
+        authStatus.authType,
+        authStatus.login ?? "",
       )
     } catch (error) {
-      lastCopilotError = error instanceof Error ? error.message : String(error)
+      const errorValue = toError(error)
+      lastCopilotError = errorValue.message
 
-      logger.error(
-        {
-          error: lastCopilotError,
-        },
-        "failed to configure engineer copilot client",
-      )
+      logger.error({ error: errorValue }, "failed to configure engineer copilot client")
     }
   })
 
@@ -179,6 +170,17 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
       return currentCopilotClient
     },
 
+    getCopilotOctokit: () => {
+      if (!currentCopilotOctokit) {
+        const reason = lastCopilotError ? ` Last error: ${lastCopilotError}` : ""
+        throw new Error(
+          `Copilot Octokit is not ready: secret "copilot" is not configured.${reason}`,
+        )
+      }
+
+      return currentCopilotOctokit
+    },
+
     getRepositoryTarget: async () => {
       if (currentRepositoryTarget) {
         return currentRepositoryTarget
@@ -199,46 +201,6 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
       }
     },
   }
-}
-
-async function ensureReadonlyRepositoryClone(owner: string, name: string): Promise<string> {
-  const localPath = join(LOCAL_REPOSITORY_ROOT, owner, name)
-
-  if (await pathExists(localPath)) {
-    return localPath
-  }
-
-  await mkdir(dirname(localPath), { recursive: true })
-
-  const cloneUrl = `https://github.com/${owner}/${name}.git`
-  await runCommand(["git", "clone", "--depth", "1", cloneUrl, localPath])
-  await runCommand(["chmod", "-R", "a-w", localPath])
-
-  return localPath
-}
-
-async function pathExists(path: string): Promise<boolean> {
-  try {
-    await stat(path)
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function runCommand(command: string[]): Promise<void> {
-  const process = Bun.spawn(command, {
-    stdout: "pipe",
-    stderr: "pipe",
-  })
-
-  const exitCode = await process.exited
-  if (exitCode === 0) {
-    return
-  }
-
-  const stderr = await process.stderr.text()
-  throw new Error(`Command failed: ${command.join(" ")} (${stderr.trim()})`)
 }
 
 function ensureWebCryptoGlobals(): void {
@@ -268,12 +230,7 @@ function startSubscription<T>(
       await onValue(next.value)
     }
   })().catch(error => {
-    logger.error(
-      {
-        error: error instanceof Error ? error.message : String(error),
-      },
-      "engineer subscription loop failed",
-    )
+    logger.error({ error: toError(error) }, "engineer subscription loop failed")
   })
 
   return async () => {
@@ -284,5 +241,7 @@ function startSubscription<T>(
     } catch {
       // no-op
     }
+
+    await _loop
   }
 }

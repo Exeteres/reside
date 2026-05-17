@@ -23,7 +23,7 @@ try {
   await assertDefinitionApi(services.definitionService, services.prisma, scope)
   await assertRequestApi(
     services.permissionRequestService,
-    services.operationStatusService,
+    services.accessOperationStatusService,
     services.definitionService,
     services.prisma,
     e2eApprovalEndpoint,

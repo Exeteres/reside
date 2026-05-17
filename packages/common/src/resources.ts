@@ -1,18 +1,15 @@
 import { waitForOperationSuccess } from "@reside/api"
-import type { DefinitionServiceClient as AccessDefinitionServiceClient } from "@reside/api/access/definition.v1"
-import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
-import {
-  CommandParameterType,
-  type DefinitionServiceClient as InteractionDefinitionServiceClient,
-} from "@reside/api/interaction/definition.v1"
-import { getReplicaEndpoint, getReplicaName } from "./kubernetes"
+import type { AvatarServiceClient as InteractionAvatarServiceClient } from "@reside/api/interaction/avatar.v1"
+import { CommandParameterType } from "@reside/api/interaction/definition.v1"
+import { WellKnownPermissions } from "@reside/registry"
+import { getReplicaCallbackEndpoint, getReplicaEndpoint, getReplicaName } from "./kubernetes"
 import { logger } from "./logger"
-import { WellKnownPermissions } from "./permissions"
 import type {
   CommandDefinition as WorkflowCommandDefinition,
   CommandDefinitionParameter,
 } from "./workflow/command"
+import type { CommonServices } from "./services"
 
 export type PermissionDefinition = {
   name: string
@@ -34,55 +31,120 @@ export type NotificationChannelDefinition = {
   description?: string
 }
 
-export type DefineCommonResourcesOptions = {
+export type GatewayDefinition = {
+  name: string
+  title: string
+  description?: string
+}
+
+type AccessDefineResourcesOptions<TApiGroups extends string> = "access" extends TApiGroups
+  ? {
+      /**
+       * The permissions to define.
+       */
+      permissions?: PermissionDefinition[]
+
+      /**
+       * The realms to define.
+       */
+      realms?: RealmDefinition[]
+    }
+  : {
+      permissions?: never
+      realms?: never
+    }
+
+type InfraDefineResourcesOptions<TApiGroups extends string> = "infra" extends TApiGroups
+  ? {
+      /**
+       * The gateways to define.
+       */
+      gateways?: GatewayDefinition[]
+    }
+  : {
+      gateways?: never
+    }
+
+type InteractionDefineResourcesOptions<TApiGroups extends string> = "interaction" extends TApiGroups
+  ? {
+      /**
+       * The localized replica title used for avatar provisioning.
+       */
+      avatarTitle?: string
+
+      /**
+       * The optional commands to define.
+       */
+      commands?: WorkflowCommandDefinition[]
+
+      /**
+       * The optional notification channels to define.
+       */
+      notificationsChannels?: NotificationChannelDefinition[]
+    }
+  : {
+      avatarTitle?: never
+      commands?: never
+      notificationsChannels?: never
+    }
+
+export type DefineCommonResourcesOptions<TApiGroups extends string = string> = {
   /**
-   * The service client to request permissions for managing resources.
+   * The services to use for defining permissions.
    */
-  accessRequestService: PermissionRequestServiceClient
+  services: Partial<CommonServices<TApiGroups>>
+} & AccessDefineResourcesOptions<TApiGroups> &
+  InfraDefineResourcesOptions<TApiGroups> &
+  InteractionDefineResourcesOptions<TApiGroups>
+
+export type EnsureReplicaAvatarOptions = {
+  /**
+   * The Interaction avatar service client.
+   */
+  avatarService: InteractionAvatarServiceClient
 
   /**
-   * The operation service client to wait for permission request operations.
+   * The operation service used to track interaction operations.
    */
-  accessOperationService: OperationServiceClient
+  operationService: OperationServiceClient
 
   /**
-   * The optional access resource definitions.
+   * The localized replica title used for avatar provisioning.
    */
-  access?: {
-    /**
-     * The Access definition service client.
-     */
-    definitionService: AccessDefinitionServiceClient
+  avatarTitle?: string
+}
 
-    /**
-     * The optional permissions to define.
-     */
-    permissions?: PermissionDefinition[]
-
-    /**
-     * The optional realms to define.
-     */
-    realms?: RealmDefinition[]
+/**
+ * Ensures that an avatar exists for the current replica.
+ *
+ * @param options The options containing avatar service dependencies and replica title.
+ */
+export async function ensureReplicaAvatar({
+  avatarService,
+  operationService,
+  avatarTitle,
+}: EnsureReplicaAvatarOptions): Promise<void> {
+  if (typeof avatarTitle !== "string") {
+    return
   }
 
-  /**
-   * The optional interaction resource definitions.
-   */
-  interaction?: {
-    /**
-     * The Interaction definition service client.
-     */
-    definitionService: InteractionDefinitionServiceClient
+  const normalizedAvatarTitle = avatarTitle.trim()
+  if (normalizedAvatarTitle.length === 0) {
+    return
+  }
 
-    /**
-     * The optional commands to define.
-     */
-    commands?: WorkflowCommandDefinition[]
+  try {
+    const ensureAvatarResponse = await avatarService.ensureAvatar({
+      replicaTitle: normalizedAvatarTitle,
+    })
 
-    /**
-     * The optional notification channels to define.
-     */
-    notificationsChannels?: NotificationChannelDefinition[]
+    if (ensureAvatarResponse.operation) {
+      await waitForOperationSuccess(ensureAvatarResponse.operation, {
+        operationService,
+      })
+    }
+  } catch (error) {
+    logger.error({ error }, "failed to ensure avatar for replica %s", getReplicaName())
   }
 }
 
@@ -91,16 +153,20 @@ export type DefineCommonResourcesOptions = {
  *
  * @param options The options containing the shared clients and optional resource sections to define.
  */
-export async function defineCommonResources({
-  accessRequestService,
-  accessOperationService,
-  access,
-  interaction,
-}: DefineCommonResourcesOptions): Promise<void> {
-  const permissions = access?.permissions ?? []
-  const realms = access?.realms ?? []
-  const commands = interaction?.commands ?? []
-  const notificationChannels = interaction?.notificationsChannels ?? []
+export async function defineCommonResources<TApiGroups extends string = string>({
+  services,
+  permissions = [],
+  realms = [],
+  gateways = [],
+  avatarTitle,
+  commands = [],
+  notificationsChannels = [],
+}: DefineCommonResourcesOptions<TApiGroups>): Promise<void> {
+  const accessServices = services as Partial<CommonServices<"access">>
+  const infraServices = services as Partial<CommonServices<"infra">>
+  const interactionServices = services as Partial<CommonServices<"interaction">>
+
+  const shouldCreateAvatar = typeof avatarTitle === "string" && avatarTitle.trim().length > 0
 
   const requestItems = [
     ...permissions.map(permission => ({
@@ -111,14 +177,26 @@ export async function defineCommonResources({
       permissionName: WellKnownPermissions.ACCESS_REALM_MANAGE,
       scope: realm.name,
     })),
+    ...gateways.map(gateway => ({
+      permissionName: WellKnownPermissions.INFRA_GATEWAY_MANAGE,
+      scope: gateway.name,
+    })),
     ...commands.map(command => ({
       permissionName: WellKnownPermissions.TELEGRAM_COMMAND_MANAGE,
       scope: command.name,
     })),
-    ...notificationChannels.map(channel => ({
+    ...notificationsChannels.map(channel => ({
       permissionName: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_MANAGE,
       scope: channel.name,
     })),
+    ...(shouldCreateAvatar
+      ? [
+          {
+            permissionName: WellKnownPermissions.TELEGRAM_AVATAR_OWN,
+            scope: getReplicaName(),
+          },
+        ]
+      : []),
   ]
 
   const uniqueRequestItems = Array.from(
@@ -126,15 +204,25 @@ export async function defineCommonResources({
   )
 
   logger.info(
-    "defining common resources: permissions=%d, realms=%d, commands=%d, notificationChannels=%d, permissionRequestItems=%d",
+    "defining common resources: permissions=%d, realms=%d, gateways=%d, commands=%d, notificationChannels=%d, permissionRequestItems=%d",
     permissions.length,
     realms.length,
+    gateways.length,
     commands.length,
-    notificationChannels.length,
+    notificationsChannels.length,
     uniqueRequestItems.length,
   )
 
   if (uniqueRequestItems.length > 0) {
+    const accessRequestService = requireService(
+      accessServices.permissionRequestService,
+      "permissionRequestService",
+    )
+    const accessOperationService = requireService(
+      accessServices.accessOperationService,
+      "accessOperationService",
+    )
+
     logger.info(
       'requesting access permissions set "%s" for replica "%s" with %d items',
       "define-common-resources",
@@ -157,21 +245,64 @@ export async function defineCommonResources({
     }
   }
 
-  if (permissions.length > 0 && access) {
-    await access.definitionService.putPermissions({ permissions })
+  if (permissions.length > 0) {
+    const accessDefinitionService = requireService(
+      accessServices.accessDefinitionService,
+      "accessDefinitionService",
+    )
+
+    await accessDefinitionService.putPermissions({ permissions })
     logger.info("defined %d access permissions", permissions.length)
   }
 
-  if (realms.length > 0 && access) {
+  if (realms.length > 0) {
+    const accessDefinitionService = requireService(
+      accessServices.accessDefinitionService,
+      "accessDefinitionService",
+    )
+
     for (const realm of realms) {
-      await access.definitionService.putRealm(realm)
+      await accessDefinitionService.putRealm({
+        ...realm,
+        subjectServiceEndpoint:
+          realm.subjectServiceEndpoint?.trim() || getReplicaCallbackEndpoint(),
+      })
     }
 
     logger.info("defined %d access realms", realms.length)
   }
 
-  if (commands.length > 0 && interaction) {
-    await interaction.definitionService.putCommands({
+  if (gateways.length > 0) {
+    const gatewayService = requireService(infraServices.gatewayService, "gatewayService")
+    const infraOperationService = requireService(
+      infraServices.infraOperationService,
+      "infraOperationService",
+    )
+
+    for (const gateway of gateways) {
+      const { operation } = await gatewayService.ensureGateway({
+        name: gateway.name,
+        title: gateway.title,
+        description: gateway.description,
+      })
+
+      if (operation) {
+        await waitForOperationSuccess(operation, {
+          operationService: infraOperationService,
+        })
+      }
+    }
+
+    logger.info("defined %d infra gateways", gateways.length)
+  }
+
+  if (commands.length > 0) {
+    const interactionDefinitionService = requireService(
+      interactionServices.interactionDefinitionService,
+      "interactionDefinitionService",
+    )
+
+    await interactionDefinitionService.putCommands({
       commands: commands.map(command => ({
         name: command.name,
         title: command.title,
@@ -192,13 +323,40 @@ export async function defineCommonResources({
     logger.info("defined %d interaction commands", commands.length)
   }
 
-  if (notificationChannels.length > 0 && interaction) {
-    await interaction.definitionService.putChannels({
-      channels: notificationChannels,
+  if (notificationsChannels.length > 0) {
+    const interactionDefinitionService = requireService(
+      interactionServices.interactionDefinitionService,
+      "interactionDefinitionService",
+    )
+
+    await interactionDefinitionService.putChannels({
+      channels: notificationsChannels,
     })
 
-    logger.info("defined %d interaction notification channels", notificationChannels.length)
+    logger.info("defined %d interaction notification channels", notificationsChannels.length)
   }
+
+  if (shouldCreateAvatar) {
+    const avatarService = requireService(interactionServices.avatarService, "avatarService")
+    const interactionOperationService = requireService(
+      interactionServices.interactionOperationService,
+      "interactionOperationService",
+    )
+
+    await ensureReplicaAvatar({
+      avatarService,
+      operationService: interactionOperationService,
+      avatarTitle,
+    })
+  }
+}
+
+function requireService<TService>(service: TService | undefined, serviceName: string): TService {
+  if (service !== undefined) {
+    return service
+  }
+
+  throw new Error(`Missing required service "${serviceName}" in defineCommonResources`)
 }
 
 function mapCommandParameterType(parameter: CommandDefinitionParameter): CommandParameterType {

@@ -1,8 +1,13 @@
+import { mkdtemp, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { logger } from "@reside/common"
+import { toError } from "@reside/utils"
 import { startEngineerAiRuntime } from "../replica"
 
 const runtime = await startEngineerAiRuntime()
 let exitCode = 0
+let workspacePath: string | undefined
 
 try {
   logger.info("starting engineer e2e")
@@ -33,22 +38,26 @@ try {
   })
 
   logger.info(
-    {
-      owner: repository.owner,
-      repo: repository.name,
-      issues: issuesResponse.data.map(issue => ({
+    'engineer e2e repository issues owner="%s" repo="%s" issues="%s"',
+    repository.owner,
+    repository.name,
+    JSON.stringify(
+      issuesResponse.data.map(issue => ({
         number: issue.number,
         state: issue.state,
         title: issue.title,
         url: issue.html_url,
       })),
-    },
-    "engineer e2e repository issues",
+    ),
   )
+
+  workspacePath = await mkdtemp(join(tmpdir(), "reside-engineer-e2e-"))
+  const repositoryPath = join(workspacePath, repository.name)
+  await runCommand(["git", "clone", "--depth", "1", repository.cloneUrl, repositoryPath])
 
   const session = await copilotClient.createSession({
     model: "gpt-5-mini",
-    workingDirectory: repository.localPath,
+    workingDirectory: repositoryPath,
     onPermissionRequest: async () => ({ kind: "approved" }),
   })
 
@@ -57,12 +66,7 @@ try {
       prompt: "Say hello to engineer replica in one short sentence.",
     })
 
-    logger.info(
-      {
-        response: normalizeAgentResponse(agentResponse),
-      },
-      "engineer e2e agent response",
-    )
+    logger.info('engineer e2e agent response text="%s"', normalizeAgentResponse(agentResponse))
   } finally {
     await session.disconnect()
   }
@@ -70,23 +74,18 @@ try {
   logger.info("engineer e2e completed")
 } catch (error) {
   exitCode = 1
+  const errorValue = toError(error)
 
-  logger.error(
-    {
-      error: error instanceof Error ? error.message : String(error),
-    },
-    "engineer e2e failed",
-  )
+  logger.error({ error: errorValue }, "engineer e2e failed")
 } finally {
+  if (workspacePath) {
+    await rm(workspacePath, { recursive: true, force: true })
+  }
+
   try {
     await withTimeout(runtime.stop(), 5_000, "Timed out waiting for runtime stop")
   } catch (error) {
-    logger.warn(
-      {
-        error: error instanceof Error ? error.message : String(error),
-      },
-      "engineer e2e runtime stop warning",
-    )
+    logger.warn({ error: toError(error) }, "engineer e2e runtime stop warning")
   }
 
   await Bun.sleep(50)
@@ -152,4 +151,19 @@ function normalizeAgentResponse(response: unknown): string {
   }
 
   return String(response)
+}
+
+async function runCommand(command: string[]): Promise<void> {
+  const process = Bun.spawn(command, {
+    stdout: "pipe",
+    stderr: "pipe",
+  })
+
+  const exitCode = await process.exited
+  if (exitCode === 0) {
+    return
+  }
+
+  const stderr = await process.stderr.text()
+  throw new Error(`Command failed: ${command.join(" ")} (${stderr.trim()})`)
 }

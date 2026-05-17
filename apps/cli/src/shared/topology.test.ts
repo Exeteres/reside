@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { topology } from "@reside/topology"
+import { topology } from "@reside/registry"
 import {
   resolveDataValues,
   resolveReplicaSelection,
@@ -14,12 +14,7 @@ describe("resolveReplicaSelection", () => {
   test("includes dependencies while preserving the provided sorted order", () => {
     const replicas = resolveReplicaSelection(topology, ["alpha"])
 
-    expect(replicas.map(replica => replica.name)).toEqual([
-      "database",
-      "access",
-      "telegram",
-      "alpha",
-    ])
+    expect(replicas.map(replica => replica.name)).toEqual(["infra", "access", "telegram", "alpha"])
   })
 
   test("selects only requested replicas when dependency expansion is disabled", () => {

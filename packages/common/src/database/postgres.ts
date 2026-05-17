@@ -1,9 +1,17 @@
-import type { DatabaseOptions } from "./shared"
 import { PrismaPg } from "@prisma/adapter-pg"
-import { registerGracefulShutdown, waitForResult } from "@reside/api"
-import type { PostgresDatabaseCredentials } from "@reside/api/database/provision.v1"
+import { waitForResult } from "@reside/api"
 import { logger } from "../logger"
 import { Pool } from "pg"
+import type { CommonServices } from "../services"
+import { registerGracefulShutdown } from "../utils"
+
+export type PostgresConnectionCredentials = {
+  host: string
+  port: number
+  database: string
+  username: string
+  password: string
+}
 
 export type PostgresPool = {
   /**
@@ -22,18 +30,22 @@ export type PostgresPool = {
  *
  * @returns The configured PostgreSQL connection pool.
  */
-export async function createPostgresPool(options: DatabaseOptions): Promise<PostgresPool> {
+export async function createPostgresPool(services: CommonServices<"infra">): Promise<PostgresPool> {
   try {
     logger.info("requesting PostgreSQL credentials from database provision service")
 
-    const response = await options.provisionService.getPostgresDatabaseCredentials({})
+    const response = await services.provisionService.getPostgresDatabaseCredentials({})
     if (!response.credentials) {
       throw new Error("Server did not return database credentials")
     }
+    if (response.credentials.case === undefined) {
+      throw new Error("Server returned empty database credentials response")
+    }
 
-    const credentials = await waitForResult(response.credentials, {
-      operationService: options.operationService,
-    })
+    const credentials = await waitForResult(response.credentials, services.infraOperationService)
+    if (!credentials) {
+      throw new Error("Server did not return resolved database credentials")
+    }
 
     logger.info(
       'received PostgreSQL credentials for host "%s" and database "%s"',
@@ -55,7 +67,7 @@ export async function createPostgresPool(options: DatabaseOptions): Promise<Post
  * @returns The configured PostgreSQL connection pool.
  */
 export function createPostgresPoolFromCredentials(
-  credentials: PostgresDatabaseCredentials,
+  credentials: PostgresConnectionCredentials,
 ): PostgresPool {
   logger.info(
     'creating PostgreSQL pool for host "%s" and database "%s"',
@@ -77,7 +89,7 @@ export function createPostgresPoolFromCredentials(
   }
 }
 
-function buildConnectionString(args: PostgresDatabaseCredentials): string {
+function buildConnectionString(args: PostgresConnectionCredentials): string {
   const connectionUrl = new URL("postgresql://placeholder")
   connectionUrl.hostname = args.host
   connectionUrl.port = `${args.port}`

@@ -1,6 +1,17 @@
 import { defineCommand } from "citty"
 import { readRequestedReplicas, runProvisionFlow } from "../shared/bootstrap-flow"
 
+function readRequiredClusterDomainFromEnv(): string {
+  const clusterDomain = process.env.RESIDE_CLUSTER_DOMAIN?.trim()
+  if (!clusterDomain || clusterDomain.length === 0) {
+    throw new Error(
+      '"RESIDE_CLUSTER_DOMAIN" environment variable must be set locally before running "reside e2e"',
+    )
+  }
+
+  return clusterDomain
+}
+
 export const e2eCommand = defineCommand({
   meta: {
     description: "Bootstrap a kind cluster and run replica e2e jobs.",
@@ -47,7 +58,7 @@ export const e2eCommand = defineCommand({
         "Provision only explicitly requested replicas without dependencies or base resources.",
       default: false,
     },
-    skipBase: {
+    "skip-base": {
       type: "boolean",
       description: "Skip cluster provisioning and base prerequisites.",
       default: false,
@@ -55,12 +66,15 @@ export const e2eCommand = defineCommand({
   },
   async run({ args }) {
     const requestedReplicas = readRequestedReplicas(args)
+    const clusterDomain = readRequiredClusterDomainFromEnv()
 
     await runProvisionFlow({
       ask: args.ask,
       clusterName: args.cluster,
+      clusterDomain,
+      installGatewayApi: true,
       only: args.only,
-      skipBase: args.skipBase,
+      skipBase: args["skip-base"],
       recreate: args.recreate,
       requestedReplicas,
       runE2E: true,

@@ -385,7 +385,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Task: 'Task',
-  TaskPrompt: 'TaskPrompt'
+  TaskIteration: 'TaskIteration'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -401,7 +401,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "task" | "taskPrompt"
+    modelProps: "task" | "taskIteration"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -479,77 +479,77 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    TaskPrompt: {
-      payload: Prisma.$TaskPromptPayload<ExtArgs>
-      fields: Prisma.TaskPromptFieldRefs
+    TaskIteration: {
+      payload: Prisma.$TaskIterationPayload<ExtArgs>
+      fields: Prisma.TaskIterationFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.TaskPromptFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload> | null
+          args: Prisma.TaskIterationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.TaskPromptFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>
+          args: Prisma.TaskIterationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>
         }
         findFirst: {
-          args: Prisma.TaskPromptFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload> | null
+          args: Prisma.TaskIterationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.TaskPromptFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>
+          args: Prisma.TaskIterationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>
         }
         findMany: {
-          args: Prisma.TaskPromptFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>[]
+          args: Prisma.TaskIterationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>[]
         }
         create: {
-          args: Prisma.TaskPromptCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>
+          args: Prisma.TaskIterationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>
         }
         createMany: {
-          args: Prisma.TaskPromptCreateManyArgs<ExtArgs>
+          args: Prisma.TaskIterationCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.TaskPromptCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>[]
+          args: Prisma.TaskIterationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>[]
         }
         delete: {
-          args: Prisma.TaskPromptDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>
+          args: Prisma.TaskIterationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>
         }
         update: {
-          args: Prisma.TaskPromptUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>
+          args: Prisma.TaskIterationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>
         }
         deleteMany: {
-          args: Prisma.TaskPromptDeleteManyArgs<ExtArgs>
+          args: Prisma.TaskIterationDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.TaskPromptUpdateManyArgs<ExtArgs>
+          args: Prisma.TaskIterationUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.TaskPromptUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>[]
+          args: Prisma.TaskIterationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>[]
         }
         upsert: {
-          args: Prisma.TaskPromptUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPromptPayload>
+          args: Prisma.TaskIterationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskIterationPayload>
         }
         aggregate: {
-          args: Prisma.TaskPromptAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateTaskPrompt>
+          args: Prisma.TaskIterationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTaskIteration>
         }
         groupBy: {
-          args: Prisma.TaskPromptGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TaskPromptGroupByOutputType>[]
+          args: Prisma.TaskIterationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskIterationGroupByOutputType>[]
         }
         count: {
-          args: Prisma.TaskPromptCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TaskPromptCountAggregateOutputType> | number
+          args: Prisma.TaskIterationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskIterationCountAggregateOutputType> | number
         }
       }
     }
@@ -594,8 +594,11 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const TaskScalarFieldEnum = {
   id: 'id',
-  subjectId: 'subjectId',
+  phase: 'phase',
+  status: 'status',
   issueId: 'issueId',
+  createdBy: 'createdBy',
+  updatedBy: 'updatedBy',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -603,14 +606,19 @@ export const TaskScalarFieldEnum = {
 export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
 
 
-export const TaskPromptScalarFieldEnum = {
+export const TaskIterationScalarFieldEnum = {
   id: 'id',
   taskId: 'taskId',
+  iteration: 'iteration',
+  phase: 'phase',
   prompt: 'prompt',
+  resultSummary: 'resultSummary',
+  errorMessage: 'errorMessage',
+  createdBy: 'createdBy',
   createdAt: 'createdAt'
 } as const
 
-export type TaskPromptScalarFieldEnum = (typeof TaskPromptScalarFieldEnum)[keyof typeof TaskPromptScalarFieldEnum]
+export type TaskIterationScalarFieldEnum = (typeof TaskIterationScalarFieldEnum)[keyof typeof TaskIterationScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -654,6 +662,34 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskPhase'
+ */
+export type EnumTaskPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskPhase'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskPhase[]'
+ */
+export type ListEnumTaskPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskPhase[]'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskStatus'
+ */
+export type EnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskStatus[]'
+ */
+export type ListEnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus[]'>
     
 
 
@@ -794,7 +830,7 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   task?: Prisma.TaskOmit
-  taskPrompt?: Prisma.TaskPromptOmit
+  taskIteration?: Prisma.TaskIterationOmit
 }
 
 /* Types for Logging */

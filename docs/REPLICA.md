@@ -6,7 +6,7 @@ This document defines the required structure, patterns, and helpers for replicas
 
 To add a new replica:
 
-1. Define it in `packages/topology/src/topology.ts`.
+1. Define it in `packages/registry/src/topology.ts`.
 2. Add a package in `replicas/<replica-name>/`.
 
 ## Replica package structure
@@ -57,10 +57,29 @@ Replica package root must not contain extra top-level files/directories outside 
 
 ## Server pattern and helpers
 
-- Use `nice-grpc` server composition and start with `startService`.
+- Use Connect server composition and start with `startService`.
 - Register service implementations directly in `src/replica/main.ts`.
 - Use authentication helpers from `@reside/common` (`authenticate`, `authenticateReplica`) in service handlers.
 - Keep business logic in `src/replica/services/*`, while `main.ts` should contain only runtime wiring.
+
+## Service dependency conventions
+
+- Entry points must keep the full `services` object (`const services = await createServices()`) and should not destructure it in `src/replica/main.ts` and `src/bootstrap/main.ts`.
+- `create*Service` factories must accept a single object argument and must destructure it in the function signature using expandable full form, even when there is only one dependency.
+- Example required signature style:
+
+```typescript
+export function createBindingService({
+  prisma,
+}: {
+  prisma: PrismaClient;
+}): BindingServiceImplementation {
+  // ...
+}
+```
+
+- If a dependency exists in some `CommonServices<...>` API group, factory typing must include and use that `CommonServices` field instead of introducing parallel ad-hoc dependency providers.
+- Shared business functions used mostly by business services (non-`@reside/common` helpers) must accept explicit service/dependency arguments (for example `prisma`) to keep them easy to test in isolation.
 
 ## Worker model and constraints
 

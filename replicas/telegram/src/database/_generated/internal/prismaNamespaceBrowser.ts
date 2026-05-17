@@ -52,10 +52,12 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   ApprovalRequest: 'ApprovalRequest',
+  Avatar: 'Avatar',
+  AvatarProvisionRequest: 'AvatarProvisionRequest',
+  UnauthorizedAvatar: 'UnauthorizedAvatar',
   NotificationChannel: 'NotificationChannel',
   Chat: 'Chat',
   Command: 'Command',
-  InteractionContext: 'InteractionContext',
   NotificationResponse: 'NotificationResponse',
   Notification: 'Notification',
   Operation: 'Operation',
@@ -91,6 +93,51 @@ export const ApprovalRequestScalarFieldEnum = {
 } as const
 
 export type ApprovalRequestScalarFieldEnum = (typeof ApprovalRequestScalarFieldEnum)[keyof typeof ApprovalRequestScalarFieldEnum]
+
+
+export const AvatarScalarFieldEnum = {
+  id: 'id',
+  subjectId: 'subjectId',
+  replicaName: 'replicaName',
+  replicaTitle: 'replicaTitle',
+  managedBotId: 'managedBotId',
+  managedBotUsername: 'managedBotUsername',
+  createdByUserId: 'createdByUserId',
+  token: 'token',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AvatarScalarFieldEnum = (typeof AvatarScalarFieldEnum)[keyof typeof AvatarScalarFieldEnum]
+
+
+export const AvatarProvisionRequestScalarFieldEnum = {
+  id: 'id',
+  operationId: 'operationId',
+  subjectId: 'subjectId',
+  replicaName: 'replicaName',
+  replicaTitle: 'replicaTitle',
+  expectedPrefix: 'expectedPrefix',
+  createdByUserId: 'createdByUserId',
+  notificationId: 'notificationId',
+  avatarId: 'avatarId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AvatarProvisionRequestScalarFieldEnum = (typeof AvatarProvisionRequestScalarFieldEnum)[keyof typeof AvatarProvisionRequestScalarFieldEnum]
+
+
+export const UnauthorizedAvatarScalarFieldEnum = {
+  id: 'id',
+  managedBotId: 'managedBotId',
+  managedBotUsername: 'managedBotUsername',
+  createdByUserId: 'createdByUserId',
+  reason: 'reason',
+  createdAt: 'createdAt'
+} as const
+
+export type UnauthorizedAvatarScalarFieldEnum = (typeof UnauthorizedAvatarScalarFieldEnum)[keyof typeof UnauthorizedAvatarScalarFieldEnum]
 
 
 export const NotificationChannelScalarFieldEnum = {
@@ -129,18 +176,6 @@ export const CommandScalarFieldEnum = {
 export type CommandScalarFieldEnum = (typeof CommandScalarFieldEnum)[keyof typeof CommandScalarFieldEnum]
 
 
-export const InteractionContextScalarFieldEnum = {
-  id: 'id',
-  type: 'type',
-  chatId: 'chatId',
-  userId: 'userId',
-  lastUserMessageId: 'lastUserMessageId',
-  createdAt: 'createdAt'
-} as const
-
-export type InteractionContextScalarFieldEnum = (typeof InteractionContextScalarFieldEnum)[keyof typeof InteractionContextScalarFieldEnum]
-
-
 export const NotificationResponseScalarFieldEnum = {
   operationId: 'operationId',
   type: 'type',
@@ -155,7 +190,8 @@ export type NotificationResponseScalarFieldEnum = (typeof NotificationResponseSc
 export const NotificationScalarFieldEnum = {
   id: 'id',
   operationId: 'operationId',
-  contextId: 'contextId',
+  targetChatId: 'targetChatId',
+  replyToMessageId: 'replyToMessageId',
   channelId: 'channelId',
   messageId: 'messageId',
   callingSubjectId: 'callingSubjectId',

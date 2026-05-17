@@ -1,10 +1,22 @@
-import { bootstrapService, runPrismaMigrations, WellKnownPermissions } from "@reside/common"
+import {
+  bootstrapService,
+  ensureReplicaAvatar,
+  registerReplica,
+  runPrismaMigrations,
+} from "@reside/common"
+import { accessReplica, WellKnownPermissions } from "@reside/registry"
 import { strings } from "../locale"
 import { createServices } from "../shared"
 
-const { pool, prisma } = await createServices()
+await registerReplica({
+  replica: accessReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
+})
 
-await runPrismaMigrations(pool)
+const services = await createServices()
+
+await runPrismaMigrations(services.pool)
 
 const [
   //
@@ -13,6 +25,9 @@ const [
   permissionManagePermission,
   approverManagePermission,
   subjectReadPermission,
+  infraGatewayManagePermission,
+  avatarOwnPermission,
+  sendAsSubjectPermission,
 ] = await Promise.all([
   ensureRealm("replica"),
   ensurePermission(
@@ -40,8 +55,12 @@ const [
     true,
   ),
 
-  // define permissions for telegram replica to allow it to bootstrap
-  // it will fill title/description later when it starts
+  // define permissions for telegram and infra replica to allow them to bootstrap
+  // they will fill title/description later when they (re)starts
+  ensurePermission(WellKnownPermissions.INFRA_GATEWAY_MANAGE, "", "", true),
+
+  ensurePermission(WellKnownPermissions.TELEGRAM_AVATAR_OWN, "", "", true),
+  ensurePermission(WellKnownPermissions.TELEGRAM_NOTIFICATION_SEND_AS_SUBJECT, "", "", true),
   ensurePermission(WellKnownPermissions.TELEGRAM_APPROVE, "", "", true),
   ensurePermission(WellKnownPermissions.TELEGRAM_COMMAND_MANAGE, "", "", true),
   ensurePermission(WellKnownPermissions.TELEGRAM_COMMAND_INVOKE, "", "", true),
@@ -84,12 +103,46 @@ await Promise.all([
     "replica:telegram",
     WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_INTERACT,
   ),
+
+  ensureBinding(
+    permissionManagePermission.id,
+    "replica:telegram",
+    WellKnownPermissions.TELEGRAM_NOTIFICATION_SEND_AS_SUBJECT,
+  ),
+
+  ensureBinding(
+    permissionManagePermission.id,
+    "replica:telegram",
+    WellKnownPermissions.TELEGRAM_AVATAR_OWN,
+  ),
+
+  ensureBinding(
+    permissionManagePermission.id,
+    "replica:infra",
+    WellKnownPermissions.INFRA_GATEWAY_MANAGE,
+  ),
+
+  // to allow auth requests on behalf of access replica
+  ensureBinding(sendAsSubjectPermission.id, "replica:telegram", "replica:access"),
+
+  // to allow telegram and access replicas have avatars
+  ensureBinding(avatarOwnPermission.id, "replica:telegram", "telegram"),
+  ensureBinding(avatarOwnPermission.id, "replica:access", "access"),
+
+  // to allow telegram replica create gateway for itself
+  ensureBinding(infraGatewayManagePermission.id, "replica:telegram", "telegram"),
 ])
+
+await ensureReplicaAvatar({
+  avatarService: services.avatarService,
+  operationService: services.interactionOperationService,
+  avatarTitle: strings.bootstrap.registration.title,
+})
 
 await bootstrapService({ longRunning: true })
 
 function ensurePermission(name: string, title: string, description: string, scoped: boolean) {
-  return prisma.permission.upsert({
+  return services.prisma.permission.upsert({
     where: {
       name,
     },
@@ -108,7 +161,7 @@ function ensurePermission(name: string, title: string, description: string, scop
 }
 
 function ensureBinding(permissionId: number, subjectId: string, scope: string = "") {
-  return prisma.permissionBinding.upsert({
+  return services.prisma.permissionBinding.upsert({
     where: {
       permissionId_subjectId_scope: {
         permissionId,
@@ -126,7 +179,7 @@ function ensureBinding(permissionId: number, subjectId: string, scope: string = 
 }
 
 function ensureRealm(name: string) {
-  return prisma.realm.upsert({
+  return services.prisma.realm.upsert({
     where: {
       name,
     },

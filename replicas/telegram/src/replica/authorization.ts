@@ -1,6 +1,7 @@
 import type { AuthzServiceClient } from "@reside/api/access/authz.v1"
 import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
-import { logger, WellKnownPermissions } from "@reside/common"
+import { logger } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 import { strings } from "../locale"
 
 export async function canInteractWithNotificationChannel(args: {

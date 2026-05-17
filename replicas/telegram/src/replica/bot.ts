@@ -1,52 +1,42 @@
+import type { JsonObject } from "@bufbuild/protobuf"
 import type { AuthzServiceClient } from "@reside/api/access/authz.v1"
 import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { CommandHandlerServiceClient } from "@reside/api/interaction/command.v1"
-import type { CommandParameter } from "@reside/api/interaction/definition.v1"
 import type { GenericOperationService, MessageElement } from "@reside/common"
+import type { Client } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../database"
-import { createChannel } from "@reside/api"
-import { CommandHandlerServiceDefinition } from "@reside/api/interaction/command.v1"
+import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
-import {
-  block,
-  bold,
-  code,
-  createClient,
-  customEmoji,
-  getReplicaName,
-  inline,
-  italic,
-  logger,
-  SPACE,
-} from "@reside/common"
-import { Bot, type BotError, type Context, GrammyError, HttpError } from "grammy"
+import { block, bold, createChannel, createClient, italic, logger } from "@reside/common"
+import { type Bot, type BotError, type Context, GrammyError, HttpError } from "grammy"
+import { getTelegramAvatarProvisionWorkflowId } from "../definitions"
 import { strings } from "../locale"
+import { createInteractionContextToken } from "../shared"
 import {
   canInteractWithNotificationChannel,
   canInvokeCommand,
   requestCommandInvokePermission,
 } from "./authorization"
+import { createTelegramBotClient } from "./bot-client"
 import {
   type CallbackCompletionResult,
   completeOperationFromCallbackAction,
   completeOperationFromTextReply,
 } from "./response"
 
-const SYSTEM_MESSAGE_HEADER_EMOJI_FIRST_ID = "5199547568144554620"
-const SYSTEM_MESSAGE_HEADER_EMOJI_SECOND_ID = "5201851568990749302"
-const SYSTEM_MESSAGE_HEADER_EMOJI_THIRD_ID = "5202075663204387704"
-const SYSTEM_MESSAGE_HEADER_EMOJI_FOURTH_ID = "5199493481621395003"
-
-function getSystemReplicaName(): string {
-  return getReplicaName()
-}
-
-function getSystemReplicaSubjectId(): string {
-  return `replica:${getSystemReplicaName()}`
+type ParsedCommandParameter = {
+  name: string
+  title: string
+  description?: string
+  type: CommandParameterType
+  required: boolean
+  rest: boolean
 }
 
 /**
- * Creates a Telegram bot instance with the demo commands used in local testing.
+ * Creates and initializes the primary Telegram bot instance used by the webhook runtime.
+ *
+ * The returned bot handles incoming updates, commands, callbacks, and managed-bot lifecycle events.
  *
  * @param args.token The Telegram bot token.
  * @param args.prisma The Telegram replica Prisma client.
@@ -58,9 +48,12 @@ export async function createTelegramBot(args: {
   operationService: GenericOperationService<Operation>
   authzService: AuthzServiceClient
   permissionRequestService: PermissionRequestServiceClient
+  temporalClient: Client
   superAdminUserId: string | undefined
 }): Promise<Bot<Context>> {
-  const bot = new Bot(args.token)
+  const bot = createTelegramBotClient(args.token, {
+    role: "manager",
+  })
   const commandHandlerClients = new Map<string, CommandHandlerServiceClient>()
 
   function getCommandHandlerClient(callbackEndpoint: string): CommandHandlerServiceClient {
@@ -70,7 +63,7 @@ export async function createTelegramBot(args: {
     }
 
     const channel = createChannel(callbackEndpoint)
-    const client = createClient(CommandHandlerServiceDefinition, channel)
+    const client = createClient(CommandHandlerService, channel)
 
     commandHandlerClients.set(callbackEndpoint, client)
     return client
@@ -115,6 +108,21 @@ export async function createTelegramBot(args: {
     })
   })
 
+  bot.use(async (context, next) => {
+    try {
+      await handleManagedBotLifecycleUpdate(args, context, bot)
+    } catch (error) {
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "failed to handle managed bot lifecycle update",
+      )
+    }
+
+    await next()
+  })
+
   bot.on("message:text", async (context: Context) => {
     const message = context.message
     if (!message?.text) {
@@ -129,8 +137,10 @@ export async function createTelegramBot(args: {
 
     logger.debug("received text message event chatId=%s userId=%s", chatId, userId)
 
-    const interactionContext = await ensureInteractionContext(args.prisma, context, {
-      lastUserMessageId: message.message_id,
+    await ensureTelegramEntities(args.prisma, context)
+
+    const interactionContext = await buildInteractionContext(context, {
+      messageId: message.message_id,
     })
 
     const commandInvocation = parseCommandInvocation(message.text)
@@ -216,10 +226,10 @@ export async function createTelegramBot(args: {
             callbackEndpoint: commandDefinition.callbackEndpoint,
           },
           context: {
-            id: interactionContext.id,
+            token: interactionContext.token,
             title: interactionContext.title,
           },
-          parameters,
+          parameters: parameters as JsonObject,
           subjectId: `telegram:${userId}`,
         })
 
@@ -334,7 +344,9 @@ export async function createTelegramBot(args: {
       actionName,
     )
 
-    await ensureInteractionContext(args.prisma, context)
+    const selectedOptionName = resolveCallbackOptionTitle(context, actionName)
+
+    await ensureTelegramEntities(args.prisma, context)
 
     let result: CallbackCompletionResult
     try {
@@ -374,10 +386,14 @@ export async function createTelegramBot(args: {
       return
     }
 
+    const applyAcceptedMessageUi = async (): Promise<void> => {
+      await clearInlineActions(context, chatId, messageId)
+      await appendAcceptedStamp(context, args.prisma, selectedOptionName)
+    }
+
     if (result.accepted) {
       logger.info("callback action accepted for messageId=%s", messageId)
-      await clearInlineActions(context, chatId, messageId)
-      await appendAcceptedStamp(context, args.prisma)
+      await applyAcceptedMessageUi()
       return
     }
 
@@ -388,7 +404,14 @@ export async function createTelegramBot(args: {
       result.reason,
     )
 
-    if (result.reason === "already-responded" || result.reason === "action-not-allowed") {
+    if (result.reason === "already-responded") {
+      logger.info("reconciling callback message UI for already-responded messageId=%s", messageId)
+      await applyAcceptedMessageUi()
+      await context.answerCallbackQuery()
+      return
+    }
+
+    if (result.reason === "action-not-allowed") {
       await context.answerCallbackQuery()
       return
     }
@@ -440,7 +463,7 @@ export function parseCommandInvocation(text: string): {
   }
 }
 
-export function parseStoredCommandParameters(raw: unknown): CommandParameter[] {
+export function parseStoredCommandParameters(raw: unknown): ParsedCommandParameter[] {
   if (!Array.isArray(raw)) {
     return []
   }
@@ -509,7 +532,7 @@ export function parseCommandParameters(
   return params
 }
 
-function parseCommandParameterValue(definition: CommandParameter, value: string): unknown {
+function parseCommandParameterValue(definition: ParsedCommandParameter, value: string): unknown {
   if (definition.type === CommandParameterType.INTEGER) {
     const parsedValue = Number(value)
     if (!Number.isInteger(parsedValue)) {
@@ -534,7 +557,7 @@ function parseCommandParameterValue(definition: CommandParameter, value: string)
   return value
 }
 
-function assertRestParameterShape(definitions: CommandParameter[]): void {
+function assertRestParameterShape(definitions: ParsedCommandParameter[]): void {
   const restIndexes: number[] = []
 
   for (let index = 0; index < definitions.length; index++) {
@@ -553,13 +576,7 @@ function assertRestParameterShape(definitions: CommandParameter[]): void {
   throw new Error(strings.worker.bot.commandExecutionFailed)
 }
 
-async function ensureInteractionContext(
-  prisma: PrismaClient,
-  context: Context,
-  options?: {
-    lastUserMessageId?: number
-  },
-): Promise<{ id: number; title: string }> {
+async function ensureTelegramEntities(prisma: PrismaClient, context: Context): Promise<void> {
   const chat = context.chat
   const user = context.from
 
@@ -604,75 +621,32 @@ async function ensureInteractionContext(
           },
         })
 
-  const type: "SYSTEM" | "CHAT" | "USER_PRIVATE" | "USER_IN_CHAT" = !chat
-    ? "SYSTEM"
-    : chat.type === "private"
-      ? "USER_PRIVATE"
-      : userId
-        ? "USER_IN_CHAT"
-        : "CHAT"
+  void chatEntity
+  void userEntity
 
-  const normalizedChatId = type === "USER_PRIVATE" ? null : (chatEntity?.id ?? null)
-  const normalizedUserId = type === "CHAT" || type === "SYSTEM" ? null : (userEntity?.id ?? null)
+  return
+}
 
-  const existing = await prisma.interactionContext.findFirst({
-    where: {
-      type,
-      chatId: normalizedChatId,
-      userId: normalizedUserId,
-    },
-    select: {
-      id: true,
-    },
+async function buildInteractionContext(
+  context: Context,
+  options?: {
+    messageId?: number
+  },
+): Promise<{ token: string; title: string }> {
+  const chat = context.chat
+  const user = context.from
+
+  if (!chat) {
+    throw new Error("Interaction context requires chat information")
+  }
+
+  const interactionContextToken = await createInteractionContextToken({
+    chat_id: String(chat.id),
+    message_id: options?.messageId,
   })
 
-  let interactionContext = existing
-
-  if (!interactionContext) {
-    try {
-      interactionContext = await prisma.interactionContext.create({
-        data: {
-          type,
-          chatId: normalizedChatId,
-          userId: normalizedUserId,
-          lastUserMessageId: type === "USER_IN_CHAT" ? (options?.lastUserMessageId ?? null) : null,
-        },
-        select: {
-          id: true,
-        },
-      })
-    } catch (error) {
-      if (!isUniqueConstraintViolation(error)) {
-        throw error
-      }
-
-      interactionContext = await prisma.interactionContext.findFirst({
-        where: {
-          type,
-          chatId: normalizedChatId,
-          userId: normalizedUserId,
-        },
-        select: {
-          id: true,
-        },
-      })
-
-      if (!interactionContext) {
-        throw error
-      }
-    }
-  }
-
-  if (type === "USER_IN_CHAT" && options?.lastUserMessageId !== undefined) {
-    await prisma.interactionContext.update({
-      where: {
-        id: interactionContext.id,
-      },
-      data: {
-        lastUserMessageId: options.lastUserMessageId,
-      },
-    })
-  }
+  const type: "SYSTEM" | "CHAT" | "USER_PRIVATE" | "USER_IN_CHAT" =
+    chat.type === "private" ? "USER_PRIVATE" : user?.id ? "USER_IN_CHAT" : "CHAT"
 
   const title =
     type === "USER_PRIVATE"
@@ -682,20 +656,16 @@ async function ensureInteractionContext(
         : formatChatTitle(chat)
 
   return {
-    id: interactionContext.id,
+    token: interactionContextToken,
     title,
   }
 }
 
-function isUniqueConstraintViolation(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return false
-  }
-
-  return "code" in error && error.code === "P2002"
-}
-
-async function appendAcceptedStamp(context: Context, prisma: PrismaClient): Promise<void> {
+async function appendAcceptedStamp(
+  context: Context,
+  prisma: PrismaClient,
+  selectedOptionName?: string,
+): Promise<void> {
   const callbackMessage = context.callbackQuery?.message
   const chatId = callbackMessage?.chat.id
   const messageId = callbackMessage?.message_id
@@ -725,7 +695,11 @@ async function appendAcceptedStamp(context: Context, prisma: PrismaClient): Prom
   const subjectTitle = formatUserTitle(context.from)
   const { date, time } = formatMskDateTime(new Date())
   const renderedNotification = renderStoredNotificationMessage(notification)
-  const suffix = bold(italic(strings.worker.bot.acceptedSuffix(subjectTitle, date, time)))
+  const suffixText =
+    selectedOptionName === undefined
+      ? strings.worker.bot.acceptedSuffix(subjectTitle, date, time)
+      : strings.worker.bot.acceptedActionSuffix(subjectTitle, selectedOptionName, date, time)
+  const suffix = bold(italic(suffixText))
   const updatedMessage = block(renderedNotification, "", suffix).html
 
   try {
@@ -750,6 +724,33 @@ async function appendAcceptedStamp(context: Context, prisma: PrismaClient): Prom
   }
 }
 
+function resolveCallbackOptionTitle(context: Context, actionName: string): string {
+  const keyboard = context.callbackQuery?.message?.reply_markup?.inline_keyboard
+
+  if (!Array.isArray(keyboard)) {
+    return actionName
+  }
+
+  for (const row of keyboard) {
+    if (!Array.isArray(row)) {
+      continue
+    }
+
+    for (const button of row) {
+      if (
+        button &&
+        "callback_data" in button &&
+        button.callback_data === actionName &&
+        typeof button.text === "string"
+      ) {
+        return button.text
+      }
+    }
+  }
+
+  return actionName
+}
+
 function formatMskDateTime(date: Date): { date: string; time: string } {
   const mskDate = new Intl.DateTimeFormat("ru-RU", {
     timeZone: "Europe/Moscow",
@@ -771,34 +772,16 @@ function formatMskDateTime(date: Date): { date: string; time: string } {
   }
 }
 
-function renderSystemMessageHeaderElement(): MessageElement {
-  return block(
-    inline(
-      customEmoji(SYSTEM_MESSAGE_HEADER_EMOJI_FIRST_ID),
-      customEmoji(SYSTEM_MESSAGE_HEADER_EMOJI_SECOND_ID),
-      SPACE,
-      bold(getSystemReplicaName()),
-    ),
-    inline(
-      customEmoji(SYSTEM_MESSAGE_HEADER_EMOJI_THIRD_ID),
-      customEmoji(SYSTEM_MESSAGE_HEADER_EMOJI_FOURTH_ID),
-      SPACE,
-      code(getSystemReplicaSubjectId()),
-    ),
-  )
-}
-
 function renderStoredNotificationMessage(input: {
   title: string
   content: string
 }): MessageElement {
-  const header = renderSystemMessageHeaderElement()
   const content = input.content.trim()
   if (content.length > 0) {
-    return block(header, "", bold(input.title), { html: content })
+    return block(bold(input.title), { html: content })
   }
 
-  return block(header, "", bold(input.title))
+  return block(bold(input.title))
 }
 
 async function sendSystemMessage(
@@ -808,7 +791,7 @@ async function sendSystemMessage(
     replyToMessageId?: number
   },
 ): Promise<void> {
-  const message = block(renderSystemMessageHeaderElement(), "", args.text).html
+  const message = args.text
 
   await context.reply(message, {
     parse_mode: "HTML",
@@ -822,6 +805,314 @@ async function sendSystemMessage(
             message_id: args.replyToMessageId,
           },
   })
+}
+
+async function handleManagedBotLifecycleUpdate(
+  args: {
+    prisma: PrismaClient
+    temporalClient: Client
+  },
+  context: Context,
+  managerBot: Bot<Context>,
+): Promise<void> {
+  const managedBotCreated = extractManagedBotCreatedEvent(context.update)
+  if (managedBotCreated) {
+    await handleManagedBotCreated(args, context, managedBotCreated)
+  }
+
+  const managedBotUpdated = extractManagedBotUpdatedEvent(context.update)
+  if (managedBotUpdated) {
+    await handleManagedBotUpdated(args, managerBot, managedBotUpdated)
+  }
+}
+
+async function handleManagedBotCreated(
+  args: {
+    prisma: PrismaClient
+    temporalClient: Client
+  },
+  context: Context,
+  managedBotCreated: {
+    managedBotId: string
+    managedBotUsername: string
+  },
+): Promise<void> {
+  const createdByUserId = await resolveCreatorUserId(args.prisma, context.from)
+
+  const pendingRequests = await args.prisma.avatarProvisionRequest.findMany({
+    where: {
+      operation: {
+        status: "PENDING",
+      },
+    },
+    select: {
+      operationId: true,
+      expectedPrefix: true,
+      replicaName: true,
+    },
+  })
+
+  const matchedRequest = pendingRequests.find(request => {
+    return isManagedBotUsernameAccepted(
+      managedBotCreated.managedBotUsername,
+      request.expectedPrefix,
+    )
+  })
+
+  if (!matchedRequest) {
+    const followsManagedBotPattern = isManagedBotUsernamePattern(
+      managedBotCreated.managedBotUsername,
+    )
+
+    await args.prisma.unauthorizedAvatar.create({
+      data: {
+        managedBotId: managedBotCreated.managedBotId,
+        managedBotUsername: managedBotCreated.managedBotUsername,
+        createdByUserId,
+        reason: followsManagedBotPattern ? "NO_PENDING_REQUEST" : "INVALID_PATTERN",
+      },
+    })
+    return
+  }
+
+  await args.prisma.avatarProvisionRequest.update({
+    where: {
+      operationId: matchedRequest.operationId,
+    },
+    data: {
+      createdByUserId,
+    },
+  })
+
+  const handle = args.temporalClient.workflow.getHandle(
+    getTelegramAvatarProvisionWorkflowId(matchedRequest.operationId),
+  )
+
+  await handle.signal("avatarManagedBotCreated", {
+    managedBotId: managedBotCreated.managedBotId,
+    managedBotUsername: managedBotCreated.managedBotUsername,
+  })
+}
+
+async function handleManagedBotUpdated(
+  args: {
+    prisma: PrismaClient
+  },
+  managerBot: Bot<Context>,
+  managedBotUpdated: {
+    managedBotId: string
+    managedBotUsername: string
+  },
+): Promise<void> {
+  const avatarById = await args.prisma.avatar.findFirst({
+    where: {
+      managedBotId: managedBotUpdated.managedBotId,
+    },
+    select: {
+      id: true,
+    },
+  })
+
+  const avatarByUsername =
+    avatarById !== null
+      ? null
+      : await args.prisma.avatar.findFirst({
+          where: {
+            managedBotUsername: managedBotUpdated.managedBotUsername,
+          },
+          select: {
+            id: true,
+          },
+        })
+
+  const avatar = avatarById ?? avatarByUsername
+
+  if (!avatar) {
+    return
+  }
+
+  if (avatarByUsername !== null) {
+    const conflictingAvatar = await args.prisma.avatar.findFirst({
+      where: {
+        managedBotId: managedBotUpdated.managedBotId,
+        id: {
+          not: avatar.id,
+        },
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (conflictingAvatar) {
+      logger.warn(
+        "managed bot update points to id %s that is already linked to avatar %s",
+        managedBotUpdated.managedBotId,
+        conflictingAvatar.id,
+      )
+      return
+    }
+  }
+
+  const managedBotId = Number(managedBotUpdated.managedBotId)
+  if (!Number.isInteger(managedBotId)) {
+    return
+  }
+
+  const nextToken = await managerBot.api.getManagedBotToken(managedBotId)
+
+  if (!nextToken || nextToken.length === 0) {
+    return
+  }
+
+  await args.prisma.avatar.update({
+    where: {
+      id: avatar.id,
+    },
+    data: {
+      managedBotId: managedBotUpdated.managedBotId,
+      managedBotUsername: managedBotUpdated.managedBotUsername,
+      token: nextToken,
+    },
+  })
+}
+
+function extractManagedBotCreatedEvent(update: unknown):
+  | {
+      managedBotId: string
+      managedBotUsername: string
+    }
+  | undefined {
+  if (!isRecord(update)) {
+    return undefined
+  }
+
+  const message = toRecord(update.message)
+  const payload = toRecord(message?.managed_bot_created ?? message?.managedBotCreated)
+  if (!payload) {
+    return undefined
+  }
+
+  return extractManagedBotIdentity(payload)
+}
+
+function extractManagedBotUpdatedEvent(update: unknown):
+  | {
+      managedBotId: string
+      managedBotUsername: string
+    }
+  | undefined {
+  if (!isRecord(update)) {
+    return undefined
+  }
+
+  const payload = toRecord(update.managed_bot ?? update.managedBot)
+  if (!payload) {
+    return undefined
+  }
+
+  const identity = extractManagedBotIdentity(payload)
+  if (!identity) {
+    return undefined
+  }
+
+  return {
+    managedBotId: identity.managedBotId,
+    managedBotUsername: identity.managedBotUsername,
+  }
+}
+
+function extractManagedBotIdentity(payload: Record<string, unknown>):
+  | {
+      managedBotId: string
+      managedBotUsername: string
+    }
+  | undefined {
+  const directId = toStringValue(payload.id)
+  const directUsername = toStringValue(payload.username)
+
+  if (directId && directUsername) {
+    return {
+      managedBotId: directId,
+      managedBotUsername: directUsername,
+    }
+  }
+
+  const bot = toRecord(payload.bot)
+  const botId = toStringValue(bot?.id)
+  const botUsername = toStringValue(bot?.username)
+
+  if (botId && botUsername) {
+    return {
+      managedBotId: botId,
+      managedBotUsername: botUsername,
+    }
+  }
+
+  return undefined
+}
+
+function isManagedBotUsernameAccepted(candidateUsername: string, expectedPrefix: string): boolean {
+  if (!candidateUsername.endsWith("_bot")) {
+    return false
+  }
+
+  return candidateUsername.startsWith(`${expectedPrefix}_`)
+}
+
+function isManagedBotUsernamePattern(username: string): boolean {
+  return username.startsWith("reside_") && username.endsWith("_bot")
+}
+
+async function resolveCreatorUserId(
+  prisma: PrismaClient,
+  user: Context["from"] | undefined,
+): Promise<number | null> {
+  if (!user?.id) {
+    return null
+  }
+
+  const userEntity = await prisma.user.upsert({
+    where: {
+      telegramId: String(user.id),
+    },
+    create: {
+      telegramId: String(user.id),
+      data: user as unknown as PrismaJson.UserData,
+    },
+    update: {
+      data: user as unknown as PrismaJson.UserData,
+    },
+    select: {
+      id: true,
+    },
+  })
+
+  return userEntity.id
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+function toRecord(value: unknown): Record<string, unknown> | undefined {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  return value
+}
+
+function toStringValue(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    return value
+  }
+
+  if (typeof value === "number") {
+    return String(value)
+  }
+
+  return undefined
 }
 
 function formatUserTitle(user: Context["from"]): string {

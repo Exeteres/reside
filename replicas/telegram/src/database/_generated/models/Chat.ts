@@ -214,7 +214,7 @@ export type ChatWhereInput = {
   data?: Prisma.JsonFilter<"Chat">
   createdAt?: Prisma.DateTimeFilter<"Chat"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Chat"> | Date | string
-  contexts?: Prisma.InteractionContextListRelationFilter
+  notifications?: Prisma.NotificationListRelationFilter
 }
 
 export type ChatOrderByWithRelationInput = {
@@ -223,7 +223,7 @@ export type ChatOrderByWithRelationInput = {
   data?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  contexts?: Prisma.InteractionContextOrderByRelationAggregateInput
+  notifications?: Prisma.NotificationOrderByRelationAggregateInput
 }
 
 export type ChatWhereUniqueInput = Prisma.AtLeast<{
@@ -235,7 +235,7 @@ export type ChatWhereUniqueInput = Prisma.AtLeast<{
   data?: Prisma.JsonFilter<"Chat">
   createdAt?: Prisma.DateTimeFilter<"Chat"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Chat"> | Date | string
-  contexts?: Prisma.InteractionContextListRelationFilter
+  notifications?: Prisma.NotificationListRelationFilter
 }, "id" | "telegramId">
 
 export type ChatOrderByWithAggregationInput = {
@@ -267,7 +267,7 @@ export type ChatCreateInput = {
   data:PrismaJson.ChatData
   createdAt?: Date | string
   updatedAt?: Date | string
-  contexts?: Prisma.InteractionContextCreateNestedManyWithoutChatInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutChatInput
 }
 
 export type ChatUncheckedCreateInput = {
@@ -276,7 +276,7 @@ export type ChatUncheckedCreateInput = {
   data:PrismaJson.ChatData
   createdAt?: Date | string
   updatedAt?: Date | string
-  contexts?: Prisma.InteractionContextUncheckedCreateNestedManyWithoutChatInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
 }
 
 export type ChatUpdateInput = {
@@ -284,7 +284,7 @@ export type ChatUpdateInput = {
   data?:PrismaJson.ChatData
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  contexts?: Prisma.InteractionContextUpdateManyWithoutChatNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutChatNestedInput
 }
 
 export type ChatUncheckedUpdateInput = {
@@ -293,7 +293,7 @@ export type ChatUncheckedUpdateInput = {
   data?:PrismaJson.ChatData
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  contexts?: Prisma.InteractionContextUncheckedUpdateManyWithoutChatNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
 }
 
 export type ChatCreateManyInput = {
@@ -349,35 +349,33 @@ export type ChatSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
 }
 
-export type ChatNullableScalarRelationFilter = {
-  is?: Prisma.ChatWhereInput | null
-  isNot?: Prisma.ChatWhereInput | null
+export type ChatScalarRelationFilter = {
+  is?: Prisma.ChatWhereInput
+  isNot?: Prisma.ChatWhereInput
 }
 
-export type ChatCreateNestedOneWithoutContextsInput = {
-  create?: Prisma.XOR<Prisma.ChatCreateWithoutContextsInput, Prisma.ChatUncheckedCreateWithoutContextsInput>
-  connectOrCreate?: Prisma.ChatCreateOrConnectWithoutContextsInput
+export type ChatCreateNestedOneWithoutNotificationsInput = {
+  create?: Prisma.XOR<Prisma.ChatCreateWithoutNotificationsInput, Prisma.ChatUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.ChatCreateOrConnectWithoutNotificationsInput
   connect?: Prisma.ChatWhereUniqueInput
 }
 
-export type ChatUpdateOneWithoutContextsNestedInput = {
-  create?: Prisma.XOR<Prisma.ChatCreateWithoutContextsInput, Prisma.ChatUncheckedCreateWithoutContextsInput>
-  connectOrCreate?: Prisma.ChatCreateOrConnectWithoutContextsInput
-  upsert?: Prisma.ChatUpsertWithoutContextsInput
-  disconnect?: Prisma.ChatWhereInput | boolean
-  delete?: Prisma.ChatWhereInput | boolean
+export type ChatUpdateOneRequiredWithoutNotificationsNestedInput = {
+  create?: Prisma.XOR<Prisma.ChatCreateWithoutNotificationsInput, Prisma.ChatUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.ChatCreateOrConnectWithoutNotificationsInput
+  upsert?: Prisma.ChatUpsertWithoutNotificationsInput
   connect?: Prisma.ChatWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ChatUpdateToOneWithWhereWithoutContextsInput, Prisma.ChatUpdateWithoutContextsInput>, Prisma.ChatUncheckedUpdateWithoutContextsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ChatUpdateToOneWithWhereWithoutNotificationsInput, Prisma.ChatUpdateWithoutNotificationsInput>, Prisma.ChatUncheckedUpdateWithoutNotificationsInput>
 }
 
-export type ChatCreateWithoutContextsInput = {
+export type ChatCreateWithoutNotificationsInput = {
   telegramId: string
   data:PrismaJson.ChatData
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
-export type ChatUncheckedCreateWithoutContextsInput = {
+export type ChatUncheckedCreateWithoutNotificationsInput = {
   id?: number
   telegramId: string
   data:PrismaJson.ChatData
@@ -385,30 +383,30 @@ export type ChatUncheckedCreateWithoutContextsInput = {
   updatedAt?: Date | string
 }
 
-export type ChatCreateOrConnectWithoutContextsInput = {
+export type ChatCreateOrConnectWithoutNotificationsInput = {
   where: Prisma.ChatWhereUniqueInput
-  create: Prisma.XOR<Prisma.ChatCreateWithoutContextsInput, Prisma.ChatUncheckedCreateWithoutContextsInput>
+  create: Prisma.XOR<Prisma.ChatCreateWithoutNotificationsInput, Prisma.ChatUncheckedCreateWithoutNotificationsInput>
 }
 
-export type ChatUpsertWithoutContextsInput = {
-  update: Prisma.XOR<Prisma.ChatUpdateWithoutContextsInput, Prisma.ChatUncheckedUpdateWithoutContextsInput>
-  create: Prisma.XOR<Prisma.ChatCreateWithoutContextsInput, Prisma.ChatUncheckedCreateWithoutContextsInput>
+export type ChatUpsertWithoutNotificationsInput = {
+  update: Prisma.XOR<Prisma.ChatUpdateWithoutNotificationsInput, Prisma.ChatUncheckedUpdateWithoutNotificationsInput>
+  create: Prisma.XOR<Prisma.ChatCreateWithoutNotificationsInput, Prisma.ChatUncheckedCreateWithoutNotificationsInput>
   where?: Prisma.ChatWhereInput
 }
 
-export type ChatUpdateToOneWithWhereWithoutContextsInput = {
+export type ChatUpdateToOneWithWhereWithoutNotificationsInput = {
   where?: Prisma.ChatWhereInput
-  data: Prisma.XOR<Prisma.ChatUpdateWithoutContextsInput, Prisma.ChatUncheckedUpdateWithoutContextsInput>
+  data: Prisma.XOR<Prisma.ChatUpdateWithoutNotificationsInput, Prisma.ChatUncheckedUpdateWithoutNotificationsInput>
 }
 
-export type ChatUpdateWithoutContextsInput = {
+export type ChatUpdateWithoutNotificationsInput = {
   telegramId?: Prisma.StringFieldUpdateOperationsInput | string
   data?:PrismaJson.ChatData
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ChatUncheckedUpdateWithoutContextsInput = {
+export type ChatUncheckedUpdateWithoutNotificationsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramId?: Prisma.StringFieldUpdateOperationsInput | string
   data?:PrismaJson.ChatData
@@ -422,11 +420,11 @@ export type ChatUncheckedUpdateWithoutContextsInput = {
  */
 
 export type ChatCountOutputType = {
-  contexts: number
+  notifications: number
 }
 
 export type ChatCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  contexts?: boolean | ChatCountOutputTypeCountContextsArgs
+  notifications?: boolean | ChatCountOutputTypeCountNotificationsArgs
 }
 
 /**
@@ -442,8 +440,8 @@ export type ChatCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
 /**
  * ChatCountOutputType without action
  */
-export type ChatCountOutputTypeCountContextsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.InteractionContextWhereInput
+export type ChatCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
 }
 
 
@@ -453,7 +451,7 @@ export type ChatSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   data?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  contexts?: boolean | Prisma.Chat$contextsArgs<ExtArgs>
+  notifications?: boolean | Prisma.Chat$notificationsArgs<ExtArgs>
   _count?: boolean | Prisma.ChatCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["chat"]>
 
@@ -483,7 +481,7 @@ export type ChatSelectScalar = {
 
 export type ChatOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "telegramId" | "data" | "createdAt" | "updatedAt", ExtArgs["result"]["chat"]>
 export type ChatInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  contexts?: boolean | Prisma.Chat$contextsArgs<ExtArgs>
+  notifications?: boolean | Prisma.Chat$notificationsArgs<ExtArgs>
   _count?: boolean | Prisma.ChatCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ChatIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -493,9 +491,9 @@ export type $ChatPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "Chat"
   objects: {
     /**
-     * The interaction contexts referencing this chat.
+     * Notifications delivered to this chat.
      */
-    contexts: Prisma.$InteractionContextPayload<ExtArgs>[]
+    notifications: Prisma.$NotificationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     /**
@@ -914,7 +912,7 @@ readonly fields: ChatFieldRefs;
  */
 export interface Prisma__ChatClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  contexts<T extends Prisma.Chat$contextsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Chat$contextsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InteractionContextPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notifications<T extends Prisma.Chat$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Chat$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1337,27 +1335,27 @@ export type ChatDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * Chat.contexts
+ * Chat.notifications
  */
-export type Chat$contextsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Chat$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the InteractionContext
+   * Select specific fields to fetch from the Notification
    */
-  select?: Prisma.InteractionContextSelect<ExtArgs> | null
+  select?: Prisma.NotificationSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the InteractionContext
+   * Omit specific fields from the Notification
    */
-  omit?: Prisma.InteractionContextOmit<ExtArgs> | null
+  omit?: Prisma.NotificationOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.InteractionContextInclude<ExtArgs> | null
-  where?: Prisma.InteractionContextWhereInput
-  orderBy?: Prisma.InteractionContextOrderByWithRelationInput | Prisma.InteractionContextOrderByWithRelationInput[]
-  cursor?: Prisma.InteractionContextWhereUniqueInput
+  include?: Prisma.NotificationInclude<ExtArgs> | null
+  where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.InteractionContextScalarFieldEnum | Prisma.InteractionContextScalarFieldEnum[]
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
 }
 
 /**

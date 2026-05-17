@@ -2,7 +2,7 @@ import type { AuthzServiceClient } from "@reside/api/access/authz.v1"
 import type { DefinitionServiceClient } from "@reside/api/access/definition.v1"
 import type { PrismaClient } from "../database"
 import type { AccessE2EScope } from "./scope"
-import { status } from "@grpc/grpc-js"
+import { Code } from "@connectrpc/connect"
 import { logger } from "@reside/common"
 
 const ALLOWED_SCOPE = "report:e2e-authz-allowed"
@@ -167,7 +167,7 @@ async function expectInvalidArgument(
     }
 
     const errorCode = Reflect.get(error, "code")
-    if (errorCode !== status.INVALID_ARGUMENT) {
+    if (errorCode !== Code.InvalidArgument) {
       throw new Error(`Unexpected error code: ${String(errorCode)}`)
     }
 

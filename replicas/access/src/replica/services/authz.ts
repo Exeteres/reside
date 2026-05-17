@@ -1,15 +1,15 @@
-import type {
-  AuthzServiceImplementation,
-  CheckPermissionResponse,
-} from "@reside/api/access/authz.v1"
-import type { CallContext } from "nice-grpc"
+import type { AuthzServiceImplementation } from "@reside/api/access/authz.v1"
 import type { PrismaClient } from "../../database"
 import { authenticate, logger } from "@reside/common"
 import { isAuthorizedByPermissionBinding } from "./permission-auth"
 
-export function createAuthzService(prisma: PrismaClient) {
-  const service: AuthzServiceImplementation = {
-    async checkPermission(request, context: CallContext): Promise<CheckPermissionResponse> {
+export function createAuthzService({
+  prisma,
+}: {
+  prisma: PrismaClient
+}): AuthzServiceImplementation {
+  return {
+    async checkPermission(request, context) {
       await authenticate(context)
 
       logger.debug(
@@ -37,6 +37,4 @@ export function createAuthzService(prisma: PrismaClient) {
       }
     },
   }
-
-  return service
 }

@@ -1,45 +1,34 @@
-import { status as grpcStatus } from "@grpc/grpc-js"
-import { AuthzServiceDefinition } from "@reside/api/access/authz.v1"
-import { BindingServiceDefinition } from "@reside/api/access/binding.v1"
-import { DefinitionServiceDefinition } from "@reside/api/access/definition.v1"
-import { PermissionRequestServiceDefinition } from "@reside/api/access/request.v1"
-import { OperationServiceDefinition } from "@reside/api/common/operation.v1"
-import { SubjectServiceDefinition } from "@reside/api/common/subject.v1"
-import { ProvisionServiceDefinition } from "@reside/api/database/provision.v1"
+import { status as GrpcStatus } from "@grpc/grpc-js"
+import { AuthzService } from "@reside/api/access/authz.v1"
+import { BindingService } from "@reside/api/access/binding.v1"
+import { DefinitionService } from "@reside/api/access/definition.v1"
+import { PermissionRequestService } from "@reside/api/access/request.v1"
+import { OperationService } from "@reside/api/common/operation.v1"
+import { SubjectService } from "@reside/api/common/subject.v1"
 import {
-  createChannels,
   createClient,
+  createCommonServices,
   createGenericOperationService,
   createPostgresPool,
   createTemporalClient,
 } from "@reside/common"
-import { accessReplica } from "@reside/topology"
+import { accessReplica } from "@reside/registry"
 import { isGrpcServiceError } from "@temporalio/client"
 import { PrismaClient } from "../database"
 
 export async function createServices() {
-  const channels = await createChannels(accessReplica.endpoints)
+  const services = await createCommonServices(accessReplica.endpoints)
 
-  const databaseProvisionService = createClient(ProvisionServiceDefinition, channels.database)
-  const databaseOperationService = createClient(OperationServiceDefinition, channels.database)
+  const authzService = createClient(AuthzService, services.channels.self)
+  const bindingService = createClient(BindingService, services.channels.self)
+  const definitionService = createClient(DefinitionService, services.channels.self)
+  const permissionRequestService = createClient(PermissionRequestService, services.channels.self)
+  const accessOperationStatusService = createClient(OperationService, services.channels.self)
+  const subjectService = createClient(SubjectService, services.channels.self)
 
-  const authzService = createClient(AuthzServiceDefinition, channels.self)
-  const bindingService = createClient(BindingServiceDefinition, channels.self)
-  const definitionService = createClient(DefinitionServiceDefinition, channels.self)
-  const permissionRequestService = createClient(PermissionRequestServiceDefinition, channels.self)
-  const operationStatusService = createClient(OperationServiceDefinition, channels.self)
-  const subjectService = createClient(SubjectServiceDefinition, channels.self)
-
-  const { pool, adapter } = await createPostgresPool({
-    provisionService: databaseProvisionService,
-    operationService: databaseOperationService,
-  })
-
-  const prisma = new PrismaClient({ adapter })
-  const temporalClient = await createTemporalClient({
-    provisionService: databaseProvisionService,
-    operationService: databaseOperationService,
-  })
+  const postgres = await createPostgresPool(services)
+  const prisma = new PrismaClient({ adapter: postgres.adapter })
+  const temporalClient = await createTemporalClient(services)
 
   const operationService = createGenericOperationService({
     prisma,
@@ -68,7 +57,7 @@ export async function createServices() {
           .getHandle(`approve-permission-request-set-${operationId}`)
           .cancel()
       } catch (error) {
-        if (isGrpcServiceError(error) && error.code === grpcStatus.NOT_FOUND) {
+        if (isGrpcServiceError(error) && error.code === GrpcStatus.NOT_FOUND) {
           return
         }
 
@@ -78,13 +67,12 @@ export async function createServices() {
   })
 
   return {
-    pool,
+    ...services,
+    pool: postgres.pool,
     prisma,
     temporalClient,
     operationService,
-    operationStatusService,
-    databaseProvisionService,
-    databaseOperationService,
+    accessOperationStatusService,
     authzService,
     bindingService,
     definitionService,

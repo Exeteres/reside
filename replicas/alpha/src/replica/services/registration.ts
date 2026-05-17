@@ -1,38 +1,18 @@
 import type {
   RegisterReplicaRequest,
-  RegisterReplicaResponse,
   RegistrationServiceImplementation,
 } from "@reside/api/alpha/registration.v1"
-import type { GenericOperationService } from "@reside/common"
-import type { Client } from "@temporalio/client"
-import type { Operation, PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
-import { CustomObjectsApi } from "@kubernetes/client-node"
-import { authenticateReplica, getReplicaNamespace, kubeConfig } from "@reside/common"
-import { WorkflowExecutionAlreadyStartedError, WorkflowIdReusePolicy } from "@temporalio/client"
-import { type CallContext, ServerError } from "nice-grpc"
-import { strings } from "../../locale"
-import {
-  evaluateRegistrationReadiness,
-  loadReplicaForRegistrationReadiness,
-} from "../../shared/registration-readiness"
+import type { PrismaClient } from "../../database"
+import { Code, ConnectError } from "@connectrpc/connect"
+import { authenticateReplica } from "@reside/common"
 
-const REGISTRATION_WORKFLOW_TYPE = "waitForReplicaRegistrationWorkflow"
-
-type AlphaOperationService = GenericOperationService<Operation>
-
-export function createRegistrationService(
-  prisma: PrismaClient,
-  temporalClient: Client,
-  operationService: AlphaOperationService,
-): RegistrationServiceImplementation {
-  const customObjectsApi = kubeConfig.makeApiClient(CustomObjectsApi)
-
-  const service: RegistrationServiceImplementation = {
-    async registerReplica(
-      request: RegisterReplicaRequest,
-      context: CallContext,
-    ): Promise<RegisterReplicaResponse> {
+export function createRegistrationService({
+  prisma,
+}: {
+  prisma: PrismaClient
+}): RegistrationServiceImplementation {
+  return {
+    async registerReplica(request, context) {
       const identity = await authenticateReplica(context)
 
       const replicaName = identity.name
@@ -158,79 +138,8 @@ export function createRegistrationService(
         }
       })
 
-      const replica = await loadReplicaForRegistrationReadiness(prisma, replicaName)
-      if (replica === null) {
-        throw new ServerError(status.NOT_FOUND, `Replica "${replicaName}" was not found`)
-      }
-
-      const readiness = await evaluateRegistrationReadiness(customObjectsApi, replica)
-      if (readiness.ready) {
-        return {
-          operation: undefined,
-        }
-      }
-
-      const existingOperation = await prisma.operation.findFirst({
-        where: {
-          replicaName,
-          status: "PENDING",
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      })
-
-      if (existingOperation !== null) {
-        return {
-          operation: await operationService.toApiOperation(existingOperation.id),
-        }
-      }
-
-      const operation = await prisma.operation.create({
-        data: {
-          title: strings.server.registration.operations.reconcileReplica.title,
-          description: strings.server.registration.operations.reconcileReplica.description,
-          status: "PENDING",
-          replicaName,
-        },
-      })
-
-      await startRegistrationWorkflow(temporalClient, operation.id)
-
-      return {
-        operation: await operationService.toApiOperation(operation.id),
-      }
+      return {}
     },
-  }
-
-  return service
-}
-
-async function startRegistrationWorkflow(
-  temporalClient: Client,
-  operationId: number,
-): Promise<void> {
-  const workflowId = String(operationId)
-
-  try {
-    await temporalClient.workflow.start(REGISTRATION_WORKFLOW_TYPE, {
-      args: [operationId],
-      workflowId,
-      taskQueue: getReplicaNamespace(),
-      workflowIdReusePolicy: WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
-    })
-
-    return
-  } catch (error) {
-    if (error instanceof WorkflowExecutionAlreadyStartedError) {
-      return
-    }
-
-    if (error instanceof Error) {
-      throw new ServerError(status.INTERNAL, error.message)
-    }
-
-    throw new ServerError(status.INTERNAL, "Failed to schedule registration workflow")
   }
 }
 
@@ -281,7 +190,7 @@ function assertRequiredValue(value: string, fieldName: string): void {
     return
   }
 
-  throw new ServerError(status.INVALID_ARGUMENT, `Field "${fieldName}" is required`)
+  throw new ConnectError(`Field "${fieldName}" is required`, Code.InvalidArgument)
 }
 
 function assertValidSlotNames(slotNames: string[], fieldName: string): void {
@@ -289,9 +198,9 @@ function assertValidSlotNames(slotNames: string[], fieldName: string): void {
 
   for (const slotName of slotNames) {
     if (slotName.length === 0) {
-      throw new ServerError(
-        status.INVALID_ARGUMENT,
+      throw new ConnectError(
         `Field "${fieldName}" contains slot with empty name`,
+        Code.InvalidArgument,
       )
     }
 
@@ -300,9 +209,9 @@ function assertValidSlotNames(slotNames: string[], fieldName: string): void {
       continue
     }
 
-    throw new ServerError(
-      status.INVALID_ARGUMENT,
+    throw new ConnectError(
       `Field "${fieldName}" contains duplicate slot name "${slotName}"`,
+      Code.InvalidArgument,
     )
   }
 }

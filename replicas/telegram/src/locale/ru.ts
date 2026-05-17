@@ -40,16 +40,32 @@ export const ru = {
         description:
           "Позволяет подтверждать запросы доступа от конкретной реплики через Телеграмную Реплику.",
       },
+      avatarOwn: {
+        title: "Управление аватаром",
+        description: "Позволяет реплике создать и использовать бота-аватара.",
+      },
     },
     channels: {
       approvals: {
         title: "Подтверждения",
         description: "Уведомления для подтверждения запросов доступа.",
       },
+      avatarProvisioning: {
+        title: "Создание аватаров реплик",
+        description: "Уведомления с запросами на создание управляемых ботов-аватаров.",
+      },
+      avatarPrivacyMode: {
+        title: "Проблемы доставки аватаров",
+        description: "Уведомления о проблемах доставки сообщений ботами-аватарами.",
+      },
     },
     approver: {
       title: "Telegram-подтверждение",
       description: "Автоматическое подтверждение запросов для Telegram-реалма",
+    },
+    gateway: {
+      title: "Шлюз Телеграмной Реплики",
+      description: "HTTP-шлюз для входящих webhook-обновлений Telegram.",
     },
   },
   server: {
@@ -59,6 +75,12 @@ export const ru = {
     notification: {
       responseOperationTitle: "Ожидание ответа на уведомление",
       chooseAction: "Выберите действие",
+      avatarProvisionOperationTitle: "Ожидание создания Telegram-аватара",
+      avatarProvisionOperationDescription:
+        "Ожидает создание управляемого Telegram-бота для реплики.",
+      avatarPrivacyModeWarningTitle: "Проблемы при доставке сообщений аватаром",
+      avatarPrivacyModeWarningContent: (botUsername: string) =>
+        `У @${botUsername} Включен Privacy Mode. Отключите его через /setprivacy у BotFather для корректной отправки сообщений.`,
     },
     subject: {
       userById: (telegramId: string | number) => `Пользователь ${telegramId}`,
@@ -71,6 +93,14 @@ export const ru = {
         approve: "Подтвердить",
         reject: "Отклонить",
         escalate: "Эскалировать",
+      },
+      avatarProvisioning: {
+        title: (replicaTitle: string) => `Создание аватара для ${replicaTitle}`,
+        createdTitle: (replicaTitle: string) => `Аватар для ${replicaTitle} создан`,
+        content: "Нажмите на кнопку ниже и завершите создание аватара для реплики.",
+        createdContent: "Добавьте созданного бота в текущий чат.",
+        openCreationLink: "Создать аватар",
+        timeoutMessage: "Не удалось дождаться создания аватара за отведенное время (24 часа).",
       },
     },
     activities: {
@@ -94,6 +124,12 @@ export const ru = {
         `Параметр "${parameterName}" должен быть true/false`,
       acceptedSuffix: (subjectTitle: string, date: string, time: string) =>
         `${subjectTitle} ответил ${date} в ${time} MSK`,
+      acceptedActionSuffix: (
+        subjectTitle: string,
+        optionName: string,
+        date: string,
+        time: string,
+      ) => `${subjectTitle} выбрал "${optionName}" ${date} в ${time} MSK`,
       systemTitle: "Система",
       privateChatTitle: "Личный чат",
       chatById: (chatId: string | number) => `Чат ${chatId}`,

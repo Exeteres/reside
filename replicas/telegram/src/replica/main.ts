@@ -1,105 +1,112 @@
-import { type RunnerHandle, run } from "@grammyjs/runner"
-import { CoreV1Api, KubeConfig } from "@kubernetes/client-node"
-import { startService } from "@reside/api"
-import { ApprovalServiceDefinition } from "@reside/api/common/approval.v1"
+import type { FastifyReply, FastifyRequest } from "fastify"
+import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
+import { CoreV1Api } from "@kubernetes/client-node"
+import { ApprovalService } from "@reside/api/common/approval.v1"
+import { OperationService, OperationSubscriptionService } from "@reside/api/common/operation.v1"
+import { PingService } from "@reside/api/common/ping.v1"
+import { SubjectService } from "@reside/api/common/subject.v1"
+import { AvatarService } from "@reside/api/interaction/avatar.v1"
+import { DefinitionService } from "@reside/api/interaction/definition.v1"
+import { NotificationService } from "@reside/api/interaction/notification.v1"
 import {
-  OperationServiceDefinition,
-  OperationSubscriptionServiceDefinition,
-} from "@reside/api/common/operation.v1"
-import { SubjectServiceDefinition } from "@reside/api/common/subject.v1"
-import { DefinitionServiceDefinition } from "@reside/api/interaction/definition.v1"
-import { NotificationServiceDefinition } from "@reside/api/interaction/notification.v1"
-import {
+  createInteractionActivities,
   createOperationSubscriptionService,
+  createPingService,
+  createServer,
   getReplicaNamespace,
+  kubeConfig,
   logger,
-  runTemporalWorker,
+  registerGracefulShutdown,
+  startTemporalWorker,
 } from "@reside/common"
-import { createServer } from "nice-grpc"
+import { TELEGRAM_WEBHOOK_PATH } from "../definitions"
 import { createServices } from "../shared"
 import { createTelegramActivities } from "./activities"
-import { createTelegramBot } from "./bot"
+import { createBotRuntime, createWebhookUrl } from "./bot-runtime"
 import { loadTelegramConfigState } from "./config"
 import { loadTelegramSecretState } from "./secret"
 import { createApprovalService } from "./services/approval"
+import { createAvatarService } from "./services/avatar"
 import { createDefinitionService } from "./services/definition"
 import { createNotificationService } from "./services/notification"
 import { createSubjectService } from "./services/subject"
 
 const SECRET_POLL_INTERVAL_MS = 5_000
 
-const {
-  prisma,
-  operationService,
-  databaseProvisionService,
-  databaseOperationService,
-  interactionNotificationService,
-  interactionOperationService,
-  accessAuthzService,
-  accessRequestService,
-  accessSubjectService,
-  temporalClient,
-} = await createServices()
+const services = await createServices()
+const server = await createServer(services)
 
-const server = createServer()
+await server.register(fastifyConnectPlugin, {
+  routes(router) {
+    router.service(DefinitionService, createDefinitionService(services))
+    router.service(NotificationService, createNotificationService(services))
+    router.service(ApprovalService, createApprovalService(services))
+    router.service(AvatarService, createAvatarService(services))
+    router.service(SubjectService, createSubjectService(services))
+    router.service(PingService, createPingService())
+    router.service(OperationService, services.operationService.implementation)
+    router.service(
+      OperationSubscriptionService,
+      createOperationSubscriptionService(services.temporalClient),
+    )
+  },
+})
 
-server.add(DefinitionServiceDefinition, createDefinitionService(prisma, accessAuthzService))
-server.add(
-  NotificationServiceDefinition,
-  createNotificationService(prisma, operationService, accessAuthzService, accessSubjectService),
-)
-server.add(
-  ApprovalServiceDefinition,
-  createApprovalService(prisma, operationService, temporalClient),
-)
-server.add(SubjectServiceDefinition, createSubjectService(prisma))
-server.add(OperationServiceDefinition, operationService.implementation)
-server.add(
-  OperationSubscriptionServiceDefinition,
-  createOperationSubscriptionService(temporalClient),
-)
+const webhookUrl = createWebhookUrl()
+const botRuntime = createBotRuntime({ services, webhookUrl })
 
-await startService(server)
+server.post(TELEGRAM_WEBHOOK_PATH, async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    await botRuntime.handleWebhookUpdate(
+      request.headers["x-telegram-bot-api-secret-token"],
+      request.body,
+    )
+  } catch (error) {
+    logger.error(
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "failed to handle telegram webhook update",
+    )
+  }
+
+  return await reply.code(200).send({ ok: true })
+})
+
+await server.listen({ host: "0.0.0.0", port: 8080 })
+
+registerGracefulShutdown(async () => {
+  logger.info("shutting down bot runtime")
+  await botRuntime.dispose()
+})
 
 const stopSignal = createStopSignal()
 
 const namespace = getReplicaNamespace()
-const kubeConfig = new KubeConfig()
-kubeConfig.loadFromDefault()
 const coreApi = kubeConfig.makeApiClient(CoreV1Api)
-
-await operationService.startOperationWorker({
-  provisionService: databaseProvisionService,
-  operationService: databaseOperationService,
-})
 
 if (stopSignal.stopped) {
   logger.info({ namespace }, "stop requested before telegram runtime startup")
 } else {
-  await runTemporalWorker({
-    provisionService: databaseProvisionService,
-    operationService: databaseOperationService,
-    activities: createTelegramActivities({
-      prisma,
-      notificationService: interactionNotificationService,
-      operationService: interactionOperationService,
-      localOperationService: operationService,
-    }),
+  await startTemporalWorker({
+    services,
+    activities: {
+      ...services.operationService.activities,
+      ...createInteractionActivities(
+        services.notificationService,
+        services.interactionOperationService,
+      ),
+      ...createTelegramActivities({
+        prisma: services.prisma,
+        operationService: services.operationService,
+      }),
+    },
   })
 
   if (stopSignal.stopped) {
     logger.info({ namespace }, "stop requested during telegram runtime startup")
   } else {
     logger.info({ namespace }, "starting telegram replica")
-
-    const botRuntime = createBotRuntime({
-      prisma,
-      operationService,
-      accessAuthzService,
-      accessRequestService,
-    })
-    let currentResourceVersion: string | undefined
-    let currentConfigResourceVersion: string | undefined
 
     while (!stopSignal.stopped) {
       try {
@@ -112,23 +119,11 @@ if (stopSignal.stopped) {
           break
         }
 
-        if (
-          secretState.resourceVersion !== currentResourceVersion ||
-          configState.resourceVersion !== currentConfigResourceVersion
-        ) {
-          currentResourceVersion = secretState.resourceVersion
-          currentConfigResourceVersion = configState.resourceVersion
-
-          if (stopSignal.stopped) {
-            break
-          }
-
-          await botRuntime.reconcile(
-            secretState.botToken,
-            configState.systemChatId,
-            configState.superAdminUserId,
-          )
-        }
+        await botRuntime.reconcile(
+          secretState.botToken,
+          configState.systemChatId,
+          configState.superAdminUserId,
+        )
       } catch (error) {
         if (stopSignal.stopped && isPoolClosedError(error)) {
           break
@@ -150,76 +145,6 @@ if (stopSignal.stopped) {
     }
 
     await botRuntime.dispose()
-  }
-}
-
-function createBotRuntime(args: {
-  prisma: Awaited<ReturnType<typeof createServices>>["prisma"]
-  operationService: Awaited<ReturnType<typeof createServices>>["operationService"]
-  accessAuthzService: Awaited<ReturnType<typeof createServices>>["accessAuthzService"]
-  accessRequestService: Awaited<ReturnType<typeof createServices>>["accessRequestService"]
-}): {
-  reconcile: (
-    nextToken: string | undefined,
-    nextSystemChatId: string | undefined,
-    nextSuperAdminUserId: string | undefined,
-  ) => Promise<void>
-  dispose: () => Promise<void>
-} {
-  let currentToken: string | undefined
-  let currentSystemChatId: string | undefined
-  let currentSuperAdminUserId: string | undefined
-  let currentRunner: RunnerHandle | undefined
-
-  return {
-    reconcile: async (
-      nextToken: string | undefined,
-      nextSystemChatId: string | undefined,
-      nextSuperAdminUserId: string | undefined,
-    ) => {
-      if (
-        nextToken === currentToken &&
-        nextSystemChatId === currentSystemChatId &&
-        nextSuperAdminUserId === currentSuperAdminUserId
-      ) {
-        return
-      }
-
-      if (currentRunner) {
-        logger.info("stopping telegram bot instance")
-        await currentRunner.stop()
-        currentRunner = undefined
-      }
-
-      currentToken = nextToken
-      currentSystemChatId = nextSystemChatId
-      currentSuperAdminUserId = nextSuperAdminUserId
-
-      if (!nextToken || nextToken.length === 0) {
-        logger.info("telegram bot token is not configured, bot stays stopped")
-        return
-      }
-
-      const bot = await createTelegramBot({
-        token: nextToken,
-        prisma: args.prisma,
-        operationService: args.operationService,
-        authzService: args.accessAuthzService,
-        permissionRequestService: args.accessRequestService,
-        superAdminUserId: nextSuperAdminUserId,
-      })
-      currentRunner = run(bot)
-
-      logger.info({ username: bot.botInfo.username }, "telegram bot instance started")
-    },
-    dispose: async () => {
-      if (!currentRunner) {
-        return
-      }
-
-      await currentRunner.stop()
-      currentRunner = undefined
-    },
   }
 }
 

@@ -5,7 +5,8 @@ import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { PrismaClient } from "../database"
 import type { AlphaE2EScope } from "./scope"
 import { waitForOperationSuccess } from "@reside/api"
-import { logger, WellKnownPermissions } from "@reside/common"
+import { logger } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 import {
   isNotFoundError,
   REPLICA_API_GROUP,
@@ -18,7 +19,7 @@ const REPLICA_CRD_WAIT_INTERVAL_MS = 1_000
 
 export async function assertLoadApi(
   loadService: LoadServiceClient,
-  accessRequestService: PermissionRequestServiceClient,
+  permissionRequestService: PermissionRequestServiceClient,
   accessOperationService: OperationServiceClient,
   prisma: PrismaClient,
   customObjectsApi: CustomObjectsApi,
@@ -27,7 +28,7 @@ export async function assertLoadApi(
   await deleteReplicaCrd(customObjectsApi, scope.loadReplicaName)
 
   try {
-    const { operation } = await accessRequestService.requestPermissions({
+    const { operation } = await permissionRequestService.requestPermissions({
       reason: "Для выполнения e2e проверки загрузки реплики",
       permissionSetName: scope.loadPermissionSetName,
       items: [

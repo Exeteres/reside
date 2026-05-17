@@ -2,7 +2,7 @@ import type { DefinitionServiceClient } from "@reside/api/access/definition.v1"
 import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
 import type { PrismaClient } from "../database"
 import type { AccessE2EScope } from "./scope"
-import { status } from "@grpc/grpc-js"
+import { Code } from "@connectrpc/connect"
 import { logger } from "@reside/common"
 
 export async function assertSubjectApi(
@@ -66,7 +66,7 @@ export async function assertSubjectApi(
     subjectService.getSubjectDisplayInfo({
       subjectId: `${scope.subjectDeniedRealmName}:subject-b`,
     }),
-    status.PERMISSION_DENIED,
+    Code.PermissionDenied,
     "access:subject:read",
   )
 
@@ -74,7 +74,7 @@ export async function assertSubjectApi(
     subjectService.getSubjectDisplayInfo({
       subjectId: `${scope.subjectNoEndpointRealmName}:subject-c`,
     }),
-    status.FAILED_PRECONDITION,
+    Code.FailedPrecondition,
     "has no subject service endpoint",
   )
 
@@ -82,7 +82,7 @@ export async function assertSubjectApi(
     subjectService.getSubjectDisplayInfo({
       subjectId: "invalid-subject",
     }),
-    status.INVALID_ARGUMENT,
+    Code.InvalidArgument,
     "{realm}:{name}",
   )
 

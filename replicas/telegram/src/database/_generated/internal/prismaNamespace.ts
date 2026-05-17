@@ -385,10 +385,12 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   ApprovalRequest: 'ApprovalRequest',
+  Avatar: 'Avatar',
+  AvatarProvisionRequest: 'AvatarProvisionRequest',
+  UnauthorizedAvatar: 'UnauthorizedAvatar',
   NotificationChannel: 'NotificationChannel',
   Chat: 'Chat',
   Command: 'Command',
-  InteractionContext: 'InteractionContext',
   NotificationResponse: 'NotificationResponse',
   Notification: 'Notification',
   Operation: 'Operation',
@@ -408,7 +410,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "approvalRequest" | "notificationChannel" | "chat" | "command" | "interactionContext" | "notificationResponse" | "notification" | "operation" | "user"
+    modelProps: "approvalRequest" | "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "chat" | "command" | "notificationResponse" | "notification" | "operation" | "user"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -483,6 +485,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ApprovalRequestCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ApprovalRequestCountAggregateOutputType> | number
+        }
+      }
+    }
+    Avatar: {
+      payload: Prisma.$AvatarPayload<ExtArgs>
+      fields: Prisma.AvatarFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AvatarFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AvatarFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>
+        }
+        findFirst: {
+          args: Prisma.AvatarFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AvatarFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>
+        }
+        findMany: {
+          args: Prisma.AvatarFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>[]
+        }
+        create: {
+          args: Prisma.AvatarCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>
+        }
+        createMany: {
+          args: Prisma.AvatarCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AvatarCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>[]
+        }
+        delete: {
+          args: Prisma.AvatarDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>
+        }
+        update: {
+          args: Prisma.AvatarUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>
+        }
+        deleteMany: {
+          args: Prisma.AvatarDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AvatarUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AvatarUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>[]
+        }
+        upsert: {
+          args: Prisma.AvatarUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarPayload>
+        }
+        aggregate: {
+          args: Prisma.AvatarAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAvatar>
+        }
+        groupBy: {
+          args: Prisma.AvatarGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AvatarGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AvatarCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AvatarCountAggregateOutputType> | number
+        }
+      }
+    }
+    AvatarProvisionRequest: {
+      payload: Prisma.$AvatarProvisionRequestPayload<ExtArgs>
+      fields: Prisma.AvatarProvisionRequestFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AvatarProvisionRequestFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AvatarProvisionRequestFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>
+        }
+        findFirst: {
+          args: Prisma.AvatarProvisionRequestFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AvatarProvisionRequestFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>
+        }
+        findMany: {
+          args: Prisma.AvatarProvisionRequestFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>[]
+        }
+        create: {
+          args: Prisma.AvatarProvisionRequestCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>
+        }
+        createMany: {
+          args: Prisma.AvatarProvisionRequestCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AvatarProvisionRequestCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>[]
+        }
+        delete: {
+          args: Prisma.AvatarProvisionRequestDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>
+        }
+        update: {
+          args: Prisma.AvatarProvisionRequestUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>
+        }
+        deleteMany: {
+          args: Prisma.AvatarProvisionRequestDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AvatarProvisionRequestUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AvatarProvisionRequestUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>[]
+        }
+        upsert: {
+          args: Prisma.AvatarProvisionRequestUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AvatarProvisionRequestPayload>
+        }
+        aggregate: {
+          args: Prisma.AvatarProvisionRequestAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAvatarProvisionRequest>
+        }
+        groupBy: {
+          args: Prisma.AvatarProvisionRequestGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AvatarProvisionRequestGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AvatarProvisionRequestCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AvatarProvisionRequestCountAggregateOutputType> | number
+        }
+      }
+    }
+    UnauthorizedAvatar: {
+      payload: Prisma.$UnauthorizedAvatarPayload<ExtArgs>
+      fields: Prisma.UnauthorizedAvatarFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UnauthorizedAvatarFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UnauthorizedAvatarFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>
+        }
+        findFirst: {
+          args: Prisma.UnauthorizedAvatarFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UnauthorizedAvatarFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>
+        }
+        findMany: {
+          args: Prisma.UnauthorizedAvatarFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>[]
+        }
+        create: {
+          args: Prisma.UnauthorizedAvatarCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>
+        }
+        createMany: {
+          args: Prisma.UnauthorizedAvatarCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UnauthorizedAvatarCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>[]
+        }
+        delete: {
+          args: Prisma.UnauthorizedAvatarDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>
+        }
+        update: {
+          args: Prisma.UnauthorizedAvatarUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>
+        }
+        deleteMany: {
+          args: Prisma.UnauthorizedAvatarDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UnauthorizedAvatarUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UnauthorizedAvatarUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>[]
+        }
+        upsert: {
+          args: Prisma.UnauthorizedAvatarUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UnauthorizedAvatarPayload>
+        }
+        aggregate: {
+          args: Prisma.UnauthorizedAvatarAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUnauthorizedAvatar>
+        }
+        groupBy: {
+          args: Prisma.UnauthorizedAvatarGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UnauthorizedAvatarGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UnauthorizedAvatarCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UnauthorizedAvatarCountAggregateOutputType> | number
         }
       }
     }
@@ -705,80 +929,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CommandCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CommandCountAggregateOutputType> | number
-        }
-      }
-    }
-    InteractionContext: {
-      payload: Prisma.$InteractionContextPayload<ExtArgs>
-      fields: Prisma.InteractionContextFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.InteractionContextFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.InteractionContextFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>
-        }
-        findFirst: {
-          args: Prisma.InteractionContextFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.InteractionContextFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>
-        }
-        findMany: {
-          args: Prisma.InteractionContextFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>[]
-        }
-        create: {
-          args: Prisma.InteractionContextCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>
-        }
-        createMany: {
-          args: Prisma.InteractionContextCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.InteractionContextCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>[]
-        }
-        delete: {
-          args: Prisma.InteractionContextDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>
-        }
-        update: {
-          args: Prisma.InteractionContextUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>
-        }
-        deleteMany: {
-          args: Prisma.InteractionContextDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.InteractionContextUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.InteractionContextUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>[]
-        }
-        upsert: {
-          args: Prisma.InteractionContextUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$InteractionContextPayload>
-        }
-        aggregate: {
-          args: Prisma.InteractionContextAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateInteractionContext>
-        }
-        groupBy: {
-          args: Prisma.InteractionContextGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.InteractionContextGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.InteractionContextCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.InteractionContextCountAggregateOutputType> | number
         }
       }
     }
@@ -1132,6 +1282,51 @@ export const ApprovalRequestScalarFieldEnum = {
 export type ApprovalRequestScalarFieldEnum = (typeof ApprovalRequestScalarFieldEnum)[keyof typeof ApprovalRequestScalarFieldEnum]
 
 
+export const AvatarScalarFieldEnum = {
+  id: 'id',
+  subjectId: 'subjectId',
+  replicaName: 'replicaName',
+  replicaTitle: 'replicaTitle',
+  managedBotId: 'managedBotId',
+  managedBotUsername: 'managedBotUsername',
+  createdByUserId: 'createdByUserId',
+  token: 'token',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AvatarScalarFieldEnum = (typeof AvatarScalarFieldEnum)[keyof typeof AvatarScalarFieldEnum]
+
+
+export const AvatarProvisionRequestScalarFieldEnum = {
+  id: 'id',
+  operationId: 'operationId',
+  subjectId: 'subjectId',
+  replicaName: 'replicaName',
+  replicaTitle: 'replicaTitle',
+  expectedPrefix: 'expectedPrefix',
+  createdByUserId: 'createdByUserId',
+  notificationId: 'notificationId',
+  avatarId: 'avatarId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AvatarProvisionRequestScalarFieldEnum = (typeof AvatarProvisionRequestScalarFieldEnum)[keyof typeof AvatarProvisionRequestScalarFieldEnum]
+
+
+export const UnauthorizedAvatarScalarFieldEnum = {
+  id: 'id',
+  managedBotId: 'managedBotId',
+  managedBotUsername: 'managedBotUsername',
+  createdByUserId: 'createdByUserId',
+  reason: 'reason',
+  createdAt: 'createdAt'
+} as const
+
+export type UnauthorizedAvatarScalarFieldEnum = (typeof UnauthorizedAvatarScalarFieldEnum)[keyof typeof UnauthorizedAvatarScalarFieldEnum]
+
+
 export const NotificationChannelScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -1168,18 +1363,6 @@ export const CommandScalarFieldEnum = {
 export type CommandScalarFieldEnum = (typeof CommandScalarFieldEnum)[keyof typeof CommandScalarFieldEnum]
 
 
-export const InteractionContextScalarFieldEnum = {
-  id: 'id',
-  type: 'type',
-  chatId: 'chatId',
-  userId: 'userId',
-  lastUserMessageId: 'lastUserMessageId',
-  createdAt: 'createdAt'
-} as const
-
-export type InteractionContextScalarFieldEnum = (typeof InteractionContextScalarFieldEnum)[keyof typeof InteractionContextScalarFieldEnum]
-
-
 export const NotificationResponseScalarFieldEnum = {
   operationId: 'operationId',
   type: 'type',
@@ -1194,7 +1377,8 @@ export type NotificationResponseScalarFieldEnum = (typeof NotificationResponseSc
 export const NotificationScalarFieldEnum = {
   id: 'id',
   operationId: 'operationId',
-  contextId: 'contextId',
+  targetChatId: 'targetChatId',
+  replyToMessageId: 'replyToMessageId',
   channelId: 'channelId',
   messageId: 'messageId',
   callingSubjectId: 'callingSubjectId',
@@ -1371,20 +1555,6 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'InteractionContextType'
- */
-export type EnumInteractionContextTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'InteractionContextType'>
-    
-
-
-/**
- * Reference to a field of type 'InteractionContextType[]'
- */
-export type ListEnumInteractionContextTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'InteractionContextType[]'>
-    
-
-
-/**
  * Reference to a field of type 'NotificationResponseType'
  */
 export type EnumNotificationResponseTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationResponseType'>
@@ -1521,10 +1691,12 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   approvalRequest?: Prisma.ApprovalRequestOmit
+  avatar?: Prisma.AvatarOmit
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestOmit
+  unauthorizedAvatar?: Prisma.UnauthorizedAvatarOmit
   notificationChannel?: Prisma.NotificationChannelOmit
   chat?: Prisma.ChatOmit
   command?: Prisma.CommandOmit
-  interactionContext?: Prisma.InteractionContextOmit
   notificationResponse?: Prisma.NotificationResponseOmit
   notification?: Prisma.NotificationOmit
   operation?: Prisma.OperationOmit

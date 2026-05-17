@@ -82,7 +82,7 @@ spec:
       containers:
         - name: operator
           image: ghcr.io/exeteres/reside/operator:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: RESIDE_SYSTEM_NAMESPACE
               value: reside-system

@@ -18,16 +18,6 @@ export const ApprovalResult = {
 export type ApprovalResult = (typeof ApprovalResult)[keyof typeof ApprovalResult]
 
 
-export const InteractionContextType = {
-  SYSTEM: 'SYSTEM',
-  CHAT: 'CHAT',
-  USER_PRIVATE: 'USER_PRIVATE',
-  USER_IN_CHAT: 'USER_IN_CHAT'
-} as const
-
-export type InteractionContextType = (typeof InteractionContextType)[keyof typeof InteractionContextType]
-
-
 export const NotificationResponseType = {
   ACTION: 'ACTION',
   TEXT: 'TEXT'

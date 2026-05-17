@@ -1,34 +1,29 @@
-import type {
-  PermissionRequestServiceImplementation,
-  RequestPermissionsRequest,
-  RequestPermissionsResponse,
-} from "@reside/api/access/request.v1"
+import type { PermissionRequestServiceImplementation } from "@reside/api/access/request.v1"
 import type { GenericOperationService } from "@reside/common"
 import type { Operation as AccessOperation, PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
-import { authenticate, getReplicaNamespace, logger } from "@reside/common"
+import { Code, ConnectError } from "@connectrpc/connect"
+import { status as GrpcStatus } from "@grpc/grpc-js"
+import { authenticate, DEFAULT_TEMPORAL_TASK_QUEUE, logger } from "@reside/common"
 import { type Client, isGrpcServiceError, WorkflowIdReusePolicy } from "@temporalio/client"
-import { type CallContext, ServerError } from "nice-grpc"
 import { strings } from "../../locale"
 
-type AccessOperationService = GenericOperationService<AccessOperation>
-
-export function createPermissionRequestService(
-  prisma: PrismaClient,
-  operationService: AccessOperationService,
-  temporalClient: Client,
-) {
-  const service: PermissionRequestServiceImplementation = {
-    async requestPermissions(
-      request: RequestPermissionsRequest,
-      context: CallContext,
-    ): Promise<RequestPermissionsResponse> {
+export function createPermissionRequestService({
+  prisma,
+  operationService,
+  temporalClient,
+}: {
+  prisma: PrismaClient
+  operationService: GenericOperationService<AccessOperation>
+  temporalClient: Client
+}): PermissionRequestServiceImplementation {
+  return {
+    async requestPermissions(request, context) {
       const { subjectId: requestedBySubjectId } = await authenticate(context)
       const effectiveSubjectId = request.subjectId ?? requestedBySubjectId
       if (effectiveSubjectId === undefined) {
-        throw new ServerError(
-          status.INVALID_ARGUMENT,
+        throw new ConnectError(
           "subject_id is missing and requester subject id is unavailable",
+          Code.InvalidArgument,
         )
       }
 
@@ -46,6 +41,10 @@ export function createPermissionRequestService(
         effectiveRequestedBySubjectId,
         request.items.length,
         effectivePermissionSetName,
+      )
+      logger.info(
+        'request.requestPermissions requestedPermissions="%s"',
+        formatRequestedPermissionsForLog(request.items),
       )
 
       const requestedPermissionNames = [...new Set(request.items.map(item => item.permissionName))]
@@ -65,36 +64,36 @@ export function createPermissionRequestService(
       const permissionsByName = new Map(
         permissions.map(permission => [permission.name, permission]),
       )
+      const permissionNamesById = new Map(
+        permissions.map(permission => [permission.id, permission.name]),
+      )
       const missingPermissionNames = requestedPermissionNames.filter(
         name => !permissionsByName.has(name),
       )
       if (missingPermissionNames.length > 0) {
-        throw new ServerError(
-          status.NOT_FOUND,
+        throw new ConnectError(
           `Permissions not found: ${missingPermissionNames.join(", ")}`,
+          Code.NotFound,
         )
       }
 
       const normalizedItems = request.items.map(item => {
         const permission = permissionsByName.get(item.permissionName)
         if (!permission) {
-          throw new ServerError(
-            status.NOT_FOUND,
-            `Permission "${item.permissionName}" was not found`,
-          )
+          throw new ConnectError(`Permission "${item.permissionName}" was not found`, Code.NotFound)
         }
 
         if (permission.scoped && item.scope === undefined) {
-          throw new ServerError(
-            status.INVALID_ARGUMENT,
+          throw new ConnectError(
             `Permission "${item.permissionName}" requires scope descriptor`,
+            Code.InvalidArgument,
           )
         }
 
         if (!permission.scoped && item.scope !== undefined) {
-          throw new ServerError(
-            status.INVALID_ARGUMENT,
+          throw new ConnectError(
             `Permission "${item.permissionName}" is not scoped and does not accept scope descriptor`,
+            Code.InvalidArgument,
           )
         }
 
@@ -123,9 +122,9 @@ export function createPermissionRequestService(
         })
 
         if (restricted !== null) {
-          throw new ServerError(
-            status.PERMISSION_DENIED,
+          throw new ConnectError(
             "At least one requested permission is explicitly restricted",
+            Code.PermissionDenied,
           )
         }
       }
@@ -209,6 +208,11 @@ export function createPermissionRequestService(
 
         const missingItems = deduplicatedItems.filter(
           item => !hasMatchingBinding(existingBindings, item),
+        )
+
+        logger.info(
+          'request.requestPermissions missingApprovalPermissions="%s"',
+          formatMissingPermissionItemsForLog(missingItems, permissionNamesById),
         )
 
         if (missingItems.length === 0) {
@@ -339,7 +343,7 @@ export function createPermissionRequestService(
               .getHandle(`approve-permission-request-set-${supersededOperationId}`)
               .cancel()
           } catch (error) {
-            if (isGrpcServiceError(error) && error.code === status.NOT_FOUND) {
+            if (isGrpcServiceError(error) && error.code === GrpcStatus.NOT_FOUND) {
               continue
             }
 
@@ -379,7 +383,7 @@ export function createPermissionRequestService(
         args: [requestOutcome.operationId],
         workflowId: `approve-permission-request-set-${requestOutcome.operationId}`,
         workflowIdReusePolicy: WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
-        taskQueue: getReplicaNamespace(),
+        taskQueue: DEFAULT_TEMPORAL_TASK_QUEUE,
       })
 
       return {
@@ -387,8 +391,6 @@ export function createPermissionRequestService(
       }
     },
   }
-
-  return service
 }
 
 function deduplicatePermissionItems(
@@ -464,10 +466,7 @@ function hasExactPermissionItems(
 
 function assertValidSubjectId(value: string, fieldName: string): void {
   if (!isSubjectId(value)) {
-    throw new ServerError(
-      status.INVALID_ARGUMENT,
-      `${fieldName} must be in format "{realm}:{name}"`,
-    )
+    throw new ConnectError(`${fieldName} must be in format "{realm}:{name}"`, Code.InvalidArgument)
   }
 }
 
@@ -484,4 +483,43 @@ function isSubjectId(value: string): boolean {
   }
 
   return realm.length > 0 && name.length > 0
+}
+
+function formatRequestedPermissionsForLog(
+  items: Array<{
+    permissionName: string
+    scope?: string
+  }>,
+): string {
+  if (items.length === 0) {
+    return "[]"
+  }
+
+  return items
+    .map(item => {
+      const scope = item.scope ?? "<global>"
+      return `${item.permissionName}[${scope}]`
+    })
+    .join(", ")
+}
+
+function formatMissingPermissionItemsForLog(
+  items: Array<{
+    permissionId: number
+    scope: string | undefined
+  }>,
+  permissionNamesById: Map<number, string>,
+): string {
+  if (items.length === 0) {
+    return "[]"
+  }
+
+  return items
+    .map(item => {
+      const permissionName =
+        permissionNamesById.get(item.permissionId) ?? `<unknown:${item.permissionId}>`
+      const scope = item.scope ?? "<global>"
+      return `${permissionName}[${scope}]`
+    })
+    .join(", ")
 }

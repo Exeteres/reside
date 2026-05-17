@@ -1,17 +1,20 @@
 export { type RegisterReplicaOptions, registerReplica } from "./alpha"
-export { createChannels, createClient } from "./api"
+export { createChannel, createChannels, createClient } from "./api"
 export { authenticate, authenticateReplica } from "./auth"
-export { bootstrapService } from "./bootstrap"
+export { bootstrapGatewayRoute, bootstrapService, boostrapGatewayRoute } from "./bootstrap"
 export {
+  DEFAULT_TEMPORAL_TASK_QUEUE,
   createPostgresPool,
   createPostgresPoolFromCredentials,
+  createStorageBucketService,
   createTemporalClient,
-  type DatabaseOptions,
   type PostgresPool,
+  type StorageBucketService,
   runPrismaMigrations,
-  startTemporalWorker as runTemporalWorker,
+  startTemporalWorker,
 } from "./database"
 export {
+  applyObject,
   createAuthInterceptor,
   getReplicaComponentName,
   getReplicaImage,
@@ -19,11 +22,13 @@ export {
   getReplicaNamespace,
   getReplicaServiceAccountName,
   getReplicaEndpoint,
+  getReplicaCallbackEndpoint,
   kubeConfig,
   subscribeToConfigMap,
   subscribeToSecret,
 } from "./kubernetes"
 export { logger } from "./logger"
+export { setupTelemetry, type TelemetryInfraService } from "./telemetry"
 export {
   createGenericOperationService,
   type GenericOperationService,
@@ -31,14 +36,19 @@ export {
   notifyOperationCompletionViaGrpc,
   type OperationSubscriptionData,
 } from "./operation"
-export { WellKnownPermissions } from "./permissions"
+export { createPingService } from "./ping"
 export {
   type DefineCommonResourcesOptions,
   defineCommonResources,
+  type EnsureReplicaAvatarOptions,
+  ensureReplicaAvatar,
+  type GatewayDefinition,
   type NotificationChannelDefinition,
   type PermissionDefinition,
   type RealmDefinition,
 } from "./resources"
 export * from "./temporal"
-export { toProtoDateTime } from "./utils"
+export * from "./utils"
 export * from "./telegram"
+export * from "./services"
+export * from "./server"

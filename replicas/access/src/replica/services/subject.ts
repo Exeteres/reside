@@ -1,20 +1,21 @@
 import type {
-  GetSubjectDisplayInfoRequest,
-  SubjectDisplayInfo,
   SubjectServiceClient,
   SubjectServiceImplementation,
 } from "@reside/api/common/subject.v1"
 import type { PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
-import { createChannel } from "@reside/api"
-import { SubjectServiceDefinition } from "@reside/api/common/subject.v1"
-import { authenticate, createClient, WellKnownPermissions } from "@reside/common"
-import { type CallContext, ServerError } from "nice-grpc"
+import { Code, ConnectError } from "@connectrpc/connect"
+import { SubjectService } from "@reside/api/common/subject.v1"
+import { authenticate, createChannel, createClient } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 import { isAuthorizedByPermissionBinding } from "./permission-auth"
 
 const SUBJECT_READ_PERMISSION_NAME = WellKnownPermissions.ACCESS_SUBJECT_READ
 
-export function createSubjectService(prisma: PrismaClient): SubjectServiceImplementation {
+export function createSubjectService({
+  prisma,
+}: {
+  prisma: PrismaClient
+}): SubjectServiceImplementation {
   const clientsByEndpoint = new Map<string, SubjectServiceClient>()
 
   function getSubjectServiceClient(endpoint: string): SubjectServiceClient {
@@ -23,23 +24,20 @@ export function createSubjectService(prisma: PrismaClient): SubjectServiceImplem
       return cachedClient
     }
 
-    const nextClient = createClient(SubjectServiceDefinition, createChannel(endpoint))
+    const nextClient = createClient(SubjectService, createChannel(endpoint))
     clientsByEndpoint.set(endpoint, nextClient)
     return nextClient
   }
 
-  const service: SubjectServiceImplementation = {
-    async getSubjectDisplayInfo(
-      request: GetSubjectDisplayInfoRequest,
-      context: CallContext,
-    ): Promise<SubjectDisplayInfo> {
+  return {
+    async getSubjectDisplayInfo(request, context) {
       const identity = await authenticate(context)
       const parsedSubjectId = parseSubjectId(request.subjectId)
 
       if (parsedSubjectId === null) {
-        throw new ServerError(
-          status.INVALID_ARGUMENT,
+        throw new ConnectError(
           'Subject ID must match format "{realm}:{name}"',
+          Code.InvalidArgument,
         )
       }
 
@@ -50,9 +48,9 @@ export function createSubjectService(prisma: PrismaClient): SubjectServiceImplem
       })
 
       if (!authorized) {
-        throw new ServerError(
-          status.PERMISSION_DENIED,
+        throw new ConnectError(
           `Subject "${identity.subjectId}" lacks "${SUBJECT_READ_PERMISSION_NAME}" for scope "${parsedSubjectId.realmName}"`,
+          Code.PermissionDenied,
         )
       }
 
@@ -66,16 +64,13 @@ export function createSubjectService(prisma: PrismaClient): SubjectServiceImplem
       })
 
       if (realm === null) {
-        throw new ServerError(
-          status.NOT_FOUND,
-          `Realm "${parsedSubjectId.realmName}" was not found`,
-        )
+        throw new ConnectError(`Realm "${parsedSubjectId.realmName}" was not found`, Code.NotFound)
       }
 
       if (realm.subjectServiceEndpoint === null || realm.subjectServiceEndpoint.length === 0) {
-        throw new ServerError(
-          status.FAILED_PRECONDITION,
+        throw new ConnectError(
           `Realm "${parsedSubjectId.realmName}" has no subject service endpoint`,
+          Code.FailedPrecondition,
         )
       }
 
@@ -84,8 +79,6 @@ export function createSubjectService(prisma: PrismaClient): SubjectServiceImplem
       })
     },
   }
-
-  return service
 }
 
 function parseSubjectId(subjectId: string): { realmName: string; subjectName: string } | null {

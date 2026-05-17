@@ -1,0 +1,4 @@
+{
+  "name": "@reside/registry",
+  "main": "./src/index.ts"
+}

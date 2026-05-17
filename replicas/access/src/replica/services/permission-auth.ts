@@ -1,7 +1,6 @@
 import type { PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
+import { Code, ConnectError } from "@connectrpc/connect"
 import { logger } from "@reside/common"
-import { ServerError } from "nice-grpc"
 
 export type PermissionAuthorizationRequest = {
   permissionName: string
@@ -30,7 +29,7 @@ export async function isAuthorizedByPermissionBinding(
   })
 
   if (!permission) {
-    throw new ServerError(status.NOT_FOUND, `Permission "${request.permissionName}" was not found`)
+    throw new ConnectError(`Permission "${request.permissionName}" was not found`, Code.NotFound)
   }
 
   assertPermissionScopeCompatibility(request.permissionName, permission.scoped, request.scope)
@@ -57,16 +56,16 @@ function assertPermissionScopeCompatibility(
   scope: string | undefined,
 ): void {
   if (scoped && scope === undefined) {
-    throw new ServerError(
-      status.INVALID_ARGUMENT,
+    throw new ConnectError(
       `Permission "${permissionName}" requires scope descriptor`,
+      Code.InvalidArgument,
     )
   }
 
   if (!scoped && scope !== undefined) {
-    throw new ServerError(
-      status.INVALID_ARGUMENT,
+    throw new ConnectError(
       `Permission "${permissionName}" is not scoped and does not accept scope descriptor`,
+      Code.InvalidArgument,
     )
   }
 }

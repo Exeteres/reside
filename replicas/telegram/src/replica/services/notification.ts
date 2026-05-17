@@ -1,75 +1,65 @@
 import type { AuthzServiceClient } from "@reside/api/access/authz.v1"
-import type { Operation } from "@reside/api/common/operation.v1"
 import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
-import type {
-  NotificationServiceImplementation,
-  SendNotificationRequest,
-  SendNotificationResponse,
-  UpdateNotificationRequest,
-  UpdateNotificationResponse,
-} from "@reside/api/interaction/notification.v1"
+import type { NotificationServiceImplementation } from "@reside/api/interaction/notification.v1"
 import type { InlineKeyboardMarkup, InputMediaDocument, InputMediaPhoto } from "grammy/types"
-import type { PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
+import type { Operation, PrismaClient } from "../../database"
+import { Code, ConnectError } from "@connectrpc/connect"
 import { CoreV1Api } from "@kubernetes/client-node"
 import {
   authenticateReplica,
   block,
   bold,
-  code,
-  customEmoji,
+  type CommonServices,
+  type GenericOperationService,
   getReplicaNamespace,
-  inline,
   kubeConfig,
   logger,
-  SPACE,
-  WellKnownPermissions,
 } from "@reside/common"
-import { Bot, InputFile } from "grammy"
-import { type CallContext, ServerError } from "nice-grpc"
+import { WellKnownPermissions } from "@reside/registry"
+import { type Bot, GrammyError, InputFile } from "grammy"
+import { TelegramNotificationChannels } from "../../definitions"
 import { strings } from "../../locale"
+import { decryptInteractionContextToken } from "../../shared"
+import { createTelegramBotClient } from "../bot-client"
+import {
+  loadTelegramConfigState,
+  TELEGRAM_CONFIG_MAP_NAME,
+  TELEGRAM_SYSTEM_CHAT_ID_KEY,
+} from "../config"
 import { loadTelegramSecretState, TELEGRAM_SECRET_NAME } from "../secret"
 
-const TELEGRAM_CONFIG_MAP_NAME = "telegram"
-const TELEGRAM_SYSTEM_CHAT_ID_KEY = "system_chat_id"
 const RESPONSE_OPERATION_TITLE = strings.server.notification.responseOperationTitle
-const HEADER_EMOJI_FIRST_ID = "5199547568144554620"
-const HEADER_EMOJI_SECOND_ID = "5201851568990749302"
-const HEADER_EMOJI_THIRD_ID = "5202075663204387704"
-const HEADER_EMOJI_FOURTH_ID = "5199493481621395003"
 
-export function createNotificationService(
-  prisma: PrismaClient,
-  operationService: {
-    toApiOperation: (operationId: number) => Promise<Operation>
-  },
-  accessAuthzService: AuthzServiceClient,
-  accessSubjectService: SubjectServiceClient,
-): NotificationServiceImplementation {
+export function createNotificationService({
+  prisma,
+  authzService,
+  subjectService,
+  operationService,
+}: CommonServices<"access"> & {
+  prisma: PrismaClient
+  operationService: GenericOperationService<Operation>
+}): NotificationServiceImplementation {
   const namespace = getReplicaNamespace()
   const coreApi = kubeConfig.makeApiClient(CoreV1Api)
 
   return {
-    async sendNotification(
-      request: SendNotificationRequest,
-      context: CallContext,
-    ): Promise<SendNotificationResponse> {
+    async sendNotification(request, context) {
       const { name: replicaName } = await authenticateReplica(context)
       logger.info(
         "sendNotification requested by replica %s for channel %s",
         replicaName,
         request.channel,
       )
-      const contextId = parseContextId(request.contextId)
       assertChannelName(request.channel)
       const replicaSubjectId = `replica:${replicaName}`
       const senderSubjectId = await resolveSenderSubjectId({
-        accessAuthzService,
+        authzService,
         callerSubjectId: replicaSubjectId,
         requestedSubjectId: request.sendAsSubjectId,
       })
+
       const senderDisplayTitle = await resolveSenderDisplayTitle(
-        accessSubjectService,
+        subjectService,
         senderSubjectId,
         senderSubjectId,
       )
@@ -81,44 +71,25 @@ export function createNotificationService(
       })
 
       if (!channel) {
-        throw new ServerError(
-          status.NOT_FOUND,
+        throw new ConnectError(
           `Channel with name "${request.channel}" was not found`,
+          Code.NotFound,
         )
       }
 
-      assertActionNames(request.actions)
+      assertActionRows(request.actionRows)
+      const callbackActions = collectCallbackActions(request.actionRows)
 
-      const interactionContext = await prisma.interactionContext.findUnique({
+      const hasPendingResponse = callbackActions.length > 0 || request.requiresTextResponse === true
+      const avatar = await prisma.avatar.findUnique({
         where: {
-          id: contextId,
+          subjectId: senderSubjectId,
         },
         select: {
-          id: true,
-          type: true,
-          lastUserMessageId: true,
-          chat: {
-            select: {
-              telegramId: true,
-            },
-          },
-          user: {
-            select: {
-              telegramId: true,
-            },
-          },
+          token: true,
         },
       })
-
-      if (!interactionContext) {
-        throw new ServerError(
-          status.NOT_FOUND,
-          `Interaction context "${request.contextId}" was not found`,
-        )
-      }
-
-      const hasPendingResponse = request.actions.length > 0 || request.requiresTextResponse === true
-      const messageText = toTelegramMessageText(request, senderDisplayTitle, senderSubjectId)
+      const messageText = toTelegramMessageText(request, senderDisplayTitle, avatar === null)
       logger.debug(
         "prepared telegram notification payload for channel %s (pendingResponse=%s)",
         request.channel,
@@ -127,32 +98,86 @@ export function createNotificationService(
 
       try {
         const deliveryConfig = await loadDeliveryConfig(coreApi, namespace)
-        const bot = new Bot(deliveryConfig.botToken)
-        const replyMarkup = toInlineKeyboardMarkup(request)
-        const targetChatId = resolveTargetChatId(interactionContext, deliveryConfig.systemChatId)
-        const replyToMessageId = resolveReplyToMessageId(interactionContext)
-
-        const sentMessageId = await sendNotificationPayload(
-          bot,
-          targetChatId,
-          request,
-          messageText,
-          replyMarkup,
-          replyToMessageId,
+        const interactionContext = await parseInteractionContextToken(
+          request.contextToken,
+          deliveryConfig.systemChatId,
         )
+        const botToken = avatar?.token ?? deliveryConfig.botToken
+        const bot = createTelegramBotClient(botToken, {
+          role: "notification.send",
+        })
+        const replyMarkup = toInlineKeyboardMarkup(request)
+        const targetChatId = interactionContext.chatId
+        const replyToMessageId = interactionContext.messageId
+        const isAvatarSender = avatar?.token !== null && avatar?.token !== undefined
+
+        await ensureTargetChatExists(prisma, targetChatId)
+
+        let sentMessageId: number
+        let usedReplyFallback = false
+
+        try {
+          sentMessageId = await sendNotificationPayload(
+            bot,
+            targetChatId,
+            request,
+            messageText,
+            replyMarkup,
+            replyToMessageId,
+          )
+        } catch (error) {
+          if (
+            isAvatarSender &&
+            replyToMessageId !== undefined &&
+            isReplyTargetMessageMissingError(error)
+          ) {
+            usedReplyFallback = true
+
+            logger.warn(
+              {
+                targetChatId,
+                replyToMessageId,
+                senderSubjectId,
+              },
+              "avatar bot reply target message was not found, retrying without reply target",
+            )
+
+            sentMessageId = await sendNotificationPayload(
+              bot,
+              targetChatId,
+              request,
+              messageText,
+              replyMarkup,
+              undefined,
+            )
+          } else {
+            throw error
+          }
+        }
+
+        if (usedReplyFallback) {
+          await sendAvatarPrivacyModeWarning({
+            prisma,
+            botToken: deliveryConfig.botToken,
+            targetChatId,
+            callingSubjectId: replicaSubjectId,
+            sendAsSubjectId: senderSubjectId,
+          })
+        }
 
         if (!hasPendingResponse) {
           const notification = await prisma.notification.create({
             data: {
               operationId: null,
-              contextId: interactionContext.id,
+              targetChatId,
+              replyToMessageId,
               channelId: channel.id,
               messageId: sentMessageId,
               callingSubjectId: replicaSubjectId,
               sendAsSubjectId: senderSubjectId,
               title: request.title,
               content: request.content ?? "",
-              allowedActions: request.actions.map(action => action.name),
+              allowedActions: callbackActions.map(action => action.name),
               requiresTextResponse: request.requiresTextResponse === true,
               isProtected: request.protected === true,
             },
@@ -180,14 +205,15 @@ export function createNotificationService(
           const notification = await tx.notification.create({
             data: {
               operationId: operation.id,
-              contextId: interactionContext.id,
+              targetChatId,
+              replyToMessageId,
               channelId: channel.id,
               messageId: sentMessageId,
               callingSubjectId: replicaSubjectId,
               sendAsSubjectId: senderSubjectId,
               title: request.title,
               content: request.content ?? "",
-              allowedActions: request.actions.map(action => action.name),
+              allowedActions: callbackActions.map(action => action.name),
               requiresTextResponse: request.requiresTextResponse === true,
               isProtected: request.protected === true,
             },
@@ -217,14 +243,11 @@ export function createNotificationService(
       } catch (error) {
         logger.error({ error }, "failed to send telegram notification")
 
-        throw new ServerError(status.INTERNAL, "Failed to send telegram notification")
+        throw new ConnectError("Failed to send telegram notification", Code.Internal)
       }
     },
 
-    async updateNotification(
-      request: UpdateNotificationRequest,
-      context: CallContext,
-    ): Promise<UpdateNotificationResponse> {
+    async updateNotification(request, context) {
       const { name: replicaName } = await authenticateReplica(context)
       logger.info(
         "updateNotification requested by replica %s for notificationId %s",
@@ -235,13 +258,21 @@ export function createNotificationService(
       assertActionNames(request.actions)
       const senderSubjectId = `replica:${replicaName}`
       const senderDisplayTitle = await resolveSenderDisplayTitle(
-        accessSubjectService,
+        subjectService,
         senderSubjectId,
         replicaName,
       )
+      const avatar = await prisma.avatar.findUnique({
+        where: {
+          subjectId: senderSubjectId,
+        },
+        select: {
+          token: true,
+        },
+      })
 
       if (request.title.length === 0) {
-        throw new ServerError(status.INVALID_ARGUMENT, "Notification title must not be empty")
+        throw new ConnectError("Notification title must not be empty", Code.InvalidArgument)
       }
 
       const notification = await prisma.notification.findFirst({
@@ -251,6 +282,7 @@ export function createNotificationService(
         select: {
           id: true,
           messageId: true,
+          targetChatId: true,
           allowedActions: true,
           requiresTextResponse: true,
           operationId: true,
@@ -259,32 +291,19 @@ export function createNotificationService(
               status: true,
             },
           },
-          context: {
-            select: {
-              type: true,
-              chat: {
-                select: {
-                  telegramId: true,
-                },
-              },
-              user: {
-                select: {
-                  telegramId: true,
-                },
-              },
-            },
-          },
         },
       })
 
       if (notification === null) {
-        throw new ServerError(
-          status.NOT_FOUND,
+        throw new ConnectError(
           `Notification "${request.notificationId}" was not found`,
+          Code.NotFound,
         )
       }
 
-      const nextAllowedActions = request.actions.map(action => action.name)
+      const nextAllowedActions = request.actions
+        .filter(action => action.url === undefined)
+        .map(action => action.name)
       const nextRequiresTextResponse =
         request.requiresTextResponse ?? notification.requiresTextResponse
       const nextHasPendingResponse =
@@ -295,15 +314,12 @@ export function createNotificationService(
 
       try {
         const deliveryConfig = await loadDeliveryConfig(coreApi, namespace)
-        const bot = new Bot(deliveryConfig.botToken)
+        const botToken = avatar?.token ?? deliveryConfig.botToken
+        const bot = createTelegramBotClient(botToken, {
+          role: "notification.update",
+        })
         const replyMarkup = toInlineKeyboardMarkupFromActions(request.actions)
-        const targetChatId = resolveTargetChatId(
-          {
-            ...notification.context,
-            lastUserMessageId: null,
-          },
-          deliveryConfig.systemChatId,
-        )
+        const targetChatId = notification.targetChatId
 
         const messageText = toTelegramMessageTextValue(
           {
@@ -311,7 +327,7 @@ export function createNotificationService(
             content: request.content,
           },
           senderDisplayTitle,
-          senderSubjectId,
+          avatar === null,
         )
 
         await bot.api.editMessageText(targetChatId, notification.messageId, messageText, {
@@ -392,14 +408,14 @@ export function createNotificationService(
       } catch (error) {
         logger.error({ error }, "failed to update telegram notification")
 
-        throw new ServerError(status.INTERNAL, "Failed to update telegram notification")
+        throw new ConnectError("Failed to update telegram notification", Code.Internal)
       }
     },
   }
 }
 
 async function resolveSenderSubjectId(args: {
-  accessAuthzService: AuthzServiceClient
+  authzService: AuthzServiceClient
   callerSubjectId: string
   requestedSubjectId: string | undefined
 }): Promise<string> {
@@ -409,23 +425,23 @@ async function resolveSenderSubjectId(args: {
 
   const requestedSubjectId = args.requestedSubjectId.trim()
   if (requestedSubjectId.length === 0) {
-    throw new ServerError(status.INVALID_ARGUMENT, "sendAsSubjectId must not be empty")
+    throw new ConnectError("sendAsSubjectId must not be empty", Code.InvalidArgument)
   }
 
   if (requestedSubjectId === args.callerSubjectId) {
     return requestedSubjectId
   }
 
-  const permissionCheck = await args.accessAuthzService.checkPermission({
+  const permissionCheck = await args.authzService.checkPermission({
     permissionName: WellKnownPermissions.TELEGRAM_NOTIFICATION_SEND_AS_SUBJECT,
     subjectId: args.callerSubjectId,
     scope: requestedSubjectId,
   })
 
   if (!permissionCheck.authorized) {
-    throw new ServerError(
-      status.PERMISSION_DENIED,
+    throw new ConnectError(
       `Subject "${args.callerSubjectId}" is not allowed to send notifications as subject "${requestedSubjectId}"`,
+      Code.PermissionDenied,
     )
   }
 
@@ -435,32 +451,83 @@ async function resolveSenderSubjectId(args: {
 function assertActionNames(actions: Array<{ name: string }>): void {
   for (const action of actions) {
     if (action.name.length === 0) {
-      throw new ServerError(status.INVALID_ARGUMENT, "Action name must not be empty")
+      throw new ConnectError("Action name must not be empty", Code.InvalidArgument)
     }
   }
 }
 
-function parseContextId(contextId: string): number {
-  if (contextId.length === 0) {
-    throw new ServerError(status.INVALID_ARGUMENT, "Context id is required")
+function assertActionRows(actions: Array<{ actions: Array<{ name: string }> }>): void {
+  for (const row of actions) {
+    assertActionNames(row.actions)
+  }
+}
+
+function collectCallbackActions(
+  actionRows: Array<{ actions: Array<{ name: string; title: string; url?: string }> }>,
+): Array<{ name: string; title: string }> {
+  return actionRows.flatMap(row =>
+    row.actions
+      .filter(action => action.url === undefined)
+      .map(action => ({
+        name: action.name,
+        title: action.title,
+      })),
+  )
+}
+
+async function parseInteractionContextToken(
+  token: string | undefined,
+  systemChatId: string,
+): Promise<{
+  chatId: string
+  messageId: number | undefined
+}> {
+  if (token === undefined || token.trim().length === 0) {
+    return {
+      chatId: systemChatId,
+      messageId: undefined,
+    }
   }
 
-  const parsedContextId = Number(contextId)
-  if (!Number.isInteger(parsedContextId) || parsedContextId <= 0) {
-    throw new ServerError(status.INVALID_ARGUMENT, `Invalid context id "${contextId}"`)
-  }
+  try {
+    const context = await decryptInteractionContextToken(token)
 
-  return parsedContextId
+    return {
+      chatId: context.chat_id,
+      messageId: context.message_id,
+    }
+  } catch (error) {
+    throw new ConnectError(
+      `Invalid context token: ${error instanceof Error ? error.message : String(error)}`,
+      Code.InvalidArgument,
+    )
+  }
+}
+
+async function ensureTargetChatExists(prisma: PrismaClient, targetChatId: string): Promise<void> {
+  await prisma.chat.upsert({
+    where: {
+      telegramId: targetChatId,
+    },
+    create: {
+      telegramId: targetChatId,
+      data: {} as unknown as PrismaJson.ChatData,
+    },
+    update: {},
+    select: {
+      id: true,
+    },
+  })
 }
 
 function parseNotificationId(notificationId: string): number {
   if (notificationId.length === 0) {
-    throw new ServerError(status.INVALID_ARGUMENT, "Notification id is required")
+    throw new ConnectError("Notification id is required", Code.InvalidArgument)
   }
 
   const parsedNotificationId = Number(notificationId)
   if (!Number.isInteger(parsedNotificationId) || parsedNotificationId <= 0) {
-    throw new ServerError(status.INVALID_ARGUMENT, `Invalid notification id "${notificationId}"`)
+    throw new ConnectError(`Invalid notification id "${notificationId}"`, Code.InvalidArgument)
   }
 
   return parsedNotificationId
@@ -471,7 +538,7 @@ function assertChannelName(channelName: string): void {
     return
   }
 
-  throw new ServerError(status.INVALID_ARGUMENT, "Channel name must not be empty")
+  throw new ConnectError("Channel name must not be empty", Code.InvalidArgument)
 }
 
 async function loadDeliveryConfig(
@@ -479,37 +546,35 @@ async function loadDeliveryConfig(
   namespace: string,
 ): Promise<{ botToken: string; systemChatId: string }> {
   const secretState = await loadTelegramSecretState(coreApi, namespace)
+  const configState = await loadTelegramConfigState(coreApi, namespace)
 
   if (!secretState.botToken) {
-    throw new ServerError(
-      status.FAILED_PRECONDITION,
+    throw new ConnectError(
       `Secret "${TELEGRAM_SECRET_NAME}" must contain "bot_token"`,
+      Code.FailedPrecondition,
     )
   }
 
-  const configMap = await coreApi.readNamespacedConfigMap({
-    name: TELEGRAM_CONFIG_MAP_NAME,
-    namespace,
-  })
-
-  const systemChatId = configMap.data?.[TELEGRAM_SYSTEM_CHAT_ID_KEY]?.trim()
-  if (!systemChatId) {
-    throw new ServerError(
-      status.FAILED_PRECONDITION,
+  if (!configState.systemChatId) {
+    throw new ConnectError(
       `ConfigMap "${TELEGRAM_CONFIG_MAP_NAME}" must contain "${TELEGRAM_SYSTEM_CHAT_ID_KEY}"`,
+      Code.FailedPrecondition,
     )
   }
 
   return {
     botToken: secretState.botToken,
-    systemChatId,
+    systemChatId: configState.systemChatId,
   }
 }
 
 function toTelegramMessageText(
-  request: SendNotificationRequest,
+  request: {
+    title: string
+    content?: string
+  },
   senderTitle: string,
-  senderSubjectId: string,
+  includeSenderTitle: boolean,
 ): string {
   return toTelegramMessageTextValue(
     {
@@ -517,7 +582,7 @@ function toTelegramMessageText(
       content: request.content,
     },
     senderTitle,
-    senderSubjectId,
+    includeSenderTitle,
   )
 }
 
@@ -527,32 +592,23 @@ function toTelegramMessageTextValue(
     content: string | undefined
   },
   senderTitle: string,
-  senderSubjectId: string,
+  includeSenderTitle: boolean,
 ): string {
-  const header = renderNotificationHeader(senderTitle, senderSubjectId)
   const content = input.content?.trim()
-  if (content) {
-    return block(header, "", bold(input.title), { html: content }).html
+
+  if (includeSenderTitle) {
+    if (content) {
+      return block(bold(senderTitle), "", bold(input.title), "", { html: content }).html
+    }
+
+    return block(bold(senderTitle), "", bold(input.title)).html
   }
 
-  return block(header, "", bold(input.title)).html
-}
+  if (content) {
+    return block(bold(input.title), "", { html: content }).html
+  }
 
-function renderNotificationHeader(senderTitle: string, senderSubjectId: string) {
-  return block(
-    inline(
-      customEmoji(HEADER_EMOJI_FIRST_ID),
-      customEmoji(HEADER_EMOJI_SECOND_ID),
-      SPACE,
-      bold(senderTitle),
-    ),
-    inline(
-      customEmoji(HEADER_EMOJI_THIRD_ID),
-      customEmoji(HEADER_EMOJI_FOURTH_ID),
-      SPACE,
-      code(senderSubjectId),
-    ),
-  )
+  return block(bold(input.title)).html
 }
 
 async function resolveSenderDisplayTitle(
@@ -576,33 +632,83 @@ async function resolveSenderDisplayTitle(
   }
 }
 
-function toInlineKeyboardMarkup(
-  request: SendNotificationRequest,
-): InlineKeyboardMarkup | undefined {
-  return toInlineKeyboardMarkupFromActions(request.actions)
+function toInlineKeyboardMarkup(request: {
+  actionRows: Array<{
+    actions: Array<{ name: string; title: string; url?: string }>
+  }>
+}): InlineKeyboardMarkup | undefined {
+  return toInlineKeyboardMarkupFromActionRows(request.actionRows)
 }
 
-function toInlineKeyboardMarkupFromActions(
-  actions: Array<{ name: string; title: string }>,
+function toInlineKeyboardMarkupFromActionRows(
+  actionRows: Array<{
+    actions: Array<{ name: string; title: string; url?: string }>
+  }>,
 ): InlineKeyboardMarkup | undefined {
-  if (actions.length === 0) {
+  const rows = actionRows
+    .map(row =>
+      row.actions.map(action => {
+        if (action.url !== undefined) {
+          return {
+            text: action.title,
+            url: action.url,
+          }
+        }
+
+        return {
+          text: action.title,
+          callback_data: action.name,
+        }
+      }),
+    )
+    .filter(row => row.length > 0)
+
+  if (rows.length === 0) {
     return undefined
   }
 
   return {
-    inline_keyboard: actions.map(action => [
+    inline_keyboard: rows,
+  }
+}
+
+function toInlineKeyboardMarkupFromActions(
+  actions: Array<{ name: string; title: string; url?: string }>,
+): InlineKeyboardMarkup | undefined {
+  const rows = actions.map(action => {
+    if (action.url !== undefined) {
+      return [
+        {
+          text: action.title,
+          url: action.url,
+        },
+      ]
+    }
+
+    return [
       {
         text: action.title,
         callback_data: action.name,
       },
-    ]),
+    ]
+  })
+
+  if (rows.length === 0) {
+    return undefined
+  }
+
+  return {
+    inline_keyboard: rows,
   }
 }
 
 async function sendNotificationPayload(
   bot: Bot,
   chatId: string,
-  request: SendNotificationRequest,
+  request: {
+    images: Array<{ content: Uint8Array; name: string }>
+    attachments: Array<{ content: Uint8Array; name: string }>
+  },
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,
   replyToMessageId: number | undefined,
@@ -634,7 +740,7 @@ async function sendNotificationPayload(
   const firstImageMessage = imageMessages[0]
 
   if (!firstImageMessage) {
-    throw new ServerError(status.INTERNAL, "Failed to send image group")
+    throw new ConnectError("Failed to send image group", Code.Internal)
   }
 
   if (request.attachments.length > 0) {
@@ -663,7 +769,7 @@ async function sendNotificationPayload(
 async function sendImageGroup(
   bot: Bot,
   chatId: string,
-  images: SendNotificationRequest["images"],
+  images: Array<{ content: Uint8Array; name: string }>,
   caption?: string,
   replyToMessageId?: number,
 ): Promise<{ message_id: number }[]> {
@@ -700,7 +806,7 @@ async function sendImageGroup(
 async function sendAttachmentGroup(
   bot: Bot,
   chatId: string,
-  attachments: SendNotificationRequest["attachments"],
+  attachments: Array<{ content: Uint8Array; name: string }>,
   replyToMessageId?: number,
 ): Promise<void> {
   if (attachments.length === 1) {
@@ -738,44 +844,87 @@ function toReplyParameters(
   }
 }
 
-function resolveTargetChatId(
-  context: {
-    type: "SYSTEM" | "CHAT" | "USER_PRIVATE" | "USER_IN_CHAT"
-    lastUserMessageId: number | null
-    chat: { telegramId: string } | null
-    user: { telegramId: string } | null
-  },
-  systemChatId: string,
-): string {
-  if (context.chat?.telegramId) {
-    return context.chat.telegramId
+function isReplyTargetMessageMissingError(error: unknown): boolean {
+  if (error instanceof GrammyError) {
+    return error.description.toLowerCase().includes("message to be replied not found")
   }
 
-  if (context.user?.telegramId) {
-    return context.user.telegramId
+  if (error instanceof Error) {
+    return error.message.toLowerCase().includes("message to be replied not found")
   }
 
-  if (context.type === "SYSTEM") {
-    return systemChatId
-  }
-
-  throw new ServerError(status.FAILED_PRECONDITION, "Context does not contain chat or user target")
+  return String(error).toLowerCase().includes("message to be replied not found")
 }
 
-function resolveReplyToMessageId(context: {
-  type: "SYSTEM" | "CHAT" | "USER_PRIVATE" | "USER_IN_CHAT"
-  lastUserMessageId: number | null
-}): number | undefined {
-  if (context.type !== "USER_IN_CHAT") {
-    return undefined
-  }
+async function sendAvatarPrivacyModeWarning(args: {
+  prisma: PrismaClient
+  botToken: string
+  targetChatId: string
+  callingSubjectId: string
+  sendAsSubjectId: string
+}): Promise<void> {
+  const warningChannel = await args.prisma.notificationChannel.findUnique({
+    where: {
+      name: TelegramNotificationChannels.AVATAR_PRIVACY_MODE,
+    },
+    select: {
+      id: true,
+    },
+  })
 
-  if (context.lastUserMessageId === null) {
-    throw new ServerError(
-      status.FAILED_PRECONDITION,
-      "User-in-chat context does not have last observed user message id",
+  if (warningChannel === null) {
+    logger.warn(
+      "privacy-mode warning channel is missing, skipping avatar privacy-mode warning notification",
     )
+    return
   }
 
-  return context.lastUserMessageId
+  const avatar = await args.prisma.avatar.findUnique({
+    where: {
+      subjectId: args.sendAsSubjectId,
+    },
+    select: {
+      managedBotUsername: true,
+    },
+  })
+
+  const normalizedBotUsername = avatar?.managedBotUsername?.trim()
+  const privacyModeWarningContent =
+    normalizedBotUsername && normalizedBotUsername.length > 0
+      ? strings.server.notification.avatarPrivacyModeWarningContent(normalizedBotUsername)
+      : strings.server.notification.avatarPrivacyModeWarningContent("bot_username")
+
+  const warningText = block(
+    bold(strings.server.notification.avatarPrivacyModeWarningTitle),
+    "",
+    privacyModeWarningContent,
+  ).html
+
+  const warningBot = createTelegramBotClient(args.botToken, {
+    role: "notification.privacy-mode-warning",
+  })
+
+  const warningMessage = await warningBot.api.sendMessage(args.targetChatId, warningText, {
+    parse_mode: "HTML",
+    link_preview_options: {
+      is_disabled: true,
+    },
+  })
+
+  await args.prisma.notification.create({
+    data: {
+      operationId: null,
+      targetChatId: args.targetChatId,
+      replyToMessageId: null,
+      channelId: warningChannel.id,
+      messageId: warningMessage.message_id,
+      callingSubjectId: args.callingSubjectId,
+      sendAsSubjectId: args.sendAsSubjectId,
+      title: strings.server.notification.avatarPrivacyModeWarningTitle,
+      content: privacyModeWarningContent,
+      allowedActions: [],
+      requiresTextResponse: false,
+      isProtected: false,
+    },
+  })
 }

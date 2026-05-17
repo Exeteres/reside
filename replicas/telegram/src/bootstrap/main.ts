@@ -1,15 +1,30 @@
+import { randomBytes } from "node:crypto"
+import { CoreV1Api } from "@kubernetes/client-node"
 import {
+  bootstrapGatewayRoute,
   bootstrapService,
   defineCommonResources,
-  getReplicaEndpoint,
+  getReplicaCallbackEndpoint,
+  getReplicaNamespace,
+  kubeConfig,
   registerReplica,
   runPrismaMigrations,
-  WellKnownPermissions,
 } from "@reside/common"
-import { telegramReplica } from "@reside/topology"
-import { TelegramNotificationChannels } from "../definitions"
+import { telegramReplica, WellKnownPermissions } from "@reside/registry"
+import { getStatusCode } from "@reside/utils"
+import {
+  TELEGRAM_GATEWAY_NAME,
+  TELEGRAM_GATEWAY_ROUTE_NAME,
+  TELEGRAM_WEBHOOK_PATH,
+  TelegramNotificationChannels,
+} from "../definitions"
 import { strings } from "../locale"
-import { createServices } from "../shared"
+import {
+  createServices,
+  TELEGRAM_INTERACTION_CONTEXT_ENV_NAME,
+  TELEGRAM_INTERACTION_CONTEXT_SECRET_KEY,
+  TELEGRAM_INTERACTION_CONTEXT_SECRET_NAME,
+} from "../shared"
 
 await registerReplica({
   replica: telegramReplica,
@@ -17,100 +32,183 @@ await registerReplica({
   description: strings.bootstrap.registration.description,
 })
 
-const { pool, prisma, accessRequestService, accessOperationService, accessDefinitionService } =
-  await createServices()
+const services = await createServices()
 
-await runPrismaMigrations(pool)
-
-const interactionContextCount = await prisma.interactionContext.count()
-if (interactionContextCount === 0) {
-  // ensure system interaction context exists for system-initiated interactions (e.g. approval callbacks)
-  await prisma.interactionContext.create({
-    data: {
-      type: "SYSTEM",
-      chatId: null,
-      userId: null,
-    },
-  })
-}
+await runPrismaMigrations(services.pool)
+await ensureInteractionContextTokenSecret()
 
 await defineCommonResources({
-  accessRequestService,
-  accessOperationService,
-  access: {
-    definitionService: accessDefinitionService,
-    realms: [
-      {
-        name: "telegram",
-        title: "Telegram",
-        description: strings.bootstrap.realmDescription,
-        subjectServiceEndpoint: `${getReplicaEndpoint()}:80`,
-      },
-    ],
-    permissions: [
-      {
-        name: WellKnownPermissions.TELEGRAM_COMMAND_MANAGE,
-        title: strings.bootstrap.permissions.commandManage.title,
-        description: strings.bootstrap.permissions.commandManage.description,
-        scoped: true,
-      },
-      {
-        name: WellKnownPermissions.TELEGRAM_COMMAND_INVOKE,
-        title: strings.bootstrap.permissions.commandInvoke.title,
-        description: strings.bootstrap.permissions.commandInvoke.description,
-        scoped: true,
-      },
-      {
-        name: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_MANAGE,
-        title: strings.bootstrap.permissions.notificationChannelManage.title,
-        description: strings.bootstrap.permissions.notificationChannelManage.description,
-        scoped: true,
-      },
-      {
-        name: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_INTERACT,
-        title: strings.bootstrap.permissions.notificationChannelInteract.title,
-        description: strings.bootstrap.permissions.notificationChannelInteract.description,
-        scoped: true,
-      },
-      {
-        name: WellKnownPermissions.TELEGRAM_NOTIFICATION_SEND_AS_SUBJECT,
-        title: strings.bootstrap.permissions.notificationSendAsSubject.title,
-        description: strings.bootstrap.permissions.notificationSendAsSubject.description,
-        scoped: true,
-      },
-      {
-        name: WellKnownPermissions.TELEGRAM_APPROVE,
-        title: strings.bootstrap.permissions.approve.title,
-        description: strings.bootstrap.permissions.approve.description,
-        scoped: true,
-      },
-    ],
-  },
+  services,
+
+  realms: [
+    {
+      name: "telegram",
+      title: "Telegram",
+      description: strings.bootstrap.realmDescription,
+      subjectServiceEndpoint: getReplicaCallbackEndpoint(),
+    },
+  ],
+
+  permissions: [
+    {
+      name: WellKnownPermissions.TELEGRAM_COMMAND_MANAGE,
+      title: strings.bootstrap.permissions.commandManage.title,
+      description: strings.bootstrap.permissions.commandManage.description,
+      scoped: true,
+    },
+    {
+      name: WellKnownPermissions.TELEGRAM_COMMAND_INVOKE,
+      title: strings.bootstrap.permissions.commandInvoke.title,
+      description: strings.bootstrap.permissions.commandInvoke.description,
+      scoped: true,
+    },
+    {
+      name: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_MANAGE,
+      title: strings.bootstrap.permissions.notificationChannelManage.title,
+      description: strings.bootstrap.permissions.notificationChannelManage.description,
+      scoped: true,
+    },
+    {
+      name: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_INTERACT,
+      title: strings.bootstrap.permissions.notificationChannelInteract.title,
+      description: strings.bootstrap.permissions.notificationChannelInteract.description,
+      scoped: true,
+    },
+    {
+      name: WellKnownPermissions.TELEGRAM_NOTIFICATION_SEND_AS_SUBJECT,
+      title: strings.bootstrap.permissions.notificationSendAsSubject.title,
+      description: strings.bootstrap.permissions.notificationSendAsSubject.description,
+      scoped: true,
+    },
+    {
+      name: WellKnownPermissions.TELEGRAM_APPROVE,
+      title: strings.bootstrap.permissions.approve.title,
+      description: strings.bootstrap.permissions.approve.description,
+      scoped: true,
+    },
+    {
+      name: WellKnownPermissions.TELEGRAM_AVATAR_OWN,
+      title: strings.bootstrap.permissions.avatarOwn.title,
+      description: strings.bootstrap.permissions.avatarOwn.description,
+      scoped: true,
+    },
+  ],
+
+  gateways: [
+    {
+      name: TELEGRAM_GATEWAY_NAME,
+      title: strings.bootstrap.gateway.title,
+      description: strings.bootstrap.gateway.description,
+    },
+  ],
 })
 
-// create approval channel directly since now have no telegram service
-await prisma.notificationChannel.upsert({
-  where: {
-    name: TelegramNotificationChannels.APPROVAL,
-  },
-  create: {
-    name: TelegramNotificationChannels.APPROVAL,
-    title: strings.bootstrap.channels.approvals.title,
-    description: strings.bootstrap.channels.approvals.description,
-  },
-  update: {
-    title: strings.bootstrap.channels.approvals.title,
-    description: strings.bootstrap.channels.approvals.description,
-  },
+await bootstrapGatewayRoute({
+  gatewayName: TELEGRAM_GATEWAY_NAME,
+  routeName: TELEGRAM_GATEWAY_ROUTE_NAME,
+  paths: [TELEGRAM_WEBHOOK_PATH],
 })
 
-await accessDefinitionService.putApprover({
+await Promise.all([
+  // create bootstrap channels directly since now have no telegram service
+  services.prisma.notificationChannel.upsert({
+    where: {
+      name: TelegramNotificationChannels.APPROVAL,
+    },
+    create: {
+      name: TelegramNotificationChannels.APPROVAL,
+      title: strings.bootstrap.channels.approvals.title,
+      description: strings.bootstrap.channels.approvals.description,
+    },
+    update: {
+      title: strings.bootstrap.channels.approvals.title,
+      description: strings.bootstrap.channels.approvals.description,
+    },
+  }),
+  services.prisma.notificationChannel.upsert({
+    where: {
+      name: TelegramNotificationChannels.AVATAR_PROVISIONING,
+    },
+    create: {
+      name: TelegramNotificationChannels.AVATAR_PROVISIONING,
+      title: strings.bootstrap.channels.avatarProvisioning.title,
+      description: strings.bootstrap.channels.avatarProvisioning.description,
+    },
+    update: {
+      title: strings.bootstrap.channels.avatarProvisioning.title,
+      description: strings.bootstrap.channels.avatarProvisioning.description,
+    },
+  }),
+  services.prisma.notificationChannel.upsert({
+    where: {
+      name: TelegramNotificationChannels.AVATAR_PRIVACY_MODE,
+    },
+    create: {
+      name: TelegramNotificationChannels.AVATAR_PRIVACY_MODE,
+      title: strings.bootstrap.channels.avatarPrivacyMode.title,
+      description: strings.bootstrap.channels.avatarPrivacyMode.description,
+    },
+    update: {
+      title: strings.bootstrap.channels.avatarPrivacyMode.title,
+      description: strings.bootstrap.channels.avatarPrivacyMode.description,
+    },
+  }),
+])
+
+await services.accessDefinitionService.putApprover({
   name: "telegram",
   priority: 50,
   realms: ["telegram", "replica"],
   title: strings.bootstrap.approver.title,
   description: strings.bootstrap.approver.description,
-  callbackEndpoint: `${telegramReplica.endpoint}:80`,
+  callbackEndpoint: getReplicaCallbackEndpoint(),
 })
 
-await bootstrapService({ longRunning: true })
+await bootstrapService({
+  longRunning: true,
+  extraEnv: [
+    {
+      name: TELEGRAM_INTERACTION_CONTEXT_ENV_NAME,
+      valueFrom: {
+        secretKeyRef: {
+          name: TELEGRAM_INTERACTION_CONTEXT_SECRET_NAME,
+          key: TELEGRAM_INTERACTION_CONTEXT_SECRET_KEY,
+        },
+      },
+    },
+  ],
+})
+
+async function ensureInteractionContextTokenSecret(): Promise<void> {
+  const coreApi = kubeConfig.makeApiClient(CoreV1Api)
+  const namespace = getReplicaNamespace()
+
+  try {
+    await coreApi.readNamespacedSecret({
+      namespace,
+      name: TELEGRAM_INTERACTION_CONTEXT_SECRET_NAME,
+    })
+    return
+  } catch (error) {
+    if (getStatusCode(error) !== 404) {
+      throw error
+    }
+  }
+
+  const key = randomBytes(32).toString("base64url")
+  await coreApi.createNamespacedSecret({
+    namespace,
+    body: {
+      apiVersion: "v1",
+      kind: "Secret",
+      metadata: {
+        name: TELEGRAM_INTERACTION_CONTEXT_SECRET_NAME,
+        namespace,
+      },
+      type: "Opaque",
+      data: {
+        [TELEGRAM_INTERACTION_CONTEXT_SECRET_KEY]: Buffer.from(key, "utf8").toString("base64"),
+      },
+    },
+  })
+}

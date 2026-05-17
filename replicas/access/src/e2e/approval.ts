@@ -1,30 +1,32 @@
 import type { ApprovalRequest, ApprovalServiceImplementation } from "@reside/api/common/approval.v1"
-import type {
-  GetOperationRequest,
-  GetOperationResponse,
-  Operation,
-  OperationServiceImplementation,
-  SubscribeToOperationCompletionRequest,
-  SubscribeToOperationCompletionResponse,
-} from "@reside/api/common/operation.v1"
-import type {
-  GetSubjectDisplayInfoRequest,
-  SubjectDisplayInfo,
-  SubjectServiceImplementation,
-} from "@reside/api/common/subject.v1"
-import { status } from "@grpc/grpc-js"
+import type { Operation, OperationServiceImplementation } from "@reside/api/common/operation.v1"
+import type { SubjectServiceImplementation } from "@reside/api/common/subject.v1"
+import { create, toJson } from "@bufbuild/protobuf"
+import { EmptySchema } from "@bufbuild/protobuf/wkt"
+import { Code, ConnectError } from "@connectrpc/connect"
+import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
 import { CoreV1Api } from "@kubernetes/client-node"
-import { startService } from "@reside/api"
-import { ApprovalResult, ApprovalServiceDefinition } from "@reside/api/common/approval.v1"
-import { OperationServiceDefinition, OperationStatus } from "@reside/api/common/operation.v1"
-import { SubjectServiceDefinition } from "@reside/api/common/subject.v1"
 import {
+  ApprovalResponseSchema,
+  ApprovalResult,
+  ApprovalService,
+} from "@reside/api/common/approval.v1"
+import {
+  GetOperationResponseSchema,
+  OperationSchema,
+  OperationService,
+  OperationStatus,
+  SubscribeToOperationCompletionResponseSchema,
+} from "@reside/api/common/operation.v1"
+import { SubjectDisplayInfoSchema, SubjectService } from "@reside/api/common/subject.v1"
+import {
+  createServer,
   getReplicaComponentName,
   getReplicaNamespace,
   kubeConfig,
+  startServer,
   toProtoDateTime,
 } from "@reside/common"
-import { type CallContext, createServer, ServerError } from "nice-grpc"
 import { strings } from "../locale"
 
 const E2E_APPROVER_OPERATION_TITLE = "E2E Auto Approval"
@@ -39,27 +41,29 @@ export async function startE2EApprovalServer(): Promise<E2EApprovalServer> {
   let nextOperationId = 1
 
   const approvalService: ApprovalServiceImplementation = {
-    async approve(request: ApprovalRequest): Promise<Operation> {
+    async approve(request: ApprovalRequest) {
       const operationId = nextOperationId
       nextOperationId += 1
 
       const now = new Date()
-      const operation = {
+      const approvalResponse = create(ApprovalResponseSchema, {
+        result: ApprovalResult.APPROVED,
+        resolution: strings.e2e.autoApprovalResolution,
+      })
+
+      const operation = create(OperationSchema, {
         id: operationId,
         title: request.title.length > 0 ? request.title : E2E_APPROVER_OPERATION_TITLE,
         description: strings.e2e.autoApprovalDescription,
         status: OperationStatus.COMPLETED,
         resolution: {
-          $case: "result" as const,
-          value: {
-            result: ApprovalResult.APPROVED,
-            resolution: strings.e2e.autoApprovalResolution,
-          },
+          case: "result",
+          value: toJson(ApprovalResponseSchema, approvalResponse),
         },
         resolvedAt: now.toISOString(),
         createdAt: toProtoDateTime(now),
         updatedAt: toProtoDateTime(now),
-      }
+      })
 
       operations.set(operationId, operation)
 
@@ -68,69 +72,69 @@ export async function startE2EApprovalServer(): Promise<E2EApprovalServer> {
   }
 
   const operationService: OperationServiceImplementation = {
-    async getOperation(request: GetOperationRequest): Promise<GetOperationResponse> {
+    async getOperation(request) {
       const operation = operations.get(request.operationId)
       if (!operation) {
-        throw new ServerError(status.NOT_FOUND, `Operation "${request.operationId}" was not found`)
+        throw new ConnectError(`Operation "${request.operationId}" was not found`, Code.NotFound)
       }
 
-      return {
+      return create(GetOperationResponseSchema, {
         operation,
-      }
+      })
     },
 
-    async subscribeToOperationCompletion(
-      request: SubscribeToOperationCompletionRequest,
-      _context: CallContext,
-    ): Promise<SubscribeToOperationCompletionResponse> {
+    async subscribeToOperationCompletion(request) {
       const operation = operations.get(request.operationId)
       if (!operation) {
-        throw new ServerError(status.NOT_FOUND, `Operation "${request.operationId}" was not found`)
+        throw new ConnectError(`Operation "${request.operationId}" was not found`, Code.NotFound)
       }
 
-      return {
+      return create(SubscribeToOperationCompletionResponseSchema, {
         response: {
-          $case: "completedOperation",
+          case: "completedOperation",
           value: operation,
         },
-      }
+      })
     },
 
     async cancelOperation() {
-      return {}
+      return create(EmptySchema)
     },
   }
 
   const subjectService: SubjectServiceImplementation = {
-    async getSubjectDisplayInfo(
-      request: GetSubjectDisplayInfoRequest,
-    ): Promise<SubjectDisplayInfo> {
+    async getSubjectDisplayInfo(request) {
       const parsedSubjectId = parseSubjectId(request.subjectId)
       if (parsedSubjectId === null) {
-        throw new ServerError(
-          status.INVALID_ARGUMENT,
+        throw new ConnectError(
           'Subject ID must match format "{realm}:{name}"',
+          Code.InvalidArgument,
         )
       }
 
-      return {
+      return create(SubjectDisplayInfoSchema, {
         title: `E2E ${parsedSubjectId.subjectName}`,
         avatarUrl: undefined,
-      }
+      })
     },
   }
 
-  const server = createServer()
-  server.add(ApprovalServiceDefinition, approvalService)
-  server.add(OperationServiceDefinition, operationService)
-  server.add(SubjectServiceDefinition, subjectService)
+  const server = await createServer({})
 
-  await startService(server)
+  await server.register(fastifyConnectPlugin, {
+    routes(router) {
+      router.service(ApprovalService, approvalService)
+      router.service(OperationService, operationService)
+      router.service(SubjectService, subjectService)
+    },
+  })
+
+  await startServer(server)
 
   return {
     endpoint: await getCurrentPodEndpoint(),
     shutdown: async (): Promise<void> => {
-      await server.shutdown()
+      await server.close()
     },
   }
 }

@@ -1,4 +1,5 @@
-import { proxyActivities, sleep } from "@temporalio/workflow"
+import { sleepSafely } from "@reside/common/workflow"
+import { proxyActivities } from "@temporalio/workflow"
 
 const REGISTRATION_CHECK_INTERVAL_MS = 5_000
 
@@ -23,6 +24,6 @@ export async function waitForReplicaRegistrationWorkflow(operationId: number): P
       return
     }
 
-    await sleep(REGISTRATION_CHECK_INTERVAL_MS)
+    await sleepSafely(REGISTRATION_CHECK_INTERVAL_MS)
   }
 }

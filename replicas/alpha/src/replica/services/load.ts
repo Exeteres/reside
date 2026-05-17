@@ -1,19 +1,18 @@
-import type { AuthzServiceClient } from "@reside/api/access/authz.v1"
 import type { LoadServiceImplementation } from "@reside/api/alpha/load.v1"
-import type { Empty } from "@reside/api/google/protobuf/empty"
 import type { PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
-import { authenticate, WellKnownPermissions } from "@reside/common"
-import { wellKnownReplicaEndpoint } from "@reside/topology"
-import { type CallContext, ServerError } from "nice-grpc"
+import { Code, ConnectError } from "@connectrpc/connect"
+import { authenticate, type CommonServices } from "@reside/common"
+import { WellKnownPermissions, wellKnownReplicaEndpoint } from "@reside/registry"
 import { strings } from "../../locale"
 
-export function createLoadService(
-  prisma: PrismaClient,
-  getAccessAuthzService: () => AuthzServiceClient,
-): LoadServiceImplementation {
-  const service: LoadServiceImplementation = {
-    async loadReplica(request, context: CallContext): Promise<Empty> {
+export function createLoadService({
+  prisma,
+  authzService,
+}: CommonServices<"access"> & {
+  prisma: PrismaClient
+}): LoadServiceImplementation {
+  return {
+    async loadReplica(request, context) {
       const identity = await authenticate(context)
 
       const name = request.name.trim()
@@ -22,17 +21,16 @@ export function createLoadService(
       assertRequiredValue(name, "name")
       assertRequiredValue(image, "image")
 
-      const accessAuthzService = getAccessAuthzService()
-      const check = await accessAuthzService.checkPermission({
+      const check = await authzService.checkPermission({
         permissionName: WellKnownPermissions.ALPHA_REPLICA_LOAD,
         subjectId: identity.subjectId,
         scope: name,
       })
 
       if (!check.authorized) {
-        throw new ServerError(
-          status.PERMISSION_DENIED,
+        throw new ConnectError(
           `Subject "${identity.subjectId}" cannot load replica "${name}"`,
+          Code.PermissionDenied,
         )
       }
 
@@ -57,8 +55,6 @@ export function createLoadService(
       return {}
     },
   }
-
-  return service
 }
 
 function assertRequiredValue(value: string, fieldName: string): void {
@@ -66,5 +62,5 @@ function assertRequiredValue(value: string, fieldName: string): void {
     return
   }
 
-  throw new ServerError(status.INVALID_ARGUMENT, `Field "${fieldName}" is required`)
+  throw new ConnectError(`Field "${fieldName}" is required`, Code.InvalidArgument)
 }

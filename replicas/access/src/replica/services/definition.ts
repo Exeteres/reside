@@ -2,28 +2,32 @@ import type {
   Approver,
   DefinitionServiceImplementation,
   Permission,
-  PutApproverRequest,
-  PutPermissionsRequest,
-  PutPermissionsResponse,
-  PutRealmRequest,
   Realm,
 } from "@reside/api/access/definition.v1"
 import type { PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
-import { authenticateReplica, logger, WellKnownPermissions } from "@reside/common"
-import { type CallContext, ServerError } from "nice-grpc"
+import { create } from "@bufbuild/protobuf"
+import { Code, ConnectError } from "@connectrpc/connect"
+import {
+  ApproverSchema,
+  PermissionSchema,
+  PutPermissionsResponseSchema,
+  RealmSchema,
+} from "@reside/api/access/definition.v1"
+import { authenticateReplica, logger } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 import { isAuthorizedByPermissionBinding } from "./permission-auth"
 
 const REALM_MANAGE_PERMISSION_NAME = WellKnownPermissions.ACCESS_REALM_MANAGE
 const PERMISSION_MANAGE_PERMISSION_NAME = WellKnownPermissions.ACCESS_PERMISSION_MANAGE
 const APPROVER_MANAGE_PERMISSION_NAME = WellKnownPermissions.ACCESS_APPROVER_MANAGE
 
-export function createDefinitionService(prisma: PrismaClient) {
-  const service: DefinitionServiceImplementation = {
-    async putPermissions(
-      request: PutPermissionsRequest,
-      context: CallContext,
-    ): Promise<PutPermissionsResponse> {
+export function createDefinitionService({
+  prisma,
+}: {
+  prisma: PrismaClient
+}): DefinitionServiceImplementation {
+  return {
+    async putPermissions(request, context) {
       const replicaSubjectId = await getReplicaSubjectIdFromContext(context)
 
       logger.info(
@@ -66,12 +70,12 @@ export function createDefinitionService(prisma: PrismaClient) {
         }),
       )
 
-      return {
+      return create(PutPermissionsResponseSchema, {
         permissions,
-      }
+      })
     },
 
-    async putRealm(request: PutRealmRequest, context: CallContext): Promise<Realm> {
+    async putRealm(request, context) {
       const replicaSubjectId = await getReplicaSubjectIdFromContext(context)
 
       logger.info(
@@ -106,7 +110,7 @@ export function createDefinitionService(prisma: PrismaClient) {
       return toRealmResponse(realm)
     },
 
-    async putApprover(request: PutApproverRequest, context: CallContext): Promise<Approver> {
+    async putApprover(request, context) {
       const replicaName = await getReplicaNameFromContext(context)
 
       logger.info(
@@ -165,16 +169,18 @@ export function createDefinitionService(prisma: PrismaClient) {
       return toApproverResponse(approver)
     },
   }
-
-  return service
 }
 
-async function getReplicaNameFromContext(context: CallContext): Promise<string> {
+async function getReplicaNameFromContext(
+  context: Parameters<DefinitionServiceImplementation["putRealm"]>[1],
+): Promise<string> {
   const identity = await authenticateReplica(context)
   return identity.name
 }
 
-async function getReplicaSubjectIdFromContext(context: CallContext): Promise<string> {
+async function getReplicaSubjectIdFromContext(
+  context: Parameters<DefinitionServiceImplementation["putRealm"]>[1],
+): Promise<string> {
   const replicaName = await getReplicaNameFromContext(context)
   return `replica:${replicaName}`
 }
@@ -197,9 +203,9 @@ async function assertSubjectCanManagePermission(
     return
   }
 
-  throw new ServerError(
-    status.PERMISSION_DENIED,
+  throw new ConnectError(
     `Subject "${request.subjectId}" lacks "${request.permissionName}" for scope "${request.scope}"`,
+    Code.PermissionDenied,
   )
 }
 
@@ -208,9 +214,9 @@ function assertApproverName(name: string): void {
     return
   }
 
-  throw new ServerError(
-    status.INVALID_ARGUMENT,
+  throw new ConnectError(
     'Approver name must match "name" format (e.g., "auto-approver")',
+    Code.InvalidArgument,
   )
 }
 
@@ -219,7 +225,7 @@ function assertApproverPriority(priority: number): void {
     return
   }
 
-  throw new ServerError(status.INVALID_ARGUMENT, "Approver priority must be a non-negative integer")
+  throw new ConnectError("Approver priority must be a non-negative integer", Code.InvalidArgument)
 }
 
 function normalizeRealmNames(realms: string[]): string[] {
@@ -228,12 +234,12 @@ function normalizeRealmNames(realms: string[]): string[] {
   )
 
   if (normalizedRealmNames.length === 0) {
-    throw new ServerError(status.INVALID_ARGUMENT, "Approver must define at least one realm")
+    throw new ConnectError("Approver must define at least one realm", Code.InvalidArgument)
   }
 
   for (const realm of normalizedRealmNames) {
     if (realm.length === 0 || realm.includes(":")) {
-      throw new ServerError(status.INVALID_ARGUMENT, `Approver allowed realm "${realm}" is invalid`)
+      throw new ConnectError(`Approver allowed realm "${realm}" is invalid`, Code.InvalidArgument)
     }
   }
 
@@ -258,7 +264,7 @@ async function assertRealmsExist(prisma: PrismaClient, realms: string[]): Promis
     return
   }
 
-  throw new ServerError(status.NOT_FOUND, `Realms not found: ${missingRealmNames.join(", ")}`)
+  throw new ConnectError(`Realms not found: ${missingRealmNames.join(", ")}`, Code.NotFound)
 }
 
 function buildApproverManageScope(args: {
@@ -274,7 +280,7 @@ function assertCallbackEndpoint(callbackEndpoint: string): void {
     return
   }
 
-  throw new ServerError(status.INVALID_ARGUMENT, "Approver callback endpoint is required")
+  throw new ConnectError("Approver callback endpoint is required", Code.InvalidArgument)
 }
 
 function toPermissionResponse(permission: {
@@ -284,13 +290,13 @@ function toPermissionResponse(permission: {
   description: string | null
   scoped: boolean
 }): Permission {
-  return {
+  return create(PermissionSchema, {
     id: permission.id,
     name: permission.name,
     title: permission.title,
     description: permission.description ?? undefined,
     scoped: permission.scoped,
-  }
+  })
 }
 
 function toRealmResponse(realm: {
@@ -300,13 +306,13 @@ function toRealmResponse(realm: {
   description: string | null
   subjectServiceEndpoint: string | null
 }): Realm {
-  return {
+  return create(RealmSchema, {
     id: realm.id,
     name: realm.name,
     title: realm.title,
     description: realm.description ?? undefined,
     subjectServiceEndpoint: realm.subjectServiceEndpoint ?? undefined,
-  }
+  })
 }
 
 function toApproverResponse(approver: {
@@ -324,7 +330,7 @@ function toApproverResponse(approver: {
   description: string | null
   callbackEndpoint: string
 }): Approver {
-  return {
+  return create(ApproverSchema, {
     id: approver.id,
     name: approver.name,
     priority: approver.priority,
@@ -332,5 +338,5 @@ function toApproverResponse(approver: {
     title: approver.title,
     description: approver.description ?? undefined,
     callbackEndpoint: approver.callbackEndpoint,
-  }
+  })
 }

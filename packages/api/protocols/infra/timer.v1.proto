@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package reside.infra.timer.v1;
+
+import "google/protobuf/empty.proto";
+
+// The request for setting a wake-up timer callback.
+message SetTimerRequest {
+  // The callback endpoint that should be pinged after timer expiration.
+  string callback_endpoint = 1;
+
+  // The timer delay in milliseconds.
+  int64 delay_ms = 2;
+}
+
+// Schedules replica wake-up timers.
+service TimerService {
+  // Schedules a wake-up timer that will ping the target endpoint after delay.
+  rpc SetTimer(SetTimerRequest) returns (google.protobuf.Empty);
+}

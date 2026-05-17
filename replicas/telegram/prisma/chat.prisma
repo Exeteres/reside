@@ -11,8 +11,8 @@ model Chat {
   /// [ChatData]
   data Json
 
-  /// The interaction contexts referencing this chat.
-  contexts InteractionContext[]
+  /// Notifications delivered to this chat.
+  notifications Notification[] @relation("NotificationTargetChat")
 
   /// The timestamp when this chat was created.
   createdAt DateTime @default(now())

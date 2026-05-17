@@ -13,7 +13,7 @@ const REQUEST_SCOPE_SUPERSEDE_B = "report:e2e-request-supersede-b"
 
 export async function assertRequestApi(
   permissionRequestService: PermissionRequestServiceClient,
-  operationStatusService: OperationServiceClient,
+  accessOperationStatusService: OperationServiceClient,
   definitionService: DefinitionServiceClient,
   prisma: PrismaClient,
   e2eApprovalEndpoint: string,
@@ -96,7 +96,7 @@ export async function assertRequestApi(
   }
 
   const completedRequestOperation = await waitForOperationCompletion(
-    operationStatusService,
+    accessOperationStatusService,
     createdRequestResponse.operation.id,
   )
 
@@ -148,7 +148,7 @@ export async function assertRequestApi(
   }
 
   const completedGlobalRequestOperation = await waitForOperationCompletion(
-    operationStatusService,
+    accessOperationStatusService,
     createdGlobalRequestResponse.operation.id,
   )
 
@@ -332,11 +332,11 @@ export async function assertRequestApi(
     throw new Error("Second supersede request set must keep updated requested scope")
   }
 
-  await operationStatusService.cancelOperation({
+  await accessOperationStatusService.cancelOperation({
     operationId: firstReuseRequestResponse.operation.id,
   })
 
-  await operationStatusService.cancelOperation({
+  await accessOperationStatusService.cancelOperation({
     operationId: secondSupersedeRequestResponse.operation.id,
   })
 
@@ -344,11 +344,11 @@ export async function assertRequestApi(
 }
 
 async function waitForOperationCompletion(
-  operationStatusService: OperationServiceClient,
+  accessOperationStatusService: OperationServiceClient,
   operationId: number,
 ): Promise<{ status: OperationStatus }> {
   for (let attempt = 0; attempt < 120; attempt++) {
-    const operationResponse = await operationStatusService.getOperation({ operationId })
+    const operationResponse = await accessOperationStatusService.getOperation({ operationId })
 
     if (!operationResponse.operation) {
       throw new Error("Operation service must return operation payload")

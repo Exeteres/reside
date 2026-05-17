@@ -8,137 +8,259 @@ import { proxyActivities } from "@temporalio/workflow"
 import { createTaskCommand, EngineerNotificationChannels } from "../definitions"
 import { strings } from "../locale"
 
-type CreateTaskResult = {
+type PlanningResult = {
   taskId: string
   issueTitle: string
   issueUrl: string
   repositoryUrl: string
+  resultSummary: string
 }
 
-type DraftTaskResult = {
-  draftId: string
+type ImplementationResult = {
   taskId: string
-  issueTitle: string
-  issueBody: string
+  status: "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED"
+  resultSummary?: string
+  errorMessage?: string
 }
 
-type DraftFeedbackResult = {
-  issueTitle: string
-  issueBody: string
-}
-
-const {
-  analyzeTaskForIssue,
-  createTaskFromDraft,
-  analyzeTaskFeedback,
-  applyTaskFeedback,
-  confirmTask,
-  closeTask,
-} = proxyActivities<{
-  analyzeTaskForIssue: (input: {
+const activities = proxyActivities<{
+  startPlanningInteraction: (input: {
     subjectId: string
-    task: string
+    prompt: string
     progressNotificationId: string
-  }) => Promise<DraftTaskResult>
-  createTaskFromDraft: (input: {
-    draftId: string
-    taskId: string
-    issueTitle: string
-    issueBody: string
-  }) => Promise<CreateTaskResult>
-  analyzeTaskFeedback: (input: {
+  }) => Promise<PlanningResult>
+  submitPlanningFeedbackInteraction: (input: {
     taskId: string
     feedback: string
     progressNotificationId: string
-  }) => Promise<DraftFeedbackResult>
-  applyTaskFeedback: (input: {
+  }) => Promise<PlanningResult>
+  approveTask: (input: { taskId: string }) => Promise<void>
+  requestCancellation: (input: { taskId: string }) => Promise<void>
+  runImplementationInteraction: (input: {
     taskId: string
-    feedback: string
-    issueTitle: string
-    issueBody: string
-  }) => Promise<CreateTaskResult>
-  confirmTask: (taskId: string) => Promise<void>
-  closeTask: (taskId: string) => Promise<void>
-}>({ scheduleToCloseTimeout: "10 minutes" })
+    prompt: string
+    progressNotificationId: string
+  }) => Promise<ImplementationResult>
+  reviveTaskFromFeedback: (input: { taskId: string }) => Promise<void>
+}>({ scheduleToCloseTimeout: "30 minutes" })
 
 export const createTaskCommandHandler = defineCommandHandler({
   command: createTaskCommand,
   async handler({ params, invocation }) {
-    const progressNotification = await sendNotification({
-      channel: EngineerNotificationChannels.TASKS,
-      title: strings.notifications.taskAnalysis.title,
-      message: block(strings.notifications.taskAnalysis.creating),
-    })
+    if (!invocation.subjectId) {
+      throw new Error("Command invocation is missing subjectId")
+    }
 
-    const initialDraft = await analyzeTaskForIssue({
+    let planning = await runPlanningInteraction({
+      prompt: params.task,
       subjectId: invocation.subjectId,
-      task: params.task,
-      progressNotificationId: progressNotification.notificationId,
-    })
-
-    let task = await createTaskFromDraft({
-      draftId: initialDraft.draftId,
-      taskId: initialDraft.taskId,
-      issueTitle: initialDraft.issueTitle,
-      issueBody: initialDraft.issueBody,
     })
 
     while (true) {
-      const response = await updateNotification<
+      const planningReply = await updateNotification<
         {
-          confirmImplementation: { title: string }
-          closeTask: { title: string }
+          approve: { title: string }
+          cancel: { title: string }
         },
         true
       >({
-        notificationId: progressNotification.notificationId,
-        title: strings.notifications.taskCreated.title,
+        notificationId: planning.notificationId,
+        title: strings.notifications.taskPlanning.readyTitle,
         content: block(
-          strings.notifications.taskCreated.message(
-            task.repositoryUrl,
-            task.issueUrl,
-            task.issueTitle,
+          strings.notifications.taskPlanning.readyMessage(
+            planning.result.repositoryUrl,
+            planning.result.issueUrl,
+            planning.result.issueTitle,
+            planning.result.resultSummary,
           ),
         ),
         actions: {
-          confirmImplementation: {
-            title: strings.notifications.taskCreated.actions.confirm,
+          approve: {
+            title: strings.notifications.taskPlanning.actions.approve,
           },
-          closeTask: {
-            title: strings.notifications.taskCreated.actions.close,
+          cancel: {
+            title: strings.notifications.taskPlanning.actions.cancel,
           },
         },
         requiresTextResponse: true,
       })
 
-      if (response.type === "action") {
-        if (response.actionName === "confirmImplementation") {
-          await confirmTask(task.taskId)
+      if (planningReply.type === "action") {
+        if (planningReply.actionName === "cancel") {
+          await activities.requestCancellation({
+            taskId: planning.result.taskId,
+          })
+
+          await updateNotification({
+            notificationId: planning.notificationId,
+            title: strings.notifications.taskExecution.doneTitle,
+            content: block(strings.notifications.taskExecution.cancelledSummary),
+          })
+
           return
         }
 
-        await closeTask(task.taskId)
-        return
+        await activities.approveTask({
+          taskId: planning.result.taskId,
+        })
+
+        break
       }
 
-      await updateNotification({
-        notificationId: progressNotification.notificationId,
-        title: strings.notifications.taskAnalysis.title,
-        content: block(strings.notifications.taskAnalysis.updating),
+      planning = await runPlanningFeedbackInteraction({
+        taskId: planning.result.taskId,
+        feedback: planningReply.text,
+      })
+    }
+
+    let implementationPrompt = strings.notifications.taskExecution.initialPrompt
+    const taskId = planning.result.taskId
+
+    while (true) {
+      const implementationNotification = await sendNotification({
+        channel: EngineerNotificationChannels.TASKS,
+        title: strings.notifications.taskExecution.inProgressTitle,
+        message: block(strings.notifications.taskExecution.inProgressMessage),
       })
 
-      const updatedDraft = await analyzeTaskFeedback({
-        taskId: task.taskId,
-        feedback: response.text,
-        progressNotificationId: progressNotification.notificationId,
+      let finished: ImplementationResult | undefined
+      const runPromise = activities
+        .runImplementationInteraction({
+          taskId,
+          prompt: implementationPrompt,
+          progressNotificationId: implementationNotification.notificationId,
+        })
+        .then(result => {
+          finished = result
+          return result
+        })
+
+      while (!finished) {
+        const runningReply = await updateNotification<
+          {
+            cancel: { title: string }
+          },
+          true,
+          () => boolean
+        >({
+          notificationId: implementationNotification.notificationId,
+          title: strings.notifications.taskExecution.inProgressTitle,
+          content: block(strings.notifications.taskExecution.runningAwaitingInput),
+          actions: {
+            cancel: {
+              title: strings.notifications.taskExecution.actions.cancel,
+            },
+          },
+          requiresTextResponse: true,
+          cancelWhen: () => finished !== undefined,
+        })
+
+        if (runningReply.type === "cancelled") {
+          break
+        }
+
+        if (runningReply.type === "action") {
+          await activities.requestCancellation({ taskId })
+
+          await updateNotification({
+            notificationId: implementationNotification.notificationId,
+            title: strings.notifications.taskExecution.inProgressTitle,
+            content: block(strings.notifications.taskExecution.cancellationRequested),
+          })
+
+          continue
+        }
+
+        await updateNotification({
+          notificationId: implementationNotification.notificationId,
+          title: strings.notifications.taskExecution.inProgressTitle,
+          content: block(strings.notifications.taskExecution.changeRejectedWhileRunning),
+        })
+      }
+
+      const implementationResult = finished ?? (await runPromise)
+
+      if (implementationResult.status === "COMPLETED") {
+        await updateNotification({
+          notificationId: implementationNotification.notificationId,
+          title: strings.notifications.taskExecution.doneTitle,
+          content: block(
+            implementationResult.resultSummary ??
+              strings.notifications.taskExecution.defaultSummary,
+          ),
+        })
+      } else {
+        await updateNotification({
+          notificationId: implementationNotification.notificationId,
+          title: strings.notifications.taskExecution.failedTitle,
+          content: block(
+            implementationResult.errorMessage ?? strings.notifications.taskExecution.defaultFailure,
+          ),
+        })
+      }
+
+      const terminalReply = await updateNotification<
+        {
+          cancel: { title: string }
+        },
+        true
+      >({
+        notificationId: implementationNotification.notificationId,
+        title: strings.notifications.taskExecution.awaitingNextActionTitle,
+        content: block(strings.notifications.taskExecution.awaitingNextActionMessage),
+        actions: {
+          cancel: {
+            title: strings.notifications.taskExecution.actions.cancel,
+          },
+        },
+        requiresTextResponse: true,
       })
 
-      task = await applyTaskFeedback({
-        taskId: task.taskId,
-        feedback: response.text,
-        issueTitle: updatedDraft.issueTitle,
-        issueBody: updatedDraft.issueBody,
-      })
+      if (terminalReply.type === "action") {
+        await activities.requestCancellation({ taskId })
+        continue
+      }
+
+      await activities.reviveTaskFromFeedback({ taskId })
+      implementationPrompt = terminalReply.text
     }
   },
 })
+
+async function runPlanningInteraction(input: { subjectId: string; prompt: string }) {
+  const notification = await sendNotification({
+    channel: EngineerNotificationChannels.TASKS,
+    title: strings.notifications.taskAnalysis.title,
+    message: block(strings.notifications.taskAnalysis.creating),
+  })
+
+  const result = await activities.startPlanningInteraction({
+    subjectId: input.subjectId,
+    prompt: input.prompt,
+    progressNotificationId: notification.notificationId,
+  })
+
+  return {
+    notificationId: notification.notificationId,
+    result,
+  }
+}
+
+async function runPlanningFeedbackInteraction(input: { taskId: string; feedback: string }) {
+  const notification = await sendNotification({
+    channel: EngineerNotificationChannels.TASKS,
+    title: strings.notifications.taskAnalysis.title,
+    message: block(strings.notifications.taskAnalysis.updating),
+  })
+
+  const result = await activities.submitPlanningFeedbackInteraction({
+    taskId: input.taskId,
+    feedback: input.feedback,
+    progressNotificationId: notification.notificationId,
+  })
+
+  return {
+    notificationId: notification.notificationId,
+    result,
+  }
+}

@@ -188,6 +188,21 @@ e2eTest(
           "-n",
           systemNamespace,
           "set",
+          "env",
+          "deployment/reside-operator",
+          "RESIDE_CLUSTER_DOMAIN=e2e.reside.local",
+        ],
+        { mirror: true },
+      )
+
+      await runCommand(
+        [
+          "kubectl",
+          "--context",
+          context,
+          "-n",
+          systemNamespace,
+          "set",
           "image",
           "deployment/reside-operator",
           `operator=${operatorImage}`,
@@ -223,26 +238,18 @@ e2eTest(
         { mirror: true },
       )
 
-      const createReplicaManifest = (image: string, endpoints?: Record<string, string>) => {
-        const endpointsYaml = Object.entries(endpoints ?? {})
-          .map(([name, endpoint]) => `    ${name}: ${endpoint}`)
-          .join("\n")
-
-        const endpointsBlock = endpointsYaml.length > 0 ? `\n  endpoints:\n${endpointsYaml}` : ""
-
+      const createReplicaManifest = (image: string) => {
         return `apiVersion: reside.io/v1
 kind: Replica
 metadata:
   name: ${replicaName}
 spec:
-  image: ${image}${endpointsBlock}
+  image: ${image}
 `
       }
 
       await runCommand(["kubectl", "--context", context, "apply", "-f", "-"], {
-        input: createReplicaManifest("busybox:1.36.1", {
-          database: "database.database.svc.cluster.local",
-        }),
+        input: createReplicaManifest("busybox:1.36.1"),
         mirror: true,
       })
 
@@ -317,30 +324,6 @@ spec:
               "-n",
               replicaNamespace,
               "get",
-              "service",
-              "database",
-              "-o",
-              "jsonpath={.spec.type}:{.spec.externalName}",
-            ],
-            { ignoreExitCode: true },
-          )
-
-          return output.trim() === "ExternalName:database.database.svc.cluster.local"
-        },
-        30_000,
-        "externalname service was not created",
-      )
-
-      await waitFor(
-        async () => {
-          const output = await runCommand(
-            [
-              "kubectl",
-              "--context",
-              context,
-              "-n",
-              replicaNamespace,
-              "get",
               "job",
               `${replicaName}-bootstrap`,
               "-o",
@@ -357,7 +340,7 @@ spec:
 
       await waitFor(
         async () => {
-          const output = await runCommand(
+          const phase = await runCommand(
             [
               "kubectl",
               "--context",
@@ -366,21 +349,54 @@ spec:
               "replica",
               replicaName,
               "-o",
-              'jsonpath={.status.phase}:{.status.observedGeneration}:{.status.conditions[?(@.type=="Ready")].status}',
+              "jsonpath={.status.phase}",
             ],
             { ignoreExitCode: true },
           )
 
-          return output.trim() === "Ready:1:True"
+          const observedGeneration = await runCommand(
+            [
+              "kubectl",
+              "--context",
+              context,
+              "get",
+              "replica",
+              replicaName,
+              "-o",
+              "jsonpath={.status.observedGeneration}",
+            ],
+            { ignoreExitCode: true },
+          )
+
+          const readyCondition = await runCommand(
+            [
+              "kubectl",
+              "--context",
+              context,
+              "get",
+              "replica",
+              replicaName,
+              "-o",
+              'jsonpath={.status.conditions[?(@.type=="Ready")].status}',
+            ],
+            { ignoreExitCode: true },
+          )
+
+          const parsedGeneration = Number(observedGeneration.trim())
+
+          return (
+            phase.trim() === "Ready" &&
+            Number.isInteger(parsedGeneration) &&
+            parsedGeneration >= 1 &&
+            readyCondition.includes("True")
+          )
         },
         30_000,
         "replica status was not populated after initial reconcile",
       )
 
       await runCommand(["kubectl", "--context", context, "apply", "-f", "-"], {
-        input: createReplicaManifest("busybox:1.37.0", {
-          database: "database.database.svc.cluster.local",
-        }),
+        input: createReplicaManifest("busybox:1.37.0"),
         mirror: true,
       })
 
@@ -410,7 +426,7 @@ spec:
 
       await waitFor(
         async () => {
-          const output = await runCommand(
+          const phase = await runCommand(
             [
               "kubectl",
               "--context",
@@ -419,44 +435,50 @@ spec:
               "replica",
               replicaName,
               "-o",
-              'jsonpath={.status.phase}:{.status.observedGeneration}:{.status.conditions[?(@.type=="Ready")].status}',
+              "jsonpath={.status.phase}",
             ],
             { ignoreExitCode: true },
           )
 
-          return output.trim() === "Ready:2:True"
-        },
-        30_000,
-        "replica status was not updated after image change",
-      )
-
-      await runCommand(["kubectl", "--context", context, "apply", "-f", "-"], {
-        input: createReplicaManifest("busybox:1.37.0"),
-        mirror: true,
-      })
-
-      await waitFor(
-        async () => {
-          const output = await runCommand(
+          const observedGeneration = await runCommand(
             [
               "kubectl",
               "--context",
               context,
-              "-n",
-              replicaNamespace,
               "get",
-              "service",
-              "database",
+              "replica",
+              replicaName,
               "-o",
-              "name",
+              "jsonpath={.status.observedGeneration}",
             ],
             { ignoreExitCode: true },
           )
 
-          return output.trim() === ""
+          const readyCondition = await runCommand(
+            [
+              "kubectl",
+              "--context",
+              context,
+              "get",
+              "replica",
+              replicaName,
+              "-o",
+              'jsonpath={.status.conditions[?(@.type=="Ready")].status}',
+            ],
+            { ignoreExitCode: true },
+          )
+
+          const parsedGeneration = Number(observedGeneration.trim())
+
+          return (
+            phase.trim() === "Ready" &&
+            Number.isInteger(parsedGeneration) &&
+            parsedGeneration >= 2 &&
+            readyCondition.includes("True")
+          )
         },
         30_000,
-        "stale externalname service was not deleted after endpoint removal",
+        "replica status was not updated after image change",
       )
 
       await runCommand(["kubectl", "--context", context, "describe", "replica", replicaName], {

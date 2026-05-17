@@ -18,7 +18,7 @@ try {
 
   await assertLoadApi(
     services.loadService,
-    services.accessRequestService,
+    services.permissionRequestService,
     services.accessOperationService,
     services.prisma,
     customObjectsApi,

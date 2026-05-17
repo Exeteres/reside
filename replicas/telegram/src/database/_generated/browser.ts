@@ -23,6 +23,21 @@ export * from './enums.ts';
  */
 export type ApprovalRequest = Prisma.ApprovalRequestModel
 /**
+ * Model Avatar
+ * Represents a managed Telegram bot avatar assigned to a replica subject.
+ */
+export type Avatar = Prisma.AvatarModel
+/**
+ * Model AvatarProvisionRequest
+ * Tracks an ongoing avatar provisioning request.
+ */
+export type AvatarProvisionRequest = Prisma.AvatarProvisionRequestModel
+/**
+ * Model UnauthorizedAvatar
+ * Represents a managed bot creation event that did not match a valid pending provisioning request.
+ */
+export type UnauthorizedAvatar = Prisma.UnauthorizedAvatarModel
+/**
  * Model NotificationChannel
  * Represents a logical channel used to group notifications.
  */
@@ -37,12 +52,6 @@ export type Chat = Prisma.ChatModel
  * Represents a command definition registered by a replica for Telegram invocation.
  */
 export type Command = Prisma.CommandModel
-/**
- * Model InteractionContext
- * The context in which user interactions occur, such as a specific user session or environment.
- * All contexts are immutable and are created at the time of the first interaction that initiates them.
- */
-export type InteractionContext = Prisma.InteractionContextModel
 /**
  * Model NotificationResponse
  * Represents a user response to a notification.

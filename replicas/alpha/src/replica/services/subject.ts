@@ -1,32 +1,28 @@
-import type {
-  GetSubjectDisplayInfoRequest,
-  SubjectDisplayInfo,
-  SubjectServiceImplementation,
-} from "@reside/api/common/subject.v1"
+import type { SubjectServiceImplementation } from "@reside/api/common/subject.v1"
 import type { PrismaClient } from "../../database"
-import { status } from "@grpc/grpc-js"
+import { Code, ConnectError } from "@connectrpc/connect"
 import { authenticateReplica } from "@reside/common"
-import { type CallContext, ServerError } from "nice-grpc"
 
-export function createSubjectService(prisma: PrismaClient): SubjectServiceImplementation {
-  const service: SubjectServiceImplementation = {
-    async getSubjectDisplayInfo(
-      request: GetSubjectDisplayInfoRequest,
-      context: CallContext,
-    ): Promise<SubjectDisplayInfo> {
+export function createSubjectService({
+  prisma,
+}: {
+  prisma: PrismaClient
+}): SubjectServiceImplementation {
+  return {
+    async getSubjectDisplayInfo(request, context) {
       const identity = await authenticateReplica(context)
       if (identity.name !== "access" && identity.name !== "alpha") {
-        throw new ServerError(
-          status.PERMISSION_DENIED,
+        throw new ConnectError(
           `Replica "${identity.name}" is not allowed to query replica subject display info`,
+          Code.PermissionDenied,
         )
       }
 
       const parsedSubjectId = parseReplicaSubjectId(request.subjectId)
       if (parsedSubjectId === null) {
-        throw new ServerError(
-          status.INVALID_ARGUMENT,
+        throw new ConnectError(
           'Subject ID must match format "replica:{name}"',
+          Code.InvalidArgument,
         )
       }
 
@@ -41,7 +37,7 @@ export function createSubjectService(prisma: PrismaClient): SubjectServiceImplem
       })
 
       if (replica === null) {
-        throw new ServerError(status.NOT_FOUND, `Subject "${request.subjectId}" was not found`)
+        throw new ConnectError(`Subject "${request.subjectId}" was not found`, Code.NotFound)
       }
 
       return {
@@ -50,8 +46,6 @@ export function createSubjectService(prisma: PrismaClient): SubjectServiceImplem
       }
     },
   }
-
-  return service
 }
 
 function parseReplicaSubjectId(subjectId: string): { name: string } | null {

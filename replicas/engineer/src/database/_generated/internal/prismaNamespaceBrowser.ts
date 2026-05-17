@@ -52,7 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   Task: 'Task',
-  TaskPrompt: 'TaskPrompt'
+  TaskIteration: 'TaskIteration'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -73,8 +73,11 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const TaskScalarFieldEnum = {
   id: 'id',
-  subjectId: 'subjectId',
+  phase: 'phase',
+  status: 'status',
   issueId: 'issueId',
+  createdBy: 'createdBy',
+  updatedBy: 'updatedBy',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -82,14 +85,19 @@ export const TaskScalarFieldEnum = {
 export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
 
 
-export const TaskPromptScalarFieldEnum = {
+export const TaskIterationScalarFieldEnum = {
   id: 'id',
   taskId: 'taskId',
+  iteration: 'iteration',
+  phase: 'phase',
   prompt: 'prompt',
+  resultSummary: 'resultSummary',
+  errorMessage: 'errorMessage',
+  createdBy: 'createdBy',
   createdAt: 'createdAt'
 } as const
 
-export type TaskPromptScalarFieldEnum = (typeof TaskPromptScalarFieldEnum)[keyof typeof TaskPromptScalarFieldEnum]
+export type TaskIterationScalarFieldEnum = (typeof TaskIterationScalarFieldEnum)[keyof typeof TaskIterationScalarFieldEnum]
 
 
 export const SortOrder = {

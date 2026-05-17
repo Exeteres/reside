@@ -1,7 +1,7 @@
 import type { CustomObjectsApi } from "@kubernetes/client-node"
 import type { PrismaClient } from "../database"
 import type { ReplicaForDesiredEndpoints } from "./replica-crd"
-import { readReplicaCrd, resolveDesiredReplicaEndpoints } from "./replica-crd"
+import { readReplicaCrd } from "./replica-crd"
 
 export type RegistrationReadinessStatus =
   | {
@@ -9,12 +9,7 @@ export type RegistrationReadinessStatus =
     }
   | {
       ready: false
-      reason:
-        | "CRD_NOT_FOUND"
-        | "CRD_NOT_READY"
-        | "IMAGE_MISMATCH"
-        | "ENDPOINT_MISMATCH"
-        | "REPLICA_WITHOUT_IMAGE"
+      reason: "CRD_NOT_FOUND" | "CRD_NOT_READY" | "IMAGE_MISMATCH" | "REPLICA_WITHOUT_IMAGE"
     }
 
 export async function loadReplicaForRegistrationReadiness(
@@ -60,7 +55,6 @@ export async function evaluateRegistrationReadiness(
     }
   }
 
-  const desiredEndpoints = resolveDesiredReplicaEndpoints(replica)
   const replicaCrd = await readReplicaCrd(customObjectsApi, replica.name)
 
   if (!replicaCrd.exists) {
@@ -81,15 +75,6 @@ export async function evaluateRegistrationReadiness(
     return {
       ready: false,
       reason: "IMAGE_MISMATCH",
-    }
-  }
-
-  for (const [endpointName, endpoint] of Object.entries(desiredEndpoints)) {
-    if (replicaCrd.endpoints[endpointName] !== endpoint) {
-      return {
-        ready: false,
-        reason: "ENDPOINT_MISMATCH",
-      }
     }
   }
 

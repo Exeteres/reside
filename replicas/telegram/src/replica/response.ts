@@ -3,8 +3,6 @@ import type { Operation, PrismaClient } from "../database"
 import { logger } from "@reside/common"
 import { isRecord } from "@reside/utils"
 
-type TelegramOperationService = GenericOperationService<Operation>
-
 export type CallbackCompletionResult =
   | { accepted: true; unauthorized: false; reason: "accepted" }
   | {
@@ -15,7 +13,7 @@ export type CallbackCompletionResult =
 
 export async function completeOperationFromTextReply(args: {
   prisma: PrismaClient
-  operationService: TelegramOperationService
+  operationService: GenericOperationService<Operation>
   chatId: number
   userId: number
   repliedMessageId: number
@@ -28,7 +26,8 @@ export async function completeOperationFromTextReply(args: {
   })
 
   const operation = operations.find(
-    candidate => candidate.response === null && isChatAuthorized(candidate.context, args.chatId),
+    candidate =>
+      candidate.response === null && isChatAuthorized(candidate.targetChatId, args.chatId),
   )
 
   if (!operation) {
@@ -74,7 +73,7 @@ export async function completeOperationFromTextReply(args: {
 
 export async function completeOperationFromCallbackAction(args: {
   prisma: PrismaClient
-  operationService: TelegramOperationService
+  operationService: GenericOperationService<Operation>
   chatId: number
   userId: number
   messageId: number
@@ -87,7 +86,18 @@ export async function completeOperationFromCallbackAction(args: {
   })
 
   const chatAuthorizedOperations = operations.filter(candidate =>
-    isChatAuthorized(candidate.context, args.chatId),
+    isChatAuthorized(candidate.targetChatId, args.chatId),
+  )
+
+  logger.debug(
+    {
+      chatId: args.chatId,
+      messageId: args.messageId,
+      actionName: args.actionName,
+      pendingOperations: operations.length,
+      chatAuthorizedOperations: chatAuthorizedOperations.length,
+    },
+    "evaluating callback action",
   )
 
   const actionableOperation = chatAuthorizedOperations.find(
@@ -167,6 +177,16 @@ export async function completeOperationFromCallbackAction(args: {
     !args.isSuperAdminUser(args.userId) &&
     !(await args.canInteractWithChannel(args.userId, actionableOperation.channelName))
   ) {
+    logger.info(
+      {
+        operationId: actionableOperation.id,
+        chatId: args.chatId,
+        userId: args.userId,
+        channelName: actionableOperation.channelName,
+      },
+      "rejecting callback action due to channel permission check",
+    )
+
     return { accepted: false, unauthorized: true, reason: "chat-not-authorized" }
   }
 
@@ -247,10 +267,7 @@ async function getPendingOperationsByMessage(
     allowedActions: string[]
     channelName: string | null
     isProtected: boolean
-    context: {
-      chatTelegramId: string | null
-      userTelegramId: string | null
-    }
+    targetChatId: string
     response: { operationId: number } | null
   }>
 > {
@@ -270,20 +287,7 @@ async function getPendingOperationsByMessage(
           name: true,
         },
       },
-      context: {
-        select: {
-          chat: {
-            select: {
-              telegramId: true,
-            },
-          },
-          user: {
-            select: {
-              telegramId: true,
-            },
-          },
-        },
-      },
+      targetChatId: true,
       operation: {
         select: {
           id: true,
@@ -311,25 +315,15 @@ async function getPendingOperationsByMessage(
         allowedActions: record.allowedActions,
         channelName: record.channel.name,
         isProtected: record.isProtected,
-        context: {
-          chatTelegramId: record.context.chat?.telegramId ?? null,
-          userTelegramId: record.context.user?.telegramId ?? null,
-        },
+        targetChatId: record.targetChatId,
         response: record.operation.notificationResponse,
       },
     ]
   })
 }
 
-function isChatAuthorized(
-  context: { chatTelegramId: string | null; userTelegramId: string | null },
-  chatId: number,
-): boolean {
-  if (!context.chatTelegramId) {
-    return true
-  }
-
-  return context.chatTelegramId === String(chatId)
+function isChatAuthorized(targetChatId: string, chatId: number): boolean {
+  return targetChatId === String(chatId)
 }
 
 async function findRespondedOperationByMessage(
@@ -351,20 +345,7 @@ async function findRespondedOperationByMessage(
           id: true,
         },
       },
-      context: {
-        select: {
-          chat: {
-            select: {
-              telegramId: true,
-            },
-          },
-          user: {
-            select: {
-              telegramId: true,
-            },
-          },
-        },
-      },
+      targetChatId: true,
     },
     orderBy: {
       id: "desc",
@@ -375,15 +356,7 @@ async function findRespondedOperationByMessage(
     return null
   }
 
-  if (
-    !isChatAuthorized(
-      {
-        chatTelegramId: notification.context.chat?.telegramId ?? null,
-        userTelegramId: notification.context.user?.telegramId ?? null,
-      },
-      args.chatId,
-    )
-  ) {
+  if (!isChatAuthorized(notification.targetChatId, args.chatId)) {
     return null
   }
 

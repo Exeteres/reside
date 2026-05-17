@@ -1,52 +1,54 @@
-import { startService } from "@reside/api"
-import { OperationSubscriptionServiceDefinition } from "@reside/api/common/operation.v1"
-import { CommandHandlerServiceDefinition } from "@reside/api/interaction/command.v1"
+import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
+import { OperationSubscriptionService } from "@reside/api/common/operation.v1"
+import { PingService } from "@reside/api/common/ping.v1"
+import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import {
   createCommandHandlerService,
   createInteractionActivities,
   createOperationSubscriptionService,
+  createPingService,
+  createServer,
   logger,
-  runTemporalWorker,
+  startServer,
+  startTemporalWorker,
 } from "@reside/common"
-import { createServer } from "nice-grpc"
 import { createServices } from "../shared"
 import { createCreateTaskActivities } from "./activities/task"
 import { startEngineerAiRuntime } from "./ai-runtime"
 
-const {
-  prisma,
-  temporalClient,
-  databaseProvisionService,
-  databaseOperationService,
-  interactionNotificationService,
-  interactionOperationService,
-} = await createServices()
+const services = await createServices()
 
-const server = createServer()
+const server = await createServer(services)
 
-server.add(CommandHandlerServiceDefinition, createCommandHandlerService(temporalClient))
-server.add(
-  OperationSubscriptionServiceDefinition,
-  createOperationSubscriptionService(temporalClient),
-)
+await server.register(fastifyConnectPlugin, {
+  routes(router) {
+    router.service(CommandHandlerService, createCommandHandlerService(services.temporalClient))
+    router.service(PingService, createPingService())
+    router.service(
+      OperationSubscriptionService,
+      createOperationSubscriptionService(services.temporalClient),
+    )
+  },
+})
 
-await startService(server)
+await startServer(server)
 
 const runtime = await startEngineerAiRuntime()
-const createTaskActivities = createCreateTaskActivities(
+const createTaskActivities = createCreateTaskActivities({
   runtime,
-  prisma,
-  interactionNotificationService,
-)
+  prisma: services.prisma,
+  notificationService: services.notificationService,
+  loadService: services.alphaLoadService,
+  storageBucketService: services.storageBucketService,
+})
 
-await runTemporalWorker({
-  provisionService: databaseProvisionService,
-  operationService: databaseOperationService,
+await startTemporalWorker({
+  services,
   activities: {
-    ...createInteractionActivities({
-      notificationService: interactionNotificationService,
-      operationService: interactionOperationService,
-    }),
+    ...createInteractionActivities(
+      services.notificationService,
+      services.interactionOperationService,
+    ),
     ...createTaskActivities,
   },
 })

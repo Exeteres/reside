@@ -31,7 +31,7 @@ export type AggregateNotification = {
 export type NotificationAvgAggregateOutputType = {
   id: number | null
   operationId: number | null
-  contextId: number | null
+  replyToMessageId: number | null
   channelId: number | null
   messageId: number | null
 }
@@ -39,7 +39,7 @@ export type NotificationAvgAggregateOutputType = {
 export type NotificationSumAggregateOutputType = {
   id: number | null
   operationId: number | null
-  contextId: number | null
+  replyToMessageId: number | null
   channelId: number | null
   messageId: number | null
 }
@@ -47,7 +47,8 @@ export type NotificationSumAggregateOutputType = {
 export type NotificationMinAggregateOutputType = {
   id: number | null
   operationId: number | null
-  contextId: number | null
+  targetChatId: string | null
+  replyToMessageId: number | null
   channelId: number | null
   messageId: number | null
   callingSubjectId: string | null
@@ -63,7 +64,8 @@ export type NotificationMinAggregateOutputType = {
 export type NotificationMaxAggregateOutputType = {
   id: number | null
   operationId: number | null
-  contextId: number | null
+  targetChatId: string | null
+  replyToMessageId: number | null
   channelId: number | null
   messageId: number | null
   callingSubjectId: string | null
@@ -79,7 +81,8 @@ export type NotificationMaxAggregateOutputType = {
 export type NotificationCountAggregateOutputType = {
   id: number
   operationId: number
-  contextId: number
+  targetChatId: number
+  replyToMessageId: number
   channelId: number
   messageId: number
   callingSubjectId: number
@@ -98,7 +101,7 @@ export type NotificationCountAggregateOutputType = {
 export type NotificationAvgAggregateInputType = {
   id?: true
   operationId?: true
-  contextId?: true
+  replyToMessageId?: true
   channelId?: true
   messageId?: true
 }
@@ -106,7 +109,7 @@ export type NotificationAvgAggregateInputType = {
 export type NotificationSumAggregateInputType = {
   id?: true
   operationId?: true
-  contextId?: true
+  replyToMessageId?: true
   channelId?: true
   messageId?: true
 }
@@ -114,7 +117,8 @@ export type NotificationSumAggregateInputType = {
 export type NotificationMinAggregateInputType = {
   id?: true
   operationId?: true
-  contextId?: true
+  targetChatId?: true
+  replyToMessageId?: true
   channelId?: true
   messageId?: true
   callingSubjectId?: true
@@ -130,7 +134,8 @@ export type NotificationMinAggregateInputType = {
 export type NotificationMaxAggregateInputType = {
   id?: true
   operationId?: true
-  contextId?: true
+  targetChatId?: true
+  replyToMessageId?: true
   channelId?: true
   messageId?: true
   callingSubjectId?: true
@@ -146,7 +151,8 @@ export type NotificationMaxAggregateInputType = {
 export type NotificationCountAggregateInputType = {
   id?: true
   operationId?: true
-  contextId?: true
+  targetChatId?: true
+  replyToMessageId?: true
   channelId?: true
   messageId?: true
   callingSubjectId?: true
@@ -250,7 +256,8 @@ export type NotificationGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
 export type NotificationGroupByOutputType = {
   id: number
   operationId: number | null
-  contextId: number
+  targetChatId: string
+  replyToMessageId: number | null
   channelId: number
   messageId: number
   callingSubjectId: string | null
@@ -290,7 +297,8 @@ export type NotificationWhereInput = {
   NOT?: Prisma.NotificationWhereInput | Prisma.NotificationWhereInput[]
   id?: Prisma.IntFilter<"Notification"> | number
   operationId?: Prisma.IntNullableFilter<"Notification"> | number | null
-  contextId?: Prisma.IntFilter<"Notification"> | number
+  targetChatId?: Prisma.StringFilter<"Notification"> | string
+  replyToMessageId?: Prisma.IntNullableFilter<"Notification"> | number | null
   channelId?: Prisma.IntFilter<"Notification"> | number
   messageId?: Prisma.IntFilter<"Notification"> | number
   callingSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
@@ -303,14 +311,16 @@ export type NotificationWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   operation?: Prisma.XOR<Prisma.OperationNullableScalarRelationFilter, Prisma.OperationWhereInput> | null
-  context?: Prisma.XOR<Prisma.InteractionContextScalarRelationFilter, Prisma.InteractionContextWhereInput>
+  chat?: Prisma.XOR<Prisma.ChatScalarRelationFilter, Prisma.ChatWhereInput>
   channel?: Prisma.XOR<Prisma.NotificationChannelScalarRelationFilter, Prisma.NotificationChannelWhereInput>
+  avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
 }
 
 export type NotificationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   operationId?: Prisma.SortOrderInput | Prisma.SortOrder
-  contextId?: Prisma.SortOrder
+  targetChatId?: Prisma.SortOrder
+  replyToMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   channelId?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -323,8 +333,9 @@ export type NotificationOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   operation?: Prisma.OperationOrderByWithRelationInput
-  context?: Prisma.InteractionContextOrderByWithRelationInput
+  chat?: Prisma.ChatOrderByWithRelationInput
   channel?: Prisma.NotificationChannelOrderByWithRelationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestOrderByWithRelationInput
 }
 
 export type NotificationWhereUniqueInput = Prisma.AtLeast<{
@@ -333,7 +344,8 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.NotificationWhereInput | Prisma.NotificationWhereInput[]
   OR?: Prisma.NotificationWhereInput[]
   NOT?: Prisma.NotificationWhereInput | Prisma.NotificationWhereInput[]
-  contextId?: Prisma.IntFilter<"Notification"> | number
+  targetChatId?: Prisma.StringFilter<"Notification"> | string
+  replyToMessageId?: Prisma.IntNullableFilter<"Notification"> | number | null
   channelId?: Prisma.IntFilter<"Notification"> | number
   messageId?: Prisma.IntFilter<"Notification"> | number
   callingSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
@@ -346,14 +358,16 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   operation?: Prisma.XOR<Prisma.OperationNullableScalarRelationFilter, Prisma.OperationWhereInput> | null
-  context?: Prisma.XOR<Prisma.InteractionContextScalarRelationFilter, Prisma.InteractionContextWhereInput>
+  chat?: Prisma.XOR<Prisma.ChatScalarRelationFilter, Prisma.ChatWhereInput>
   channel?: Prisma.XOR<Prisma.NotificationChannelScalarRelationFilter, Prisma.NotificationChannelWhereInput>
+  avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
 }, "id" | "operationId">
 
 export type NotificationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   operationId?: Prisma.SortOrderInput | Prisma.SortOrder
-  contextId?: Prisma.SortOrder
+  targetChatId?: Prisma.SortOrder
+  replyToMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   channelId?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -378,7 +392,8 @@ export type NotificationScalarWhereWithAggregatesInput = {
   NOT?: Prisma.NotificationScalarWhereWithAggregatesInput | Prisma.NotificationScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"Notification"> | number
   operationId?: Prisma.IntNullableWithAggregatesFilter<"Notification"> | number | null
-  contextId?: Prisma.IntWithAggregatesFilter<"Notification"> | number
+  targetChatId?: Prisma.StringWithAggregatesFilter<"Notification"> | string
+  replyToMessageId?: Prisma.IntNullableWithAggregatesFilter<"Notification"> | number | null
   channelId?: Prisma.IntWithAggregatesFilter<"Notification"> | number
   messageId?: Prisma.IntWithAggregatesFilter<"Notification"> | number
   callingSubjectId?: Prisma.StringNullableWithAggregatesFilter<"Notification"> | string | null
@@ -393,6 +408,7 @@ export type NotificationScalarWhereWithAggregatesInput = {
 }
 
 export type NotificationCreateInput = {
+  replyToMessageId?: number | null
   messageId: number
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
@@ -404,14 +420,16 @@ export type NotificationCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
-  context: Prisma.InteractionContextCreateNestedOneWithoutNotificationsInput
+  chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
 export type NotificationUncheckedCreateInput = {
   id?: number
   operationId?: number | null
-  contextId: number
+  targetChatId: string
+  replyToMessageId?: number | null
   channelId: number
   messageId: number
   callingSubjectId?: string | null
@@ -423,9 +441,11 @@ export type NotificationUncheckedCreateInput = {
   isProtected?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
 export type NotificationUpdateInput = {
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -437,14 +457,16 @@ export type NotificationUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
-  context?: Prisma.InteractionContextUpdateOneRequiredWithoutNotificationsNestedInput
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
 export type NotificationUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  contextId?: Prisma.IntFieldUpdateOperationsInput | number
+  targetChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -456,12 +478,14 @@ export type NotificationUncheckedUpdateInput = {
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
 export type NotificationCreateManyInput = {
   id?: number
   operationId?: number | null
-  contextId: number
+  targetChatId: string
+  replyToMessageId?: number | null
   channelId: number
   messageId: number
   callingSubjectId?: string | null
@@ -476,6 +500,7 @@ export type NotificationCreateManyInput = {
 }
 
 export type NotificationUpdateManyMutationInput = {
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -491,7 +516,8 @@ export type NotificationUpdateManyMutationInput = {
 export type NotificationUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  contextId?: Prisma.IntFieldUpdateOperationsInput | number
+  targetChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -503,6 +529,11 @@ export type NotificationUncheckedUpdateManyInput = {
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type NotificationNullableScalarRelationFilter = {
+  is?: Prisma.NotificationWhereInput | null
+  isNot?: Prisma.NotificationWhereInput | null
 }
 
 export type NotificationListRelationFilter = {
@@ -526,7 +557,8 @@ export type StringNullableListFilter<$PrismaModel = never> = {
 export type NotificationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   operationId?: Prisma.SortOrder
-  contextId?: Prisma.SortOrder
+  targetChatId?: Prisma.SortOrder
+  replyToMessageId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrder
@@ -543,7 +575,7 @@ export type NotificationCountOrderByAggregateInput = {
 export type NotificationAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   operationId?: Prisma.SortOrder
-  contextId?: Prisma.SortOrder
+  replyToMessageId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
 }
@@ -551,7 +583,8 @@ export type NotificationAvgOrderByAggregateInput = {
 export type NotificationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   operationId?: Prisma.SortOrder
-  contextId?: Prisma.SortOrder
+  targetChatId?: Prisma.SortOrder
+  replyToMessageId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrder
@@ -567,7 +600,8 @@ export type NotificationMaxOrderByAggregateInput = {
 export type NotificationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   operationId?: Prisma.SortOrder
-  contextId?: Prisma.SortOrder
+  targetChatId?: Prisma.SortOrder
+  replyToMessageId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrder
@@ -583,14 +617,25 @@ export type NotificationMinOrderByAggregateInput = {
 export type NotificationSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   operationId?: Prisma.SortOrder
-  contextId?: Prisma.SortOrder
+  replyToMessageId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
 }
 
-export type NotificationNullableScalarRelationFilter = {
-  is?: Prisma.NotificationWhereInput | null
-  isNot?: Prisma.NotificationWhereInput | null
+export type NotificationCreateNestedOneWithoutAvatarProvisionRequestInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutAvatarProvisionRequestInput, Prisma.NotificationUncheckedCreateWithoutAvatarProvisionRequestInput>
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutAvatarProvisionRequestInput
+  connect?: Prisma.NotificationWhereUniqueInput
+}
+
+export type NotificationUpdateOneWithoutAvatarProvisionRequestNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutAvatarProvisionRequestInput, Prisma.NotificationUncheckedCreateWithoutAvatarProvisionRequestInput>
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutAvatarProvisionRequestInput
+  upsert?: Prisma.NotificationUpsertWithoutAvatarProvisionRequestInput
+  disconnect?: Prisma.NotificationWhereInput | boolean
+  delete?: Prisma.NotificationWhereInput | boolean
+  connect?: Prisma.NotificationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationUpdateToOneWithWhereWithoutAvatarProvisionRequestInput, Prisma.NotificationUpdateWithoutAvatarProvisionRequestInput>, Prisma.NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput>
 }
 
 export type NotificationCreateNestedManyWithoutChannelInput = {
@@ -635,45 +680,45 @@ export type NotificationUncheckedUpdateManyWithoutChannelNestedInput = {
   deleteMany?: Prisma.NotificationScalarWhereInput | Prisma.NotificationScalarWhereInput[]
 }
 
-export type NotificationCreateNestedManyWithoutContextInput = {
-  create?: Prisma.XOR<Prisma.NotificationCreateWithoutContextInput, Prisma.NotificationUncheckedCreateWithoutContextInput> | Prisma.NotificationCreateWithoutContextInput[] | Prisma.NotificationUncheckedCreateWithoutContextInput[]
-  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutContextInput | Prisma.NotificationCreateOrConnectWithoutContextInput[]
-  createMany?: Prisma.NotificationCreateManyContextInputEnvelope
+export type NotificationCreateNestedManyWithoutChatInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutChatInput, Prisma.NotificationUncheckedCreateWithoutChatInput> | Prisma.NotificationCreateWithoutChatInput[] | Prisma.NotificationUncheckedCreateWithoutChatInput[]
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutChatInput | Prisma.NotificationCreateOrConnectWithoutChatInput[]
+  createMany?: Prisma.NotificationCreateManyChatInputEnvelope
   connect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
 }
 
-export type NotificationUncheckedCreateNestedManyWithoutContextInput = {
-  create?: Prisma.XOR<Prisma.NotificationCreateWithoutContextInput, Prisma.NotificationUncheckedCreateWithoutContextInput> | Prisma.NotificationCreateWithoutContextInput[] | Prisma.NotificationUncheckedCreateWithoutContextInput[]
-  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutContextInput | Prisma.NotificationCreateOrConnectWithoutContextInput[]
-  createMany?: Prisma.NotificationCreateManyContextInputEnvelope
+export type NotificationUncheckedCreateNestedManyWithoutChatInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutChatInput, Prisma.NotificationUncheckedCreateWithoutChatInput> | Prisma.NotificationCreateWithoutChatInput[] | Prisma.NotificationUncheckedCreateWithoutChatInput[]
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutChatInput | Prisma.NotificationCreateOrConnectWithoutChatInput[]
+  createMany?: Prisma.NotificationCreateManyChatInputEnvelope
   connect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
 }
 
-export type NotificationUpdateManyWithoutContextNestedInput = {
-  create?: Prisma.XOR<Prisma.NotificationCreateWithoutContextInput, Prisma.NotificationUncheckedCreateWithoutContextInput> | Prisma.NotificationCreateWithoutContextInput[] | Prisma.NotificationUncheckedCreateWithoutContextInput[]
-  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutContextInput | Prisma.NotificationCreateOrConnectWithoutContextInput[]
-  upsert?: Prisma.NotificationUpsertWithWhereUniqueWithoutContextInput | Prisma.NotificationUpsertWithWhereUniqueWithoutContextInput[]
-  createMany?: Prisma.NotificationCreateManyContextInputEnvelope
+export type NotificationUpdateManyWithoutChatNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutChatInput, Prisma.NotificationUncheckedCreateWithoutChatInput> | Prisma.NotificationCreateWithoutChatInput[] | Prisma.NotificationUncheckedCreateWithoutChatInput[]
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutChatInput | Prisma.NotificationCreateOrConnectWithoutChatInput[]
+  upsert?: Prisma.NotificationUpsertWithWhereUniqueWithoutChatInput | Prisma.NotificationUpsertWithWhereUniqueWithoutChatInput[]
+  createMany?: Prisma.NotificationCreateManyChatInputEnvelope
   set?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
   disconnect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
   delete?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
   connect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
-  update?: Prisma.NotificationUpdateWithWhereUniqueWithoutContextInput | Prisma.NotificationUpdateWithWhereUniqueWithoutContextInput[]
-  updateMany?: Prisma.NotificationUpdateManyWithWhereWithoutContextInput | Prisma.NotificationUpdateManyWithWhereWithoutContextInput[]
+  update?: Prisma.NotificationUpdateWithWhereUniqueWithoutChatInput | Prisma.NotificationUpdateWithWhereUniqueWithoutChatInput[]
+  updateMany?: Prisma.NotificationUpdateManyWithWhereWithoutChatInput | Prisma.NotificationUpdateManyWithWhereWithoutChatInput[]
   deleteMany?: Prisma.NotificationScalarWhereInput | Prisma.NotificationScalarWhereInput[]
 }
 
-export type NotificationUncheckedUpdateManyWithoutContextNestedInput = {
-  create?: Prisma.XOR<Prisma.NotificationCreateWithoutContextInput, Prisma.NotificationUncheckedCreateWithoutContextInput> | Prisma.NotificationCreateWithoutContextInput[] | Prisma.NotificationUncheckedCreateWithoutContextInput[]
-  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutContextInput | Prisma.NotificationCreateOrConnectWithoutContextInput[]
-  upsert?: Prisma.NotificationUpsertWithWhereUniqueWithoutContextInput | Prisma.NotificationUpsertWithWhereUniqueWithoutContextInput[]
-  createMany?: Prisma.NotificationCreateManyContextInputEnvelope
+export type NotificationUncheckedUpdateManyWithoutChatNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutChatInput, Prisma.NotificationUncheckedCreateWithoutChatInput> | Prisma.NotificationCreateWithoutChatInput[] | Prisma.NotificationUncheckedCreateWithoutChatInput[]
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutChatInput | Prisma.NotificationCreateOrConnectWithoutChatInput[]
+  upsert?: Prisma.NotificationUpsertWithWhereUniqueWithoutChatInput | Prisma.NotificationUpsertWithWhereUniqueWithoutChatInput[]
+  createMany?: Prisma.NotificationCreateManyChatInputEnvelope
   set?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
   disconnect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
   delete?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
   connect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
-  update?: Prisma.NotificationUpdateWithWhereUniqueWithoutContextInput | Prisma.NotificationUpdateWithWhereUniqueWithoutContextInput[]
-  updateMany?: Prisma.NotificationUpdateManyWithWhereWithoutContextInput | Prisma.NotificationUpdateManyWithWhereWithoutContextInput[]
+  update?: Prisma.NotificationUpdateWithWhereUniqueWithoutChatInput | Prisma.NotificationUpdateWithWhereUniqueWithoutChatInput[]
+  updateMany?: Prisma.NotificationUpdateManyWithWhereWithoutChatInput | Prisma.NotificationUpdateManyWithWhereWithoutChatInput[]
   deleteMany?: Prisma.NotificationScalarWhereInput | Prisma.NotificationScalarWhereInput[]
 }
 
@@ -718,7 +763,8 @@ export type NotificationUncheckedUpdateOneWithoutOperationNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationUpdateToOneWithWhereWithoutOperationInput, Prisma.NotificationUpdateWithoutOperationInput>, Prisma.NotificationUncheckedUpdateWithoutOperationInput>
 }
 
-export type NotificationCreateWithoutChannelInput = {
+export type NotificationCreateWithoutAvatarProvisionRequestInput = {
+  replyToMessageId?: number | null
   messageId: number
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
@@ -730,13 +776,16 @@ export type NotificationCreateWithoutChannelInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
-  context: Prisma.InteractionContextCreateNestedOneWithoutNotificationsInput
+  chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
+  channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
 }
 
-export type NotificationUncheckedCreateWithoutChannelInput = {
+export type NotificationUncheckedCreateWithoutAvatarProvisionRequestInput = {
   id?: number
   operationId?: number | null
-  contextId: number
+  targetChatId: string
+  replyToMessageId?: number | null
+  channelId: number
   messageId: number
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
@@ -747,6 +796,92 @@ export type NotificationUncheckedCreateWithoutChannelInput = {
   isProtected?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+}
+
+export type NotificationCreateOrConnectWithoutAvatarProvisionRequestInput = {
+  where: Prisma.NotificationWhereUniqueInput
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutAvatarProvisionRequestInput, Prisma.NotificationUncheckedCreateWithoutAvatarProvisionRequestInput>
+}
+
+export type NotificationUpsertWithoutAvatarProvisionRequestInput = {
+  update: Prisma.XOR<Prisma.NotificationUpdateWithoutAvatarProvisionRequestInput, Prisma.NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput>
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutAvatarProvisionRequestInput, Prisma.NotificationUncheckedCreateWithoutAvatarProvisionRequestInput>
+  where?: Prisma.NotificationWhereInput
+}
+
+export type NotificationUpdateToOneWithWhereWithoutAvatarProvisionRequestInput = {
+  where?: Prisma.NotificationWhereInput
+  data: Prisma.XOR<Prisma.NotificationUpdateWithoutAvatarProvisionRequestInput, Prisma.NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput>
+}
+
+export type NotificationUpdateWithoutAvatarProvisionRequestInput = {
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  messageId?: Prisma.IntFieldUpdateOperationsInput | number
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  allowedActions?: Prisma.NotificationUpdateallowedActionsInput | string[]
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
+  channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+}
+
+export type NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  targetChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  messageId?: Prisma.IntFieldUpdateOperationsInput | number
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  allowedActions?: Prisma.NotificationUpdateallowedActionsInput | string[]
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type NotificationCreateWithoutChannelInput = {
+  replyToMessageId?: number | null
+  messageId: number
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  allowedActions?: Prisma.NotificationCreateallowedActionsInput | string[]
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
+  chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
+}
+
+export type NotificationUncheckedCreateWithoutChannelInput = {
+  id?: number
+  operationId?: number | null
+  targetChatId: string
+  replyToMessageId?: number | null
+  messageId: number
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  allowedActions?: Prisma.NotificationCreateallowedActionsInput | string[]
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
 export type NotificationCreateOrConnectWithoutChannelInput = {
@@ -781,7 +916,8 @@ export type NotificationScalarWhereInput = {
   NOT?: Prisma.NotificationScalarWhereInput | Prisma.NotificationScalarWhereInput[]
   id?: Prisma.IntFilter<"Notification"> | number
   operationId?: Prisma.IntNullableFilter<"Notification"> | number | null
-  contextId?: Prisma.IntFilter<"Notification"> | number
+  targetChatId?: Prisma.StringFilter<"Notification"> | string
+  replyToMessageId?: Prisma.IntNullableFilter<"Notification"> | number | null
   channelId?: Prisma.IntFilter<"Notification"> | number
   messageId?: Prisma.IntFilter<"Notification"> | number
   callingSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
@@ -795,7 +931,8 @@ export type NotificationScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
 }
 
-export type NotificationCreateWithoutContextInput = {
+export type NotificationCreateWithoutChatInput = {
+  replyToMessageId?: number | null
   messageId: number
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
@@ -808,11 +945,13 @@ export type NotificationCreateWithoutContextInput = {
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
-export type NotificationUncheckedCreateWithoutContextInput = {
+export type NotificationUncheckedCreateWithoutChatInput = {
   id?: number
   operationId?: number | null
+  replyToMessageId?: number | null
   channelId: number
   messageId: number
   callingSubjectId?: string | null
@@ -824,35 +963,37 @@ export type NotificationUncheckedCreateWithoutContextInput = {
   isProtected?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
-export type NotificationCreateOrConnectWithoutContextInput = {
+export type NotificationCreateOrConnectWithoutChatInput = {
   where: Prisma.NotificationWhereUniqueInput
-  create: Prisma.XOR<Prisma.NotificationCreateWithoutContextInput, Prisma.NotificationUncheckedCreateWithoutContextInput>
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutChatInput, Prisma.NotificationUncheckedCreateWithoutChatInput>
 }
 
-export type NotificationCreateManyContextInputEnvelope = {
-  data: Prisma.NotificationCreateManyContextInput | Prisma.NotificationCreateManyContextInput[]
+export type NotificationCreateManyChatInputEnvelope = {
+  data: Prisma.NotificationCreateManyChatInput | Prisma.NotificationCreateManyChatInput[]
   skipDuplicates?: boolean
 }
 
-export type NotificationUpsertWithWhereUniqueWithoutContextInput = {
+export type NotificationUpsertWithWhereUniqueWithoutChatInput = {
   where: Prisma.NotificationWhereUniqueInput
-  update: Prisma.XOR<Prisma.NotificationUpdateWithoutContextInput, Prisma.NotificationUncheckedUpdateWithoutContextInput>
-  create: Prisma.XOR<Prisma.NotificationCreateWithoutContextInput, Prisma.NotificationUncheckedCreateWithoutContextInput>
+  update: Prisma.XOR<Prisma.NotificationUpdateWithoutChatInput, Prisma.NotificationUncheckedUpdateWithoutChatInput>
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutChatInput, Prisma.NotificationUncheckedCreateWithoutChatInput>
 }
 
-export type NotificationUpdateWithWhereUniqueWithoutContextInput = {
+export type NotificationUpdateWithWhereUniqueWithoutChatInput = {
   where: Prisma.NotificationWhereUniqueInput
-  data: Prisma.XOR<Prisma.NotificationUpdateWithoutContextInput, Prisma.NotificationUncheckedUpdateWithoutContextInput>
+  data: Prisma.XOR<Prisma.NotificationUpdateWithoutChatInput, Prisma.NotificationUncheckedUpdateWithoutChatInput>
 }
 
-export type NotificationUpdateManyWithWhereWithoutContextInput = {
+export type NotificationUpdateManyWithWhereWithoutChatInput = {
   where: Prisma.NotificationScalarWhereInput
-  data: Prisma.XOR<Prisma.NotificationUpdateManyMutationInput, Prisma.NotificationUncheckedUpdateManyWithoutContextInput>
+  data: Prisma.XOR<Prisma.NotificationUpdateManyMutationInput, Prisma.NotificationUncheckedUpdateManyWithoutChatInput>
 }
 
 export type NotificationCreateWithoutOperationInput = {
+  replyToMessageId?: number | null
   messageId: number
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
@@ -863,13 +1004,15 @@ export type NotificationCreateWithoutOperationInput = {
   isProtected?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  context: Prisma.InteractionContextCreateNestedOneWithoutNotificationsInput
+  chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
 export type NotificationUncheckedCreateWithoutOperationInput = {
   id?: number
-  contextId: number
+  targetChatId: string
+  replyToMessageId?: number | null
   channelId: number
   messageId: number
   callingSubjectId?: string | null
@@ -881,6 +1024,7 @@ export type NotificationUncheckedCreateWithoutOperationInput = {
   isProtected?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
 export type NotificationCreateOrConnectWithoutOperationInput = {
@@ -900,6 +1044,7 @@ export type NotificationUpdateToOneWithWhereWithoutOperationInput = {
 }
 
 export type NotificationUpdateWithoutOperationInput = {
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -910,13 +1055,15 @@ export type NotificationUpdateWithoutOperationInput = {
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  context?: Prisma.InteractionContextUpdateOneRequiredWithoutNotificationsNestedInput
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
 export type NotificationUncheckedUpdateWithoutOperationInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  contextId?: Prisma.IntFieldUpdateOperationsInput | number
+  targetChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -928,12 +1075,14 @@ export type NotificationUncheckedUpdateWithoutOperationInput = {
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
 export type NotificationCreateManyChannelInput = {
   id?: number
   operationId?: number | null
-  contextId: number
+  targetChatId: string
+  replyToMessageId?: number | null
   messageId: number
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
@@ -947,6 +1096,7 @@ export type NotificationCreateManyChannelInput = {
 }
 
 export type NotificationUpdateWithoutChannelInput = {
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -958,13 +1108,15 @@ export type NotificationUpdateWithoutChannelInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
-  context?: Prisma.InteractionContextUpdateOneRequiredWithoutNotificationsNestedInput
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
 export type NotificationUncheckedUpdateWithoutChannelInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  contextId?: Prisma.IntFieldUpdateOperationsInput | number
+  targetChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -975,12 +1127,14 @@ export type NotificationUncheckedUpdateWithoutChannelInput = {
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
 export type NotificationUncheckedUpdateManyWithoutChannelInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  contextId?: Prisma.IntFieldUpdateOperationsInput | number
+  targetChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -993,9 +1147,10 @@ export type NotificationUncheckedUpdateManyWithoutChannelInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type NotificationCreateManyContextInput = {
+export type NotificationCreateManyChatInput = {
   id?: number
   operationId?: number | null
+  replyToMessageId?: number | null
   channelId: number
   messageId: number
   callingSubjectId?: string | null
@@ -1009,7 +1164,8 @@ export type NotificationCreateManyContextInput = {
   updatedAt?: Date | string
 }
 
-export type NotificationUpdateWithoutContextInput = {
+export type NotificationUpdateWithoutChatInput = {
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1022,11 +1178,13 @@ export type NotificationUpdateWithoutContextInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
-export type NotificationUncheckedUpdateWithoutContextInput = {
+export type NotificationUncheckedUpdateWithoutChatInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1038,11 +1196,13 @@ export type NotificationUncheckedUpdateWithoutContextInput = {
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
-export type NotificationUncheckedUpdateManyWithoutContextInput = {
+export type NotificationUncheckedUpdateManyWithoutChatInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  replyToMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
   messageId?: Prisma.IntFieldUpdateOperationsInput | number
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1061,7 +1221,8 @@ export type NotificationUncheckedUpdateManyWithoutContextInput = {
 export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   operationId?: boolean
-  contextId?: boolean
+  targetChatId?: boolean
+  replyToMessageId?: boolean
   channelId?: boolean
   messageId?: boolean
   callingSubjectId?: boolean
@@ -1074,14 +1235,16 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
-  context?: boolean | Prisma.InteractionContextDefaultArgs<ExtArgs>
+  chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
+  avatarProvisionRequest?: boolean | Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>
 }, ExtArgs["result"]["notification"]>
 
 export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   operationId?: boolean
-  contextId?: boolean
+  targetChatId?: boolean
+  replyToMessageId?: boolean
   channelId?: boolean
   messageId?: boolean
   callingSubjectId?: boolean
@@ -1094,14 +1257,15 @@ export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
-  context?: boolean | Prisma.InteractionContextDefaultArgs<ExtArgs>
+  chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["notification"]>
 
 export type NotificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   operationId?: boolean
-  contextId?: boolean
+  targetChatId?: boolean
+  replyToMessageId?: boolean
   channelId?: boolean
   messageId?: boolean
   callingSubjectId?: boolean
@@ -1114,14 +1278,15 @@ export type NotificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
-  context?: boolean | Prisma.InteractionContextDefaultArgs<ExtArgs>
+  chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["notification"]>
 
 export type NotificationSelectScalar = {
   id?: boolean
   operationId?: boolean
-  contextId?: boolean
+  targetChatId?: boolean
+  replyToMessageId?: boolean
   channelId?: boolean
   messageId?: boolean
   callingSubjectId?: boolean
@@ -1135,20 +1300,21 @@ export type NotificationSelectScalar = {
   updatedAt?: boolean
 }
 
-export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "contextId" | "channelId" | "messageId" | "callingSubjectId" | "sendAsSubjectId" | "title" | "content" | "allowedActions" | "requiresTextResponse" | "isProtected" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
+export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "targetChatId" | "replyToMessageId" | "channelId" | "messageId" | "callingSubjectId" | "sendAsSubjectId" | "title" | "content" | "allowedActions" | "requiresTextResponse" | "isProtected" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
 export type NotificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
-  context?: boolean | Prisma.InteractionContextDefaultArgs<ExtArgs>
+  chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
+  avatarProvisionRequest?: boolean | Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>
 }
 export type NotificationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
-  context?: boolean | Prisma.InteractionContextDefaultArgs<ExtArgs>
+  chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
 }
 export type NotificationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
-  context?: boolean | Prisma.InteractionContextDefaultArgs<ExtArgs>
+  chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
 }
 
@@ -1160,13 +1326,17 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      */
     operation: Prisma.$OperationPayload<ExtArgs> | null
     /**
-     * The interaction context associated with this notification.
+     * The Telegram chat entity where this notification was sent.
      */
-    context: Prisma.$InteractionContextPayload<ExtArgs>
+    chat: Prisma.$ChatPayload<ExtArgs>
     /**
      * The notification channel associated with this notification.
      */
     channel: Prisma.$NotificationChannelPayload<ExtArgs>
+    /**
+     * The avatar provisioning request that references this notification.
+     */
+    avatarProvisionRequest: Prisma.$AvatarProvisionRequestPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     /**
@@ -1178,9 +1348,13 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      */
     operationId: number | null
     /**
-     * The ID of the interaction context expecting the user response.
+     * The Telegram chat identifier where this notification was sent.
      */
-    contextId: number
+    targetChatId: string
+    /**
+     * Optional Telegram message identifier this notification replies to.
+     */
+    replyToMessageId: number | null
     /**
      * The ID of the notification channel associated with this operation.
      */
@@ -1620,8 +1794,9 @@ readonly fields: NotificationFieldRefs;
 export interface Prisma__NotificationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   operation<T extends Prisma.Notification$operationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$operationArgs<ExtArgs>>): Prisma.Prisma__OperationClient<runtime.Types.Result.GetResult<Prisma.$OperationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  context<T extends Prisma.InteractionContextDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InteractionContextDefaultArgs<ExtArgs>>): Prisma.Prisma__InteractionContextClient<runtime.Types.Result.GetResult<Prisma.$InteractionContextPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  chat<T extends Prisma.ChatDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChatDefaultArgs<ExtArgs>>): Prisma.Prisma__ChatClient<runtime.Types.Result.GetResult<Prisma.$ChatPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   channel<T extends Prisma.NotificationChannelDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.NotificationChannelDefaultArgs<ExtArgs>>): Prisma.Prisma__NotificationChannelClient<runtime.Types.Result.GetResult<Prisma.$NotificationChannelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  avatarProvisionRequest<T extends Prisma.Notification$avatarProvisionRequestArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>>): Prisma.Prisma__AvatarProvisionRequestClient<runtime.Types.Result.GetResult<Prisma.$AvatarProvisionRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1653,7 +1828,8 @@ export interface Prisma__NotificationClient<T, Null = never, ExtArgs extends run
 export interface NotificationFieldRefs {
   readonly id: Prisma.FieldRef<"Notification", 'Int'>
   readonly operationId: Prisma.FieldRef<"Notification", 'Int'>
-  readonly contextId: Prisma.FieldRef<"Notification", 'Int'>
+  readonly targetChatId: Prisma.FieldRef<"Notification", 'String'>
+  readonly replyToMessageId: Prisma.FieldRef<"Notification", 'Int'>
   readonly channelId: Prisma.FieldRef<"Notification", 'Int'>
   readonly messageId: Prisma.FieldRef<"Notification", 'Int'>
   readonly callingSubjectId: Prisma.FieldRef<"Notification", 'String'>
@@ -2077,6 +2253,25 @@ export type Notification$operationArgs<ExtArgs extends runtime.Types.Extensions.
    */
   include?: Prisma.OperationInclude<ExtArgs> | null
   where?: Prisma.OperationWhereInput
+}
+
+/**
+ * Notification.avatarProvisionRequest
+ */
+export type Notification$avatarProvisionRequestArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AvatarProvisionRequest
+   */
+  select?: Prisma.AvatarProvisionRequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AvatarProvisionRequest
+   */
+  omit?: Prisma.AvatarProvisionRequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AvatarProvisionRequestInclude<ExtArgs> | null
+  where?: Prisma.AvatarProvisionRequestWhereInput
 }
 
 /**

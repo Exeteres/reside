@@ -45,6 +45,9 @@ model Operation {
   /// The approval request associated with this operation.
   approvalRequest ApprovalRequest?
 
+  /// The avatar provisioning request associated with this operation.
+  avatarProvisionRequest AvatarProvisionRequest?
+
   /// The timestamp when this operation was created.
   createdAt DateTime @default(now())
 

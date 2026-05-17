@@ -1,7 +1,7 @@
 import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
 import type { PrismaClient } from "../database"
 import type { AlphaE2EScope } from "./scope"
-import { status } from "@grpc/grpc-js"
+import { Code } from "@connectrpc/connect"
 import { logger } from "@reside/common"
 
 export async function assertSubjectApi(
@@ -39,7 +39,7 @@ export async function assertSubjectApi(
     subjectService.getSubjectDisplayInfo({
       subjectId: "invalid-subject",
     }),
-    status.INVALID_ARGUMENT,
+    Code.InvalidArgument,
     "replica:{name}",
   )
 
@@ -47,7 +47,7 @@ export async function assertSubjectApi(
     subjectService.getSubjectDisplayInfo({
       subjectId: "replica:alpha-e2e-not-found",
     }),
-    status.NOT_FOUND,
+    Code.NotFound,
     "was not found",
   )
 

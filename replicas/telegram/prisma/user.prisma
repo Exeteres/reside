@@ -11,8 +11,14 @@ model User {
   /// [UserData]
   data Json
 
-  /// The interaction contexts referencing this user.
-  contexts InteractionContext[]
+  /// The avatars created by this user.
+  createdAvatars Avatar[]
+
+  /// The avatar provisioning requests created by this user.
+  avatarProvisionRequests AvatarProvisionRequest[]
+
+  /// Unauthorized avatar events created by this user.
+  unauthorizedAvatars UnauthorizedAvatar[]
 
   /// The timestamp when this user was created.
   createdAt DateTime @default(now())

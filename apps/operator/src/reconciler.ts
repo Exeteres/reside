@@ -252,111 +252,6 @@ async function ensureAdminRole(
   logger.info({ namespace, roleName }, 'created role "%s" in namespace "%s"', roleName, namespace)
 }
 
-async function createExternalNameService(
-  coreApi: CoreV1Api,
-  namespace: string,
-  serviceName: string,
-  externalName: string,
-): Promise<void> {
-  await coreApi.createNamespacedService({
-    namespace,
-    body: {
-      metadata: {
-        name: serviceName,
-        namespace,
-      },
-      spec: {
-        type: "ExternalName",
-        externalName,
-      },
-    },
-  })
-
-  logger.info(
-    { namespace, serviceName, externalName },
-    'created externalname service "%s" in namespace "%s" pointing to "%s"',
-    serviceName,
-    namespace,
-    externalName,
-  )
-}
-
-async function ensureExternalNameService(
-  coreApi: CoreV1Api,
-  namespace: string,
-  serviceName: string,
-  externalName: string,
-): Promise<void> {
-  let existingServiceType: string | undefined
-  let existingExternalName: string | undefined
-
-  try {
-    const existingService = await coreApi.readNamespacedService({ name: serviceName, namespace })
-    existingServiceType = existingService.spec?.type
-    existingExternalName = existingService.spec?.externalName
-  } catch (error) {
-    if (!isNotFoundError(error)) {
-      throw error
-    }
-  }
-
-  if (!existingServiceType) {
-    await createExternalNameService(coreApi, namespace, serviceName, externalName)
-    return
-  }
-
-  if (existingServiceType === "ExternalName" && existingExternalName === externalName) {
-    return
-  }
-
-  await coreApi.deleteNamespacedService({ name: serviceName, namespace })
-  await createExternalNameService(coreApi, namespace, serviceName, externalName)
-}
-
-async function ensureExternalNameServices(
-  coreApi: CoreV1Api,
-  namespace: string,
-  endpoints: Record<string, string>,
-): Promise<void> {
-  await pruneExternalNameServices(coreApi, namespace, endpoints)
-
-  for (const [serviceName, externalName] of Object.entries(endpoints)) {
-    await ensureExternalNameService(coreApi, namespace, serviceName, externalName)
-  }
-}
-
-async function pruneExternalNameServices(
-  coreApi: CoreV1Api,
-  namespace: string,
-  endpoints: Record<string, string>,
-): Promise<void> {
-  const desiredServiceNames = new Set(Object.keys(endpoints))
-  const existingServices = await coreApi.listNamespacedService({ namespace })
-
-  for (const existingService of existingServices.items ?? []) {
-    const serviceName = existingService.metadata?.name
-    if (!serviceName || desiredServiceNames.has(serviceName)) {
-      continue
-    }
-
-    if (existingService.spec?.type !== "ExternalName") {
-      continue
-    }
-
-    await coreApi.deleteNamespacedService({
-      name: serviceName,
-      namespace,
-    })
-
-    logger.info(
-      { namespace, serviceName },
-      'deleted stale externalname service "%s" in namespace "%s"',
-      serviceName,
-      namespace,
-    )
-  }
-}
-
 async function createBootstrapJob(
   batchApi: BatchV1Api,
   namespace: string,
@@ -371,13 +266,20 @@ async function createBootstrapJob(
       metadata: {
         name: jobName,
         namespace,
+        labels: {
+          "app.kubernetes.io/name": `replica-${replicaName}`,
+          "reside.io/replica": replicaName,
+          "reside.io/component": "bootstrap",
+        },
       },
       spec: {
         backoffLimit: 0,
         template: {
           metadata: {
             labels: {
+              "app.kubernetes.io/name": `replica-${replicaName}`,
               "reside.io/replica": replicaName,
+              "reside.io/component": "bootstrap",
             },
           },
           spec: {
@@ -412,6 +314,10 @@ async function createBootstrapJob(
                   {
                     name: "REPLICA_IMAGE",
                     value: image,
+                  },
+                  {
+                    name: "RESIDE_CLUSTER_DOMAIN",
+                    value: operatorConfig.clusterDomain,
                   },
                   {
                     name: "RESIDE_BIN",
@@ -562,7 +468,6 @@ export async function reconcileReplica(
     roleName,
     serviceAccountName,
   )
-  await ensureExternalNameServices(coreApi, replicaNamespace, replica.endpoints)
   const bootstrapJobStatus = await ensureBootstrapJob(
     coreApi,
     batchApi,

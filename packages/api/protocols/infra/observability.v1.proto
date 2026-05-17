@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package reside.infra.observability.v1;
+
+import "google/protobuf/empty.proto";
+
+// The transport protocol used for OpenTelemetry export.
+enum OpenTelemetryProtocol {
+  OPEN_TELEMETRY_PROTOCOL_UNSPECIFIED = 0;
+  OPEN_TELEMETRY_PROTOCOL_GRPC = 1;
+  OPEN_TELEMETRY_PROTOCOL_HTTP_PROTOBUF = 2;
+}
+
+// A key-value header pair to attach to OTLP requests.
+message OpenTelemetryHeader {
+  string key = 1;
+  string value = 2;
+}
+
+// The credentials and endpoint details required to export OpenTelemetry data.
+message OpenTelemetryCredentials {
+  string endpoint = 1;
+  OpenTelemetryProtocol protocol = 2;
+  bool insecure = 3;
+  repeated OpenTelemetryHeader headers = 4;
+  string tls_ca_pem = 5;
+  int32 refresh_after_seconds = 6;
+}
+
+// The response for GetOpenTelemetryCredentials request.
+message GetOpenTelemetryCredentialsResponse {
+  OpenTelemetryCredentials result = 1;
+}
+
+// The service responsible for observability-related runtime credentials.
+service ObservabilityService {
+  // Gets OpenTelemetry export credentials for the caller replica.
+  rpc GetOpenTelemetryCredentials(google.protobuf.Empty)
+  returns (GetOpenTelemetryCredentialsResponse);
+}

@@ -3,12 +3,18 @@ import { getReplicaImage, getReplicaName, getReplicaNamespace, kubeConfig } from
 import { logger } from "../logger"
 import { ensureKnativeService } from "./resources"
 import { buildReplicaContainerEnv } from "./shared"
+import type { ReplicaEnvironmentVariable } from "./types"
 
 export type ServiceOptions = {
   /**
    * Whether to keep this service always running and not allow it to scale to zero.
    */
   longRunning?: boolean
+
+  /**
+   * Additional environment variables injected into replica container.
+   */
+  extraEnv?: ReplicaEnvironmentVariable[]
 }
 
 /**
@@ -16,32 +22,42 @@ export type ServiceOptions = {
  */
 export async function bootstrapService(options: ServiceOptions = {}): Promise<void> {
   const customObjectsApi = kubeConfig.makeApiClient(CustomObjectsApi)
+  const replicaName = getReplicaName()
 
   await ensureKnativeService(customObjectsApi, {
     apiVersion: "serving.knative.dev/v1",
     kind: "Service",
     metadata: {
-      name: getReplicaName(),
+      name: replicaName,
       namespace: getReplicaNamespace(),
+      labels: {
+        "app.kubernetes.io/name": `replica-${replicaName}`,
+      },
     },
     spec: {
       template: {
         metadata: {
+          labels: {
+            "app.kubernetes.io/name": `replica-${replicaName}`,
+            "reside.io/replica": replicaName,
+            "reside.io/component": "replica",
+          },
           annotations: options.longRunning
             ? { "autoscaling.knative.dev/min-scale": "1" }
             : undefined,
         },
         spec: {
-          serviceAccountName: getReplicaName(),
+          serviceAccountName: replicaName,
           terminationGracePeriodSeconds: 30,
           containers: [
             {
               name: getReplicaNamespace(),
               image: getReplicaImage(),
-              env: buildReplicaContainerEnv(getReplicaName(), [
+              env: buildReplicaContainerEnv("replica", [
                 { name: "RESIDE_BIN", value: "replica" },
+                ...(options.extraEnv ?? []),
               ]),
-              ports: [{ name: "h2c", containerPort: 8080 }],
+              ports: [{ containerPort: 8080 }],
             },
           ],
         },

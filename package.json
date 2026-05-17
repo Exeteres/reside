@@ -10,17 +10,29 @@
     "format": "nx run-many -t biome"
   },
   "catalog": {
+    "@fastify/otel": "^0.18.1",
     "@biomejs/biome": "^2.4.6",
+    "@bufbuild/buf": "^1.58.0",
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-fastify": "^2.1.1",
+    "@connectrpc/connect-node": "^2.1.1",
     "@bufbuild/protobuf": "^2.11.0",
     "@grammyjs/runner": "^2.0.3",
     "@github/copilot-sdk": "^0.2.0",
     "@grpc/grpc-js": "^1.14.3",
     "@octokit/auth-app": "^8.2.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.67.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.206.0",
+    "@opentelemetry/resources": "^2.0.1",
+    "@opentelemetry/sdk-node": "^0.206.0",
+    "@opentelemetry/semantic-conventions": "^1.38.0",
     "@inquirer/prompts": "^8.3.0",
     "@kubernetes/client-node": "^1.4.0",
     "@listr2/prompt-adapter-inquirer": "^4.2.1",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
+    "@prisma/instrumentation": "^7.4.2",
     "@temporalio/client": "^1.15.0",
     "@temporalio/common": "^1.15.0",
     "@temporalio/worker": "^1.15.0",
@@ -31,15 +43,11 @@
     "@typescript/native-preview": "^7.0.0-dev.20260309.1",
     "citty": "^0.2.1",
     "consola": "^3.4.2",
-    "google-proto-files": "^5.0.1",
+    "fastify": "^5.4.0",
     "grammy": "^1.41.1",
-    "grpc-tools": "^1.13.1",
     "jose": "^6.2.1",
     "kubernetes-models": "^4.5.1",
     "listr2": "^10.2.1",
-    "nice-grpc": "^2.1.14",
-    "nice-grpc-client-middleware-retry": "^3.1.13",
-    "nice-grpc-common": "^2.0.2",
     "nx": "^22.5.4",
     "octokit": "^5.0.5",
     "pg": "^8.20.0",
@@ -48,7 +56,6 @@
     "pkg-types": "^2.3.0",
     "prisma": "^7.4.2",
     "remeda": "^2.33.6",
-    "ts-proto": "^2.11.5",
     "type-fest": "^5.4.4",
     "typescript": "^5.9.3",
     "webpack": "^5.105.4",
@@ -67,5 +74,8 @@
   },
   "overrides": {
     "giget": "3.1.2"
+  },
+  "dependencies": {
+    "grammy": "^1.42.0"
   }
 }

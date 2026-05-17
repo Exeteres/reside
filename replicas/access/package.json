@@ -13,6 +13,8 @@
     "generate": "prisma generate"
   },
   "dependencies": {
+    "@connectrpc/connect-fastify": "catalog:",
+    "@connectrpc/connect": "catalog:",
     "@temporalio/client": "catalog:",
     "@temporalio/worker": "catalog:",
     "@temporalio/workflow": "catalog:",
@@ -21,9 +23,8 @@
   "devDependencies": {
     "@typescript/native-preview": "catalog:",
     "@reside/common": "workspace:*",
-    "@reside/topology": "workspace:*",
+    "@reside/registry": "workspace:*",
     "@reside/api": "workspace:*",
-    "@prisma/client": "catalog:",
-    "nice-grpc": "catalog:"
+    "@prisma/client": "catalog:"
   }
 }

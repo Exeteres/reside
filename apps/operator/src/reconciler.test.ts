@@ -26,9 +26,6 @@ function createReplica(overrides?: Partial<Replica>): Replica {
     name: "telegram-replica",
     generation: 1,
     image: "ghcr.io/example/telegram:v1",
-    endpoints: {
-      database: "database.database.svc.cluster.local",
-    },
     ...overrides,
   }
 }
@@ -46,41 +43,18 @@ function createCoreApiMocks() {
   const createNamespacedServiceAccount = mock(async (_request: unknown) => {
     return {} as never
   }).mockName("createNamespacedServiceAccount")
-  const readNamespacedService = mock(async () => {
-    return {
-      spec: {
-        type: "ExternalName",
-        externalName: "database.database.svc.cluster.local",
-      },
-    } as never
-  }).mockName("readNamespacedService")
-  const listNamespacedService = mock(async () => {
-    return {
-      items: [],
-    } as never
-  }).mockName("listNamespacedService")
   const listNamespacedPod = mock(async () => {
     return {
       items: [],
     } as never
   }).mockName("listNamespacedPod")
-  const createNamespacedService = mock(async (_request: unknown) => {
-    return {} as never
-  }).mockName("createNamespacedService")
-  const deleteNamespacedService = mock(async () => {
-    return {} as never
-  }).mockName("deleteNamespacedService")
 
   const coreApi = {
     readNamespace,
     createNamespace,
     readNamespacedServiceAccount,
     createNamespacedServiceAccount,
-    readNamespacedService,
-    listNamespacedService,
     listNamespacedPod,
-    createNamespacedService,
-    deleteNamespacedService,
   } as unknown as CoreV1Api
 
   return {
@@ -89,11 +63,7 @@ function createCoreApiMocks() {
     createNamespace,
     readNamespacedServiceAccount,
     createNamespacedServiceAccount,
-    readNamespacedService,
-    listNamespacedService,
     listNamespacedPod,
-    createNamespacedService,
-    deleteNamespacedService,
   }
 }
 
@@ -168,7 +138,6 @@ describe("reconcileReplica", () => {
     const coreMocks = createCoreApiMocks()
     coreMocks.readNamespace.mockRejectedValue(notFoundError())
     coreMocks.readNamespacedServiceAccount.mockRejectedValue(notFoundError())
-    coreMocks.readNamespacedService.mockRejectedValue(notFoundError())
 
     const rbacMocks = createRbacApiMocks()
     rbacMocks.readNamespacedRole.mockRejectedValue(notFoundError())
@@ -190,7 +159,6 @@ describe("reconcileReplica", () => {
     expect(coreMocks.createNamespacedServiceAccount).toHaveBeenCalledTimes(1)
     expect(rbacMocks.createNamespacedRole).toHaveBeenCalledTimes(1)
     expect(rbacMocks.createNamespacedRoleBinding).toHaveBeenCalledTimes(1)
-    expect(coreMocks.createNamespacedService).toHaveBeenCalledTimes(1)
     expect(batchMocks.createNamespacedJob).toHaveBeenCalledTimes(1)
     expect(result).toEqual({
       phase: "Reconciling",
@@ -252,32 +220,26 @@ describe("reconcileReplica", () => {
         ],
       },
     })
-    expect(coreMocks.createNamespacedService).toHaveBeenCalledWith({
-      namespace: replicaNamespace,
-      body: {
-        metadata: {
-          name: "database",
-          namespace: replicaNamespace,
-        },
-        spec: {
-          type: "ExternalName",
-          externalName: "database.database.svc.cluster.local",
-        },
-      },
-    })
     expect(batchMocks.createNamespacedJob).toHaveBeenCalledWith({
       namespace: replicaNamespace,
       body: {
         metadata: {
           name: `${replica.name}-bootstrap`,
           namespace: replicaNamespace,
+          labels: {
+            "app.kubernetes.io/name": `replica-${replica.name}`,
+            "reside.io/replica": replica.name,
+            "reside.io/component": "bootstrap",
+          },
         },
         spec: {
           backoffLimit: 0,
           template: {
             metadata: {
               labels: {
+                "app.kubernetes.io/name": `replica-${replica.name}`,
                 "reside.io/replica": replica.name,
+                "reside.io/component": "bootstrap",
               },
             },
             spec: {
@@ -312,6 +274,10 @@ describe("reconcileReplica", () => {
                     {
                       name: "REPLICA_IMAGE",
                       value: replica.image,
+                    },
+                    {
+                      name: "RESIDE_CLUSTER_DOMAIN",
+                      value: operatorConfig.clusterDomain,
                     },
                     {
                       name: "RESIDE_BIN",
@@ -428,8 +394,6 @@ describe("reconcileReplica", () => {
     expect(coreMocks.createNamespacedServiceAccount).toHaveBeenCalledTimes(0)
     expect(rbacMocks.createNamespacedRole).toHaveBeenCalledTimes(0)
     expect(rbacMocks.createNamespacedRoleBinding).toHaveBeenCalledTimes(0)
-    expect(coreMocks.deleteNamespacedService).toHaveBeenCalledTimes(0)
-    expect(coreMocks.createNamespacedService).toHaveBeenCalledTimes(0)
     expect(batchMocks.deleteNamespacedJob).toHaveBeenCalledTimes(0)
     expect(batchMocks.createNamespacedJob).toHaveBeenCalledTimes(0)
     expect(result).toEqual({
@@ -536,126 +500,6 @@ describe("reconcileReplica", () => {
     })
   })
 
-  it("recreates externalname service when target changes", async () => {
-    const coreMocks = createCoreApiMocks()
-    const rbacMocks = createRbacApiMocks()
-    const batchMocks = createBatchApiMocks()
-
-    coreMocks.readNamespacedService.mockResolvedValue({
-      spec: {
-        type: "ExternalName",
-        externalName: "legacy.database.svc.cluster.local",
-      },
-    } as never)
-
-    await reconcileReplica(
-      coreMocks.coreApi,
-      rbacMocks.rbacApi,
-      batchMocks.batchApi,
-      createReplica(),
-    )
-
-    expect(coreMocks.deleteNamespacedService).toHaveBeenCalledTimes(1)
-    expect(coreMocks.deleteNamespacedService).toHaveBeenCalledWith({
-      name: "database",
-      namespace: getReplicaNamespace("telegram-replica"),
-    })
-    expect(coreMocks.createNamespacedService).toHaveBeenCalledTimes(1)
-  })
-
-  it("deletes stale externalname services that are not requested", async () => {
-    const coreMocks = createCoreApiMocks()
-    const rbacMocks = createRbacApiMocks()
-    const batchMocks = createBatchApiMocks()
-
-    coreMocks.listNamespacedService.mockResolvedValue({
-      items: [
-        {
-          metadata: {
-            name: "database",
-          },
-          spec: {
-            type: "ExternalName",
-          },
-        },
-        {
-          metadata: {
-            name: "legacy",
-          },
-          spec: {
-            type: "ExternalName",
-          },
-        },
-      ],
-    } as never)
-
-    await reconcileReplica(
-      coreMocks.coreApi,
-      rbacMocks.rbacApi,
-      batchMocks.batchApi,
-      createReplica(),
-    )
-
-    expect(coreMocks.deleteNamespacedService).toHaveBeenCalledWith({
-      name: "legacy",
-      namespace: getReplicaNamespace("telegram-replica"),
-    })
-  })
-
-  it("does not delete non-externalname stale services", async () => {
-    const coreMocks = createCoreApiMocks()
-    const rbacMocks = createRbacApiMocks()
-    const batchMocks = createBatchApiMocks()
-
-    coreMocks.listNamespacedService.mockResolvedValue({
-      items: [
-        {
-          metadata: {
-            name: "legacy",
-          },
-          spec: {
-            type: "ClusterIP",
-          },
-        },
-      ],
-    } as never)
-
-    await reconcileReplica(
-      coreMocks.coreApi,
-      rbacMocks.rbacApi,
-      batchMocks.batchApi,
-      createReplica(),
-    )
-
-    expect(coreMocks.deleteNamespacedService).toHaveBeenCalledTimes(0)
-  })
-
-  it("recreates service when existing service type is not externalname", async () => {
-    const coreMocks = createCoreApiMocks()
-    const rbacMocks = createRbacApiMocks()
-    const batchMocks = createBatchApiMocks()
-
-    coreMocks.readNamespacedService.mockResolvedValue({
-      spec: {
-        type: "ClusterIP",
-      },
-    } as never)
-
-    await reconcileReplica(
-      coreMocks.coreApi,
-      rbacMocks.rbacApi,
-      batchMocks.batchApi,
-      createReplica(),
-    )
-
-    expect(coreMocks.deleteNamespacedService).toHaveBeenCalledTimes(1)
-    expect(coreMocks.deleteNamespacedService).toHaveBeenCalledWith({
-      name: "database",
-      namespace: getReplicaNamespace("telegram-replica"),
-    })
-    expect(coreMocks.createNamespacedService).toHaveBeenCalledTimes(1)
-  })
-
   it("throws when kubernetes api returns non-404 error", async () => {
     const coreMocks = createCoreApiMocks()
     const rbacMocks = createRbacApiMocks()
@@ -673,7 +517,6 @@ describe("reconcileReplica", () => {
     const coreMocks = createCoreApiMocks()
     coreMocks.readNamespace.mockRejectedValue(notFoundError())
     coreMocks.readNamespacedServiceAccount.mockRejectedValue(notFoundError())
-    coreMocks.readNamespacedService.mockRejectedValue(notFoundError())
 
     const rbacMocks = createRbacApiMocks()
     rbacMocks.readNamespacedRole.mockRejectedValue(notFoundError())
@@ -682,7 +525,7 @@ describe("reconcileReplica", () => {
     const batchMocks = createBatchApiMocks()
     batchMocks.readNamespacedJob.mockRejectedValue(notFoundError())
 
-    const replica = createReplica({ image: "ghcr.io/exeteres/reside/replicas/database:e2e-abc123" })
+    const replica = createReplica({ image: "ghcr.io/exeteres/reside/replicas/infra:e2e-abc123" })
 
     await reconcileReplica(coreMocks.coreApi, rbacMocks.rbacApi, batchMocks.batchApi, replica)
 
@@ -716,7 +559,6 @@ describe("listReplicas", () => {
             metadata: { name: "alpha", generation: 2 },
             spec: {
               image: "ghcr.io/example/alpha:v1",
-              endpoints: { database: "database.database.svc.cluster.local" },
             },
           },
           {
@@ -745,9 +587,6 @@ describe("listReplicas", () => {
         name: "alpha",
         generation: 2,
         image: "ghcr.io/example/alpha:v1",
-        endpoints: {
-          database: "database.database.svc.cluster.local",
-        },
       },
     ])
   })
@@ -769,7 +608,7 @@ describe("listReplicas", () => {
     expect(replicas).toEqual([])
   })
 
-  it("uses empty endpoints when omitted in replica spec", async () => {
+  it("parses replica when optional fields are omitted in spec", async () => {
     const listClusterCustomObject = mock(async (_request: unknown) => {
       return {
         items: [
@@ -793,7 +632,6 @@ describe("listReplicas", () => {
         name: "alpha",
         generation: 5,
         image: "ghcr.io/example/alpha:v1",
-        endpoints: {},
       },
     ])
   })

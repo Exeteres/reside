@@ -9,10 +9,12 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/ApprovalRequest.ts'
+export type * from './models/Avatar.ts'
+export type * from './models/AvatarProvisionRequest.ts'
+export type * from './models/UnauthorizedAvatar.ts'
 export type * from './models/NotificationChannel.ts'
 export type * from './models/Chat.ts'
 export type * from './models/Command.ts'
-export type * from './models/InteractionContext.ts'
 export type * from './models/NotificationResponse.ts'
 export type * from './models/Notification.ts'
 export type * from './models/Operation.ts'

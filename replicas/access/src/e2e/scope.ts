@@ -1,5 +1,6 @@
 import type { PrismaClient } from "../database"
-import { getReplicaName, WellKnownPermissions } from "@reside/common"
+import { getReplicaName } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 
 const legacyPermissionNames = [
   "e2e-view-reports",

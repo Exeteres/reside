@@ -1,8 +1,9 @@
 import type { DefinitionServiceClient } from "@reside/api/access/definition.v1"
 import type { PrismaClient } from "../database"
 import type { AccessE2EScope } from "./scope"
-import { status } from "@grpc/grpc-js"
-import { logger, WellKnownPermissions } from "@reside/common"
+import { Code } from "@connectrpc/connect"
+import { logger } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 
 export async function assertDefinitionApi(
   definitionService: DefinitionServiceClient,
@@ -139,7 +140,10 @@ async function expectPermissionDenied(
       throw error
     }
 
-    if (!error.message.includes("PERMISSION_DENIED")) {
+    if (
+      !error.message.includes("PERMISSION_DENIED") &&
+      !error.message.includes("permission_denied")
+    ) {
       throw new Error(`Unexpected error message: ${error.message}`)
     }
 
@@ -150,7 +154,7 @@ async function expectPermissionDenied(
     }
 
     const errorCode = Reflect.get(error, "code")
-    if (errorCode !== status.PERMISSION_DENIED) {
+    if (errorCode !== Code.PermissionDenied) {
       throw new Error(`Unexpected error code: ${String(errorCode)}`)
     }
 

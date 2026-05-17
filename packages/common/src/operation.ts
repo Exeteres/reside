@@ -1,29 +1,26 @@
+import { create, type JsonObject } from "@bufbuild/protobuf"
 import type {
   Operation as ApiOperation,
   GetOperationRequest,
-  GetOperationResponse,
-  OperationServiceClient,
   OperationServiceImplementation,
   OperationStatus,
   SubscribeToOperationCompletionRequest,
-  SubscribeToOperationCompletionResponse,
 } from "@reside/api/common/operation.v1"
-import type { ProvisionServiceClient } from "@reside/api/database/provision.v1"
-import { status as grpcStatus } from "@grpc/grpc-js"
-import { createChannel } from "@reside/api"
 import {
+  GetOperationResponseSchema,
   OperationStatus as ApiOperationStatus,
-  Operation,
-  OperationSubscriptionServiceDefinition,
+  OperationSchema,
+  OperationSubscriptionService,
+  SubscribeToOperationCompletionResponseSchema,
 } from "@reside/api/common/operation.v1"
-import { Empty } from "@reside/api/google/protobuf/empty"
-import { ErrorInfo } from "@reside/api/google/rpc/error_details"
+import { ErrorInfoSchema } from "@reside/api/google/rpc/error_details"
+import { EmptySchema } from "@bufbuild/protobuf/wkt"
 import type { Client } from "@temporalio/client"
 import { WorkflowExecutionAlreadyStartedError, WorkflowIdReusePolicy } from "@temporalio/client"
-import { type CallContext, ServerError } from "nice-grpc"
-import { createClient } from "./api"
+import { Code, type HandlerContext, ConnectError } from "@connectrpc/connect"
+import { createChannel, createClient } from "./api"
 import { authenticate } from "./auth"
-import { startTemporalWorker as runTemporalWorker } from "./database/temporal"
+import { DEFAULT_TEMPORAL_TASK_QUEUE } from "./database/temporal"
 import { getReplicaName } from "./kubernetes"
 import { logger } from "./logger"
 import { toProtoDateTime } from "./utils"
@@ -69,20 +66,17 @@ export type DuckTypedPrismaOperationClient<TOperation extends StandardPrismaOper
 export type GenericOperationServiceOptions<TOperation extends StandardPrismaOperation> = {
   prisma: DuckTypedPrismaOperationClient<TOperation>
   temporalClient: Client
-  getResult: (operationId: number) => Promise<unknown>
-  cancelOperation?: (operationId: number) => Promise<void>
-}
-
-export type StartOperationWorkerArgs = {
-  provisionService: ProvisionServiceClient
-  operationService: OperationServiceClient
   taskQueue?: string
+  getResult?: (operationId: number) => Promise<unknown>
+  cancelOperation?: (operationId: number) => Promise<void>
 }
 
 export type GenericOperationService<TOperation extends StandardPrismaOperation> = {
   implementation: OperationServiceImplementation
 
-  startOperationWorker(this: void, args: StartOperationWorkerArgs): Promise<void>
+  activities: {
+    deliverOperationCompletion: (input: DeliverOperationCompletionInput) => Promise<void>
+  }
 
   setCompleted(
     this: void,
@@ -132,86 +126,63 @@ export function createGenericOperationService<TOperation extends StandardPrismaO
   options: GenericOperationServiceOptions<TOperation>,
 ): GenericOperationService<TOperation> {
   const errorDomain = `${getReplicaName()}.reside.io`
-  const defaultOperationTaskQueue = `${getReplicaName()}-operations`
-  let operationTaskQueue = defaultOperationTaskQueue
 
   logger.info('creating generic operation service for replica "%s"', getReplicaName())
 
   return {
-    async startOperationWorker(args: StartOperationWorkerArgs): Promise<void> {
-      operationTaskQueue = args.taskQueue ?? defaultOperationTaskQueue
+    activities: {
+      deliverOperationCompletion: async (input: DeliverOperationCompletionInput) => {
+        logger.debug(
+          "deliverOperationCompletion activity started for operationId %d",
+          input.operationId,
+        )
 
-      logger.info('starting operation worker with task queue "%s"', operationTaskQueue)
+        const operationRecord = await getOperationById(options.prisma, input.operationId)
 
-      await runTemporalWorker({
-        provisionService: args.provisionService,
-        operationService: args.operationService,
-        taskQueue: operationTaskQueue,
-        activities: {
-          deliverOperationCompletion: async (input: DeliverOperationCompletionInput) => {
-            logger.debug(
-              "deliverOperationCompletion activity started for operationId %d",
-              input.operationId,
-            )
+        if (!operationRecord.callbackEndpoint || operationRecord.callbackEndpoint.length === 0) {
+          logger.debug(
+            "skipping operation completion delivery for operationId %d because callbackEndpoint is empty",
+            input.operationId,
+          )
+          return
+        }
 
-            const operationRecord = await getOperationById(options.prisma, input.operationId)
+        const operation = await mapOperationToApi(operationRecord, options.getResult, errorDomain)
+        if (!isTerminalStatus(operation.status)) {
+          logger.debug(
+            "skipping operation completion delivery for operationId %d because status is not terminal",
+            input.operationId,
+          )
+          return
+        }
 
-            if (
-              !operationRecord.callbackEndpoint ||
-              operationRecord.callbackEndpoint.length === 0
-            ) {
-              logger.debug(
-                "skipping operation completion delivery for operationId %d because callbackEndpoint is empty",
-                input.operationId,
-              )
-              return
-            }
+        await notifyOperationCompletionViaGrpc({
+          operation,
+          callbackEndpoint: operationRecord.callbackEndpoint,
+          customData: toCustomDataRecord(operationRecord.customData),
+        })
 
-            const operation = await mapOperationToApi(
-              operationRecord,
-              options.getResult,
-              errorDomain,
-            )
-            if (!isTerminalStatus(operation.status)) {
-              logger.debug(
-                "skipping operation completion delivery for operationId %d because status is not terminal",
-                input.operationId,
-              )
-              return
-            }
-
-            await notifyOperationCompletionViaGrpc({
-              operation,
-              callbackEndpoint: operationRecord.callbackEndpoint,
-              customData: toCustomDataRecord(operationRecord.customData),
-            })
-
-            logger.info("delivered operation completion for operationId %d", input.operationId)
-          },
-        },
-      })
+        logger.info("delivered operation completion for operationId %d", input.operationId)
+      },
     },
 
     implementation: {
-      async getOperation(
-        request: GetOperationRequest,
-        context: CallContext,
-      ): Promise<GetOperationResponse> {
+      async getOperation(request: GetOperationRequest, context: HandlerContext) {
         await authenticate(context)
 
         logger.debug("getOperation requested for operationId %d", request.operationId)
 
         const operationRecord = await getOperationById(options.prisma, request.operationId)
 
-        return {
+        return create(GetOperationResponseSchema, {
           operation: await mapOperationToApi(operationRecord, options.getResult, errorDomain),
-        }
+        })
       },
 
       async subscribeToOperationCompletion(
         request: SubscribeToOperationCompletionRequest,
-        context: CallContext,
-      ): Promise<SubscribeToOperationCompletionResponse> {
+        context: HandlerContext,
+      ) {
         await authenticate(context)
 
         logger.info(
@@ -231,12 +202,12 @@ export function createGenericOperationService<TOperation extends StandardPrismaO
             request.operationId,
           )
 
-          return {
+          return create(SubscribeToOperationCompletionResponseSchema, {
             response: {
-              $case: "completedOperation",
+              case: "completedOperation",
               value: operation,
             },
-          }
+          })
         }
 
         await options.prisma.operation.update({
@@ -254,23 +225,23 @@ export function createGenericOperationService<TOperation extends StandardPrismaO
           request.operationId,
         )
 
-        return {
+        return create(SubscribeToOperationCompletionResponseSchema, {
           response: {
-            $case: "ack",
-            value: Empty.create({}),
+            case: "ack",
+            value: create(EmptySchema),
           },
-        }
+        })
       },
 
-      async cancelOperation(request: GetOperationRequest, context: CallContext): Promise<Empty> {
+      async cancelOperation(request, context) {
         await authenticate(context)
 
         logger.info("cancelOperation requested for operationId %d", request.operationId)
 
         if (!options.cancelOperation) {
-          throw new ServerError(
-            grpcStatus.UNIMPLEMENTED,
+          throw new ConnectError(
             "Operation cancellation is not supported by this service",
+            Code.Unimplemented,
           )
         }
 
@@ -278,7 +249,7 @@ export function createGenericOperationService<TOperation extends StandardPrismaO
 
         logger.info("cancelOperation completed for operationId %d", request.operationId)
 
-        return Empty.create({})
+        return create(EmptySchema)
       },
     },
 
@@ -317,7 +288,7 @@ export function createGenericOperationService<TOperation extends StandardPrismaO
       await scheduleDurableNotificationDelivery(
         options.temporalClient,
         operationRecord,
-        operationTaskQueue,
+        options.taskQueue,
       )
 
       logger.info("operationId %d marked as COMPLETED", operationId)
@@ -349,7 +320,7 @@ export function createGenericOperationService<TOperation extends StandardPrismaO
       await scheduleDurableNotificationDelivery(
         options.temporalClient,
         operationRecord,
-        operationTaskQueue,
+        options.taskQueue,
       )
 
       logger.info("operationId %d marked as FAILED", operationId)
@@ -370,7 +341,7 @@ export function createGenericOperationService<TOperation extends StandardPrismaO
 export async function notifyOperationCompletionViaGrpc(args: {
   operation: ApiOperation
   callbackEndpoint: string
-  customData: Record<string, unknown> | undefined
+  customData: JsonObject | undefined
 }): Promise<void> {
   const channel = createChannel(args.callbackEndpoint)
 
@@ -381,7 +352,7 @@ export async function notifyOperationCompletionViaGrpc(args: {
       args.callbackEndpoint,
     )
 
-    const client = createClient(OperationSubscriptionServiceDefinition, channel)
+    const client = createClient(OperationSubscriptionService, channel)
 
     await client.notifyOperationCompletion({
       operation: args.operation,
@@ -391,8 +362,6 @@ export async function notifyOperationCompletionViaGrpc(args: {
   } catch (error) {
     logger.error({ error }, "failed to notify operation completion via gRPC")
     throw error
-  } finally {
-    channel.close()
   }
 }
 
@@ -408,7 +377,7 @@ async function getOperationById<TOperation extends StandardPrismaOperation>(
   })
 
   if (operationRecord === null) {
-    throw new ServerError(grpcStatus.NOT_FOUND, `Operation "${operationId}" was not found`)
+    throw new ConnectError(`Operation "${operationId}" was not found`, Code.NotFound)
   }
 
   return operationRecord
@@ -416,16 +385,16 @@ async function getOperationById<TOperation extends StandardPrismaOperation>(
 
 async function mapOperationToApi<TOperation extends StandardPrismaOperation>(
   operationRecord: TOperation,
-  getResult: (operationId: number) => Promise<unknown>,
+  getResult: ((operationId: number) => Promise<unknown>) | undefined,
   errorDomain: string,
 ): Promise<ApiOperation> {
   const operationId = operationRecord.id
   const status = toApiOperationStatus(operationRecord.status)
 
   if (status === ApiOperationStatus.COMPLETED) {
-    const result = await getResult(operationId)
+    const result = getResult ? await getResult(operationId) : undefined
 
-    return Operation.create({
+    return create(OperationSchema, {
       id: operationId,
       title: operationRecord.title,
       description: operationRecord.description ?? undefined,
@@ -434,14 +403,14 @@ async function mapOperationToApi<TOperation extends StandardPrismaOperation>(
       updatedAt: toProtoDateTime(operationRecord.updatedAt),
       resolvedAt: operationRecord.resolvedAt?.toISOString(),
       resolution: {
-        $case: "result",
-        value: result,
+        case: "result",
+        value: result as JsonObject,
       },
     })
   }
 
   if (status === ApiOperationStatus.FAILED) {
-    return Operation.create({
+    return create(OperationSchema, {
       id: operationId,
       title: operationRecord.title,
       description: operationRecord.description ?? undefined,
@@ -450,8 +419,8 @@ async function mapOperationToApi<TOperation extends StandardPrismaOperation>(
       updatedAt: toProtoDateTime(operationRecord.updatedAt),
       resolvedAt: operationRecord.resolvedAt?.toISOString(),
       resolution: {
-        $case: "error",
-        value: ErrorInfo.create({
+        case: "error",
+        value: create(ErrorInfoSchema, {
           reason: operationRecord.failureReason ?? "UNKNOWN_FAILURE",
           domain: errorDomain,
           metadata: {
@@ -463,7 +432,7 @@ async function mapOperationToApi<TOperation extends StandardPrismaOperation>(
     })
   }
 
-  return Operation.create({
+  return create(OperationSchema, {
     id: operationId,
     title: operationRecord.title,
     description: operationRecord.description ?? undefined,
@@ -476,17 +445,17 @@ async function mapOperationToApi<TOperation extends StandardPrismaOperation>(
 
 function assertCallbackEndpoint(callbackEndpoint: string): void {
   if (callbackEndpoint.length === 0) {
-    throw new ServerError(grpcStatus.INVALID_ARGUMENT, "Callback endpoint is required")
+    throw new ConnectError("Callback endpoint is required", Code.InvalidArgument)
   }
 }
 
 function parseOperationId(operationId: number): number {
   if (!Number.isInteger(operationId)) {
-    throw new ServerError(grpcStatus.INVALID_ARGUMENT, "Operation id is required")
+    throw new ConnectError("Operation id is required", Code.InvalidArgument)
   }
 
   if (operationId < 1 || operationId > 2_147_483_647) {
-    throw new ServerError(grpcStatus.INVALID_ARGUMENT, `Invalid operation id "${operationId}"`)
+    throw new ConnectError(`Invalid operation id "${operationId}"`, Code.InvalidArgument)
   }
 
   return operationId
@@ -516,13 +485,13 @@ function assertFailureReason(failureReason: string): void {
     return
   }
 
-  throw new ServerError(grpcStatus.INVALID_ARGUMENT, "Failure reason is required")
+  throw new ConnectError("Failure reason is required", Code.InvalidArgument)
 }
 
 async function scheduleDurableNotificationDelivery<TOperation extends StandardPrismaOperation>(
   temporalClient: Client,
   operationRecord: TOperation,
-  taskQueue: string,
+  taskQueue: string | undefined,
 ): Promise<void> {
   if (!operationRecord.callbackEndpoint || operationRecord.callbackEndpoint.length === 0) {
     logger.debug(
@@ -554,7 +523,7 @@ async function scheduleDurableNotificationDelivery<TOperation extends StandardPr
         },
       ],
       workflowId: getOperationDeliveryWorkflowId(operationRecord),
-      taskQueue,
+      taskQueue: taskQueue ?? DEFAULT_TEMPORAL_TASK_QUEUE,
       workflowIdReusePolicy: WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
     })
 
@@ -577,9 +546,9 @@ async function scheduleDurableNotificationDelivery<TOperation extends StandardPr
   }
 }
 
-function toCustomDataRecord(value: unknown | null): Record<string, unknown> | undefined {
+function toCustomDataRecord(value: unknown | null): JsonObject | undefined {
   if (isRecord(value)) {
-    return value
+    return value as JsonObject
   }
 
   return undefined

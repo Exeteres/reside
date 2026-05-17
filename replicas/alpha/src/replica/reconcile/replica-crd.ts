@@ -1,13 +1,11 @@
 import type { PrismaClient } from "../../database"
 import { CustomObjectsApi } from "@kubernetes/client-node"
-import { registerGracefulShutdown } from "@reside/api"
-import { kubeConfig, logger } from "@reside/common"
+import { kubeConfig, logger, registerGracefulShutdown } from "@reside/common"
 import {
   isNotFoundError,
   REPLICA_API_GROUP,
   REPLICA_API_VERSION,
   REPLICA_PLURAL,
-  resolveDesiredReplicaEndpoints,
 } from "../../shared/replica-crd"
 
 const RECONCILE_INTERVAL_MS = 5_000
@@ -61,23 +59,9 @@ async function reconcileReplicaCrds(
         not: null,
       },
     },
-    include: {
-      replicaDependencySlots: {
-        include: {
-          currentReplica: {
-            select: {
-              internalEndpoint: true,
-            },
-          },
-        },
-      },
-      endpointDependencySlots: {
-        select: {
-          name: true,
-          defaultEndpoint: true,
-          currentEndpoint: true,
-        },
-      },
+    select: {
+      name: true,
+      image: true,
     },
   })
 
@@ -87,11 +71,9 @@ async function reconcileReplicaCrds(
       continue
     }
 
-    const endpoints = resolveDesiredReplicaEndpoints(replica)
     await upsertReplicaCrd(customObjectsApi, {
       name: replica.name,
       image,
-      endpoints,
     })
   }
 }
@@ -101,12 +83,10 @@ async function upsertReplicaCrd(
   args: {
     name: string
     image: string
-    endpoints: Record<string, string>
   },
 ): Promise<void> {
   const spec = {
     image: args.image,
-    endpoints: args.endpoints,
   }
 
   try {

@@ -48,7 +48,7 @@ message Operation {
   oneof resolution {
     // The result of the successful completion of the operation, if applicable.
     // This field is only set if the operation has completed successfully.
-    google.protobuf.Value result = 5;
+    google.protobuf.Struct result = 5;
 
     // The error details if the operation has failed.
     // This field is only set if the operation has failed.

@@ -1,58 +1,53 @@
-import type { OperationServiceClient, DeepPartial } from "@reside/api/common/operation.v1"
-import type {
-  NotificationServiceClient,
-  SendNotificationRequest,
-  UpdateNotificationRequest,
+import {
+  SendNotificationResponseSchema,
+  UpdateNotificationResponseSchema,
+  type NotificationServiceClient,
+  type SendNotificationRequest,
+  type UpdateNotificationRequest,
 } from "@reside/api/interaction/notification.v1"
 import { authenticate } from "../auth"
 import { createOperationActivities } from "./operation"
 import type { CommandHandlerServiceImplementation } from "@reside/api/interaction/command.v1"
-import type { Client } from "@temporalio/client"
-import { getReplicaNamespace } from "../kubernetes"
-import type { CallContext } from "nice-grpc"
+import { CommandInvocationSchema } from "@reside/api/interaction/command.v1"
+import type { Client as TemporalClient } from "@temporalio/client"
+import { toJson } from "@bufbuild/protobuf"
+import type { OperationServiceClient } from "@reside/api/common/operation.v1"
+import { DEFAULT_TEMPORAL_TASK_QUEUE } from "../database"
 
-export type CommonActivitiesOptions = {
-  /**
-   * The service client used to interact with users via notifications.
-   */
-  notificationService: NotificationServiceClient
-
-  /**
-   * The interaction operation service client used to track interaction operations.
-   */
-  operationService: OperationServiceClient
-}
-
-export function createInteractionActivities({
-  notificationService,
-  operationService,
-}: CommonActivitiesOptions) {
+export function createInteractionActivities(
+  notificationService: NotificationServiceClient,
+  interactionOperationService: OperationServiceClient,
+) {
   return {
-    sendNotification: async (request: DeepPartial<SendNotificationRequest>) => {
-      return await notificationService.sendNotification(request)
+    sendNotification: async (request: SendNotificationRequest) => {
+      const response = await notificationService.sendNotification(request)
+
+      return toJson(SendNotificationResponseSchema, response)
     },
 
-    updateNotification: async (request: DeepPartial<UpdateNotificationRequest>) => {
-      return await notificationService.updateNotification(request)
+    updateNotification: async (request: UpdateNotificationRequest) => {
+      const response = await notificationService.updateNotification(request)
+
+      return toJson(UpdateNotificationResponseSchema, response)
     },
 
-    ...createOperationActivities(operationService),
+    ...createOperationActivities(interactionOperationService),
   }
 }
 
 export type InteractionActivities = ReturnType<typeof createInteractionActivities>
 
 export function createCommandHandlerService(
-  temporalClient: Client,
+  temporalClient: TemporalClient,
 ): CommandHandlerServiceImplementation {
   return {
-    async invokeCommand(invocation, context: CallContext) {
+    async invokeCommand(invocation, context) {
       await authenticate(context)
 
       await temporalClient.workflow.start("handleCommandWorkflow", {
         workflowId: `handle-command-${invocation.invocationId}`,
-        taskQueue: getReplicaNamespace(),
-        args: [invocation],
+        taskQueue: DEFAULT_TEMPORAL_TASK_QUEUE,
+        args: [toJson(CommandInvocationSchema, invocation)],
       })
 
       return {}

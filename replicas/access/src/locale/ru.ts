@@ -2,8 +2,13 @@ export const ru = {
   common: {
     requestSetApprovalTitle: "Подтверждение разрешений",
     noApproverApproved: "Нет подтверждающего, который одобрил запрос",
+    approvalWorkflowFailed: "Ошибка выполнения процесса подтверждения",
   },
   bootstrap: {
+    registration: {
+      title: "Авторизационная Реплика",
+      description: "Управляет доступом к ресурсам внутри экосистемы Reside.",
+    },
     permissions: {
       realmManage: {
         title: "Управление реалмом",

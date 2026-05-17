@@ -1,0 +1,12 @@
+export const MINIO_RELEASE_NAME = "minio"
+export const MINIO_SERVICE_NAME = "minio"
+export const MINIO_SERVICE_PORT = 9000
+export const MINIO_ADMIN_SECRET_NAME = "database-minio-admin"
+export const MINIO_ADMIN_USERNAME_KEY = "root-user"
+export const MINIO_ADMIN_PASSWORD_KEY = "root-password"
+export const MINIO_CONSOLE_DEPLOYMENT_NAME = "minio-console"
+export const MINIO_CONSOLE_SERVICE_NAME = "minio-console"
+export const MINIO_CONSOLE_SERVICE_PORT = 9090
+export const MINIO_CONSOLE_SECRET_NAME = "database-minio-console"
+export const MINIO_CONSOLE_PBKDF_PASSPHRASE_KEY = "pbkdf-passphrase"
+export const MINIO_CONSOLE_PBKDF_SALT_KEY = "pbkdf-salt"

@@ -1,10 +1,9 @@
-import type { SubscribeToOperationCompletionResponse } from "@reside/api/common/operation.v1"
-import type { NotificationResponse } from "@reside/api/interaction/notification.v1"
 import {
   block,
   deliverOperationCompletionWorkflow,
   html,
-  waitForOperationResult,
+  sendNotification,
+  updateNotification,
 } from "@reside/common/workflow"
 import {
   condition,
@@ -17,40 +16,32 @@ import {
 import { TELEGRAM_APPROVAL_CANCEL_SIGNAL, TelegramNotificationChannels } from "../definitions"
 import { strings } from "../locale"
 
+type ApprovalActionName = "approve" | "reject" | "escalate"
+
 type WorkflowActivities = {
-  sendNotification: (input: {
-    contextId: string
-    channel: TelegramNotificationChannels
-    title: string
-    content: string
-    protected: boolean
-    sendAsSubjectId: string
-    actions: Array<{
-      name: string
-      title: string
-    }>
-  }) => Promise<{
-    notificationId: number
-    operation?: {
-      id: number
-    }
-  }>
-  subscribeToOperationCompletion: (
-    operationId: number,
-    workflowId: string,
-  ) => Promise<SubscribeToOperationCompletionResponse>
-  updateNotification: (input: {
-    notificationId: number
-    title: string
-    content: string
-    actions: []
-    requiresTextResponse: false
-  }) => Promise<void>
   completeApprovalOperation: (input: {
     operationId: number
-    notificationResponse: NotificationResponse
+    actionName: ApprovalActionName
   }) => Promise<void>
   failApprovalOperation: (input: {
+    operationId: number
+    reason: string
+    message: string
+  }) => Promise<void>
+  getAvatarProvisionRequest: (operationId: number) => Promise<{
+    operationId: number
+    subjectId: string
+    replicaName: string
+    replicaTitle: string
+    expectedPrefix: string
+  }>
+  getAvatarProvisioningPromptLink: (input: { operationId: number }) => Promise<string>
+  completeAvatarProvisionOperation: (input: {
+    operationId: number
+    managedBotId: string
+    managedBotUsername: string
+  }) => Promise<void>
+  failAvatarProvisionOperation: (input: {
     operationId: number
     reason: string
     message: string
@@ -61,8 +52,16 @@ const activities = proxyActivities<WorkflowActivities>({
   scheduleToCloseTimeout: "5 minutes",
 })
 
-const APPROVAL_CONTEXT_ID = "1"
 const cancelApprovalSignal = defineSignal(TELEGRAM_APPROVAL_CANCEL_SIGNAL)
+const avatarManagedBotCreatedSignal =
+  defineSignal<
+    [
+      {
+        managedBotId: string
+        managedBotUsername: string
+      },
+    ]
+  >("avatarManagedBotCreated")
 
 export { deliverOperationCompletionWorkflow }
 
@@ -82,59 +81,37 @@ export async function handleApprovalRequestWorkflow(input: {
   try {
     log.info("sending approval notification", { operationId: input.operationId })
 
-    const notification = await activities.sendNotification({
-      contextId: APPROVAL_CONTEXT_ID,
+    const notification = await sendNotification({
+      system: true,
       channel: TelegramNotificationChannels.APPROVAL,
       title: input.title,
-      content: input.content,
+      // Content is pre-rendered HTML from access approval context.
+      // Pass as MessageElement to avoid helper-level escaping.
+      message: {
+        html: input.content,
+      },
       protected: true,
       sendAsSubjectId: input.requesterSubjectId,
-      actions: [
-        {
-          name: "approve",
+      actions: {
+        approve: {
           title: strings.worker.workflows.approvalActions.approve,
         },
-        {
-          name: "reject",
+        reject: {
           title: strings.worker.workflows.approvalActions.reject,
         },
-        {
-          name: "escalate",
+        escalate: {
           title: strings.worker.workflows.approvalActions.escalate,
         },
-      ],
+      },
+      cancelWhen: () => cancelRequested,
     })
 
-    if (!notification.operation) {
-      throw new Error("Approval notification must return a pending response operation")
-    }
-
-    const approvalResponsePromise = waitForOperationResult<NotificationResponse>(
-      notification.operation.id,
-      activities.subscribeToOperationCompletion,
-    )
-
-    const cancellationPromise = condition(() => cancelRequested).then(() => {
-      return {
-        type: "cancelled" as const,
-      }
-    })
-
-    const completionPromise = approvalResponsePromise.then(notificationResponse => {
-      return {
-        type: "response" as const,
-        notificationResponse,
-      }
-    })
-
-    const outcome = await Promise.race([completionPromise, cancellationPromise])
-
-    if (outcome.type === "cancelled") {
-      await activities.updateNotification({
+    if (notification.type === "cancelled") {
+      await updateNotification({
         notificationId: notification.notificationId,
         title: input.title,
         content: appendCancellationMessage(input.content),
-        actions: [],
+        actions: {},
         requiresTextResponse: false,
       })
 
@@ -150,12 +127,12 @@ export async function handleApprovalRequestWorkflow(input: {
 
     log.info("received notification output", {
       operationId: input.operationId,
-      outputType: outcome.notificationResponse.response?.$case,
+      outputType: "actionName",
     })
 
     await activities.completeApprovalOperation({
       operationId: input.operationId,
-      notificationResponse: outcome.notificationResponse,
+      actionName: notification.actionName,
     })
 
     log.info("completed approval operation", { operationId: input.operationId })
@@ -175,6 +152,78 @@ export async function handleApprovalRequestWorkflow(input: {
     await activities.failApprovalOperation({
       operationId: input.operationId,
       reason: "APPROVAL_WORKFLOW_FAILED",
+      message,
+    })
+  }
+}
+
+export async function ensureReplicaAvatarWorkflow(input: { operationId: number }): Promise<void> {
+  log.info("starting ensureReplicaAvatarWorkflow", { operationId: input.operationId })
+
+  let managedBotCreated:
+    | {
+        managedBotId: string
+        managedBotUsername: string
+      }
+    | undefined
+
+  setHandler(avatarManagedBotCreatedSignal, payload => {
+    managedBotCreated = payload
+  })
+
+  try {
+    const request = await activities.getAvatarProvisionRequest(input.operationId)
+    const requestLink = await activities.getAvatarProvisioningPromptLink({
+      operationId: input.operationId,
+    })
+
+    const notification = await sendNotification({
+      channel: TelegramNotificationChannels.AVATAR_PROVISIONING,
+      title: strings.worker.workflows.avatarProvisioning.title(request.replicaTitle),
+      message: strings.worker.workflows.avatarProvisioning.content,
+      system: true,
+      actions: {
+        open_create_avatar_link: {
+          title: strings.worker.workflows.avatarProvisioning.openCreationLink,
+          url: requestLink,
+        },
+      },
+    })
+
+    const signalReceived = await condition(() => managedBotCreated !== undefined, "24 hours")
+
+    if (!signalReceived || !managedBotCreated) {
+      await activities.failAvatarProvisionOperation({
+        operationId: input.operationId,
+        reason: "AVATAR_CREATION_TIMEOUT",
+        message: strings.worker.workflows.avatarProvisioning.timeoutMessage,
+      })
+      return
+    }
+
+    await activities.completeAvatarProvisionOperation({
+      operationId: input.operationId,
+      managedBotId: managedBotCreated.managedBotId,
+      managedBotUsername: managedBotCreated.managedBotUsername,
+    })
+
+    await updateNotification({
+      notificationId: notification.notificationId,
+      title: strings.worker.workflows.avatarProvisioning.createdTitle(request.replicaTitle),
+      content: strings.worker.workflows.avatarProvisioning.createdContent,
+      actions: {},
+      requiresTextResponse: false,
+    })
+  } catch (error) {
+    if (isCancellation(error)) {
+      return
+    }
+
+    const message = error instanceof Error ? error.message : String(error)
+
+    await activities.failAvatarProvisionOperation({
+      operationId: input.operationId,
+      reason: "AVATAR_CREATION_FAILED",
       message,
     })
   }

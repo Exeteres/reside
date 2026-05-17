@@ -1,10 +1,9 @@
-import type { Replica } from "@reside/topology"
-import { RegistrationServiceDefinition } from "@reside/api/alpha/registration.v1"
-import { alphaReplica, getAllDependencies } from "@reside/topology"
-import { createClient } from "./api"
+import type { Replica } from "@reside/registry"
+import { RegistrationService } from "@reside/api/alpha/registration.v1"
+import { alphaReplica, getAllDependencies } from "@reside/registry"
+import { createChannel, createClient } from "./api"
 import { getReplicaEndpoint } from "./kubernetes"
 import { logger } from "./logger"
-import { createChannel, type Channel } from "nice-grpc"
 
 export type RegisterReplicaOptions<TReplica extends Replica = Replica> = {
   replica: TReplica
@@ -15,7 +14,6 @@ export type RegisterReplicaOptions<TReplica extends Replica = Replica> = {
 /**
  * Registers the current replica in Alpha using its current internal endpoint.
  *
- * If registration returns an operation, this helper waits for operation completion.
  * If registration fails, the error is logged and not retried.
  *
  * @param options The registration options.
@@ -25,10 +23,8 @@ export async function registerReplica<TReplica extends Replica>({
   title,
   description,
 }: RegisterReplicaOptions<TReplica>): Promise<void> {
-  let channel: Channel | undefined
-
   try {
-    channel = createChannel(alphaReplica.endpoint)
+    const channel = createChannel(alphaReplica.endpoint)
 
     const allDependencies = getAllDependencies(replica)
     const allEndpoints = replica.endpoints
@@ -45,7 +41,7 @@ export async function registerReplica<TReplica extends Replica>({
       defaultEndpoint: endpoint,
     }))
 
-    const registrationService = createClient(RegistrationServiceDefinition, channel)
+    const registrationService = createClient(RegistrationService, channel)
 
     logger.info('registering replica "%s" in alpha', replica.name)
 
@@ -60,7 +56,5 @@ export async function registerReplica<TReplica extends Replica>({
     logger.info('replica "%s" was registered in alpha successfully', replica.name)
   } catch (error) {
     logger.error(error, 'failed to register replica "%s" in alpha, not retrying', replica.name)
-  } finally {
-    channel?.close()
   }
 }

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package reside.alpha.discovery.v1;
+
+// The request message for reading effective endpoints of the authenticated replica.
+message GetEffectiveEndpointsRequest {}
+
+// The response containing effective endpoint mappings by endpoint slot name.
+message GetEffectiveEndpointsResponse {
+  // The endpoint mapping where key is endpoint slot name and value is resolved endpoint.
+  map<string, string> endpoints = 1;
+}
+
+// The service that exposes effective endpoint discovery for replicas.
+service DiscoveryService {
+  // GetEffectiveEndpoints returns resolved endpoint values for the authenticated replica.
+  rpc GetEffectiveEndpoints(GetEffectiveEndpointsRequest) returns (GetEffectiveEndpointsResponse);
+}

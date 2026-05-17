@@ -47,7 +47,7 @@ export { Prisma }
  */
 export type Task = Prisma.TaskModel
 /**
- * Model TaskPrompt
+ * Model TaskIteration
  * 
  */
-export type TaskPrompt = Prisma.TaskPromptModel
+export type TaskIteration = Prisma.TaskIterationModel

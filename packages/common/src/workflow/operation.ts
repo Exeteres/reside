@@ -1,4 +1,4 @@
-import { OperationStatus, type Operation } from "@reside/api/common/operation.v1"
+import type { OperationJson } from "@reside/api/common/operation.v1"
 import { condition, defineSignal, log, setHandler, workflowInfo } from "@temporalio/workflow"
 import type { OperationActivities } from "../temporal"
 
@@ -15,7 +15,7 @@ import type { OperationActivities } from "../temporal"
 export async function waitForOperation(
   operationId: number,
   subscribeToOperationCompletion: OperationActivities["subscribeToOperationCompletion"],
-): Promise<Operation> {
+): Promise<OperationJson> {
   log.info("subscribing to operation completion", { operationId })
 
   const subscribeResult = await subscribeToOperationCompletion(
@@ -23,12 +23,12 @@ export async function waitForOperation(
     workflowInfo().workflowId,
   )
 
-  if (subscribeResult.response?.$case === "completedOperation") {
+  if (subscribeResult.completedOperation) {
     log.info("operation already completed on subscribe", { operationId })
-    return subscribeResult.response.value
+    return subscribeResult.completedOperation
   }
 
-  let operation: Operation | undefined
+  let operation: OperationJson | undefined
   setHandler(getOperationCompletedSignal(operationId), _operation => {
     log.info("received operation completion signal", { operationId, status: _operation.status })
     operation = _operation
@@ -50,19 +50,17 @@ export async function waitForOperation(
 export async function waitForOperationSuccess(
   operationId: number,
   subscribeToOperationCompletion: OperationActivities["subscribeToOperationCompletion"],
-): Promise<Operation> {
+): Promise<OperationJson> {
   const operation = await waitForOperation(operationId, subscribeToOperationCompletion)
 
   log.info("operation completed", { operationId, status: operation.status })
 
-  if (operation.status === OperationStatus.FAILED) {
-    if (operation.resolution?.$case !== "error") {
+  if (operation.status === "OPERATION_STATUS_FAILED") {
+    if (!operation.error) {
       throw new Error(`Operation ${operationId} failed with unknown error`)
     }
 
-    throw new Error(
-      `Operation ${operationId} failed with reason "${operation.resolution.value.reason}"`,
-    )
+    throw new Error(`Operation ${operationId} failed with reason "${operation.error.reason}"`)
   }
 
   return operation
@@ -81,13 +79,13 @@ export async function waitForOperationResult<T>(
 ): Promise<T> {
   const operation = await waitForOperationSuccess(operationId, subscribeToOperationCompletion)
 
-  if (operation.resolution?.$case !== "result") {
+  if (!operation.result) {
     throw new Error(`Operation ${operationId} completed without a result`)
   }
 
-  return operation.resolution.value as T
+  return operation.result as T
 }
 
 export function getOperationCompletedSignal(operationId: number) {
-  return defineSignal<[Operation]>(`operation:completed:${operationId}`)
+  return defineSignal<[OperationJson]>(`operation:completed:${operationId}`)
 }

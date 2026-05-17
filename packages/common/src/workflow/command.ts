@@ -1,4 +1,6 @@
-import type { CommandInvocation } from "@reside/api/interaction/command.v1"
+/** biome-ignore-all lint/suspicious/noExplicitAny: to simplify parameter parsing logic */
+
+import type { CommandInvocationJson } from "@reside/api/interaction/command.v1"
 import { upsertMemo } from "@temporalio/workflow"
 import type { Simplify } from "type-fest"
 
@@ -94,7 +96,7 @@ export type CommandHandlerContext<TDefinition extends CommandDefinition> = {
   /**
    * The underlying command invocation that triggered the command handler workflow.
    */
-  invocation: CommandInvocation
+  invocation: CommandInvocationJson
 
   /**
    * The parsed parameters from the command invocation, validated against the command definition.
@@ -125,9 +127,17 @@ export function defineCommandHandler<TDefinition extends CommandDefinition>(
 }
 
 export function createCommandHandlerWorkflow(definitions: CommandHandlerDefinition<any>[]) {
-  return async function handleCommandWorkflow(invocation: CommandInvocation) {
+  return async function handleCommandWorkflow(invocation: CommandInvocationJson) {
     if (!invocation.command) {
       throw new Error("Invalid command invocation: missing command")
+    }
+
+    if (!invocation.invocationId) {
+      throw new Error("Invalid command invocation: missing invocationId")
+    }
+
+    if (!invocation.subjectId) {
+      throw new Error("Invalid command invocation: missing subjectId")
     }
 
     const definition = definitions.find(def => def.command.name === invocation.command!.name)
@@ -138,7 +148,7 @@ export function createCommandHandlerWorkflow(definitions: CommandHandlerDefiniti
     const params = parseCommandParameters(definition.command.params, invocation.parameters ?? {})
 
     upsertMemo({
-      interactionContextId: invocation.context?.id,
+      interactionContextToken: invocation.context?.token,
     })
 
     await definition.handler({

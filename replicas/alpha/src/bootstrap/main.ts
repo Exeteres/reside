@@ -4,9 +4,8 @@ import {
   getReplicaEndpoint,
   registerReplica,
   runPrismaMigrations,
-  WellKnownPermissions,
 } from "@reside/common"
-import { alphaReplica } from "@reside/topology"
+import { alphaReplica, WellKnownPermissions } from "@reside/registry"
 import { AlphaNotificationChannels, helloCommand } from "../definitions"
 import { strings } from "../locale"
 import { createServices } from "../shared"
@@ -17,49 +16,35 @@ await registerReplica({
   description: strings.bootstrap.registration.description,
 })
 
-const {
-  pool,
-  accessRequestService,
-  accessOperationService,
-  accessDefinitionService,
-  interactionDefinitionService,
-} = await createServices()
+const services = await createServices()
 
 await defineCommonResources({
-  accessRequestService,
-  accessOperationService,
-
-  access: {
-    definitionService: accessDefinitionService,
-    realms: [
-      {
-        name: "replica",
-        title: "Replica",
-        description: strings.bootstrap.realm.description,
-        subjectServiceEndpoint: `${getReplicaEndpoint()}:80`,
-      },
-    ],
-    permissions: [
-      {
-        name: WellKnownPermissions.ALPHA_REPLICA_LOAD,
-        title: strings.bootstrap.permissions.loadReplica.title,
-        description: strings.bootstrap.permissions.loadReplica.description,
-        scoped: true,
-      },
-    ],
-  },
-
-  interaction: {
-    definitionService: interactionDefinitionService,
-    commands: [helloCommand],
-    notificationsChannels: [
-      {
-        name: AlphaNotificationChannels.HELLO,
-        title: "hiii",
-      },
-    ],
-  },
+  services,
+  realms: [
+    {
+      name: "replica",
+      title: "Replica",
+      description: strings.bootstrap.realm.description,
+      subjectServiceEndpoint: `${getReplicaEndpoint()}:80`,
+    },
+  ],
+  permissions: [
+    {
+      name: WellKnownPermissions.ALPHA_REPLICA_LOAD,
+      title: strings.bootstrap.permissions.loadReplica.title,
+      description: strings.bootstrap.permissions.loadReplica.description,
+      scoped: true,
+    },
+  ],
+  avatarTitle: strings.bootstrap.registration.title,
+  commands: [helloCommand],
+  notificationsChannels: [
+    {
+      name: AlphaNotificationChannels.HELLO,
+      title: "hiii",
+    },
+  ],
 })
 
-await runPrismaMigrations(pool)
+await runPrismaMigrations(services.pool)
 await bootstrapService({ longRunning: true })

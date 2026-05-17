@@ -1,571 +1,1087 @@
-import type { CopilotClient, CopilotSession } from "@github/copilot-sdk"
-import type { createServices } from "../../shared"
+import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
+import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
+import type { PrismaClient } from "../../database"
 import type { EngineerAiRuntime } from "../ai-runtime"
-import { defineTool } from "@github/copilot-sdk"
-import { logger } from "@reside/common"
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3"
+import { type CopilotSession, defineTool, type SessionConfig } from "@github/copilot-sdk"
+import { logger, type StorageBucketService } from "@reside/common"
+import { toError } from "@reside/utils"
 import { z } from "zod"
 import { strings } from "../../locale"
 
-type EngineerPrismaClient = Awaited<ReturnType<typeof createServices>>["prisma"]
-type EngineerNotificationService = Awaited<
-  ReturnType<typeof createServices>
->["interactionNotificationService"]
+const COPILOT_SESSION_TIMEOUT_MS = 20 * 60 * 1000
+const GRAPHQL_FEATURES_HEADER = "issues_copilot_assignment_api_support"
+const ENGINEER_SESSION_ARCHIVE_NAME = "session.tar"
+const ENGINEER_SESSION_DIR = ".engineer-session"
+const ENGINEER_SESSION_ID_FILE = "session-id"
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
   body: z.string().min(1),
 })
 
-const requiredIssueBodySections = [
-  "## Контекст",
-  "## Компоненты",
-  "## Предлагаемые изменения",
-  "## План реализации",
-] as const
+const startPlanningInputSchema = z.object({
+  subjectId: z.string().min(1),
+  prompt: z.string().min(1),
+  progressNotificationId: z.string().min(1),
+})
 
-const ISSUE_BODY_TEMPLATE = [
-  "## Контекст",
-  "<кратко опиши проблему и текущее поведение>",
-  "",
-  "## Компоненты",
-  "- **<название реплики>** (`replicas/<name>`) (изменить)",
-  "- **<имя пакета>** (`packages/<name>`) (создать)",
-  "- **<название компонента>** (`replicas/<name> | packages/<name>`) (удалить)",
-  "",
-  "## Предлагаемые изменения",
-  "- <изменение 1>",
-  "- <изменение 2>",
-  "",
-  "## План реализации",
-  "1. <шаг 1>",
-  "2. <шаг 2>",
-  "3. <шаг 3>",
-].join("\n")
+const planningFeedbackInputSchema = z.object({
+  taskId: z.string().min(1),
+  feedback: z.string().min(1),
+  progressNotificationId: z.string().min(1),
+})
 
-const ALLOWED_SESSION_TOOLS = new Set([
-  "report_intent",
-  "submit_issue_draft",
-  "read_file",
-  "list_dir",
-  "rg",
-  "view",
-  "glob",
-  "grep_search",
-  "file_search",
-  "semantic_search",
-])
-const COPILOT_ASSIGNEE_ACTOR_ID = "BOT_kgDOC9w8XQ"
-const COPILOT_SESSION_TIMEOUT_MS = 10 * 60 * 1000
-const GRAPHQL_FEATURES_HEADER = "issues_copilot_assignment_api_support"
+const taskIdInputSchema = z.object({
+  taskId: z.string().min(1),
+})
 
-const createTaskResultSchema = z.object({
+const requestCancellationInputSchema = z.object({
+  taskId: z.string().min(1),
+})
+
+const runImplementationInputSchema = z.object({
+  taskId: z.string().min(1),
+  prompt: z.string().min(1),
+  progressNotificationId: z.string().min(1),
+})
+
+const interactionResultSchema = z.object({
   taskId: z.string().min(1),
   issueTitle: z.string().min(1),
   issueUrl: z.string().url(),
   repositoryUrl: z.string().url(),
+  resultSummary: z.string().min(1),
 })
 
-type TaskSessionState = {
-  dbTaskId?: number
+const implementationResultSchema = z.object({
+  taskId: z.string().min(1),
+  status: z.enum(["IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"]),
+  resultSummary: z.string().optional(),
+  errorMessage: z.string().optional(),
+})
+
+type StartPlanningInput = z.infer<typeof startPlanningInputSchema>
+type PlanningFeedbackInput = z.infer<typeof planningFeedbackInputSchema>
+type TaskIdInput = z.infer<typeof taskIdInputSchema>
+type RequestCancellationInput = z.infer<typeof requestCancellationInputSchema>
+type RunImplementationInput = z.infer<typeof runImplementationInputSchema>
+
+type TaskSnapshot = {
   taskId: string
-  owner: string
-  repo: string
-  issueNumber: number
+  phase: "PLANNING" | "IMPLEMENTATION"
+  status:
+    | "PLANNING"
+    | "PLAN_READY"
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "FAILED"
+    | "REQUESTED_CANCELLATION"
+    | "CANCELLED"
+  issueTitle: string
   issueUrl: string
   repositoryUrl: string
-  issueTitle: string
-  issueBody: string
-  progressHistory: string[]
-  session?: CopilotSession
 }
 
-type PendingTaskDraftState = {
-  draftId: string
-  taskId: string
-  dbTaskId: number
-  owner: string
-  repo: string
-  repositoryUrl: string
-  progressHistory: string[]
-  session: CopilotSession
+type CopilotEnvironment = {
+  workingDirectory: string
+  repositoryPath: string
+  sessionDirPath: string
+  readSessionId: () => Promise<string | undefined>
+  writeSessionId: (sessionId: string) => Promise<void>
+  dispose: () => Promise<void>
 }
 
-const analyzeTaskInputSchema = z.object({
-  subjectId: z.string().min(1),
-  task: z.string().min(1),
-  progressNotificationId: z.string().min(1),
-})
-
-const analyzeTaskResultSchema = z.object({
-  draftId: z.string().min(1),
-  taskId: z.string().min(1),
-  issueTitle: z.string().min(1),
-  issueBody: z.string().min(1),
-})
-
-const createTaskFromDraftInputSchema = z.object({
-  draftId: z.string().min(1),
-  taskId: z.string().min(1),
-  issueTitle: z.string().min(1),
-  issueBody: z.string().min(1),
-})
-
-const analyzeTaskFeedbackInputSchema = z.object({
-  taskId: z.string().min(1),
-  feedback: z.string().min(1),
-  progressNotificationId: z.string().min(1),
-})
-
-const analyzeTaskFeedbackResultSchema = z.object({
-  issueTitle: z.string().min(1),
-  issueBody: z.string().min(1),
-})
-
-const applyTaskFeedbackInputSchema = z.object({
-  taskId: z.string().min(1),
-  feedback: z.string().min(1),
-  issueTitle: z.string().min(1),
-  issueBody: z.string().min(1),
-})
-
-type CreateTaskResult = z.infer<typeof createTaskResultSchema>
-type AnalyzeTaskForIssueInput = z.infer<typeof analyzeTaskInputSchema>
-type CreateTaskFromDraftInput = z.infer<typeof createTaskFromDraftInputSchema>
-type AnalyzeTaskFeedbackInput = z.infer<typeof analyzeTaskFeedbackInputSchema>
-type AnalyzeTaskFeedbackResult = z.infer<typeof analyzeTaskFeedbackResultSchema>
-type ApplyTaskFeedbackInput = z.infer<typeof applyTaskFeedbackInputSchema>
-type IssueDraft = z.infer<typeof issueDraftSchema>
-type SessionDraftState = {
-  submittedDraft?: IssueDraft
-}
-
-export function createCreateTaskActivities(
-  runtime: EngineerAiRuntime,
-  prisma: EngineerPrismaClient,
-  notificationService: EngineerNotificationService,
-) {
-  const pendingTaskDrafts = new Map<string, PendingTaskDraftState>()
-  const taskSessions = new Map<string, TaskSessionState>()
-  const draftStatesBySessionId = new Map<string, SessionDraftState>()
-
+export function createCreateTaskActivities({
+  runtime,
+  prisma,
+  notificationService,
+  loadService,
+  storageBucketService,
+}: {
+  runtime: EngineerAiRuntime
+  prisma: PrismaClient
+  notificationService: NotificationServiceClient
+  loadService: LoadServiceClient
+  storageBucketService: StorageBucketService
+}) {
   return {
-    analyzeTaskForIssue: async (input: AnalyzeTaskForIssueInput) => {
-      const parsedInput = analyzeTaskInputSchema.parse(input)
-      const copilotClient = runtime.getCopilotClient()
+    startPlanningInteraction: async (input: StartPlanningInput) => {
+      const parsedInput = startPlanningInputSchema.parse(input)
       const repository = await runtime.getRepositoryTarget()
-
       const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`
-      const taskEntity = await prisma.task.create({
+
+      const task = await prisma.task.create({
         data: {
-          subjectId: parsedInput.subjectId,
+          phase: "PLANNING",
+          status: "PLANNING",
+          createdBy: parsedInput.subjectId,
         },
       })
 
-      await prisma.taskPrompt.create({
+      const iteration = await prisma.taskIteration.create({
         data: {
-          taskId: taskEntity.id,
-          prompt: parsedInput.task,
+          taskId: task.id,
+          iteration: 1,
+          phase: "PLANNING",
+          prompt: parsedInput.prompt,
+          createdBy: parsedInput.subjectId,
         },
       })
 
-      const taskId = String(taskEntity.id)
-      const draftId = crypto.randomUUID()
-      let session: CopilotSession | undefined
+      let environment: CopilotEnvironment | undefined
 
       try {
-        session = await createTaskSession(
-          copilotClient,
-          repository.localPath,
-          draftStatesBySessionId,
+        environment = await createCopilotEnvironment(
+          runtime,
+          storageBucketService,
+          task.id,
+          iteration.id,
         )
 
-        const issueDraft = await requestIssueDraftFromSession(
-          session,
-          draftStatesBySessionId,
-          [
-            `You are preparing a GitHub issue for repository ${repository.owner}/${repository.name}.`,
-            "Analyze the user request in the context of the current codebase from working directory.",
-            "Keep implementation depth moderate: realistic but not overly detailed.",
-            "",
-            "The body must include these sections in plain markdown:",
-            "1) Контекст",
-            "2) Компоненты",
-            "3) Предлагаемые изменения",
-            "4) План реализации (3-6 шагов)",
-            "",
-            `User prompt: ${parsedInput.task}`,
-          ].join("\n"),
-          "create-task",
-          parsedInput.progressNotificationId,
-          [],
+        const draft = await runPlanningSession({
+          runtime,
+          environment,
           notificationService,
-        )
+          progressNotificationId: parsedInput.progressNotificationId,
+          prompt: parsedInput.prompt,
+          repository,
+          taskId: task.id,
+        })
 
-        const progressHistory = readProgressHistory(session)
-
-        pendingTaskDrafts.set(draftId, {
-          draftId,
-          taskId,
-          dbTaskId: taskEntity.id,
+        const issue = await upsertTaskIssue({
+          prisma,
+          runtime,
+          taskId: task.id,
           owner: repository.owner,
           repo: repository.name,
-          repositoryUrl,
-          progressHistory,
-          session,
+          issueTitle: draft.title,
+          issueBody: draft.body,
         })
 
-        return analyzeTaskResultSchema.parse({
-          draftId,
-          taskId,
-          issueTitle: issueDraft.title,
-          issueBody: issueDraft.body,
-        })
-      } catch (error) {
-        if (session) {
-          await session.disconnect()
-        }
-
-        pendingTaskDrafts.delete(draftId)
-        taskSessions.delete(taskId)
-
-        await prisma.task.delete({
+        await prisma.taskIteration.update({
           where: {
-            id: taskEntity.id,
+            id: iteration.id,
+          },
+          data: {
+            resultSummary: draft.summary,
           },
         })
-
-        throw error
-      }
-    },
-
-    createTaskFromDraft: async (input: CreateTaskFromDraftInput): Promise<CreateTaskResult> => {
-      const parsedInput = createTaskFromDraftInputSchema.parse(input)
-      const draftState = mustGetPendingTaskDraft(pendingTaskDrafts, parsedInput.draftId)
-      const octokit = runtime.getOctokit()
-
-      if (draftState.taskId !== parsedInput.taskId) {
-        throw new Error(`Draft "${parsedInput.draftId}" task mismatch`)
-      }
-
-      try {
-        const issue = await createIssueWithoutAssignee(
-          octokit,
-          draftState.owner,
-          draftState.repo,
-          parsedInput.issueTitle,
-          parsedInput.issueBody,
-        )
-
-        const issueNumber = issue.number
-        const issueUrl = issue.url
-
-        if (!issueNumber || !issueUrl) {
-          throw new Error("GitHub issue response is missing issue number or url")
-        }
 
         await prisma.task.update({
           where: {
-            id: draftState.dbTaskId,
+            id: task.id,
           },
           data: {
-            issueId: issueNumber,
+            status: "PLAN_READY",
+            updatedBy: parsedInput.subjectId,
           },
         })
 
-        taskSessions.set(draftState.taskId, {
-          dbTaskId: draftState.dbTaskId,
-          taskId: draftState.taskId,
-          owner: draftState.owner,
-          repo: draftState.repo,
-          issueNumber,
-          issueUrl,
-          repositoryUrl: draftState.repositoryUrl,
-          issueTitle: parsedInput.issueTitle,
-          issueBody: parsedInput.issueBody,
-          progressHistory: draftState.progressHistory,
-          session: draftState.session,
-        })
-
-        pendingTaskDrafts.delete(parsedInput.draftId)
-
-        logger.info(
-          {
-            owner: draftState.owner,
-            repo: draftState.repo,
-            issueNumber,
-            issueUrl,
-            taskId: draftState.taskId,
-          },
-          "engineer create_task created github issue",
-        )
-
-        return createTaskResultSchema.parse({
-          taskId: draftState.taskId,
-          issueTitle: parsedInput.issueTitle,
-          issueUrl,
-          repositoryUrl: draftState.repositoryUrl,
+        return interactionResultSchema.parse({
+          taskId: String(task.id),
+          issueTitle: issue.title,
+          issueUrl: issue.url,
+          repositoryUrl,
+          resultSummary: draft.summary,
         })
       } catch (error) {
-        pendingTaskDrafts.delete(parsedInput.draftId)
-        await draftState.session.disconnect()
-        throw error
-      }
-    },
+        const message = error instanceof Error ? error.message : String(error)
 
-    analyzeTaskFeedback: async (
-      input: AnalyzeTaskFeedbackInput,
-    ): Promise<AnalyzeTaskFeedbackResult> => {
-      const parsedInput = analyzeTaskFeedbackInputSchema.parse(input)
-      const repository = await runtime.getRepositoryTarget()
-      const octokit = runtime.getOctokit()
-      let taskState = await resolveTaskState(
-        taskSessions,
-        prisma,
-        octokit,
-        repository,
-        parsedInput.taskId,
-      )
-
-      let session = taskState.session
-
-      if (!session) {
-        const fallbackSession = await createTaskSession(
-          runtime.getCopilotClient(),
-          repository.localPath,
-          draftStatesBySessionId,
-        )
-
-        session = fallbackSession
-
-        taskState = {
-          ...taskState,
-          session,
-        }
-
-        taskSessions.set(parsedInput.taskId, taskState)
-      }
-
-      const issueDraft = await requestIssueDraftFromSession(
-        session,
-        draftStatesBySessionId,
-        [
-          "User provided feedback for existing GitHub issue draft.",
-          "Update title and body accordingly.",
-          "",
-          `Current title: ${taskState.issueTitle}`,
-          "Current body:",
-          taskState.issueBody,
-          "",
-          `Feedback: ${parsedInput.feedback}`,
-        ].join("\n"),
-        "update-task",
-        parsedInput.progressNotificationId,
-        taskState.progressHistory,
-        notificationService,
-      )
-
-      const progressHistory = readProgressHistory(session)
-
-      taskSessions.set(parsedInput.taskId, {
-        ...taskState,
-        progressHistory,
-      })
-
-      return analyzeTaskFeedbackResultSchema.parse({
-        issueTitle: issueDraft.title,
-        issueBody: issueDraft.body,
-      })
-    },
-
-    applyTaskFeedback: async (input: ApplyTaskFeedbackInput): Promise<CreateTaskResult> => {
-      const parsedInput = applyTaskFeedbackInputSchema.parse(input)
-      const repository = await runtime.getRepositoryTarget()
-      const octokit = runtime.getOctokit()
-      const taskState = await resolveTaskState(
-        taskSessions,
-        prisma,
-        octokit,
-        repository,
-        parsedInput.taskId,
-      )
-
-      const updatedIssue = await updateRepositoryIssue(
-        octokit,
-        taskState.owner,
-        taskState.repo,
-        taskState.issueNumber,
-        {
-          title: parsedInput.issueTitle,
-          body: parsedInput.issueBody,
-        },
-      )
-
-      const issueUrl = updatedIssue.url ?? taskState.issueUrl
-
-      if (taskState.dbTaskId) {
-        await prisma.taskPrompt.create({
+        await prisma.taskIteration.update({
+          where: {
+            id: iteration.id,
+          },
           data: {
-            taskId: taskState.dbTaskId,
-            prompt: parsedInput.feedback,
+            errorMessage: message,
           },
         })
-      } else {
-        logger.warn(
-          {
-            taskId: parsedInput.taskId,
+
+        await prisma.task.update({
+          where: {
+            id: task.id,
           },
-          "engineer apply_task_feedback skipped task prompt persistence because task was not found in database",
-        )
+          data: {
+            status: "FAILED",
+            updatedBy: parsedInput.subjectId,
+          },
+        })
+
+        throw error
+      } finally {
+        if (environment) {
+          await environment.dispose()
+        }
       }
-
-      const progressHistory = taskState.session
-        ? readProgressHistory(taskState.session)
-        : taskState.progressHistory
-
-      const updatedState: TaskSessionState = {
-        ...taskState,
-        issueTitle: parsedInput.issueTitle,
-        issueBody: parsedInput.issueBody,
-        issueUrl,
-        progressHistory,
-      }
-
-      taskSessions.set(parsedInput.taskId, updatedState)
-
-      return createTaskResultSchema.parse({
-        taskId: updatedState.taskId,
-        issueTitle: updatedState.issueTitle,
-        issueUrl: updatedState.issueUrl,
-        repositoryUrl: updatedState.repositoryUrl,
-      })
     },
 
-    confirmTask: async (taskId: string): Promise<void> => {
+    submitPlanningFeedbackInteraction: async (input: PlanningFeedbackInput) => {
+      const parsedInput = planningFeedbackInputSchema.parse(input)
       const repository = await runtime.getRepositoryTarget()
-      const octokit = runtime.getOctokit()
-      const taskState = await resolveTaskState(taskSessions, prisma, octokit, repository, taskId)
+      const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`
+      const dbTaskId = parseDbTaskId(parsedInput.taskId)
+      const task = await prisma.task.findUnique({
+        where: {
+          id: dbTaskId,
+        },
+      })
 
-      await assignIssueToCopilotIfAvailable(
-        octokit,
-        taskState.owner,
-        taskState.repo,
-        taskState.issueNumber,
+      if (!task) {
+        throw new Error(`Unknown task "${parsedInput.taskId}"`)
+      }
+
+      if (task.phase !== "PLANNING") {
+        throw new Error(`Task "${parsedInput.taskId}" is no longer in planning phase`)
+      }
+
+      const iterationNumber = await getNextIterationNumber(prisma, dbTaskId)
+      const iteration = await prisma.taskIteration.create({
+        data: {
+          taskId: dbTaskId,
+          iteration: iterationNumber,
+          phase: "PLANNING",
+          prompt: parsedInput.feedback,
+          createdBy: task.createdBy,
+        },
+      })
+
+      const environment = await createCopilotEnvironment(
+        runtime,
+        storageBucketService,
+        dbTaskId,
+        iteration.id,
       )
 
-      if (taskState?.session) {
-        await taskState.session.disconnect()
-      }
+      try {
+        const draft = await runPlanningSession({
+          runtime,
+          environment,
+          notificationService,
+          progressNotificationId: parsedInput.progressNotificationId,
+          prompt: parsedInput.feedback,
+          repository,
+          taskId: dbTaskId,
+        })
 
-      taskSessions.delete(taskId)
+        const issue = await upsertTaskIssue({
+          prisma,
+          runtime,
+          taskId: dbTaskId,
+          owner: repository.owner,
+          repo: repository.name,
+          issueTitle: draft.title,
+          issueBody: draft.body,
+        })
+
+        await prisma.taskIteration.update({
+          where: {
+            id: iteration.id,
+          },
+          data: {
+            resultSummary: draft.summary,
+          },
+        })
+
+        await prisma.task.update({
+          where: {
+            id: dbTaskId,
+          },
+          data: {
+            status: "PLAN_READY",
+            updatedBy: task.createdBy,
+          },
+        })
+
+        return interactionResultSchema.parse({
+          taskId: parsedInput.taskId,
+          issueTitle: issue.title,
+          issueUrl: issue.url,
+          repositoryUrl,
+          resultSummary: draft.summary,
+        })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+
+        await prisma.taskIteration.update({
+          where: {
+            id: iteration.id,
+          },
+          data: {
+            errorMessage: message,
+          },
+        })
+
+        await prisma.task.update({
+          where: {
+            id: dbTaskId,
+          },
+          data: {
+            status: "FAILED",
+          },
+        })
+        throw error
+      } finally {
+        await environment.dispose()
+      }
     },
 
-    closeTask: async (taskId: string): Promise<void> => {
-      const repository = await runtime.getRepositoryTarget()
-      const octokit = runtime.getOctokit()
-      const taskState = await resolveTaskState(taskSessions, prisma, octokit, repository, taskId)
+    approveTask: async (input: TaskIdInput) => {
+      const parsedInput = taskIdInputSchema.parse(input)
+      const dbTaskId = parseDbTaskId(parsedInput.taskId)
 
-      await updateRepositoryIssue(octokit, taskState.owner, taskState.repo, taskState.issueNumber, {
-        state: "CLOSED",
+      await prisma.task.update({
+        where: {
+          id: dbTaskId,
+        },
+        data: {
+          phase: "IMPLEMENTATION",
+          status: "IN_PROGRESS",
+        },
+      })
+    },
+
+    requestCancellation: async (input: RequestCancellationInput) => {
+      const parsedInput = requestCancellationInputSchema.parse(input)
+      const dbTaskId = parseDbTaskId(parsedInput.taskId)
+
+      const task = await prisma.task.findUnique({
+        where: {
+          id: dbTaskId,
+        },
       })
 
-      if (taskState?.session) {
-        await taskState.session.disconnect()
+      if (!task) {
+        throw new Error(`Unknown task "${parsedInput.taskId}"`)
       }
 
-      taskSessions.delete(taskId)
+      if (task.status === "IN_PROGRESS") {
+        await prisma.task.update({
+          where: {
+            id: dbTaskId,
+          },
+          data: {
+            status: "REQUESTED_CANCELLATION",
+          },
+        })
+
+        return
+      }
+
+      await prisma.task.update({
+        where: {
+          id: dbTaskId,
+        },
+        data: {
+          status: "CANCELLED",
+        },
+      })
+    },
+
+    runImplementationInteraction: async (input: RunImplementationInput) => {
+      const parsedInput = runImplementationInputSchema.parse(input)
+      const repository = await runtime.getRepositoryTarget()
+      const dbTaskId = parseDbTaskId(parsedInput.taskId)
+      const task = await prisma.task.findUnique({
+        where: {
+          id: dbTaskId,
+        },
+      })
+
+      if (!task) {
+        throw new Error(`Unknown task "${parsedInput.taskId}"`)
+      }
+
+      if (task.phase !== "IMPLEMENTATION") {
+        throw new Error(`Task "${parsedInput.taskId}" is not in implementation phase`)
+      }
+
+      if (task.status !== "IN_PROGRESS") {
+        throw new Error(`Task "${parsedInput.taskId}" is not in running state`)
+      }
+
+      const iterationNumber = await getNextIterationNumber(prisma, dbTaskId)
+      const iteration = await prisma.taskIteration.create({
+        data: {
+          taskId: dbTaskId,
+          iteration: iterationNumber,
+          phase: "IMPLEMENTATION",
+          prompt: parsedInput.prompt,
+          createdBy: task.createdBy,
+        },
+      })
+
+      const environment = await createCopilotEnvironment(
+        runtime,
+        storageBucketService,
+        dbTaskId,
+        iteration.id,
+      )
+      const copilotClient = runtime.getCopilotClient()
+      const [owner, repo] = [repository.owner, repository.name]
+
+      let summary = ""
+      let failureMessage = ""
+
+      try {
+        const sessionConfig: SessionConfig = {
+          model: "gpt-5.3-codex",
+          workingDirectory: environment.repositoryPath,
+          configDir: environment.sessionDirPath,
+          onPermissionRequest: async () => ({ kind: "approved" as const }),
+          tools: [createDeployReplicaTool({ runtime, loadService, owner, repo })],
+          hooks: {
+            onPreToolUse: async () => {
+              return {
+                permissionDecision: "allow" as const,
+              }
+            },
+          },
+        }
+
+        const session = await createOrResumeSession({
+          copilotClient,
+          environment,
+          sessionConfig,
+          flow: "implementation",
+          taskId: dbTaskId,
+          iterationId: iteration.id,
+        })
+
+        const unsubscribeRealtimeLogs = registerRealtimeSessionLogs(
+          session,
+          "implementation",
+          async progressLine => {
+            const normalizedProgressLine = normalizeProgressLine(progressLine)
+            if (!normalizedProgressLine) {
+              return
+            }
+
+            await updateProgressNotification(
+              notificationService,
+              parsedInput.progressNotificationId,
+              strings.notifications.taskExecution.inProgressTitle,
+              normalizedProgressLine,
+            )
+          },
+        )
+
+        const cancellationWatcher = watchRequestedCancellation({
+          prisma,
+          taskId: dbTaskId,
+          onCancel: async () => {
+            await session.disconnect()
+          },
+        })
+
+        try {
+          const finalMessage = await session.sendAndWait(
+            {
+              prompt: [
+                `Repository: ${owner}/${repo}`,
+                `Branch: replica/task-${dbTaskId}/${iteration.id}`,
+                "You are in implementation phase.",
+                "You can edit code, run commands, make commits, and use create_pull_request.",
+                "Pull requests must use rebase merge and delete source branch.",
+                "If PR conflicts, rebase on latest main, resolve conflicts, commit, and retry create_pull_request.",
+                "Use deploy_replica tool to perform full deploy sequence once implementation is complete.",
+                "Finish with a short 3-5 sentence summary in russian.",
+                `Current user request: ${parsedInput.prompt}`,
+              ].join("\n"),
+            },
+            COPILOT_SESSION_TIMEOUT_MS,
+          )
+
+          summary = extractSummaryFromFinalMessage(finalMessage?.data.content)
+        } finally {
+          cancellationWatcher.stop()
+          unsubscribeRealtimeLogs()
+        }
+
+        const currentTask = await prisma.task.findUnique({
+          where: {
+            id: dbTaskId,
+          },
+        })
+
+        if (!currentTask) {
+          throw new Error(`Task "${parsedInput.taskId}" disappeared during execution`)
+        }
+
+        if (currentTask.status === "REQUESTED_CANCELLATION") {
+          failureMessage = strings.notifications.taskExecution.cancelledSummary
+
+          await prisma.task.update({
+            where: {
+              id: dbTaskId,
+            },
+            data: {
+              status: "CANCELLED",
+            },
+          })
+
+          await prisma.taskIteration.update({
+            where: {
+              id: iteration.id,
+            },
+            data: {
+              errorMessage: failureMessage,
+            },
+          })
+
+          await environment.dispose()
+
+          return implementationResultSchema.parse({
+            taskId: parsedInput.taskId,
+            status: "CANCELLED",
+            errorMessage: failureMessage,
+          })
+        }
+
+        const finalSummary = summary || strings.notifications.taskExecution.defaultSummary
+
+        await prisma.task.update({
+          where: {
+            id: dbTaskId,
+          },
+          data: {
+            status: "COMPLETED",
+          },
+        })
+
+        await prisma.taskIteration.update({
+          where: {
+            id: iteration.id,
+          },
+          data: {
+            resultSummary: finalSummary,
+          },
+        })
+
+        await environment.dispose()
+
+        return implementationResultSchema.parse({
+          taskId: parsedInput.taskId,
+          status: "COMPLETED",
+          resultSummary: finalSummary,
+        })
+      } catch (error) {
+        failureMessage = error instanceof Error ? error.message : String(error)
+
+        await prisma.task.update({
+          where: {
+            id: dbTaskId,
+          },
+          data: {
+            status: "FAILED",
+          },
+        })
+
+        await prisma.taskIteration.update({
+          where: {
+            id: iteration.id,
+          },
+          data: {
+            errorMessage: failureMessage,
+          },
+        })
+
+        await environment.dispose()
+
+        return implementationResultSchema.parse({
+          taskId: parsedInput.taskId,
+          status: "FAILED",
+          errorMessage: failureMessage,
+        })
+      }
+    },
+
+    reviveTaskFromFeedback: async (input: { taskId: string }) => {
+      const dbTaskId = parseDbTaskId(input.taskId)
+
+      await prisma.task.update({
+        where: {
+          id: dbTaskId,
+        },
+        data: {
+          phase: "IMPLEMENTATION",
+          status: "IN_PROGRESS",
+        },
+      })
+    },
+
+    getTaskSnapshot: async (input: { taskId: string }): Promise<TaskSnapshot> => {
+      const dbTaskId = parseDbTaskId(input.taskId)
+      const repository = await runtime.getRepositoryTarget()
+      const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`
+
+      const task = await prisma.task.findUnique({
+        where: {
+          id: dbTaskId,
+        },
+      })
+
+      if (!task) {
+        throw new Error(`Unknown task "${input.taskId}"`)
+      }
+
+      if (!task.issueId) {
+        throw new Error(`Task "${input.taskId}" is missing issue id`)
+      }
+
+      const issue = await getRepositoryIssueByNumber(
+        runtime.getOctokit(),
+        repository.owner,
+        repository.name,
+        task.issueId,
+      )
+
+      return {
+        taskId: String(task.id),
+        phase: task.phase,
+        status: task.status,
+        issueTitle: issue.title,
+        issueUrl: issue.url,
+        repositoryUrl,
+      }
     },
   }
 }
 
-function mustGetPendingTaskDraft(
-  pendingTaskDrafts: Map<string, PendingTaskDraftState>,
-  draftId: string,
-): PendingTaskDraftState {
-  const draftState = pendingTaskDrafts.get(draftId)
-  if (!draftState) {
-    throw new Error(`Unknown pending task draft "${draftId}"`)
-  }
+function createDeployReplicaTool({
+  runtime,
+  loadService,
+  owner,
+  repo,
+}: {
+  runtime: EngineerAiRuntime
+  loadService: LoadServiceClient
+  owner: string
+  repo: string
+}) {
+  return defineTool("deploy_replica", {
+    description:
+      "Builds and pushes replica image via workflow dispatch from main, waits for completion, then loads replica through alpha",
+    parameters: z.object({
+      replicaName: z.string().min(1),
+    }),
+    handler: async _args => {
+      const input = z.object({ replicaName: z.string().min(1) }).parse(_args)
+      const octokit = runtime.getOctokit()
 
-  return draftState
+      await octokit.rest.actions.createWorkflowDispatch({
+        owner,
+        repo,
+        workflow_id: "build-replica.yml",
+        ref: "main",
+        inputs: {
+          replica_name: input.replicaName,
+        },
+      })
+
+      const run = await waitForWorkflowRun(octokit, owner, repo, input.replicaName)
+      if (run.conclusion !== "success") {
+        throw new Error(`Replica build workflow failed with conclusion "${run.conclusion}"`)
+      }
+
+      await loadService.loadReplica({
+        name: input.replicaName,
+        image: `ghcr.io/exeteres/reside/replicas/${input.replicaName}:latest`,
+      })
+
+      return `Replica ${input.replicaName} deployed successfully`
+    },
+  })
 }
 
-async function resolveTaskState(
-  taskSessions: Map<string, TaskSessionState>,
-  prisma: EngineerPrismaClient,
+async function waitForWorkflowRun(
   octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  repository: Awaited<ReturnType<EngineerAiRuntime["getRepositoryTarget"]>>,
-  taskId: string,
-): Promise<TaskSessionState> {
-  const inMemoryState = taskSessions.get(taskId)
-  if (inMemoryState) {
-    return inMemoryState
+  owner: string,
+  repo: string,
+  replicaName: string,
+): Promise<{ conclusion: string | null }> {
+  for (let attempt = 0; attempt < 180; attempt += 1) {
+    const runs = await octokit.rest.actions.listWorkflowRuns({
+      owner,
+      repo,
+      workflow_id: "build-replica.yml",
+      branch: "main",
+      event: "workflow_dispatch",
+      per_page: 10,
+    })
+
+    const run = runs.data.workflow_runs.find(candidate => {
+      return candidate.display_title.includes(replicaName)
+    })
+
+    if (!run) {
+      await sleep(2000)
+      continue
+    }
+
+    if (run.status !== "completed") {
+      await sleep(5000)
+      continue
+    }
+
+    return {
+      conclusion: run.conclusion,
+    }
   }
 
-  const dbTaskId = parseDbTaskId(taskId)
-  const taskEntity = await prisma.task.findUnique({
+  throw new Error("Timed out waiting for deploy workflow completion")
+}
+
+async function runPlanningSession({
+  runtime,
+  environment,
+  notificationService,
+  progressNotificationId,
+  prompt,
+  repository,
+  taskId,
+}: {
+  runtime: EngineerAiRuntime
+  environment: CopilotEnvironment
+  notificationService: NotificationServiceClient
+  progressNotificationId: string
+  prompt: string
+  repository: Awaited<ReturnType<EngineerAiRuntime["getRepositoryTarget"]>>
+  taskId: number
+}): Promise<{ title: string; body: string; summary: string }> {
+  const draftStatesBySessionId = new Map<
+    string,
+    { submittedDraft?: z.infer<typeof issueDraftSchema> }
+  >()
+  const copilotClient = runtime.getCopilotClient()
+
+  const sessionConfig: SessionConfig = {
+    model: "gpt-5.3-codex",
+    workingDirectory: environment.repositoryPath,
+    configDir: environment.sessionDirPath,
+    onPermissionRequest: async () => ({ kind: "approved" as const }),
+    tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
+    hooks: {
+      onPreToolUse: async toolInvocation => {
+        if (
+          [
+            "report_intent",
+            "submit_issue_draft",
+            "read_file",
+            "list_dir",
+            "rg",
+            "view",
+            "glob",
+            "grep_search",
+            "file_search",
+            "semantic_search",
+            "fetch_webpage",
+          ].includes(toolInvocation.toolName)
+        ) {
+          return {
+            permissionDecision: "allow" as const,
+          }
+        }
+
+        return {
+          permissionDecision: "deny" as const,
+          permissionDecisionReason: "Planning phase allows only read-only and reporting tools",
+        }
+      },
+    },
+  }
+
+  const session = await createOrResumeSession({
+    copilotClient,
+    environment,
+    sessionConfig,
+    flow: "planning",
+    taskId,
+  })
+
+  const unsubscribeRealtimeLogs = registerRealtimeSessionLogs(
+    session,
+    "planning",
+    async progressLine => {
+      const normalizedProgressLine = normalizeProgressLine(progressLine)
+      if (!normalizedProgressLine) {
+        return
+      }
+
+      await updateProgressNotification(
+        notificationService,
+        progressNotificationId,
+        strings.notifications.taskAnalysis.title,
+        normalizedProgressLine,
+      )
+    },
+  )
+
+  let finalSummary = ""
+
+  try {
+    const finalMessage = await session.sendAndWait(
+      {
+        prompt: [
+          `Repository: ${repository.owner}/${repository.name}`,
+          `Task id: ${taskId}`,
+          "Planning phase: produce issue draft update only.",
+          "Use submit_issue_draft exactly once.",
+          "End assistant response with short 3-5 sentence russian summary.",
+          `User prompt: ${prompt}`,
+        ].join("\n"),
+      },
+      COPILOT_SESSION_TIMEOUT_MS,
+    )
+
+    finalSummary = extractSummaryFromFinalMessage(finalMessage?.data.content)
+  } finally {
+    unsubscribeRealtimeLogs()
+    await session.disconnect()
+  }
+
+  const draftState = draftStatesBySessionId.get(session.sessionId)
+  if (!draftState?.submittedDraft) {
+    throw new Error("Copilot did not submit issue draft via submit_issue_draft tool")
+  }
+
+  return {
+    title: draftState.submittedDraft.title,
+    body: draftState.submittedDraft.body,
+    summary: finalSummary || "План обновлен и готов к подтверждению.",
+  }
+}
+
+function createSubmitIssueDraftTool(
+  draftStatesBySessionId: Map<string, { submittedDraft?: z.infer<typeof issueDraftSchema> }>,
+) {
+  return defineTool("submit_issue_draft", {
+    description: "Submit final GitHub issue draft title and body",
+    parameters: issueDraftSchema,
+    handler: async (_args, context) => {
+      const parsedDraft = issueDraftSchema.parse(_args)
+      const existing = draftStatesBySessionId.get(context.sessionId) ?? {}
+      existing.submittedDraft = parsedDraft
+      draftStatesBySessionId.set(context.sessionId, existing)
+      return "Issue draft accepted"
+    },
+  })
+}
+
+async function createOrResumeSession({
+  copilotClient,
+  environment,
+  sessionConfig,
+  flow,
+  taskId,
+  iterationId,
+}: {
+  copilotClient: ReturnType<EngineerAiRuntime["getCopilotClient"]>
+  environment: CopilotEnvironment
+  sessionConfig: SessionConfig
+  flow: "planning" | "implementation"
+  taskId: number
+  iterationId?: number
+}): Promise<CopilotSession> {
+  const previousSessionId = await environment.readSessionId()
+
+  if (previousSessionId) {
+    try {
+      const resumedSession = await copilotClient.resumeSession(previousSessionId, sessionConfig)
+
+      logger.info(
+        'engineer copilot session resumed flow="%s" task_id="%s" iteration_id="%s" session_id="%s"',
+        flow,
+        String(taskId),
+        iterationId ? String(iterationId) : "",
+        resumedSession.sessionId,
+      )
+
+      return resumedSession
+    } catch (error) {
+      const errorValue = toError(error)
+
+      logger.warn(
+        { error: errorValue },
+        'engineer failed to resume copilot session flow="%s" task_id="%s" iteration_id="%s" session_id="%s"',
+        flow,
+        String(taskId),
+        iterationId ? String(iterationId) : "",
+        previousSessionId,
+      )
+    }
+  }
+
+  const newSession = await copilotClient.createSession(sessionConfig)
+  await environment.writeSessionId(newSession.sessionId)
+
+  logger.info(
+    'engineer copilot session created flow="%s" task_id="%s" iteration_id="%s" session_id="%s" source="%s"',
+    flow,
+    String(taskId),
+    iterationId ? String(iterationId) : "",
+    newSession.sessionId,
+    previousSessionId ? "fallback_after_resume_failure" : "new",
+  )
+
+  return newSession
+}
+
+async function createCopilotEnvironment(
+  runtime: EngineerAiRuntime,
+  storageBucketService: StorageBucketService,
+  taskId: number,
+  iterationId: number,
+): Promise<CopilotEnvironment> {
+  const repository = await runtime.getRepositoryTarget()
+  const tempRoot = await mkdtemp(join(tmpdir(), "reside-engineer-"))
+  const worktreePath = join(tempRoot, "workspace")
+  const repositoryPath = join(worktreePath, repository.name)
+  const branchName = `replica/task-${taskId}/${iterationId}`
+  const sessionDirPath = join(repositoryPath, ENGINEER_SESSION_DIR)
+  const sessionIdPath = join(sessionDirPath, ENGINEER_SESSION_ID_FILE)
+
+  await runCommand([
+    "git",
+    "clone",
+    "--branch",
+    "main",
+    "--single-branch",
+    repository.cloneUrl,
+    repositoryPath,
+  ])
+  await runCommand(["git", "-C", repositoryPath, "checkout", "-b", branchName])
+
+  await mkdir(sessionDirPath, { recursive: true })
+  await restoreSessionArchive(storageBucketService, sessionDirPath)
+
+  return {
+    workingDirectory: worktreePath,
+    repositoryPath,
+    sessionDirPath,
+    readSessionId: async () => {
+      try {
+        const sessionId = await readFile(sessionIdPath, "utf-8")
+        return sessionId.trim() || undefined
+      } catch {
+        return undefined
+      }
+    },
+    writeSessionId: async sessionId => {
+      await writeFile(sessionIdPath, sessionId, "utf-8")
+      await uploadSessionArchive(storageBucketService, sessionDirPath)
+    },
+    dispose: async () => {
+      await uploadSessionArchive(storageBucketService, sessionDirPath)
+      await rm(tempRoot, { recursive: true, force: true })
+    },
+  }
+}
+
+async function restoreSessionArchive(
+  storageBucketService: StorageBucketService,
+  sessionDirPath: string,
+): Promise<void> {
+  try {
+    const object = await storageBucketService.client.send(
+      new GetObjectCommand({
+        Bucket: storageBucketService.bucket,
+        Key: ENGINEER_SESSION_ARCHIVE_NAME,
+      }),
+    )
+
+    if (!object.Body) {
+      return
+    }
+
+    const archivePath = join(sessionDirPath, ENGINEER_SESSION_ARCHIVE_NAME)
+    const bytes = await object.Body.transformToByteArray()
+    await writeFile(archivePath, Buffer.from(bytes))
+    await runCommand(["tar", "-xf", archivePath, "-C", sessionDirPath])
+    await rm(archivePath, { force: true })
+  } catch {
+    return
+  }
+}
+
+async function uploadSessionArchive(
+  storageBucketService: StorageBucketService,
+  sessionDirPath: string,
+): Promise<void> {
+  const archivePath = join(sessionDirPath, ENGINEER_SESSION_ARCHIVE_NAME)
+  await runCommand(["tar", "-cf", archivePath, "-C", sessionDirPath, "."])
+  const bytes = await readFile(archivePath)
+
+  await storageBucketService.client.send(
+    new PutObjectCommand({
+      Bucket: storageBucketService.bucket,
+      Key: ENGINEER_SESSION_ARCHIVE_NAME,
+      Body: bytes,
+      ContentType: "application/x-tar",
+    }),
+  )
+
+  await rm(archivePath, { force: true })
+}
+
+async function upsertTaskIssue({
+  prisma,
+  runtime,
+  taskId,
+  owner,
+  repo,
+  issueTitle,
+  issueBody,
+}: {
+  prisma: PrismaClient
+  runtime: EngineerAiRuntime
+  taskId: number
+  owner: string
+  repo: string
+  issueTitle: string
+  issueBody: string
+}) {
+  const octokit = runtime.getOctokit()
+  const task = await prisma.task.findUnique({
     where: {
-      id: dbTaskId,
+      id: taskId,
     },
     select: {
-      id: true,
       issueId: true,
     },
   })
 
-  if (!taskEntity) {
+  if (!task) {
     throw new Error(`Unknown task "${taskId}"`)
   }
 
-  if (!taskEntity.issueId) {
-    throw new Error(`Task "${taskId}" is not linked to GitHub issue yet`)
+  if (!task.issueId) {
+    const createdIssue = await createIssueWithoutAssignee(
+      octokit,
+      owner,
+      repo,
+      issueTitle,
+      issueBody,
+    )
+
+    await prisma.task.update({
+      where: {
+        id: taskId,
+      },
+      data: {
+        issueId: createdIssue.number,
+      },
+    })
+
+    return createdIssue
   }
 
-  const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`
-  const issue = await getRepositoryIssueByNumber(
-    octokit,
-    repository.owner,
-    repository.name,
-    taskEntity.issueId,
-  )
-
-  const issueTitle = issue.title
-  if (!issueTitle) {
-    throw new Error(`Issue "${taskId}" is missing title in GitHub response`)
-  }
-
-  const recoveredTaskState: TaskSessionState = {
-    dbTaskId: taskEntity.id,
-    taskId,
-    owner: repository.owner,
-    repo: repository.name,
-    issueNumber: taskEntity.issueId,
-    issueUrl: issue.url ?? `${repositoryUrl}/issues/${taskEntity.issueId}`,
-    repositoryUrl,
-    issueTitle,
-    issueBody: issue.body ?? "",
-    progressHistory: [],
-  }
-
-  taskSessions.set(taskId, recoveredTaskState)
-
-  logger.info(
-    {
-      taskId,
-      dbTaskId: taskEntity.id,
-    },
-    "engineer restored task state without in-memory session",
-  )
-
-  return recoveredTaskState
-}
-
-function parseDbTaskId(taskId: string): number {
-  const parsedTaskId = Number.parseInt(taskId, 10)
-  if (!Number.isInteger(parsedTaskId) || parsedTaskId <= 0) {
-    throw new Error(`Invalid task id format "${taskId}"`)
-  }
-
-  return parsedTaskId
+  return await updateRepositoryIssue(octokit, owner, repo, task.issueId, {
+    title: issueTitle,
+    body: issueBody,
+  })
 }
 
 type RepositoryIssue = {
@@ -771,42 +1287,6 @@ async function updateRepositoryIssue(
   }
 }
 
-async function assignIssueToCopilotIfAvailable(
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-): Promise<void> {
-  const issue = await getRepositoryIssueByNumber(octokit, owner, repo, issueNumber)
-  try {
-    await executeGraphqlWithFeatures(
-      octokit,
-      `
-        mutation($issueId: ID!, $assigneeIds: [ID!]!) {
-          addAssigneesToAssignable(
-            input: {
-              assignableId: $issueId
-              assigneeIds: $assigneeIds
-            }
-          ) {
-            assignable {
-              __typename
-            }
-          }
-        }
-      `,
-      {
-        issueId: issue.id,
-        assigneeIds: [COPILOT_ASSIGNEE_ACTOR_ID],
-      },
-    )
-  } catch (error) {
-    throw new Error(`Failed to assign Copilot for "${owner}/${repo}#${issueNumber}"`, {
-      cause: error,
-    })
-  }
-}
-
 function executeGraphqlWithFeatures<TResponse>(
   octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
   query: string,
@@ -820,261 +1300,39 @@ function executeGraphqlWithFeatures<TResponse>(
   })
 }
 
-function createTaskSession(
-  copilotClient: CopilotClient,
-  workingDirectory: string,
-  draftStatesBySessionId: Map<string, SessionDraftState>,
-): Promise<CopilotSession> {
-  return copilotClient.createSession({
-    model: "gpt-5.3-codex",
-    workingDirectory,
-    onPermissionRequest: async () => ({ kind: "approved" }),
-    tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
-    hooks: {
-      onPreToolUse: async toolInvocation => {
-        if (ALLOWED_SESSION_TOOLS.has(toolInvocation.toolName)) {
-          return {
-            permissionDecision: "allow",
-          }
-        }
-
-        logger.warn(
-          {
-            toolName: toolInvocation.toolName,
-          },
-          "engineer copilot session denied tool use",
-        )
-
-        return {
-          permissionDecision: "deny",
-          permissionDecisionReason:
-            'Only tools "report_intent" and "submit_issue_draft" are allowed for engineer task analysis',
-        }
-      },
-    },
-  })
-}
-
-async function requestIssueDraftFromSession(
-  session: CopilotSession,
-  draftStatesBySessionId: Map<string, SessionDraftState>,
-  prompt: string,
-  context: "create-task" | "update-task",
-  progressNotificationId: string,
-  initialProgressHistory: string[],
-  notificationService: EngineerNotificationService,
-): Promise<z.infer<typeof issueDraftSchema>> {
-  const draftState = getSessionDraftState(draftStatesBySessionId, session.sessionId)
-  draftState.submittedDraft = undefined
-  const progressHistory = [...initialProgressHistory]
-
-  setProgressHistory(session, progressHistory)
-
-  const unsubscribeRealtimeLogs = registerRealtimeSessionLogs(
-    session,
-    context,
-    async progressLine => {
-      const normalizedProgressLine = normalizeProgressLine(progressLine)
-      if (!normalizedProgressLine) {
-        return
-      }
-
-      progressHistory.push(normalizedProgressLine)
-      setProgressHistory(session, progressHistory)
-
-      await updateProgressNotification(
-        notificationService,
-        progressNotificationId,
-        context,
-        progressHistory,
-      )
-    },
-  )
-
-  try {
-    const finalAssistantMessage = await session.sendAndWait(
-      {
-        prompt: [
-          prompt,
-          "",
-          'You MUST submit the final result by calling tool "submit_issue_draft" exactly once.',
-          "Do not output JSON in assistant text.",
-          "",
-          "Issue body MUST follow this exact section template:",
-          ISSUE_BODY_TEMPLATE,
-          "",
-          'Section "Компоненты" MUST include every affected package/replica.',
-          "Each component line MUST end with exactly one operation suffix: (создать), (изменить), or (удалить).",
-          "Component line format is strict: - **<display name>** (`replicas/<name>`|`packages/<name>`) (операция).",
-          "Replica example: - **Авторизационная Реплика** (`replicas/access`) (изменить).",
-          "Package example: - **@reside/common** (`packages/common`) (изменить).",
-          "For each replica component, resolve human-readable title explicitly before writing the line:",
-          "1) Open replicas/<replica>/src/bootstrap/main.ts and locate strings.bootstrap.registration.title.",
-          "2) Open replicas/<replica>/src/locale/ru.ts and read strings.bootstrap.registration.title value.",
-          "3) Use this exact russian title in component text, and keep path in the same line for traceability.",
-          "If title cannot be resolved, use replica path only and mark with (изменить) unless operation is clearly different.",
-          "If replica is subject to be created, define its proposed title and path based on existing replicas naming and user request, and mark with (создать).",
-          "When creating new replicas, don't create extra packages for their logic unless requested by the user or clearly required by the implementation.",
-          "Use one bullet per component and keep paths repository-relative.",
-          "",
-          "Implementation plan must have 3-6 numbered steps.",
-          "",
-          'Use built-in tool "report_intent" to report progress while analyzing.',
-          'After analysis is done, call "submit_issue_draft" immediately.',
-          "Use only read-only tools for repository inspection and never call bash.",
-          "Each progress report must be one short sentence in russian lowercase.",
-          "Do not end progress sentence with punctuation.",
-        ].join("\n"),
-      },
-      COPILOT_SESSION_TIMEOUT_MS,
-    )
-
-    if (finalAssistantMessage?.data.content) {
-      logger.info(
-        {
-          context,
-          messageId: finalAssistantMessage.data.messageId,
-          content: finalAssistantMessage.data.content,
-        },
-        "engineer copilot final assistant message",
-      )
-    }
-  } finally {
-    unsubscribeRealtimeLogs()
-  }
-
-  if (!draftState.submittedDraft) {
-    throw new Error("Copilot did not submit issue draft via tool")
-  }
-
-  return draftState.submittedDraft
-}
-
-function createSubmitIssueDraftTool(draftStatesBySessionId: Map<string, SessionDraftState>) {
-  return defineTool("submit_issue_draft", {
-    description: "Submit final GitHub issue draft title and body",
-    parameters: issueDraftSchema,
-    handler: async (_args, context) => {
-      const parsedDraft = issueDraftSchema.parse(_args)
-      validateIssueBodyTemplate(parsedDraft.body)
-
-      const draftState = getSessionDraftState(draftStatesBySessionId, context.sessionId)
-      draftState.submittedDraft = parsedDraft
-
-      return "Issue draft accepted"
-    },
-  })
-}
-
-function getSessionDraftState(
-  draftStatesBySessionId: Map<string, SessionDraftState>,
-  sessionId: string,
-): SessionDraftState {
-  let draftState = draftStatesBySessionId.get(sessionId)
-  if (!draftState) {
-    draftState = {}
-    draftStatesBySessionId.set(sessionId, draftState)
-  }
-
-  return draftState
-}
-
 function registerRealtimeSessionLogs(
   session: CopilotSession,
-  context: "create-task" | "update-task",
+  context: "planning" | "implementation",
   onProgressReported: (progressLine: string) => Promise<void>,
 ): () => void {
   const unsubscribers = [
-    session.on("assistant.message_delta", event => {
-      logger.info(
-        {
-          context,
-          messageId: event.data.messageId,
-          delta: event.data.deltaContent,
-        },
-        "engineer copilot assistant message delta",
-      )
-    }),
-
     session.on("assistant.message", event => {
       logger.info(
-        {
-          context,
-          messageId: event.data.messageId,
-          content: event.data.content,
-        },
-        "engineer copilot assistant message",
+        'engineer copilot assistant message context="%s" message_id="%s" content="%s"',
+        context,
+        event.data.messageId,
+        event.data.content,
       )
     }),
-
     session.on("tool.execution_start", event => {
       logger.info(
-        {
-          context,
-          toolCallId: event.data.toolCallId,
-          toolName: event.data.toolName,
-          arguments: event.data.arguments,
-        },
-        "engineer copilot tool execution started",
+        'engineer copilot tool execution started context="%s" tool_name="%s" tool_call_id="%s"',
+        context,
+        event.data.toolName,
+        event.data.toolCallId,
       )
 
       if (event.data.toolName === "report_intent") {
         void onProgressReported(extractReportIntentProgress(event.data.arguments)).catch(error => {
+          const errorValue = toError(error)
+
           logger.warn(
-            {
-              context,
-              error: error instanceof Error ? error.message : String(error),
-            },
-            "engineer copilot progress update failed",
+            { error: errorValue },
+            'engineer copilot progress update failed context="%s"',
+            context,
           )
         })
       }
-    }),
-
-    session.on("tool.execution_progress", event => {
-      logger.info(
-        {
-          context,
-          toolCallId: event.data.toolCallId,
-          progress: event.data.progressMessage,
-        },
-        "engineer copilot tool execution progress",
-      )
-    }),
-
-    session.on("tool.execution_partial_result", event => {
-      logger.info(
-        {
-          context,
-          toolCallId: event.data.toolCallId,
-          partialOutput: event.data.partialOutput,
-        },
-        "engineer copilot tool execution partial result",
-      )
-    }),
-
-    session.on("tool.execution_complete", event => {
-      logger.info(
-        {
-          context,
-          toolCallId: event.data.toolCallId,
-          success: event.data.success,
-          result: event.data.result?.content,
-        },
-        "engineer copilot tool execution completed",
-      )
-    }),
-
-    session.on("session.error", event => {
-      logger.error(
-        {
-          context,
-          errorType: event.data.errorType,
-          message: event.data.message,
-          statusCode: event.data.statusCode,
-        },
-        "engineer copilot session error",
-      )
     }),
   ]
 
@@ -1086,27 +1344,15 @@ function registerRealtimeSessionLogs(
 }
 
 async function updateProgressNotification(
-  notificationService: EngineerNotificationService,
+  notificationService: NotificationServiceClient,
   notificationId: string,
-  context: "create-task" | "update-task",
-  progressHistory: string[],
+  title: string,
+  progressLine: string,
 ): Promise<void> {
-  const list = progressHistory
-    .slice(-5)
-    .map(item => `> ${item}`)
-    .join("\n")
-
-  const content = [
-    context === "create-task"
-      ? strings.notifications.taskAnalysis.creating
-      : strings.notifications.taskAnalysis.updating,
-    "",
-    list,
-  ].join("\n")
-
+  const content = [title, "", `> ${progressLine}`].join("\n")
   await notificationService.updateNotification({
     notificationId,
-    title: strings.notifications.taskAnalysis.title,
+    title,
     content,
   })
 }
@@ -1138,70 +1384,109 @@ function normalizeProgressLine(value: string): string | undefined {
   }
 
   const lowercase = normalized.toLowerCase()
-  const withoutEndingPunctuation = lowercase.replace(/[.!?,:;…]+$/g, "")
-  const shortSentence = withoutEndingPunctuation.slice(0, 100).trim()
-
-  if (!shortSentence) {
-    return undefined
-  }
-
-  return shortSentence
+  return (
+    lowercase
+      .replace(/[.!?,:;…]+$/g, "")
+      .slice(0, 120)
+      .trim() || undefined
+  )
 }
 
-function setProgressHistory(session: CopilotSession, progressHistory: string[]): void {
-  const sessionWithProgress = session as CopilotSession & {
-    __engineerProgressHistory?: string[]
+function extractSummaryFromFinalMessage(content: string | undefined): string {
+  const normalized = content?.trim() ?? ""
+  if (normalized.length > 0) {
+    return normalized.slice(0, 2000)
   }
 
-  sessionWithProgress.__engineerProgressHistory = [...progressHistory]
+  return strings.notifications.taskExecution.defaultSummary
 }
 
-function readProgressHistory(session: CopilotSession): string[] {
-  const sessionWithProgress = session as CopilotSession & {
-    __engineerProgressHistory?: string[]
+async function getNextIterationNumber(prisma: PrismaClient, taskId: number): Promise<number> {
+  const aggregate = await prisma.taskIteration.aggregate({
+    where: {
+      taskId,
+    },
+    _max: {
+      iteration: true,
+    },
+  })
+
+  return (aggregate._max.iteration ?? 0) + 1
+}
+
+function parseDbTaskId(taskId: string): number {
+  const parsedTaskId = Number.parseInt(taskId, 10)
+  if (!Number.isInteger(parsedTaskId) || parsedTaskId <= 0) {
+    throw new Error(`Invalid task id format "${taskId}"`)
   }
 
-  return [...(sessionWithProgress.__engineerProgressHistory ?? [])]
+  return parsedTaskId
 }
 
-function validateIssueBodyTemplate(body: string): void {
-  let sectionOffset = 0
+function watchRequestedCancellation({
+  prisma,
+  taskId,
+  onCancel,
+}: {
+  prisma: PrismaClient
+  taskId: number
+  onCancel: () => Promise<void>
+}) {
+  let stopped = false
+  let fired = false
 
-  for (const section of requiredIssueBodySections) {
-    const index = body.indexOf(section, sectionOffset)
-    if (index < 0) {
-      throw new Error(`Issue body does not contain required section: ${section}`)
+  const loop = (async () => {
+    while (!stopped && !fired) {
+      const task = await prisma.task.findUnique({
+        where: {
+          id: taskId,
+        },
+        select: {
+          status: true,
+        },
+      })
+
+      if (task?.status === "REQUESTED_CANCELLATION") {
+        fired = true
+        await onCancel()
+        return
+      }
+
+      await sleep(1000)
     }
+  })().catch(error => {
+    const errorValue = toError(error)
 
-    sectionOffset = index + section.length
+    logger.warn(
+      { error: errorValue },
+      'engineer cancellation watch failed task_id="%s"',
+      String(taskId),
+    )
+  })
+
+  return {
+    stop: () => {
+      stopped = true
+      void loop
+    },
+  }
+}
+
+async function runCommand(command: string[]): Promise<void> {
+  const process = Bun.spawn(command, {
+    stdout: "pipe",
+    stderr: "pipe",
+  })
+
+  const exitCode = await process.exited
+  if (exitCode === 0) {
+    return
   }
 
-  const componentsMatch = body.match(/## Компоненты([\s\S]*?)(## Предлагаемые изменения|$)/)
-  const componentsSection = componentsMatch?.[1] ?? ""
-  const componentLines = componentsSection
-    .split("\n")
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
+  const stderr = await process.stderr.text()
+  throw new Error(`Command failed: ${command.join(" ")} (${stderr.trim()})`)
+}
 
-  if (componentLines.length === 0) {
-    throw new Error("Issue body section Компоненты must include at least one component")
-  }
-
-  const componentLinePattern =
-    /^-\s+\*\*.+\*\*\s+\(`(replicas\/[a-z0-9-]+|packages\/[a-z0-9-]+)`\)\s+\((создать|изменить|удалить)\)$/
-  for (const line of componentLines) {
-    if (!componentLinePattern.test(line)) {
-      throw new Error(
-        "Issue body section Компоненты has invalid line format; expected '- **<название>** (`replicas/<name>`|`packages/<name>`) (создать|изменить|удалить)'",
-      )
-    }
-  }
-
-  const planMatch = body.match(/## План реализации([\s\S]*?)$/)
-  const planSection = planMatch?.[1] ?? ""
-  const steps = planSection.match(/^\d+\.\s.+$/gm) ?? []
-
-  if (steps.length < 3 || steps.length > 6) {
-    throw new Error("Issue body implementation plan must have 3-6 numbered steps")
-  }
+async function sleep(ms: number): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, ms))
 }

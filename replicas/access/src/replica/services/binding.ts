@@ -1,22 +1,21 @@
 import type {
   BindingServiceImplementation,
-  ListPermissionBindingsRequest,
-  ListPermissionBindingsResponse,
-  ListPermissionRestrictionsRequest,
-  ListPermissionRestrictionsResponse,
   PermissionBinding,
   PermissionRestriction,
 } from "@reside/api/access/binding.v1"
-import type { CallContext } from "nice-grpc"
 import type { PrismaClient } from "../../database"
+import { create } from "@bufbuild/protobuf"
+import { TimestampSchema } from "@bufbuild/protobuf/wkt"
+import { PermissionBindingSchema, PermissionRestrictionSchema } from "@reside/api/access/binding.v1"
 import { authenticate, logger } from "@reside/common"
 
-export function createBindingService(prisma: PrismaClient) {
-  const service: BindingServiceImplementation = {
-    async listPermissionBindings(
-      request: ListPermissionBindingsRequest,
-      context: CallContext,
-    ): Promise<ListPermissionBindingsResponse> {
+export function createBindingService({
+  prisma,
+}: {
+  prisma: PrismaClient
+}): BindingServiceImplementation {
+  return {
+    async listPermissionBindings(request, context) {
       await authenticate(context)
 
       logger.debug('binding.listPermissionBindings subject="%s"', request.subjectId)
@@ -40,10 +39,7 @@ export function createBindingService(prisma: PrismaClient) {
       }
     },
 
-    async listPermissionRestrictions(
-      request: ListPermissionRestrictionsRequest,
-      context: CallContext,
-    ): Promise<ListPermissionRestrictionsResponse> {
+    async listPermissionRestrictions(request, context) {
       await authenticate(context)
 
       logger.debug('binding.listPermissionRestrictions subject="%s"', request.subjectId)
@@ -67,8 +63,6 @@ export function createBindingService(prisma: PrismaClient) {
       }
     },
   }
-
-  return service
 }
 
 function toPermissionBindingResponse(binding: {
@@ -77,12 +71,12 @@ function toPermissionBindingResponse(binding: {
   scope: string | null
   createdAt: Date
 }): PermissionBinding {
-  return {
+  return create(PermissionBindingSchema, {
     permissionId: binding.permissionId,
     subjectId: binding.subjectId,
     scope: binding.scope ?? undefined,
-    createdAt: binding.createdAt,
-  }
+    createdAt: toProtoTimestamp(binding.createdAt),
+  })
 }
 
 function toPermissionRestrictionResponse(restriction: {
@@ -91,10 +85,21 @@ function toPermissionRestrictionResponse(restriction: {
   scope: string | null
   createdAt: Date
 }): PermissionRestriction {
-  return {
+  return create(PermissionRestrictionSchema, {
     permissionId: restriction.permissionId,
     subjectId: restriction.subjectId,
     scope: restriction.scope ?? undefined,
-    createdAt: restriction.createdAt,
-  }
+    createdAt: toProtoTimestamp(restriction.createdAt),
+  })
+}
+
+function toProtoTimestamp(value: Date) {
+  const milliseconds = value.getTime()
+  const seconds = Math.floor(milliseconds / 1000)
+  const nanos = (milliseconds % 1000) * 1_000_000
+
+  return create(TimestampSchema, {
+    seconds: BigInt(seconds),
+    nanos,
+  })
 }

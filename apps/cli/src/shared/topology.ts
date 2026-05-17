@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises"
 import { input } from "@inquirer/prompts"
-import { topology as packageTopology, type Replica as TopologyReplica } from "@reside/topology"
+import { topology as packageTopology, type Replica as TopologyReplica } from "@reside/registry"
 
 export type { TopologyReplica }
 export type ResideTopology = TopologyReplica[]
@@ -24,7 +24,7 @@ export async function loadTopology(_topologyPath?: string): Promise<{
 }> {
   return {
     topology: packageTopology,
-    topologyPath: "@reside/topology",
+    topologyPath: "@reside/registry",
   }
 }
 

@@ -14,24 +14,29 @@
     "generate": "prisma generate"
   },
   "dependencies": {
+    "fastify": "catalog:",
+    "@bufbuild/protobuf": "catalog:",
+    "@connectrpc/connect-fastify": "catalog:",
+    "@connectrpc/connect": "catalog:",
+    "@connectrpc/connect-node": "catalog:",
     "@temporalio/client": "catalog:",
     "@temporalio/worker": "catalog:",
     "@temporalio/workflow": "catalog:",
+    "jose": "catalog:",
     "prisma": "catalog:"
   },
   "devDependencies": {
     "@swc/wasm": "^1.15.18",
     "@typescript/native-preview": "catalog:",
-    "@grammyjs/runner": "catalog:",
     "@grpc/grpc-js": "catalog:",
     "@kubernetes/client-node": "catalog:",
+    "@opentelemetry/api": "catalog:",
     "@prisma/client": "catalog:",
     "@reside/api": "workspace:*",
     "@reside/common": "workspace:*",
-    "@reside/topology": "workspace:*",
+    "@reside/registry": "workspace:*",
     "@reside/utils": "workspace:*",
     "loader-utils": "^3.3.1",
-    "nice-grpc": "catalog:",
     "grammy": "catalog:",
     "prisma-json-types-generator": "^4.1.1"
   }

@@ -9,5 +9,5 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Task.ts'
-export type * from './models/TaskPrompt.ts'
+export type * from './models/TaskIteration.ts'
 export type * from './commonInputTypes.ts'

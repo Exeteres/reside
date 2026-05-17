@@ -19,6 +19,11 @@ export function buildReplicaContainerEnv(
   componentName: string,
   extraEnv: ReplicaEnvironmentVariable[] = [],
 ): ReplicaEnvironmentVariable[] {
+  const clusterDomain = process.env.RESIDE_CLUSTER_DOMAIN?.trim()
+  if (!clusterDomain || clusterDomain.length === 0) {
+    throw new Error('"RESIDE_CLUSTER_DOMAIN" environment variable is required')
+  }
+
   return [
     {
       name: "NODE_EXTRA_CA_CERTS",
@@ -43,6 +48,10 @@ export function buildReplicaContainerEnv(
     {
       name: "REPLICA_IMAGE",
       value: getReplicaImage(),
+    },
+    {
+      name: "RESIDE_CLUSTER_DOMAIN",
+      value: clusterDomain,
     },
     ...extraEnv,
   ]

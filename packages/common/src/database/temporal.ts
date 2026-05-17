@@ -1,16 +1,24 @@
-import type { DatabaseOptions } from "./shared"
-import { registerGracefulShutdown, waitForResult } from "@reside/api"
+import { waitForResult } from "@reside/api"
 import { Client, Connection } from "@temporalio/client"
 import { NativeConnection, Worker } from "@temporalio/worker"
 import { createAuthInterceptor, getTokenForAudience } from "../kubernetes"
 import { logger } from "../logger"
+import type { CommonServices } from "../services"
+import { registerGracefulShutdown } from "../utils"
+
+export const DEFAULT_TEMPORAL_TASK_QUEUE = "default"
+
+type TemporalCredentialsServices = Pick<
+  CommonServices<"infra">,
+  "provisionService" | "infraOperationService"
+>
 
 /**
  * Creates a Temporal client authorized for Replica's individual Temporal namespace.
  */
-export async function createTemporalClient(options: DatabaseOptions): Promise<Client> {
+export async function createTemporalClient(services: TemporalCredentialsServices): Promise<Client> {
   try {
-    const credentials = await getTemporalCredentials(options)
+    const credentials = await getTemporalCredentials(services)
 
     const connection = await Connection.connect({
       address: credentials.address,
@@ -28,7 +36,12 @@ export async function createTemporalClient(options: DatabaseOptions): Promise<Cl
   }
 }
 
-export type WorkerOptions = DatabaseOptions & {
+export type WorkerOptions = {
+  /**
+   * The services needed to setup the Temporal worker.
+   */
+  services: CommonServices<"infra">
+
   /**
    * The full path to JavaScript workflow bundle code that the worker should load.
    *
@@ -39,7 +52,7 @@ export type WorkerOptions = DatabaseOptions & {
   /**
    * The task queue that the worker should listen to for tasks.
    *
-   * If not provided, it defaults to the same value as the Temporal namespace, which is a common convention.
+   * If not provided, defaults to the "default" task queue within the Temporal namespace assigned to the Replica.
    */
   taskQueue?: string
 
@@ -66,7 +79,7 @@ export type WorkerOptions = DatabaseOptions & {
  */
 async function createTemporalWorker(options: WorkerOptions): Promise<Worker> {
   try {
-    const credentials = await getTemporalCredentials(options)
+    const credentials = await getTemporalCredentials(options.services)
 
     const getMetadata = (token: string) => {
       return {
@@ -93,7 +106,7 @@ async function createTemporalWorker(options: WorkerOptions): Promise<Worker> {
     return await Worker.create({
       connection,
       namespace: credentials.namespace,
-      taskQueue: options.taskQueue ?? credentials.namespace,
+      taskQueue: options.taskQueue ?? DEFAULT_TEMPORAL_TASK_QUEUE,
       workflowBundle: {
         codePath: options.workflowsCodePath ?? "/app/workflows.js",
       },
@@ -115,7 +128,7 @@ export async function startTemporalWorker(options: WorkerOptions): Promise<void>
 
   registerGracefulShutdown(async () => {
     try {
-      await worker.shutdown()
+      worker.shutdown()
     } catch (error) {
       if (
         error instanceof Error &&
@@ -131,13 +144,19 @@ export async function startTemporalWorker(options: WorkerOptions): Promise<void>
   void worker.run().catch(error => logger.error({ error }, "temporal worker failed with error"))
 }
 
-async function getTemporalCredentials(options: DatabaseOptions) {
-  const response = await options.provisionService.getTemporalNamespaceCredentials({})
+async function getTemporalCredentials(services: TemporalCredentialsServices) {
+  const response = await services.provisionService.getTemporalNamespaceCredentials({})
   if (!response.credentials) {
     throw new Error("Server did not return Temporal namespace credentials")
   }
+  if (response.credentials.case === undefined) {
+    throw new Error("Server returned empty Temporal namespace credentials response")
+  }
 
-  return await waitForResult(response.credentials, {
-    operationService: options.operationService,
-  })
+  const credentials = await waitForResult(response.credentials, services.infraOperationService)
+  if (!credentials) {
+    throw new Error("Server did not return resolved Temporal namespace credentials")
+  }
+
+  return credentials
 }

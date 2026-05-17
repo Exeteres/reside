@@ -1,10 +1,86 @@
-import { KubeConfig } from "@kubernetes/client-node"
+import { KubeConfig, type ApiConstructor, type ApiType } from "@kubernetes/client-node"
+import { SpanStatusCode, trace } from "@opentelemetry/api"
+
+const kubernetesTracer = trace.getTracer("reside.kubernetes")
 
 /**
  * The global Kubernetes configuration instance, loaded once and shared across the application.
  */
 export const kubeConfig = new KubeConfig()
 kubeConfig.loadFromDefault()
+instrumentKubeConfigApiClients(kubeConfig)
+
+function instrumentKubeConfigApiClients(config: KubeConfig): void {
+  const originalMakeApiClient = config.makeApiClient.bind(config)
+
+  config.makeApiClient = <T extends ApiType>(apiClientType: ApiConstructor<T>): T => {
+    const apiClient = originalMakeApiClient(apiClientType)
+    const apiName = apiClientType.name.length > 0 ? apiClientType.name : "unknown"
+
+    return createTracedApiClient(apiClient, apiName)
+  }
+}
+
+function createTracedApiClient<T extends object>(apiClient: T, apiName: string): T {
+  return new Proxy(apiClient, {
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver)
+
+      if (typeof value !== "function") {
+        return value
+      }
+
+      return (...args: unknown[]) => {
+        return kubernetesTracer.startActiveSpan(`k8s.${apiName}.${String(property)}`, span => {
+          span.setAttribute("rpc.system", "kubernetes")
+          span.setAttribute("rpc.service", apiName)
+          span.setAttribute("rpc.method", String(property))
+
+          try {
+            const result = Reflect.apply(value, target, args)
+
+            if (isPromiseLike(result)) {
+              return Promise.resolve(result)
+                .then(value => {
+                  span.end()
+                  return value
+                })
+                .catch((error: unknown) => {
+                  span.recordException(error as Error)
+                  span.setStatus({
+                    code: SpanStatusCode.ERROR,
+                    message: error instanceof Error ? error.message : String(error),
+                  })
+                  span.end()
+                  throw error
+                })
+            }
+
+            span.end()
+            return result
+          } catch (error) {
+            span.recordException(error as Error)
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: error instanceof Error ? error.message : String(error),
+            })
+            span.end()
+
+            throw error
+          }
+        })
+      }
+    },
+  })
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  if (typeof value !== "object" || value === null) {
+    return false
+  }
+
+  return "then" in value && typeof Reflect.get(value, "then") === "function"
+}
 
 function getRequiredEnvironmentVariable(name: string): string {
   const value = process.env[name]
@@ -41,6 +117,13 @@ export function getReplicaNamespace(): string {
  */
 export function getReplicaEndpoint(): string {
   return `${getReplicaName()}.${getReplicaNamespace()}.svc.cluster.local`
+}
+
+/**
+ * The full endpoint of the replica in the cluster which can be used for callback hooks.
+ */
+export function getReplicaCallbackEndpoint(): string {
+  return `${getReplicaEndpoint()}:80`
 }
 
 /**

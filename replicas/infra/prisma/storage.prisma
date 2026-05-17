@@ -1,0 +1,29 @@
+/// Represents S3 credentials for a replica-owned MinIO bucket.
+model StorageBucket {
+  /// The unique numeric identifier of the storage bucket record.
+  id Int @id @default(autoincrement())
+
+  /// The owner replica namespace.
+  replicaNamespace String @unique
+
+  /// The provisioned bucket name.
+  bucket String @unique
+
+  /// The generated access key for this bucket user.
+  accessKey String @unique
+
+  /// The generated secret key for this bucket user.
+  secretKey String
+
+  /// The timestamp when this bucket was provisioned in MinIO.
+  provisionedAt DateTime?
+
+  /// The timestamp when this record was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this record was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The operations associated with this storage bucket.
+  operations Operation[]
+}

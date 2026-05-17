@@ -2,9 +2,9 @@ import {
   OperationStatus,
   type Operation,
   type OperationServiceClient,
-} from "./_generated/common/operation.v1"
+} from "@reside/api/common/operation.v1"
 
-export type OperationWaitOptions = {
+export type FullOperationWaitOptions = {
   /**
    * The operation service client to use for polling the operation status.
    */
@@ -30,6 +30,8 @@ export type OperationWaitOptions = {
   timeout?: number
 }
 
+export type OperationWaitOptions = FullOperationWaitOptions | OperationServiceClient
+
 /**
  * Waits for an operation to resolve to a completed state (either success or failure) by polling its status at regular intervals.
  * If the polling itself fails the error is thrown (retry is expected to be configured in the provided `operationService` client),
@@ -44,9 +46,14 @@ export async function waitForOperation(
   operation: Operation,
   options: OperationWaitOptions,
 ): Promise<Operation> {
-  const interval = options.interval ?? 1000
-  const jitter = options.jitter ?? 200
-  const timeout = options.timeout ?? -1
+  const resolvedOptions: FullOperationWaitOptions =
+    options instanceof Object && "operationService" in options
+      ? options
+      : { operationService: options as OperationServiceClient }
+
+  const interval = resolvedOptions.interval ?? 1000
+  const jitter = resolvedOptions.jitter ?? 200
+  const timeout = resolvedOptions.timeout ?? -1
 
   const startTime = Date.now()
 
@@ -65,7 +72,7 @@ export async function waitForOperation(
     await Bun.sleep(interval + Math.floor(Math.random() * jitter))
 
     try {
-      const response = await options.operationService.getOperation({
+      const response = await resolvedOptions.operationService.getOperation({
         operationId: operation.id,
       })
 
@@ -96,12 +103,12 @@ export async function waitForOperationSuccess(
   const finalOperation = await waitForOperation(operation, options)
 
   if (finalOperation.status === OperationStatus.FAILED) {
-    if (finalOperation.resolution?.$case !== "error") {
+    if (finalOperation.resolution?.case !== "error") {
       throw new Error(`Operation "${operation.id}" failed with unknown error`)
     }
 
     throw new Error(
-      `Operation "${operation.id}" failed with reason ${finalOperation.resolution?.value.reason} and message "${finalOperation.resolution?.value.metadata?.message}"`,
+      `Operation "${operation.id}" failed with reason ${finalOperation.resolution.value.reason} and message "${finalOperation.resolution.value.metadata?.message}"`,
     )
   }
 
@@ -119,16 +126,16 @@ export async function waitForOperationSuccess(
  * @throws If the operation fails or if polling the operation status fails or if the timeout is reached before the operation completes.
  */
 export async function waitForResult<T>(
-  result: { $case: "operation"; value: Operation } | { $case: "result"; value: T },
+  result: { case: "operation"; value: Operation } | { case: "result"; value: T },
   options: OperationWaitOptions,
 ): Promise<T> {
-  if (result.$case === "result") {
+  if (result.case === "result") {
     return result.value
   }
 
   const operation = await waitForOperationSuccess(result.value, options)
 
-  if (operation.resolution?.$case !== "result") {
+  if (operation.resolution?.case !== "result") {
     throw new Error(`Operation "${operation.id}" completed without a result`)
   }
 

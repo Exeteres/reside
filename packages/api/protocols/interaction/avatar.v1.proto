@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package reside.interaction.avatar.v1;
+
+import "common/operation.v1.proto";
+
+// The request message for ensuring that the caller replica has its managed avatar bot configured.
+message EnsureAvatarRequest {
+  // The localized replica title to be shown in avatar provisioning prompts.
+  string replica_title = 1;
+}
+
+// The response message for EnsureAvatarRequest.
+message EnsureAvatarResponse {
+  // The optional operation representing asynchronous avatar provisioning.
+  // Omitted when avatar already exists.
+  reside.common.operation.v1.Operation operation = 1;
+}
+
+// The avatar service for managed bot provisioning.
+service AvatarService {
+  // Ensures a managed avatar bot exists for the caller replica.
+  rpc EnsureAvatar(EnsureAvatarRequest) returns (EnsureAvatarResponse);
+}

@@ -3,7 +3,7 @@ syntax = "proto3";
 package reside.alpha.registration.v1;
 
 import "google/protobuf/wrappers.proto";
-import "common/operation.v1.proto";
+import "google/protobuf/empty.proto";
 
 // The message describing the dependency slot for the replica dependency.
 message ReplicaDependencySlot {
@@ -51,13 +51,7 @@ message RegisterReplicaRequest {
 }
 
 // The service that must be used by all replicas to register themselves in the cluster.
-message RegisterReplicaResponse {
-  // The operation that should be awaited if registration requires reconciliation before becoming ready.
-  reside.common.operation.v1.Operation operation = 1;
-}
-
-// The service that must be used by all replicas to register themselves in the cluster.
 service RegistrationService {
   // RegisterReplica registers a new replica and its identity in Alpha.
-  rpc RegisterReplica(RegisterReplicaRequest) returns (RegisterReplicaResponse);
+  rpc RegisterReplica(RegisterReplicaRequest) returns (google.protobuf.Empty);
 }

@@ -1,9 +1,11 @@
-import { status as grpcStatus } from "@grpc/grpc-js"
 import type { Client } from "@temporalio/client"
-import { type CallContext, ServerError } from "nice-grpc"
+import { toJson } from "@bufbuild/protobuf"
+import { Code, type HandlerContext, ConnectError } from "@connectrpc/connect"
 import {
-  type OperationServiceClient,
+  OperationSchema,
   OperationStatus,
+  SubscribeToOperationCompletionResponseSchema,
+  type OperationServiceClient,
   type OperationSubscriptionServiceImplementation,
 } from "@reside/api/common/operation.v1"
 import { authenticate } from "../auth"
@@ -11,22 +13,31 @@ import { logger } from "../logger"
 import { getReplicaEndpoint } from "../kubernetes"
 import { getOperationCompletedSignal } from "../workflow"
 
-export function createOperationActivities(operationService: OperationServiceClient) {
+type OperationActivitiesService = Pick<
+  OperationServiceClient,
+  "subscribeToOperationCompletion" | "cancelOperation"
+>
+
+export function createOperationActivities(operationService: OperationActivitiesService) {
   return {
     subscribeToOperationCompletion: async (operationId: number, workflowId: string) => {
-      return await operationService.subscribeToOperationCompletion({
+      const response = await operationService.subscribeToOperationCompletion({
         operationId,
         callbackEndpoint: `${getReplicaEndpoint()}:80`,
         customData: {
           workflowId,
         },
       })
+
+      return toJson(SubscribeToOperationCompletionResponseSchema, response)
     },
 
     cancelOperation: async (operationId: number) => {
-      return await operationService.cancelOperation({
+      await operationService.cancelOperation({
         operationId,
       })
+
+      return
     },
   }
 }
@@ -37,13 +48,18 @@ export function createOperationSubscriptionService(
   temporalClient: Client,
 ): OperationSubscriptionServiceImplementation {
   return {
-    async notifyOperationCompletion({ operation, customData }, context: CallContext) {
+    async notifyOperationCompletion({ operation, customData }, context: HandlerContext) {
       await authenticate(context)
 
       if (!customData?.workflowId) {
         throw new Error(
           "No workflowId provided in customData for operation completion notification",
         )
+      }
+
+      const workflowId = customData.workflowId
+      if (typeof workflowId !== "string") {
+        throw new Error("customData.workflowId must be a string")
       }
 
       if (!operation) {
@@ -62,21 +78,21 @@ export function createOperationSubscriptionService(
       const signalName = getOperationCompletedSignal(operation.id).name
 
       try {
-        const workflowHandle = temporalClient.workflow.getHandle(customData.workflowId)
+        const workflowHandle = temporalClient.workflow.getHandle(workflowId)
 
-        await workflowHandle.signal(signalName, operation)
+        await workflowHandle.signal(signalName, toJson(OperationSchema, operation))
       } catch (error) {
         logger.error(
           {
             error,
-            workflowId: customData.workflowId,
+            workflowId,
             signalName,
             operationId: operation.id,
           },
           "failed to signal workflow from operation completion callback",
         )
 
-        throw new ServerError(grpcStatus.INTERNAL, "Failed to notify operation completion")
+        throw new ConnectError("Failed to notify operation completion", Code.Internal)
       }
 
       return {}

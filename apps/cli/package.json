@@ -18,7 +18,7 @@
     "@inquirer/prompts": "catalog:",
     "@listr2/prompt-adapter-inquirer": "catalog:",
     "@reside/common": "workspace:*",
-    "@reside/topology": "workspace:*",
+    "@reside/registry": "workspace:*",
     "citty": "catalog:",
     "consola": "catalog:",
     "listr2": "catalog:",

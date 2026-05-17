@@ -1,11 +1,7 @@
 {
   "name": "@replicas/engineer",
   "reside": {
-    "image": "ghcr.io/exeteres/reside/replicas/engineer",
-    "build": {
-      "packages": ["git"],
-      "commands": ["bash /app/replicas/engineer/scripts/install-coplilot-sdk.sh"]
-    }
+    "image": "ghcr.io/exeteres/reside/replicas/engineer"
   },
   "exports": {
     "./package.json": "./package.json"
@@ -17,6 +13,9 @@
     "generate": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.914.0",
+    "@connectrpc/connect-fastify": "catalog:",
+    "@connectrpc/connect": "catalog:",
     "@temporalio/client": "catalog:",
     "@temporalio/common": "catalog:",
     "@temporalio/worker": "catalog:",
@@ -31,8 +30,8 @@
     "@prisma/client": "catalog:",
     "@reside/api": "workspace:*",
     "@reside/common": "workspace:*",
-    "@reside/topology": "workspace:*",
-    "nice-grpc": "catalog:",
+    "@reside/registry": "workspace:*",
+    "@reside/utils": "workspace:*",
     "octokit": "catalog:",
     "zod": "catalog:"
   }

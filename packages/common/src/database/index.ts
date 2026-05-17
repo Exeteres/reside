@@ -1,4 +1,4 @@
 export * from "./postgres"
 export * from "./prisma"
-export * from "./shared"
+export * from "./storage"
 export * from "./temporal"

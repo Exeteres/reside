@@ -1,26 +1,28 @@
-import type { ApprovalRequest, ApprovalServiceClient } from "@reside/api/common/approval.v1"
-import type { SubscribeToOperationCompletionResponse } from "@reside/api/common/operation.v1"
-import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
 import type { Operation, PrismaClient } from "../../database"
-import { createChannel } from "@reside/api"
-import { ApprovalServiceDefinition } from "@reside/api/common/approval.v1"
-import { OperationServiceDefinition } from "@reside/api/common/operation.v1"
-import { SubjectServiceDefinition } from "@reside/api/common/subject.v1"
+import { create } from "@bufbuild/protobuf"
+import {
+  type ApprovalRequest,
+  ApprovalRequestSchema,
+  ApprovalService,
+  type ApprovalServiceClient,
+} from "@reside/api/common/approval.v1"
+import {
+  OperationService,
+  type SubscribeToOperationCompletionResponseJson,
+} from "@reside/api/common/operation.v1"
+import { SubjectService, type SubjectServiceClient } from "@reside/api/common/subject.v1"
 import {
   block,
   bold,
+  createChannel,
   createClient,
   createOperationActivities,
   type GenericOperationService,
   inline,
-  italic,
-  type MessageContent,
   type OperationActivities,
   SPACE,
 } from "@reside/common"
 import { strings } from "../../locale"
-
-type AccessOperationService = GenericOperationService<Operation>
 
 type ApprovalContext = {
   requestSetId: number
@@ -42,12 +44,13 @@ type EndpointClients = {
 }
 
 const PERMISSION_REQUEST_DENIED_FAILURE_REASON = "PERMISSION_REQUEST_DENIED"
+const PERMISSION_REQUEST_WORKFLOW_FAILED_REASON = "PERMISSION_REQUEST_WORKFLOW_FAILED"
 
 export type AccessActivities = ReturnType<typeof createAccessActivities>
 
 export function createAccessActivities(
   prisma: PrismaClient,
-  operationService: AccessOperationService,
+  operationService: GenericOperationService<Operation>,
 ) {
   const clientsByEndpoint = new Map<string, EndpointClients>()
   const subjectServiceClientsByEndpoint = new Map<string, SubjectServiceClient>()
@@ -60,10 +63,8 @@ export function createAccessActivities(
 
     const channel = createChannel(endpoint)
     const nextClients = {
-      approvalService: createClient(ApprovalServiceDefinition, channel),
-      operationActivities: createOperationActivities(
-        createClient(OperationServiceDefinition, channel),
-      ),
+      approvalService: createClient(ApprovalService, channel),
+      operationActivities: createOperationActivities(createClient(OperationService, channel)),
     }
 
     clientsByEndpoint.set(endpoint, nextClients)
@@ -76,7 +77,7 @@ export function createAccessActivities(
       return cachedClient
     }
 
-    const nextClient = createClient(SubjectServiceDefinition, createChannel(endpoint))
+    const nextClient = createClient(SubjectService, createChannel(endpoint))
     subjectServiceClientsByEndpoint.set(endpoint, nextClient)
     return nextClient
   }
@@ -149,46 +150,17 @@ export function createAccessActivities(
         },
       )
 
-      const groupedPermissions = new Map<
-        number,
-        {
-          title: string
-          description: string | null
-          scopes: string[]
-        }
-      >()
-
-      for (const item of requestSet.items) {
-        const key = item.permission.id
-        let entry = groupedPermissions.get(key)
-
-        if (!entry) {
-          entry = {
-            title: item.permission.title.length > 0 ? item.permission.title : item.permission.name,
-            description: item.permission.description,
-            scopes: [],
-          }
-          groupedPermissions.set(key, entry)
-        }
-
-        if (item.scope !== null && !entry.scopes.includes(item.scope)) {
-          entry.scopes.push(item.scope)
-        }
-      }
-
       const requestedPermissions = block(
-        [...groupedPermissions.values()].map((permission, index) => {
-          const lines: MessageContent[] = [inline(`${index + 1}. `, permission.title)]
+        deduplicateApprovalItems(requestSet.items).map((item, index) => {
+          const permissionTitle =
+            item.permission.title.length > 0 ? item.permission.title : item.permission.name
 
-          if (permission.description && permission.description.trim().length > 0) {
-            lines.push(italic(permission.description.trim()))
-          }
-
-          for (const scope of permission.scopes) {
-            lines.push(strings.approvalMessage.scopeLine(scope))
-          }
-
-          return block(lines)
+          return inline(
+            `${index + 1}. `,
+            permissionTitle,
+            SPACE,
+            `(${toApprovalScopeText(item.scope)})`,
+          )
         }),
       )
 
@@ -227,10 +199,10 @@ export function createAccessActivities(
       const callbackEndpoint = await resolveApproverCallbackEndpoint(prisma, input.approverId)
       const clients = getEndpointClients(callbackEndpoint)
 
-      const requestPayload: ApprovalRequest = {
+      const requestPayload: ApprovalRequest = create(ApprovalRequestSchema, {
         title: input.title,
         content: input.content,
-      }
+      })
 
       const operation = await clients.approvalService.approve(requestPayload)
 
@@ -241,7 +213,7 @@ export function createAccessActivities(
       approverId: number
       operationId: number
       workflowId: string
-    }): Promise<SubscribeToOperationCompletionResponse> {
+    }): Promise<SubscribeToOperationCompletionResponseJson> {
       const callbackEndpoint = await resolveApproverCallbackEndpoint(prisma, input.approverId)
       const clients = getEndpointClients(callbackEndpoint)
 
@@ -411,7 +383,84 @@ export function createAccessActivities(
         input.resolution,
       )
     },
+
+    async failPermissionRequestSetWorkflowIfPending(input: {
+      operationId: number
+      resolution: string
+    }): Promise<void> {
+      const operation = await prisma.operation.findUnique({
+        where: {
+          id: input.operationId,
+        },
+        include: {
+          permissionRequestSet: true,
+        },
+      })
+
+      if (operation === null || operation.permissionRequestSet === null) {
+        throw new Error(`Operation "${input.operationId}" has no permission request set result`)
+      }
+
+      if (operation.status !== "PENDING") {
+        return
+      }
+
+      if (operation.permissionRequestSet.status === "PENDING") {
+        await prisma.permissionRequestSet.update({
+          where: {
+            id: operation.permissionRequestSet.id,
+          },
+          data: {
+            status: "DENIED",
+            resolution: input.resolution,
+            resolvedBySubjectId: null,
+            resolvedAt: new Date(),
+          },
+        })
+      }
+
+      await operationService.setFailed(
+        input.operationId,
+        PERMISSION_REQUEST_WORKFLOW_FAILED_REASON,
+        input.resolution,
+      )
+    },
   }
+}
+
+function deduplicateApprovalItems(
+  items: Array<{
+    permission: {
+      id: number
+      name: string
+      title: string
+    }
+    scope: string | null
+  }>,
+): Array<{
+  permission: {
+    id: number
+    name: string
+    title: string
+  }
+  scope: string | null
+}> {
+  const deduplicated = new Map<string, (typeof items)[number]>()
+
+  for (const item of items) {
+    deduplicated.set(`${item.permission.id}|${item.scope ?? ""}`, item)
+  }
+
+  return [...deduplicated.values()]
+}
+
+function toApprovalScopeText(scope: string | null): string {
+  const normalizedScope = scope?.trim()
+  if (normalizedScope && normalizedScope.length > 0) {
+    return normalizedScope
+  }
+
+  return "*"
 }
 
 async function resolveApproverCallbackEndpoint(

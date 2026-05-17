@@ -12,6 +12,15 @@ export type ReplicaEnvironmentVariable =
         }
       }
     }
+  | {
+      name: string
+      valueFrom: {
+        configMapKeyRef: {
+          name: string
+          key: string
+        }
+      }
+    }
 
 export type KnativeService = {
   apiVersion: "serving.knative.dev/v1"

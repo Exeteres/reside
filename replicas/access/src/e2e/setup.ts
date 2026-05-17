@@ -1,6 +1,6 @@
 import type { PrismaClient } from "../database"
 import type { AccessE2EScope } from "./scope"
-import { WellKnownPermissions } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 
 export async function ensureE2EManageBindings(
   prisma: PrismaClient,

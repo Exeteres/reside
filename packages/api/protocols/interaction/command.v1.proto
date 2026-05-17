@@ -15,7 +15,7 @@ message CommandInvocation {
   // The command being invoked.
   reside.interaction.definition.v1.Command command = 2;
 
-  // The interaction context where the command is being invoked.
+  // The interaction context (opaque token + title) where the command is being invoked.
   reside.interaction.context.v1.InteractionContext context = 3;
 
   // The parameters for the command invocation as JSON record where keys are parameter names.

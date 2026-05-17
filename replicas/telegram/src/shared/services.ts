@@ -1,56 +1,39 @@
-import { status as grpcStatus } from "@grpc/grpc-js"
-import { AuthzServiceDefinition } from "@reside/api/access/authz.v1"
-import { DefinitionServiceDefinition as AccessDefinitionServiceDefinition } from "@reside/api/access/definition.v1"
-import { PermissionRequestServiceDefinition } from "@reside/api/access/request.v1"
-import { ApprovalResponse, ApprovalResult } from "@reside/api/common/approval.v1"
-import { OperationServiceDefinition } from "@reside/api/common/operation.v1"
-import { SubjectServiceDefinition } from "@reside/api/common/subject.v1"
-import { ProvisionServiceDefinition } from "@reside/api/database/provision.v1"
-import { DefinitionServiceDefinition as InteractionDefinitionServiceDefinition } from "@reside/api/interaction/definition.v1"
+import type { ApprovalResponseJson } from "@reside/api/common/approval.v1"
+import { status as GrpcStatus } from "@grpc/grpc-js"
+import { OperationService } from "@reside/api/common/operation.v1"
+import { SubjectService } from "@reside/api/common/subject.v1"
+import { DefinitionService as InteractionDefinitionService } from "@reside/api/interaction/definition.v1"
 import {
-  NotificationResponse,
-  NotificationServiceDefinition,
+  type NotificationResponseJson,
+  NotificationService,
 } from "@reside/api/interaction/notification.v1"
 import {
-  createChannels,
   createClient,
+  createCommonServices,
   createGenericOperationService,
   createPostgresPool,
   createTemporalClient,
 } from "@reside/common"
-import { telegramReplica } from "@reside/topology"
+import { telegramReplica } from "@reside/registry"
 import { isGrpcServiceError } from "@temporalio/client"
 import { PrismaClient } from "../database"
 import { getTelegramApprovalWorkflowId, TELEGRAM_APPROVAL_CANCEL_SIGNAL } from "../definitions"
 
 export async function createServices() {
-  const channels = await createChannels(telegramReplica.endpoints)
+  const services = await createCommonServices(telegramReplica.endpoints)
 
-  const databaseProvisionService = createClient(ProvisionServiceDefinition, channels.database)
-  const databaseOperationService = createClient(OperationServiceDefinition, channels.database)
-
-  const accessRequestService = createClient(PermissionRequestServiceDefinition, channels.access)
-  const accessOperationService = createClient(OperationServiceDefinition, channels.access)
-  const accessDefinitionService = createClient(AccessDefinitionServiceDefinition, channels.access)
-  const accessAuthzService = createClient(AuthzServiceDefinition, channels.access)
-  const accessSubjectService = createClient(SubjectServiceDefinition, channels.access)
+  const subjectService = createClient(SubjectService, services.channels.access)
   const interactionDefinitionService = createClient(
-    InteractionDefinitionServiceDefinition,
-    channels.self,
+    InteractionDefinitionService,
+    services.channels.self,
   )
-  const interactionNotificationService = createClient(NotificationServiceDefinition, channels.self)
-  const interactionOperationService = createClient(OperationServiceDefinition, channels.self)
+  const notificationService = createClient(NotificationService, services.channels.self)
+  const interactionOperationService = createClient(OperationService, services.channels.self)
 
-  const { pool, adapter } = await createPostgresPool({
-    provisionService: databaseProvisionService,
-    operationService: databaseOperationService,
-  })
+  const { pool, adapter } = await createPostgresPool(services)
 
   const prisma = new PrismaClient({ adapter })
-  const temporalClient = await createTemporalClient({
-    provisionService: databaseProvisionService,
-    operationService: databaseOperationService,
-  })
+  const temporalClient = await createTemporalClient(services)
 
   const operationService = createGenericOperationService({
     prisma,
@@ -64,10 +47,20 @@ export async function createServices() {
       })
 
       if (approvalRequest?.result !== null && approvalRequest?.result !== undefined) {
-        return ApprovalResponse.create({
-          result: toApprovalResult(approvalRequest.result),
+        return {
+          result: approvalRequest.result,
           resolution: approvalRequest.resolution ?? "",
-        })
+        } satisfies ApprovalResponseJson
+      }
+
+      const avatarProvisionRequest = await prisma.avatarProvisionRequest.findUnique({
+        where: {
+          operationId,
+        },
+      })
+
+      if (avatarProvisionRequest) {
+        return {}
       }
 
       const response = await prisma.notificationResponse.findUnique({
@@ -85,24 +78,18 @@ export async function createServices() {
           throw new Error(`Operation "${operationId}" ACTION response has no actionName`)
         }
 
-        return NotificationResponse.create({
-          response: {
-            $case: "actionName",
-            value: response.actionName,
-          },
-        })
+        return {
+          actionName: response.actionName,
+        } satisfies NotificationResponseJson
       }
 
       if (!response.textResponse) {
         throw new Error(`Operation "${operationId}" TEXT response has no textResponse`)
       }
 
-      return NotificationResponse.create({
-        response: {
-          $case: "textResponse",
-          value: response.textResponse,
-        },
-      })
+      return {
+        textResponse: response.textResponse,
+      } satisfies NotificationResponseJson
     },
 
     cancelOperation: async operationId => {
@@ -126,7 +113,7 @@ export async function createServices() {
 
         await workflowHandle.signal(TELEGRAM_APPROVAL_CANCEL_SIGNAL)
       } catch (error) {
-        if (isGrpcServiceError(error) && error.code === grpcStatus.NOT_FOUND) {
+        if (isGrpcServiceError(error) && error.code === GrpcStatus.NOT_FOUND) {
           return
         }
 
@@ -136,30 +123,14 @@ export async function createServices() {
   })
 
   return {
+    ...services,
     pool,
     prisma,
     operationService,
     temporalClient,
-    databaseProvisionService,
-    databaseOperationService,
     interactionDefinitionService,
-    interactionNotificationService,
+    notificationService,
     interactionOperationService,
-    accessRequestService,
-    accessAuthzService,
-    accessSubjectService,
-    accessDefinitionService,
-    accessOperationService,
-  }
-}
-
-function toApprovalResult(result: "ESCALATED" | "APPROVED" | "REJECTED"): ApprovalResult {
-  switch (result) {
-    case "ESCALATED":
-      return ApprovalResult.ESCALATED
-    case "APPROVED":
-      return ApprovalResult.APPROVED
-    case "REJECTED":
-      return ApprovalResult.REJECTED
+    subjectService,
   }
 }

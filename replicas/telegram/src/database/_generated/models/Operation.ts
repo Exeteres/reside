@@ -265,6 +265,7 @@ export type OperationWhereInput = {
   notification?: Prisma.XOR<Prisma.NotificationNullableScalarRelationFilter, Prisma.NotificationWhereInput> | null
   notificationResponse?: Prisma.XOR<Prisma.NotificationResponseNullableScalarRelationFilter, Prisma.NotificationResponseWhereInput> | null
   approvalRequest?: Prisma.XOR<Prisma.ApprovalRequestNullableScalarRelationFilter, Prisma.ApprovalRequestWhereInput> | null
+  avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
 }
 
 export type OperationOrderByWithRelationInput = {
@@ -282,6 +283,7 @@ export type OperationOrderByWithRelationInput = {
   notification?: Prisma.NotificationOrderByWithRelationInput
   notificationResponse?: Prisma.NotificationResponseOrderByWithRelationInput
   approvalRequest?: Prisma.ApprovalRequestOrderByWithRelationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestOrderByWithRelationInput
 }
 
 export type OperationWhereUniqueInput = Prisma.AtLeast<{
@@ -302,6 +304,7 @@ export type OperationWhereUniqueInput = Prisma.AtLeast<{
   notification?: Prisma.XOR<Prisma.NotificationNullableScalarRelationFilter, Prisma.NotificationWhereInput> | null
   notificationResponse?: Prisma.XOR<Prisma.NotificationResponseNullableScalarRelationFilter, Prisma.NotificationResponseWhereInput> | null
   approvalRequest?: Prisma.XOR<Prisma.ApprovalRequestNullableScalarRelationFilter, Prisma.ApprovalRequestWhereInput> | null
+  avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
 }, "id">
 
 export type OperationOrderByWithAggregationInput = {
@@ -354,6 +357,7 @@ export type OperationCreateInput = {
   notification?: Prisma.NotificationCreateNestedOneWithoutOperationInput
   notificationResponse?: Prisma.NotificationResponseCreateNestedOneWithoutOperationInput
   approvalRequest?: Prisma.ApprovalRequestCreateNestedOneWithoutOperationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutOperationInput
 }
 
 export type OperationUncheckedCreateInput = {
@@ -371,6 +375,7 @@ export type OperationUncheckedCreateInput = {
   notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutOperationInput
   notificationResponse?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutOperationInput
   approvalRequest?: Prisma.ApprovalRequestUncheckedCreateNestedOneWithoutOperationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutOperationInput
 }
 
 export type OperationUpdateInput = {
@@ -387,6 +392,7 @@ export type OperationUpdateInput = {
   notification?: Prisma.NotificationUpdateOneWithoutOperationNestedInput
   notificationResponse?: Prisma.NotificationResponseUpdateOneWithoutOperationNestedInput
   approvalRequest?: Prisma.ApprovalRequestUpdateOneWithoutOperationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutOperationNestedInput
 }
 
 export type OperationUncheckedUpdateInput = {
@@ -404,6 +410,7 @@ export type OperationUncheckedUpdateInput = {
   notification?: Prisma.NotificationUncheckedUpdateOneWithoutOperationNestedInput
   notificationResponse?: Prisma.NotificationResponseUncheckedUpdateOneWithoutOperationNestedInput
   approvalRequest?: Prisma.ApprovalRequestUncheckedUpdateOneWithoutOperationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutOperationNestedInput
 }
 
 export type OperationCreateManyInput = {
@@ -519,6 +526,20 @@ export type OperationUpdateOneRequiredWithoutApprovalRequestNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.OperationUpdateToOneWithWhereWithoutApprovalRequestInput, Prisma.OperationUpdateWithoutApprovalRequestInput>, Prisma.OperationUncheckedUpdateWithoutApprovalRequestInput>
 }
 
+export type OperationCreateNestedOneWithoutAvatarProvisionRequestInput = {
+  create?: Prisma.XOR<Prisma.OperationCreateWithoutAvatarProvisionRequestInput, Prisma.OperationUncheckedCreateWithoutAvatarProvisionRequestInput>
+  connectOrCreate?: Prisma.OperationCreateOrConnectWithoutAvatarProvisionRequestInput
+  connect?: Prisma.OperationWhereUniqueInput
+}
+
+export type OperationUpdateOneRequiredWithoutAvatarProvisionRequestNestedInput = {
+  create?: Prisma.XOR<Prisma.OperationCreateWithoutAvatarProvisionRequestInput, Prisma.OperationUncheckedCreateWithoutAvatarProvisionRequestInput>
+  connectOrCreate?: Prisma.OperationCreateOrConnectWithoutAvatarProvisionRequestInput
+  upsert?: Prisma.OperationUpsertWithoutAvatarProvisionRequestInput
+  connect?: Prisma.OperationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OperationUpdateToOneWithWhereWithoutAvatarProvisionRequestInput, Prisma.OperationUpdateWithoutAvatarProvisionRequestInput>, Prisma.OperationUncheckedUpdateWithoutAvatarProvisionRequestInput>
+}
+
 export type OperationCreateNestedOneWithoutNotificationResponseInput = {
   create?: Prisma.XOR<Prisma.OperationCreateWithoutNotificationResponseInput, Prisma.OperationUncheckedCreateWithoutNotificationResponseInput>
   connectOrCreate?: Prisma.OperationCreateOrConnectWithoutNotificationResponseInput
@@ -566,6 +587,7 @@ export type OperationCreateWithoutApprovalRequestInput = {
   resolvedAt?: Date | string | null
   notification?: Prisma.NotificationCreateNestedOneWithoutOperationInput
   notificationResponse?: Prisma.NotificationResponseCreateNestedOneWithoutOperationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutOperationInput
 }
 
 export type OperationUncheckedCreateWithoutApprovalRequestInput = {
@@ -582,6 +604,7 @@ export type OperationUncheckedCreateWithoutApprovalRequestInput = {
   resolvedAt?: Date | string | null
   notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutOperationInput
   notificationResponse?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutOperationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutOperationInput
 }
 
 export type OperationCreateOrConnectWithoutApprovalRequestInput = {
@@ -613,6 +636,7 @@ export type OperationUpdateWithoutApprovalRequestInput = {
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   notification?: Prisma.NotificationUpdateOneWithoutOperationNestedInput
   notificationResponse?: Prisma.NotificationResponseUpdateOneWithoutOperationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutOperationNestedInput
 }
 
 export type OperationUncheckedUpdateWithoutApprovalRequestInput = {
@@ -629,6 +653,89 @@ export type OperationUncheckedUpdateWithoutApprovalRequestInput = {
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   notification?: Prisma.NotificationUncheckedUpdateOneWithoutOperationNestedInput
   notificationResponse?: Prisma.NotificationResponseUncheckedUpdateOneWithoutOperationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutOperationNestedInput
+}
+
+export type OperationCreateWithoutAvatarProvisionRequestInput = {
+  title: string
+  description?: string | null
+  status?: $Enums.OperationStatus
+  failureReason?: string | null
+  failureMessage?: string | null
+  callbackEndpoint?: string | null
+  customData?:unknown | Prisma.NullableJsonNullValueInput
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  resolvedAt?: Date | string | null
+  notification?: Prisma.NotificationCreateNestedOneWithoutOperationInput
+  notificationResponse?: Prisma.NotificationResponseCreateNestedOneWithoutOperationInput
+  approvalRequest?: Prisma.ApprovalRequestCreateNestedOneWithoutOperationInput
+}
+
+export type OperationUncheckedCreateWithoutAvatarProvisionRequestInput = {
+  id?: number
+  title: string
+  description?: string | null
+  status?: $Enums.OperationStatus
+  failureReason?: string | null
+  failureMessage?: string | null
+  callbackEndpoint?: string | null
+  customData?:unknown | Prisma.NullableJsonNullValueInput
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  resolvedAt?: Date | string | null
+  notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutOperationInput
+  notificationResponse?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutOperationInput
+  approvalRequest?: Prisma.ApprovalRequestUncheckedCreateNestedOneWithoutOperationInput
+}
+
+export type OperationCreateOrConnectWithoutAvatarProvisionRequestInput = {
+  where: Prisma.OperationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OperationCreateWithoutAvatarProvisionRequestInput, Prisma.OperationUncheckedCreateWithoutAvatarProvisionRequestInput>
+}
+
+export type OperationUpsertWithoutAvatarProvisionRequestInput = {
+  update: Prisma.XOR<Prisma.OperationUpdateWithoutAvatarProvisionRequestInput, Prisma.OperationUncheckedUpdateWithoutAvatarProvisionRequestInput>
+  create: Prisma.XOR<Prisma.OperationCreateWithoutAvatarProvisionRequestInput, Prisma.OperationUncheckedCreateWithoutAvatarProvisionRequestInput>
+  where?: Prisma.OperationWhereInput
+}
+
+export type OperationUpdateToOneWithWhereWithoutAvatarProvisionRequestInput = {
+  where?: Prisma.OperationWhereInput
+  data: Prisma.XOR<Prisma.OperationUpdateWithoutAvatarProvisionRequestInput, Prisma.OperationUncheckedUpdateWithoutAvatarProvisionRequestInput>
+}
+
+export type OperationUpdateWithoutAvatarProvisionRequestInput = {
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumOperationStatusFieldUpdateOperationsInput | $Enums.OperationStatus
+  failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customData?:unknown | Prisma.NullableJsonNullValueInput
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  notification?: Prisma.NotificationUpdateOneWithoutOperationNestedInput
+  notificationResponse?: Prisma.NotificationResponseUpdateOneWithoutOperationNestedInput
+  approvalRequest?: Prisma.ApprovalRequestUpdateOneWithoutOperationNestedInput
+}
+
+export type OperationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumOperationStatusFieldUpdateOperationsInput | $Enums.OperationStatus
+  failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customData?:unknown | Prisma.NullableJsonNullValueInput
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  notification?: Prisma.NotificationUncheckedUpdateOneWithoutOperationNestedInput
+  notificationResponse?: Prisma.NotificationResponseUncheckedUpdateOneWithoutOperationNestedInput
+  approvalRequest?: Prisma.ApprovalRequestUncheckedUpdateOneWithoutOperationNestedInput
 }
 
 export type OperationCreateWithoutNotificationResponseInput = {
@@ -644,6 +751,7 @@ export type OperationCreateWithoutNotificationResponseInput = {
   resolvedAt?: Date | string | null
   notification?: Prisma.NotificationCreateNestedOneWithoutOperationInput
   approvalRequest?: Prisma.ApprovalRequestCreateNestedOneWithoutOperationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutOperationInput
 }
 
 export type OperationUncheckedCreateWithoutNotificationResponseInput = {
@@ -660,6 +768,7 @@ export type OperationUncheckedCreateWithoutNotificationResponseInput = {
   resolvedAt?: Date | string | null
   notification?: Prisma.NotificationUncheckedCreateNestedOneWithoutOperationInput
   approvalRequest?: Prisma.ApprovalRequestUncheckedCreateNestedOneWithoutOperationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutOperationInput
 }
 
 export type OperationCreateOrConnectWithoutNotificationResponseInput = {
@@ -691,6 +800,7 @@ export type OperationUpdateWithoutNotificationResponseInput = {
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   notification?: Prisma.NotificationUpdateOneWithoutOperationNestedInput
   approvalRequest?: Prisma.ApprovalRequestUpdateOneWithoutOperationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutOperationNestedInput
 }
 
 export type OperationUncheckedUpdateWithoutNotificationResponseInput = {
@@ -707,6 +817,7 @@ export type OperationUncheckedUpdateWithoutNotificationResponseInput = {
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   notification?: Prisma.NotificationUncheckedUpdateOneWithoutOperationNestedInput
   approvalRequest?: Prisma.ApprovalRequestUncheckedUpdateOneWithoutOperationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutOperationNestedInput
 }
 
 export type OperationCreateWithoutNotificationInput = {
@@ -722,6 +833,7 @@ export type OperationCreateWithoutNotificationInput = {
   resolvedAt?: Date | string | null
   notificationResponse?: Prisma.NotificationResponseCreateNestedOneWithoutOperationInput
   approvalRequest?: Prisma.ApprovalRequestCreateNestedOneWithoutOperationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutOperationInput
 }
 
 export type OperationUncheckedCreateWithoutNotificationInput = {
@@ -738,6 +850,7 @@ export type OperationUncheckedCreateWithoutNotificationInput = {
   resolvedAt?: Date | string | null
   notificationResponse?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutOperationInput
   approvalRequest?: Prisma.ApprovalRequestUncheckedCreateNestedOneWithoutOperationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutOperationInput
 }
 
 export type OperationCreateOrConnectWithoutNotificationInput = {
@@ -769,6 +882,7 @@ export type OperationUpdateWithoutNotificationInput = {
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   notificationResponse?: Prisma.NotificationResponseUpdateOneWithoutOperationNestedInput
   approvalRequest?: Prisma.ApprovalRequestUpdateOneWithoutOperationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutOperationNestedInput
 }
 
 export type OperationUncheckedUpdateWithoutNotificationInput = {
@@ -785,6 +899,7 @@ export type OperationUncheckedUpdateWithoutNotificationInput = {
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   notificationResponse?: Prisma.NotificationResponseUncheckedUpdateOneWithoutOperationNestedInput
   approvalRequest?: Prisma.ApprovalRequestUncheckedUpdateOneWithoutOperationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutOperationNestedInput
 }
 
 
@@ -804,6 +919,7 @@ export type OperationSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   notification?: boolean | Prisma.Operation$notificationArgs<ExtArgs>
   notificationResponse?: boolean | Prisma.Operation$notificationResponseArgs<ExtArgs>
   approvalRequest?: boolean | Prisma.Operation$approvalRequestArgs<ExtArgs>
+  avatarProvisionRequest?: boolean | Prisma.Operation$avatarProvisionRequestArgs<ExtArgs>
 }, ExtArgs["result"]["operation"]>
 
 export type OperationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -853,6 +969,7 @@ export type OperationInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   notification?: boolean | Prisma.Operation$notificationArgs<ExtArgs>
   notificationResponse?: boolean | Prisma.Operation$notificationResponseArgs<ExtArgs>
   approvalRequest?: boolean | Prisma.Operation$approvalRequestArgs<ExtArgs>
+  avatarProvisionRequest?: boolean | Prisma.Operation$avatarProvisionRequestArgs<ExtArgs>
 }
 export type OperationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 export type OperationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -872,6 +989,10 @@ export type $OperationPayload<ExtArgs extends runtime.Types.Extensions.InternalA
      * The approval request associated with this operation.
      */
     approvalRequest: Prisma.$ApprovalRequestPayload<ExtArgs> | null
+    /**
+     * The avatar provisioning request associated with this operation.
+     */
+    avatarProvisionRequest: Prisma.$AvatarProvisionRequestPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     /**
@@ -1315,6 +1436,7 @@ export interface Prisma__OperationClient<T, Null = never, ExtArgs extends runtim
   notification<T extends Prisma.Operation$notificationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Operation$notificationArgs<ExtArgs>>): Prisma.Prisma__NotificationClient<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   notificationResponse<T extends Prisma.Operation$notificationResponseArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Operation$notificationResponseArgs<ExtArgs>>): Prisma.Prisma__NotificationResponseClient<runtime.Types.Result.GetResult<Prisma.$NotificationResponsePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   approvalRequest<T extends Prisma.Operation$approvalRequestArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Operation$approvalRequestArgs<ExtArgs>>): Prisma.Prisma__ApprovalRequestClient<runtime.Types.Result.GetResult<Prisma.$ApprovalRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  avatarProvisionRequest<T extends Prisma.Operation$avatarProvisionRequestArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Operation$avatarProvisionRequestArgs<ExtArgs>>): Prisma.Prisma__AvatarProvisionRequestClient<runtime.Types.Result.GetResult<Prisma.$AvatarProvisionRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1797,6 +1919,25 @@ export type Operation$approvalRequestArgs<ExtArgs extends runtime.Types.Extensio
    */
   include?: Prisma.ApprovalRequestInclude<ExtArgs> | null
   where?: Prisma.ApprovalRequestWhereInput
+}
+
+/**
+ * Operation.avatarProvisionRequest
+ */
+export type Operation$avatarProvisionRequestArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AvatarProvisionRequest
+   */
+  select?: Prisma.AvatarProvisionRequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AvatarProvisionRequest
+   */
+  omit?: Prisma.AvatarProvisionRequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AvatarProvisionRequestInclude<ExtArgs> | null
+  where?: Prisma.AvatarProvisionRequestWhereInput
 }
 
 /**

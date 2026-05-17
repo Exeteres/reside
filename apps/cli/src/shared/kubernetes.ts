@@ -1,4 +1,5 @@
 import type { ResideLogger } from "./logger"
+import type { TopologyReplica } from "./topology"
 import { Buffer } from "node:buffer"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -6,7 +7,6 @@ import { z } from "zod"
 import { buildPackageImage } from "./build-image"
 import { loadPackageConfig } from "./package-config"
 import { type CommandLog, runCommand, waitFor } from "./process"
-import { sanitizeEndpointName, type TopologyReplica } from "./topology"
 
 type ReplicaData = {
   name: string
@@ -17,6 +17,7 @@ type ClusterRoleRule = {
   apiGroups: string[]
   resources: string[]
   verbs: string[]
+  resourceNames?: string[]
 }
 
 const operatorNamespace = "reside-system"
@@ -63,6 +64,22 @@ const JobSchema = z
   .passthrough()
 
 const PodListSchema = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          metadata: z
+            .object({
+              name: z.string().optional(),
+            })
+            .optional(),
+        })
+        .passthrough(),
+    ),
+  })
+  .passthrough()
+
+const NamespaceListSchema = z
   .object({
     items: z.array(
       z
@@ -172,11 +189,19 @@ async function buildReplicaE2EImage(
   replica: TopologyReplica,
   args: BuildReplicaImageArgs,
 ): Promise<string> {
+  return await buildReplicaImage(replica, "e2e", args)
+}
+
+async function buildReplicaImage(
+  replica: TopologyReplica,
+  tag: string,
+  args: BuildReplicaImageArgs,
+): Promise<string> {
   const packagePath = getReplicaPackagePath(replica.name)
   const packageJsonPath = resolve(packagePath, "package.json")
   if (!(await pathExists(packageJsonPath))) {
     throw new Error(
-      `Failed to prepare e2e image for replica "${replica.name}". Local package was not found in "${packagePath}".`,
+      `Failed to prepare image for replica "${replica.name}". Local package was not found in "${packagePath}".`,
     )
   }
 
@@ -189,9 +214,15 @@ async function buildReplicaE2EImage(
   const builtImage = await buildPackageImage(packagePath, {
     commandLog: args.commandLog,
     logger: args.logger,
-    tag: "e2e",
+    tag,
     push: true,
   })
+
+  if (!builtImage.includes("@sha256:")) {
+    throw new Error(
+      `Built image for replica "${replica.name}" is not digest-pinned: "${builtImage}"`,
+    )
+  }
 
   return builtImage
 }
@@ -399,19 +430,6 @@ export function createPinoPrettyStdoutWriter(prefix: string): PrettyStdoutWriter
 }
 
 function buildReplicaBody(replica: TopologyReplica): Record<string, unknown> {
-  const endpoints: Record<string, string> = {}
-  const dependencyEndpoints: Record<string, string> = replica.endpoints
-
-  for (const [endpointName, endpointValue] of Object.entries(dependencyEndpoints)) {
-    const sanitizedName = sanitizeEndpointName(endpointName)
-
-    if (Object.hasOwn(endpoints, sanitizedName) && endpoints[sanitizedName] !== endpointValue) {
-      throw new Error(`Endpoint name collision after sanitization for "${endpointName}"`)
-    }
-
-    endpoints[sanitizedName] = endpointValue
-  }
-
   const metadata = {
     name: replica.name,
   }
@@ -422,7 +440,6 @@ function buildReplicaBody(replica: TopologyReplica): Record<string, unknown> {
     metadata,
     spec: {
       image: replica.image,
-      endpoints,
     },
   }
 }
@@ -472,6 +489,20 @@ function buildReplicaClusterRole(
   }
 }
 
+function buildReplicaBootstrapClusterRole(
+  replicaName: string,
+  rules: ClusterRoleRule[],
+): Record<string, unknown> {
+  return {
+    apiVersion: "rbac.authorization.k8s.io/v1",
+    kind: "ClusterRole",
+    metadata: {
+      name: `replica-${replicaName}-bootstrap`,
+    },
+    rules,
+  }
+}
+
 function buildReplicaClusterRoleBinding(
   replicaName: string,
   namespace: string,
@@ -486,6 +517,31 @@ function buildReplicaClusterRoleBinding(
       apiGroup: "rbac.authorization.k8s.io",
       kind: "ClusterRole",
       name: `replica-${replicaName}`,
+    },
+    subjects: [
+      {
+        kind: "ServiceAccount",
+        name: replicaName,
+        namespace,
+      },
+    ],
+  }
+}
+
+function buildReplicaBootstrapClusterRoleBinding(
+  replicaName: string,
+  namespace: string,
+): Record<string, unknown> {
+  return {
+    apiVersion: "rbac.authorization.k8s.io/v1",
+    kind: "ClusterRoleBinding",
+    metadata: {
+      name: `replica-${replicaName}-bootstrap`,
+    },
+    roleRef: {
+      apiGroup: "rbac.authorization.k8s.io",
+      kind: "ClusterRole",
+      name: `replica-${replicaName}-bootstrap`,
     },
     subjects: [
       {
@@ -512,6 +568,7 @@ function buildE2EJob(
   namespace: string,
   replicaName: string,
   image: string,
+  clusterDomain: string,
 ): Record<string, unknown> {
   const workingDirectory = getReplicaPackageContainerPath(replicaName)
 
@@ -521,13 +578,20 @@ function buildE2EJob(
     metadata: {
       name: `${replicaName}-e2e`,
       namespace,
+      labels: {
+        "app.kubernetes.io/name": `replica-${replicaName}`,
+        "reside.io/replica": replicaName,
+        "reside.io/component": "e2e",
+      },
     },
     spec: {
       backoffLimit: 0,
       template: {
         metadata: {
           labels: {
+            "app.kubernetes.io/name": `replica-${replicaName}`,
             "reside.io/replica": replicaName,
+            "reside.io/component": "e2e",
           },
         },
         spec: {
@@ -562,6 +626,10 @@ function buildE2EJob(
                 {
                   name: "REPLICA_IMAGE",
                   value: image,
+                },
+                {
+                  name: "RESIDE_CLUSTER_DOMAIN",
+                  value: clusterDomain,
                 },
                 {
                   name: "RESIDE_BIN",
@@ -649,6 +717,21 @@ export async function buildE2EImage(
   return await buildReplicaE2EImage(replica, args)
 }
 
+/**
+ * Builds a latest-tagged image for the given replica.
+ *
+ * It builds a local replica package using the `latest` tag.
+ *
+ * @param replica The replica to prepare.
+ * @returns The digest-pinned image reference.
+ */
+export async function buildLatestImage(
+  replica: TopologyReplica,
+  args: BuildReplicaImageArgs,
+): Promise<string> {
+  return await buildReplicaImage(replica, "latest", args)
+}
+
 export async function installGatewayApi(
   access: KubernetesClusterAccess,
   args: CommandLoggingArgs = {},
@@ -711,6 +794,7 @@ export async function waitForKourier(
 
 export async function installResideOperator(
   access: KubernetesClusterAccess,
+  clusterDomain: string,
   args: CommandLoggingArgs = {},
 ): Promise<void> {
   const cliRootPath = getCliRootPath()
@@ -725,6 +809,29 @@ export async function installResideOperator(
     resolve(cliRootPath, "..", "operator", "assets", "reside-operator.yaml"),
     args,
   )
+
+  await setResideOperatorClusterDomain(access, clusterDomain, args)
+}
+
+export async function setResideOperatorClusterDomain(
+  access: KubernetesClusterAccess,
+  clusterDomain: string,
+  args: CommandLoggingArgs = {},
+): Promise<void> {
+  await runCommand(
+    [
+      ...buildKubectlBaseArgs(access),
+      "-n",
+      operatorNamespace,
+      "set",
+      "env",
+      "deployment/reside-operator",
+      `RESIDE_CLUSTER_DOMAIN=${clusterDomain}`,
+    ],
+    {
+      commandLog: args.commandLog,
+    },
+  )
 }
 
 export async function waitForResideOperator(
@@ -735,6 +842,43 @@ export async function waitForResideOperator(
     access,
     { namespace: operatorNamespace, deployment: "reside-operator" },
     args,
+  )
+}
+
+/**
+ * Deletes all Replica custom resources and waits until all replica namespaces are removed.
+ *
+ * @param access The target cluster access.
+ */
+export async function recreateReplicas(
+  access: KubernetesClusterAccess,
+  args: CommandLoggingArgs = {},
+): Promise<void> {
+  await runKubectl(access, ["delete", "replicas.reside.io", "--all", "--wait=false"], {
+    commandLog: args.commandLog,
+    ignoreExitCode: true,
+  })
+
+  await waitFor(
+    async () => {
+      const namespaces = await getKubectlJson(
+        access,
+        ["get", "namespaces", "-o", "json"],
+        NamespaceListSchema,
+      )
+      if (!namespaces) {
+        return true
+      }
+
+      const replicaNamespaces = namespaces.items
+        .map(item => item.metadata?.name)
+        .filter((name): name is string => typeof name === "string")
+        .filter(name => name.startsWith("replica-"))
+
+      return replicaNamespaces.length === 0
+    },
+    300_000,
+    "Timed out waiting for replica namespaces deletion",
   )
 }
 
@@ -798,6 +942,32 @@ export async function waitForReplicaReady(
     },
     timeoutMs,
     `Replica "${replicaName}" did not become ready in time`,
+  )
+}
+
+/**
+ * Waits until the replica namespace exists.
+ *
+ * @param access The target cluster access.
+ * @param replicaName The replica name.
+ */
+export async function waitForReplicaNamespace(
+  access: KubernetesClusterAccess,
+  replicaName: string,
+): Promise<void> {
+  const namespace = getReplicaNamespace(replicaName)
+
+  await waitFor(
+    async () => {
+      const output = await runKubectl(access, ["get", "namespace", namespace, "-o", "name"], {
+        ignoreExitCode: true,
+        logOutput: false,
+      })
+
+      return output.trim().length > 0
+    },
+    180_000,
+    `Replica namespace "${namespace}" did not become available in time`,
   )
 }
 
@@ -925,6 +1095,67 @@ export async function upsertReplicaClusterRole(
 }
 
 /**
+ * Upserts a temporary bootstrap cluster role and binding for a replica service account.
+ *
+ * @param access The target cluster access.
+ * @param replicaName The replica name.
+ * @param rules The bootstrap cluster role rules to grant.
+ */
+export async function upsertReplicaBootstrapClusterRole(
+  access: KubernetesClusterAccess,
+  replicaName: string,
+  rules: ClusterRoleRule[],
+  args: CommandLoggingArgs = {},
+): Promise<void> {
+  const namespace = getReplicaNamespace(replicaName)
+
+  await applyResourceFromStdin(access, buildReplicaBootstrapClusterRole(replicaName, rules), args)
+  await applyResourceFromStdin(
+    access,
+    buildReplicaBootstrapClusterRoleBinding(replicaName, namespace),
+    args,
+  )
+}
+
+/**
+ * Deletes a temporary bootstrap cluster role and binding for a replica service account.
+ *
+ * @param access The target cluster access.
+ * @param replicaName The replica name.
+ */
+export async function deleteReplicaBootstrapClusterRole(
+  access: KubernetesClusterAccess,
+  replicaName: string,
+  args: CommandLoggingArgs = {},
+): Promise<void> {
+  await runCommand(
+    [
+      ...buildKubectlBaseArgs(access),
+      "delete",
+      "clusterrolebinding",
+      `replica-${replicaName}-bootstrap`,
+      "--ignore-not-found=true",
+    ],
+    {
+      commandLog: args.commandLog,
+    },
+  )
+
+  await runCommand(
+    [
+      ...buildKubectlBaseArgs(access),
+      "delete",
+      "clusterrole",
+      `replica-${replicaName}-bootstrap`,
+      "--ignore-not-found=true",
+    ],
+    {
+      commandLog: args.commandLog,
+    },
+  )
+}
+
+/**
  * Reads the current secret data from the replica namespace.
  *
  * @param access The target cluster access.
@@ -986,6 +1217,7 @@ async function waitForJobDeletion(
 export async function recreateE2EJob(
   access: KubernetesClusterAccess,
   replica: TopologyReplica,
+  clusterDomain: string,
 ): Promise<string> {
   const namespace = getReplicaNamespace(replica.name)
   const jobName = `${replica.name}-e2e`
@@ -999,7 +1231,10 @@ export async function recreateE2EJob(
   )
 
   await waitForJobDeletion(access, namespace, jobName)
-  await applyResourceFromStdin(access, buildE2EJob(namespace, replica.name, replica.image))
+  await applyResourceFromStdin(
+    access,
+    buildE2EJob(namespace, replica.name, replica.image, clusterDomain),
+  )
 
   return jobName
 }

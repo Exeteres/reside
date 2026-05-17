@@ -23,13 +23,24 @@ message NotificationAction {
 
   // The optional well-known icon to be displayed alongside the action in the UI, used to visually convey the purpose of the action.
   NotificationActionIcon icon = 3;
+
+  // The optional URL of the action to redirect the user.
+  // If provided, no callback will be triggered.
+  google.protobuf.StringValue url = 4;
+}
+
+// The row of actions in a notification.
+message NotificationActionRow {
+  // The list of actions to be displayed in the same row in the UI.
+  repeated NotificationAction actions = 1;
 }
 
 // The request message for sending a notification to a channel.
 message SendNotificationRequest {
-  // The ID of the interaction context to send the notification in response to.
-  // This ID is opaque and must not be parsed.
-  string context_id = 1;
+  // The optional interaction context token to send the notification in response to.
+  // This token is opaque and must not be parsed.
+  // If omitted, the notification is sent to the system chat.
+  optional string context_token = 1;
 
   // The channel to send the notification to.
   string channel = 2;
@@ -53,9 +64,10 @@ message SendNotificationRequest {
   // Unlike images, these files are not actively displayed in the notification, but can be accessed by the user in some other way.
   repeated reside.common.file.v1.InlineFile attachments = 7;
 
-  // The optional list of actions that the user can take in response to the notification.
+  // The optional list of action rows that the user can take in response to the notification.
   // If provided with `requires_text_response` set to true, the user will have choice to either click one of the provided actions or provide a text response.
-  repeated NotificationAction actions = 8;
+  // If all actions are "url-based", no response will be tracked.
+  repeated NotificationActionRow action_rows = 8;
 
   // Whether the notification needs (or may) text input from the user in response.
   // If not true, the response to the notification will not be tracked and no operation will be created to await it.

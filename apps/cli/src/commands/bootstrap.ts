@@ -1,5 +1,18 @@
+import { input } from "@inquirer/prompts"
 import { defineCommand } from "citty"
 import { readRequestedReplicas, runProvisionFlow } from "../shared/bootstrap-flow"
+
+async function readClusterDomain(): Promise<string> {
+  const clusterDomain = process.env.RESIDE_CLUSTER_DOMAIN?.trim()
+  if (clusterDomain && clusterDomain.length > 0) {
+    return clusterDomain
+  }
+
+  return await input({
+    message: "Enter value for RESIDE_CLUSTER_DOMAIN",
+    validate: value => (value.trim().length > 0 ? true : "RESIDE_CLUSTER_DOMAIN cannot be empty"),
+  })
+}
 
 export const bootstrapCommand = defineCommand({
   meta: {
@@ -42,20 +55,47 @@ export const bootstrapCommand = defineCommand({
         "Provision only explicitly requested replicas without dependencies or base resources.",
       default: false,
     },
-    skipBase: {
+    "skip-base": {
       type: "boolean",
       description: "Skip cluster provisioning and base prerequisites.",
+      default: false,
+    },
+    build: {
+      type: "boolean",
+      description: "Build and push selected replica images with the latest tag before bootstrap.",
+      default: false,
+    },
+    "grant-bootstrap-role": {
+      type: "boolean",
+      description:
+        "Temporarily grant bootstrap-only cluster roles defined in topology during provisioning.",
+      default: false,
+    },
+    "install-gateway-api": {
+      type: "boolean",
+      description: "Install Gateway API CRDs during bootstrap prerequisites setup.",
+      default: false,
+    },
+    recreate: {
+      type: "boolean",
+      description: "Delete all Replica CRs and wait until all replica namespaces are removed.",
       default: false,
     },
   },
   async run({ args }) {
     const requestedReplicas = readRequestedReplicas(args)
+    const clusterDomain = await readClusterDomain()
 
     await runProvisionFlow({
       ask: args.ask,
+      clusterDomain,
       context: args.context,
+      build: args.build,
+      grantBootstrapRole: args["grant-bootstrap-role"],
+      installGatewayApi: args["install-gateway-api"],
       only: args.only,
-      skipBase: args.skipBase,
+      skipBase: args["skip-base"],
+      recreate: args.recreate,
       requestedReplicas,
       runE2E: false,
       silent: args.silent,

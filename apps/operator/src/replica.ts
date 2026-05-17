@@ -7,7 +7,6 @@ const replicaSchema = z.object({
   }),
   spec: z.object({
     image: z.string().min(1),
-    endpoints: z.record(z.string(), z.string()).optional().default({}),
   }),
 })
 
@@ -19,7 +18,6 @@ export type Replica = {
   name: string
   generation: number
   image: string
-  endpoints: Record<string, string>
 }
 
 export function parseReplicaListResponse(listResponse: unknown): unknown[] {
@@ -41,6 +39,5 @@ export function parseReplica(value: unknown): Replica | undefined {
     name: parsedReplica.data.metadata.name,
     generation: parsedReplica.data.metadata.generation,
     image: parsedReplica.data.spec.image,
-    endpoints: parsedReplica.data.spec.endpoints,
   }
 }
