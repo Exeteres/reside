@@ -226,6 +226,23 @@
         "pg": "catalog:",
       },
     },
+    "replicas/rate": {
+      "name": "@replicas/rate",
+      "dependencies": {
+        "@connectrpc/connect": "catalog:",
+        "@connectrpc/connect-fastify": "catalog:",
+        "@temporalio/client": "catalog:",
+        "@temporalio/worker": "catalog:",
+        "@temporalio/workflow": "catalog:",
+        "fastify": "catalog:",
+      },
+      "devDependencies": {
+        "@reside/api": "workspace:*",
+        "@reside/common": "workspace:*",
+        "@reside/registry": "workspace:*",
+        "@typescript/native-preview": "catalog:",
+      },
+    },
     "replicas/telegram": {
       "name": "@replicas/telegram",
       "dependencies": {
@@ -911,6 +928,8 @@
     "@replicas/hello": ["@replicas/hello@workspace:replicas/hello"],
 
     "@replicas/infra": ["@replicas/infra@workspace:replicas/infra"],
+
+    "@replicas/rate": ["@replicas/rate@workspace:replicas/rate"],
 
     "@replicas/telegram": ["@replicas/telegram@workspace:replicas/telegram"],
 

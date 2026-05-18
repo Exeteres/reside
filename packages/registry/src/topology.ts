@@ -147,6 +147,17 @@ export const helloReplica = defineReplica({
   },
 })
 
+export const rateReplica = defineReplica({
+  name: "rate",
+  dependencies: {
+    replicas: {
+      infra: infraReplica,
+      access: accessReplica,
+      interaction: telegramReplica,
+    },
+  },
+})
+
 export const topology = sortReplicasByDependencies([
   accessReplica,
   infraReplica,
@@ -154,4 +165,5 @@ export const topology = sortReplicasByDependencies([
   engineerReplica,
   alphaReplica,
   helloReplica,
+  rateReplica,
 ])
