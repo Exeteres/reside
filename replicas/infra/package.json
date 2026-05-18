@@ -22,6 +22,8 @@
     "prisma": "catalog:"
   },
   "devDependencies": {
+    "@bufbuild/protobuf": "catalog:",
+    "@types/pg": "catalog:",
     "@typescript/native-preview": "catalog:",
     "@grpc/grpc-js": "catalog:",
     "@kubernetes/client-node": "catalog:",
