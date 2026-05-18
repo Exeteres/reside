@@ -1,3 +1,4 @@
+import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
@@ -8,7 +9,8 @@ import { join } from "node:path"
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3"
 import { type CopilotSession, defineTool, type SessionConfig } from "@github/copilot-sdk"
 import { waitForOperationSuccess } from "@reside/api"
-import { logger, type StorageBucketService } from "@reside/common"
+import { link, logger, type StorageBucketService } from "@reside/common"
+import { WellKnownPermissions } from "@reside/registry"
 import { toError } from "@reside/utils"
 import { z } from "zod"
 import { strings } from "../../locale"
@@ -103,6 +105,8 @@ export function createCreateTaskActivities({
   runtime,
   prisma,
   notificationService,
+  permissionRequestService,
+  accessOperationService,
   loadService,
   alphaOperationService,
   storageBucketService,
@@ -110,6 +114,8 @@ export function createCreateTaskActivities({
   runtime: EngineerAiRuntime
   prisma: PrismaClient
   notificationService: NotificationServiceClient
+  permissionRequestService: PermissionRequestServiceClient
+  accessOperationService: OperationServiceClient
   loadService: LoadServiceClient
   alphaOperationService: OperationServiceClient
   storageBucketService: StorageBucketService
@@ -377,6 +383,8 @@ export function createCreateTaskActivities({
       const parsedInput = requestCancellationInputSchema.parse(input)
       const dbTaskId = parseDbTaskId(parsedInput.taskId)
 
+      logger.info('engineer cancellation requested task_id="%s"', String(dbTaskId))
+
       const task = await prisma.task.findUnique({
         where: {
           id: dbTaskId,
@@ -384,18 +392,52 @@ export function createCreateTaskActivities({
       })
 
       if (!task) {
+        logger.warn('engineer cancellation requested for unknown task_id="%s"', String(dbTaskId))
         throw new Error(`Unknown task "${parsedInput.taskId}"`)
       }
 
+      logger.info(
+        'engineer cancellation current state task_id="%s" phase="%s" status="%s"',
+        String(dbTaskId),
+        task.phase,
+        task.status,
+      )
+
       if (task.status === "IN_PROGRESS") {
-        await prisma.task.update({
+        const updateResult = await prisma.task.updateMany({
           where: {
             id: dbTaskId,
+            status: "IN_PROGRESS",
           },
           data: {
             status: "REQUESTED_CANCELLATION",
           },
         })
+
+        if (updateResult.count > 0) {
+          logger.info('engineer cancellation marked as requested task_id="%s"', String(dbTaskId))
+        } else {
+          const currentTask = await prisma.task.findUnique({
+            where: {
+              id: dbTaskId,
+            },
+            select: {
+              status: true,
+            },
+          })
+
+          logger.warn(
+            'engineer cancellation request was not applied task_id="%s" current_status="%s"',
+            String(dbTaskId),
+            currentTask?.status ?? "",
+          )
+        }
+
+        return
+      }
+
+      if (task.status === "REQUESTED_CANCELLATION") {
+        logger.info('engineer cancellation already requested task_id="%s"', String(dbTaskId))
 
         return
       }
@@ -408,6 +450,8 @@ export function createCreateTaskActivities({
           status: "CANCELLED",
         },
       })
+
+      logger.info('engineer cancellation completed immediately task_id="%s"', String(dbTaskId))
 
       await syncTaskIssueState({
         runtime,
@@ -438,6 +482,10 @@ export function createCreateTaskActivities({
 
       if (task.status !== "IN_PROGRESS") {
         throw new Error(`Task "${parsedInput.taskId}" is not in running state`)
+      }
+
+      if (!task.issueId) {
+        throw new Error(`Task "${parsedInput.taskId}" is missing issue id`)
       }
 
       const iterationNumber = await getNextIterationNumber(prisma, dbTaskId)
@@ -488,16 +536,18 @@ export function createCreateTaskActivities({
               repo,
               repositoryPath: environment.repositoryPath,
               branchName: `replica/task-${dbTaskId}/${iteration.id}`,
-              issueNumber: task.issueId ?? undefined,
+              issueNumber: task.issueId,
             }),
             createDeployReplicaTool({
               runtime,
+              permissionRequestService,
+              accessOperationService,
               loadService,
               alphaOperationService,
               owner,
               repo,
               branchName: `replica/task-${dbTaskId}/${iteration.id}`,
-              issueNumber: task.issueId ?? undefined,
+              issueNumber: task.issueId,
             }),
           ],
           hooks: {
@@ -547,18 +597,21 @@ export function createCreateTaskActivities({
               prompt: [
                 `Repository: ${owner}/${repo}`,
                 `Branch: replica/task-${dbTaskId}/${iteration.id}`,
-                task.issueId
-                  ? `Issue: #${task.issueId}`
-                  : "Issue: create and link one before deploy.",
+                `Issue: #${task.issueId}`,
                 "You are in implementation phase.",
                 "Git environment is already configured for commits on the provided branch.",
                 "Do not run git push and do not manipulate branches (no checkout/switch/branch/rebase/cherry-pick/reset).",
                 "Use only git add/git commit on the provided branch.",
                 "Use create_pull_request tool to push commits, create PR, merge with rebase, and delete source branch.",
-                "Before calling deploy_replica, you MUST commit your changes, then call create_pull_request with your own descriptive title.",
-                "PR body MUST link the issue (for example: Closes #<issue-number>).",
+                "Commit messages MUST follow conventional commits format and stay lowercase (single-line subject only, no commit body).",
+                "For simple or tightly related changes prefer a single commit; for larger or clearly separable phases prefer multiple focused commits.",
+                "Before calling deploy_replica, commit your changes. If you are confident deploy is safe without PR, you may deploy directly.",
+                "When repository review is needed, call create_pull_request with your own descriptive title before deploy.",
+                "PR title must be a regular capitalized title and MUST NOT be a conventional-commit title.",
+                "All details belong to PR body, not commit body.",
+                "PR body MUST end with issue closing tag (for example: Closes #<issue-number>).",
                 "Pull requests must use rebase merge and delete source branch.",
-                "Use deploy_replica tool only after merged PR exists on this branch.",
+                "When PR is used, deploy_replica should be called only after merged PR exists on this branch.",
                 "If deploy_replica fails, report the exact failure reason and continue by fixing the root cause.",
                 "Finish with a short 3-5 sentence summary in russian.",
                 `Current user request: ${parsedInput.prompt}`,
@@ -756,6 +809,8 @@ export function createCreateTaskActivities({
 
 function createDeployReplicaTool({
   runtime,
+  permissionRequestService,
+  accessOperationService,
   loadService,
   alphaOperationService,
   owner,
@@ -764,6 +819,8 @@ function createDeployReplicaTool({
   issueNumber,
 }: {
   runtime: EngineerAiRuntime
+  permissionRequestService: PermissionRequestServiceClient
+  accessOperationService: OperationServiceClient
   loadService: LoadServiceClient
   alphaOperationService: OperationServiceClient
   owner: string
@@ -795,28 +852,23 @@ function createDeployReplicaTool({
           branchName,
         })
 
-        if (!mergedPullRequest) {
-          throw new Error(
-            `deploy_replica requires a merged pull request for branch "${branchName}". Create and merge PR first.`,
-          )
-        }
+        if (mergedPullRequest) {
+          if (mergedPullRequest.title.trim().length === 0) {
+            throw new Error(
+              `Merged pull request for branch "${branchName}" has empty title. Use a descriptive PR title and retry.`,
+            )
+          }
 
-        if (mergedPullRequest.title.trim().length === 0) {
-          throw new Error(
-            `Merged pull request for branch "${branchName}" has empty title. Use a descriptive PR title and retry.`,
-          )
-        }
-
-        if (
-          issueNumber &&
-          !isIssueLinkedInPullRequest({
-            issueNumber,
-            title: mergedPullRequest.title,
-            body: mergedPullRequest.body,
-          })
-        ) {
-          throw new Error(
-            `Merged pull request #${mergedPullRequest.number} must link issue #${issueNumber} in title/body (e.g. "Closes #${issueNumber}").`,
+          if (issueNumber && !hasIssueClosingTagAtBodyEnd(mergedPullRequest.body, issueNumber)) {
+            throw new Error(
+              `Merged pull request #${mergedPullRequest.number} must end body with "Closes #${issueNumber}".`,
+            )
+          }
+        } else {
+          logger.info(
+            'engineer deploy_replica proceeding without merged PR replica="%s" branch="%s"',
+            replicaName,
+            branchName,
           )
         }
 
@@ -842,6 +894,15 @@ function createDeployReplicaTool({
           )
         }
 
+        await requestReplicaLoadPermission({
+          permissionRequestService,
+          accessOperationService,
+          replicaName,
+          issueUrl: issueNumber
+            ? `https://github.com/${owner}/${repo}/issues/${issueNumber}`
+            : undefined,
+        })
+
         const loadReplicaResponse = await loadService.loadReplica({
           name: replicaName,
           image: `ghcr.io/exeteres/reside/replicas/${replicaName}:latest`,
@@ -863,7 +924,7 @@ function createDeployReplicaTool({
 
         return `Replica ${replicaName} deployed successfully`
       } catch (error) {
-        const errorDetails = describeToolError(error)
+        const errorDetails = describeToolError(error) || "unknown error"
         logger.error(
           { error: toError(error) },
           'engineer deploy_replica failed replica="%s" branch="%s" details="%s"',
@@ -872,9 +933,40 @@ function createDeployReplicaTool({
           errorDetails,
         )
 
-        throw new Error(`deploy_replica failed: ${errorDetails}`)
+        return `deploy_replica failed: ${errorDetails}`
       }
     },
+  })
+}
+
+async function requestReplicaLoadPermission(input: {
+  permissionRequestService: PermissionRequestServiceClient
+  accessOperationService: OperationServiceClient
+  replicaName: string
+  issueUrl?: string
+}): Promise<void> {
+  const permissionSetName = `engineer:deploy:${input.replicaName}`
+  const reason = input.issueUrl
+    ? `Для деплоя реплики ${input.replicaName} в рамках ${link("задачи", input.issueUrl).html}.`
+    : `Для деплоя реплики ${input.replicaName} в рамках задачи.`
+
+  const response = await input.permissionRequestService.requestPermissions({
+    reason,
+    permissionSetName,
+    items: [
+      {
+        permissionName: WellKnownPermissions.ALPHA_REPLICA_LOAD,
+        scope: input.replicaName,
+      },
+    ],
+  })
+
+  if (!response.operation) {
+    return
+  }
+
+  await waitForOperationSuccess(response.operation, {
+    operationService: input.accessOperationService,
   })
 }
 
@@ -910,11 +1002,14 @@ function createPullRequestTool({
       try {
         const octokit = runtime.getOctokit()
 
-        if (issueNumber && !isIssueLinkedInPullRequest({ issueNumber, title, body })) {
-          throw new Error(
-            `Pull request body must link issue #${issueNumber} (for example: "Closes #${issueNumber}").`,
-          )
+        validatePullRequestTitle(title)
+
+        if (!hasIssueClosingTagAtBodyEnd(body, issueNumber)) {
+          const suffix = issueNumber ? ` #${issueNumber}` : " #<issue-number>"
+          throw new Error(`Pull request body must end with "Closes${suffix}".`)
         }
+
+        await validateBranchCommitMessages(repositoryPath, branchName)
 
         await runCommand([
           "git",
@@ -955,6 +1050,17 @@ function createPullRequestTool({
               })
             ).data
 
+        const ciCheckResult = await waitForPullRequestCiCheck({
+          octokit,
+          owner,
+          repo,
+          pullRequestNumber: pullRequest.number,
+        })
+
+        if (ciCheckResult.status !== "success") {
+          throw new Error(`PR check ci:check failed: ${ciCheckResult.failureMessage}`)
+        }
+
         await octokit.rest.pulls.merge({
           owner,
           repo,
@@ -978,7 +1084,7 @@ function createPullRequestTool({
 
         return `Pull request #${pullRequest.number} merged: ${pullRequest.html_url}`
       } catch (error) {
-        const errorDetails = describeToolError(error)
+        const errorDetails = describeToolError(error) || "unknown error"
         logger.error(
           { error: toError(error) },
           'engineer create_pull_request failed branch="%s" details="%s"',
@@ -986,7 +1092,7 @@ function createPullRequestTool({
           errorDetails,
         )
 
-        throw new Error(`create_pull_request failed: ${errorDetails}`)
+        return `create_pull_request failed: ${errorDetails}`
       }
     },
   })
@@ -1033,6 +1139,186 @@ async function waitForWorkflowRun(input: {
   throw new Error("Timed out waiting for build-replica workflow completion")
 }
 
+async function waitForPullRequestCiCheck(input: {
+  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
+  owner: string
+  repo: string
+  pullRequestNumber: number
+}): Promise<{ status: "success" } | { status: "failed"; failureMessage: string }> {
+  for (let attempt = 0; attempt < 180; attempt += 1) {
+    const pullRequest = await input.octokit.rest.pulls.get({
+      owner: input.owner,
+      repo: input.repo,
+      pull_number: input.pullRequestNumber,
+    })
+
+    const checkRunsResponse = await input.octokit.rest.checks.listForRef({
+      owner: input.owner,
+      repo: input.repo,
+      ref: pullRequest.data.head.sha,
+      filter: "latest",
+      per_page: 100,
+    })
+
+    const ciCheckRun = checkRunsResponse.data.check_runs.find(checkRun => {
+      const checkRunName = checkRun.name.toLowerCase()
+      return checkRunName === "ci:check" || checkRunName.includes("ci:check")
+    })
+
+    if (!ciCheckRun) {
+      await sleep(2000)
+      continue
+    }
+
+    if (ciCheckRun.status !== "completed") {
+      await sleep(5000)
+      continue
+    }
+
+    if (ciCheckRun.conclusion === "success") {
+      return { status: "success" }
+    }
+
+    const failureMessage = await getCiCheckFailureMessage({
+      octokit: input.octokit,
+      owner: input.owner,
+      repo: input.repo,
+      checkRunDetailsUrl: ciCheckRun.details_url ?? "",
+      checkRunName: ciCheckRun.name,
+      checkRunSummary: ciCheckRun.output?.summary ?? "",
+      checkRunText: ciCheckRun.output?.text ?? "",
+      checkRunTitle: ciCheckRun.output?.title ?? "",
+    })
+
+    return {
+      status: "failed",
+      failureMessage,
+    }
+  }
+
+  return {
+    status: "failed",
+    failureMessage: "Timed out waiting for ci:check status",
+  }
+}
+
+async function getCiCheckFailureMessage(input: {
+  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
+  owner: string
+  repo: string
+  checkRunDetailsUrl: string
+  checkRunName: string
+  checkRunSummary: string
+  checkRunText: string
+  checkRunTitle: string
+}): Promise<string> {
+  const runId = extractWorkflowRunId(input.checkRunDetailsUrl)
+  if (runId) {
+    const logsMessage = await getWorkflowRunFailureLogMessage({
+      octokit: input.octokit,
+      owner: input.owner,
+      repo: input.repo,
+      runId,
+      checkRunName: input.checkRunName,
+    })
+
+    if (logsMessage) {
+      return logsMessage
+    }
+  }
+
+  const checkRunMessage = [input.checkRunTitle, input.checkRunSummary, input.checkRunText]
+    .map(value => value.trim())
+    .find(value => value.length > 0)
+
+  if (checkRunMessage) {
+    return truncateOneLine(checkRunMessage, 1200)
+  }
+
+  return `ci:check failed (run details: ${input.checkRunDetailsUrl || "unavailable"})`
+}
+
+function extractWorkflowRunId(detailsUrl: string): number | undefined {
+  const match = /\/actions\/runs\/(\d+)/.exec(detailsUrl)
+  if (!match?.[1]) {
+    return undefined
+  }
+
+  const runId = Number.parseInt(match[1], 10)
+  if (!Number.isFinite(runId)) {
+    return undefined
+  }
+
+  return runId
+}
+
+async function getWorkflowRunFailureLogMessage(input: {
+  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
+  owner: string
+  repo: string
+  runId: number
+  checkRunName: string
+}): Promise<string | undefined> {
+  const jobsResponse = await input.octokit.rest.actions.listJobsForWorkflowRun({
+    owner: input.owner,
+    repo: input.repo,
+    run_id: input.runId,
+    per_page: 100,
+  })
+
+  const failedJob =
+    jobsResponse.data.jobs.find(job => {
+      return job.name.toLowerCase().includes("ci:check") && job.conclusion === "failure"
+    }) ?? jobsResponse.data.jobs.find(job => job.conclusion === "failure")
+
+  if (!failedJob) {
+    return undefined
+  }
+
+  const logsResponse = await input.octokit.rest.actions.downloadJobLogsForWorkflowRun({
+    owner: input.owner,
+    repo: input.repo,
+    job_id: failedJob.id,
+  })
+
+  const logDownloadUrl = logsResponse.url
+  if (!logDownloadUrl) {
+    return failedJob.steps?.find(step => step.conclusion === "failure")?.name
+  }
+
+  const response = await fetch(logDownloadUrl)
+  if (!response.ok) {
+    return failedJob.steps?.find(step => step.conclusion === "failure")?.name
+  }
+
+  const logText = (await response.text()).trim()
+  if (logText.length === 0) {
+    return failedJob.steps?.find(step => step.conclusion === "failure")?.name
+  }
+
+  return extractFailureMessageFromLog(logText)
+}
+
+function extractFailureMessageFromLog(logText: string): string {
+  const lines = logText
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+
+  const failureLine = [...lines].reverse().find(line => {
+    return /(error|failed|exception|panic|npm ERR!|ELIFECYCLE|TypeScript error|AssertionError)/i.test(
+      line,
+    )
+  })
+
+  if (failureLine) {
+    return truncateOneLine(failureLine, 1200)
+  }
+
+  return truncateOneLine(lines.at(-1) ?? "ci:check failed without log details", 1200)
+}
+
 async function getMergedPullRequestForBranch({
   octokit,
   owner,
@@ -1069,17 +1355,112 @@ async function getMergedPullRequestForBranch({
   }
 }
 
-function isIssueLinkedInPullRequest({
-  issueNumber,
-  title,
-  body,
-}: {
-  issueNumber: number
-  title: string
-  body: string
-}): boolean {
-  const combined = `${title}\n${body}`.toLowerCase()
-  return combined.includes(`#${issueNumber}`)
+function hasIssueClosingTagAtBodyEnd(body: string, issueNumber?: number): boolean {
+  const lastLine = body
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .at(-1)
+
+  if (!lastLine) {
+    return false
+  }
+
+  const match = /^closes\s+#(\d+)$/i.exec(lastLine)
+  if (!match) {
+    return false
+  }
+
+  if (!issueNumber) {
+    return true
+  }
+
+  return Number.parseInt(match[1] ?? "", 10) === issueNumber
+}
+
+function validatePullRequestTitle(title: string): void {
+  const normalized = title.trim()
+  if (normalized.length === 0) {
+    throw new Error("Pull request title must not be empty")
+  }
+
+  if (!/^[A-ZА-ЯЁ]/.test(normalized)) {
+    throw new Error("Pull request title must start with a capital letter")
+  }
+
+  if (isConventionalCommitTitle(normalized)) {
+    throw new Error(
+      "Pull request title must be a regular title and must not use conventional-commit format",
+    )
+  }
+}
+
+async function validateBranchCommitMessages(
+  repositoryPath: string,
+  branchName: string,
+): Promise<void> {
+  const { stdout } = await runCommandWithOutput([
+    "git",
+    "-C",
+    repositoryPath,
+    "log",
+    "--format=%H%x00%s%x00%b%x00",
+    `main..${branchName}`,
+  ])
+
+  const parts = stdout.split("\u0000")
+  const commits: Array<{ hash: string; subject: string; body: string }> = []
+
+  for (let index = 0; index + 2 < parts.length; index += 3) {
+    const hash = parts[index]?.trim() ?? ""
+    const subject = parts[index + 1] ?? ""
+    const body = parts[index + 2] ?? ""
+
+    if (hash.length === 0) {
+      continue
+    }
+
+    commits.push({ hash, subject, body })
+  }
+
+  if (commits.length === 0) {
+    throw new Error("No commits found on branch for pull request")
+  }
+
+  for (const commit of commits) {
+    const subject = commit.subject.trim()
+    if (subject.length === 0) {
+      throw new Error(`Commit ${commit.hash.slice(0, 8)} has empty subject`)
+    }
+
+    if (subject !== commit.subject) {
+      throw new Error(
+        `Commit ${commit.hash.slice(0, 8)} subject must be a single clean line without surrounding whitespace`,
+      )
+    }
+
+    if (subject !== subject.toLowerCase()) {
+      throw new Error(`Commit ${commit.hash.slice(0, 8)} subject must be lowercase`)
+    }
+
+    if (!isConventionalCommitTitle(subject)) {
+      throw new Error(
+        `Commit ${commit.hash.slice(0, 8)} subject must follow conventional commits format`,
+      )
+    }
+
+    if (commit.body.trim().length > 0) {
+      throw new Error(
+        `Commit ${commit.hash.slice(0, 8)} must not contain commit body; move details to pull request body`,
+      )
+    }
+  }
+}
+
+function isConventionalCommitTitle(value: string): boolean {
+  return /^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([a-z0-9._/-]+\))?!: .+$/.test(
+    value,
+  )
 }
 
 async function runPlanningSession({
@@ -1168,7 +1549,6 @@ async function runPlanningSession({
       {
         prompt: [
           `Repository: ${repository.owner}/${repository.name}`,
-          `Task id: ${taskId}`,
           "Planning phase: produce issue draft update only.",
           "Issue title, issue body, and plan summary MUST be in russian.",
           "Use submit_issue_draft exactly once.",
@@ -1304,7 +1684,7 @@ async function createCopilotEnvironment(
     repositoryPath,
   ])
   await runCommand(["git", "-C", repositoryPath, "checkout", "-b", branchName])
-  await runCommand(["git", "-C", repositoryPath, "config", "user.name", "reside-agent"])
+  await runCommand(["git", "-C", repositoryPath, "config", "user.name", "reside-agent[bot]"])
   await runCommand([
     "git",
     "-C",

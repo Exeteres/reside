@@ -99,6 +99,14 @@ export const createTaskCommandHandler = defineCommandHandler({
         break
       }
 
+      await updateNotification({
+        notificationId: planning.notificationId,
+        title: strings.notifications.taskAnalysis.title,
+        content: block(strings.notifications.taskAnalysis.updating),
+        actions: {},
+        requiresTextResponse: false,
+      })
+
       planning = await runPlanningFeedbackInteraction({
         taskId: planning.result.taskId,
         feedback: planningReply.text,
@@ -191,10 +199,23 @@ export const createTaskCommandHandler = defineCommandHandler({
             notificationId: implementationNotification.notificationId,
             title: strings.notifications.taskExecution.doneTitle,
             content: block(strings.notifications.taskExecution.cancelledSummary),
+            actions: {},
+            requiresTextResponse: false,
           })
 
           return
         }
+
+        await updateNotification({
+          notificationId: implementationNotification.notificationId,
+          title: strings.notifications.taskExecution.doneTitle,
+          content: renderMarkdownAsTelegramHtml(
+            implementationResult.resultSummary ??
+              strings.notifications.taskExecution.defaultSummary,
+          ),
+          actions: {},
+          requiresTextResponse: false,
+        })
 
         await activities.reviveTaskFromFeedback({ taskId })
         implementationPrompt = terminalReply.text
@@ -221,10 +242,22 @@ export const createTaskCommandHandler = defineCommandHandler({
             notificationId: implementationNotification.notificationId,
             title: strings.notifications.taskExecution.doneTitle,
             content: block(strings.notifications.taskExecution.cancelledSummary),
+            actions: {},
+            requiresTextResponse: false,
           })
 
           return
         }
+
+        await updateNotification({
+          notificationId: implementationNotification.notificationId,
+          title: strings.notifications.taskExecution.failedTitle,
+          content: block(
+            implementationResult.errorMessage ?? strings.notifications.taskExecution.defaultFailure,
+          ),
+          actions: {},
+          requiresTextResponse: false,
+        })
 
         await activities.reviveTaskFromFeedback({ taskId })
         implementationPrompt = terminalReply.text

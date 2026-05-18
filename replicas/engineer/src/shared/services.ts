@@ -1,3 +1,4 @@
+import { PermissionRequestService } from "@reside/api/access/request.v1"
 import { LoadService } from "@reside/api/alpha/load.v1"
 import { OperationService } from "@reside/api/common/operation.v1"
 import {
@@ -17,6 +18,8 @@ export async function createServices() {
   const prisma = new PrismaClient({ adapter })
   const temporalClient = await createTemporalClient(services)
   const storageBucketService = await createStorageBucketService(services)
+  const permissionRequestService = createClient(PermissionRequestService, services.channels.access)
+  const accessOperationService = createClient(OperationService, services.channels.access)
   const alphaLoadService = createClient(LoadService, services.channels.alpha)
   const alphaOperationService = createClient(OperationService, services.channels.alpha)
 
@@ -26,6 +29,8 @@ export async function createServices() {
     prisma,
     temporalClient,
     storageBucketService,
+    permissionRequestService,
+    accessOperationService,
     alphaLoadService,
     alphaOperationService,
   }

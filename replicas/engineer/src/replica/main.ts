@@ -38,6 +38,8 @@ const createTaskActivities = createCreateTaskActivities({
   runtime,
   prisma: services.prisma,
   notificationService: services.notificationService,
+  permissionRequestService: services.permissionRequestService,
+  accessOperationService: services.accessOperationService,
   loadService: services.alphaLoadService,
   alphaOperationService: services.alphaOperationService,
   storageBucketService: services.storageBucketService,

@@ -173,7 +173,7 @@ export function createAccessActivities(
         requestedPermissions,
         "",
         bold(strings.approvalMessage.reasonHeader),
-        requestSet.reason,
+        { html: requestSet.reason },
       ).html
 
       return {
