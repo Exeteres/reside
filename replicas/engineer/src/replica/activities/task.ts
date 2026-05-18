@@ -551,16 +551,7 @@ export function createCreateTaskActivities({
             }),
           ],
           hooks: {
-            onPreToolUse: async toolInvocation => {
-              const bashCommand = extractBashCommand(toolInvocation)
-              if (isForbiddenImplementationGitCommand(bashCommand)) {
-                return {
-                  permissionDecision: "deny" as const,
-                  permissionDecisionReason:
-                    "Use git add/git commit only. Do not run git push or branch-manipulation commands; use create_pull_request tool.",
-                }
-              }
-
+            onPreToolUse: async () => {
               return {
                 permissionDecision: "allow" as const,
               }
@@ -600,11 +591,15 @@ export function createCreateTaskActivities({
                 `Issue: #${task.issueId}`,
                 "You are in implementation phase.",
                 "Git environment is already configured for commits on the provided branch.",
-                "Do not run git push and do not manipulate branches (no checkout/switch/branch/rebase/cherry-pick/reset).",
-                "Use only git add/git commit on the provided branch.",
+                "You may use any git commands needed during implementation.",
+                "Before calling create_pull_request (create_pr_branch), ensure git HEAD is on the initial branch shown above.",
+                "Commit messages must be lowercase conventional commits with a single-line subject.",
+                "Do not create commit body or trailers.",
+                "When multiple invalid commits exist, rewrite current-branch history as needed before creating PR.",
                 "Use create_pull_request tool to push commits, create PR, merge with rebase, and delete source branch.",
                 "Commit messages MUST follow conventional commits format and stay lowercase (single-line subject only, no commit body).",
                 "For simple or tightly related changes prefer a single commit; for larger or clearly separable phases prefer multiple focused commits.",
+                "If create_pull_request fails with commit validation, rewrite invalid commit message(s) first (at minimum amend latest commit), then retry create_pull_request.",
                 "Before calling deploy_replica, commit your changes. If you are confident deploy is safe without PR, you may deploy directly.",
                 "When repository review is needed, call create_pull_request with your own descriptive title before deploy.",
                 "PR title must be a regular capitalized title and MUST NOT be a conventional-commit title.",
@@ -613,7 +608,10 @@ export function createCreateTaskActivities({
                 "Pull requests must use rebase merge and delete source branch.",
                 "When PR is used, deploy_replica should be called only after merged PR exists on this branch.",
                 "If deploy_replica fails, report the exact failure reason and continue by fixing the root cause.",
-                "Finish with a short 3-5 sentence summary in russian.",
+                "Finish with a concise russian summary in one paragraph (prefer 3-5 short sentences).",
+                "Focus the summary on new, useful information for the user: key changes, important outcomes, risks, trade-offs, and immediate next implications.",
+                "Avoid process checklist narration and avoid describing rule compliance unless it changes user decisions.",
+                "Prefer plain prose summary (no lists, no headings, no multiple paragraphs) unless absolutely necessary.",
                 `Current user request: ${parsedInput.prompt}`,
               ].join("\n"),
             },
@@ -1001,6 +999,13 @@ function createPullRequestTool({
 
       try {
         const octokit = runtime.getOctokit()
+        const currentBranch = await getCurrentGitBranch(repositoryPath)
+
+        if (currentBranch !== branchName) {
+          throw new Error(
+            `Before create_pull_request (create_pr_branch), switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
+          )
+        }
 
         validatePullRequestTitle(title)
 
@@ -1085,6 +1090,11 @@ function createPullRequestTool({
         return `Pull request #${pullRequest.number} merged: ${pullRequest.html_url}`
       } catch (error) {
         const errorDetails = describeToolError(error) || "unknown error"
+        const rewriteHint =
+          error instanceof CommitValidationError
+            ? "Rewrite invalid commit message(s) before retry. Keep each commit subject as a single-line lowercase conventional commit without body or trailers"
+            : undefined
+        const responseDetails = rewriteHint ? `${errorDetails}. ${rewriteHint}` : errorDetails
         logger.error(
           { error: toError(error) },
           'engineer create_pull_request failed branch="%s" details="%s"',
@@ -1092,10 +1102,17 @@ function createPullRequestTool({
           errorDetails,
         )
 
-        return `create_pull_request failed: ${errorDetails}`
+        return `create_pull_request failed: ${responseDetails}`
       }
     },
   })
+}
+
+class CommitValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "CommitValidationError"
+  }
 }
 
 async function waitForWorkflowRun(input: {
@@ -1424,34 +1441,37 @@ async function validateBranchCommitMessages(
   }
 
   if (commits.length === 0) {
-    throw new Error("No commits found on branch for pull request")
+    throw new CommitValidationError("No commits found on branch for pull request")
   }
 
   for (const commit of commits) {
+    const commitHash = commit.hash.slice(0, 8)
     const subject = commit.subject.trim()
     if (subject.length === 0) {
-      throw new Error(`Commit ${commit.hash.slice(0, 8)} has empty subject`)
+      throw new CommitValidationError(`Commit ${commitHash} has empty subject`)
     }
 
     if (subject !== commit.subject) {
-      throw new Error(
-        `Commit ${commit.hash.slice(0, 8)} subject must be a single clean line without surrounding whitespace`,
+      throw new CommitValidationError(
+        `Commit ${commitHash} subject must be a single clean line without surrounding whitespace (subject="${truncateOneLine(commit.subject, 120)}")`,
       )
     }
 
     if (subject !== subject.toLowerCase()) {
-      throw new Error(`Commit ${commit.hash.slice(0, 8)} subject must be lowercase`)
+      throw new CommitValidationError(
+        `Commit ${commitHash} subject must be lowercase (subject="${truncateOneLine(subject, 120)}")`,
+      )
     }
 
     if (!isConventionalCommitTitle(subject)) {
-      throw new Error(
-        `Commit ${commit.hash.slice(0, 8)} subject must follow conventional commits format`,
+      throw new CommitValidationError(
+        `Commit ${commitHash} subject must follow conventional commits format (subject="${truncateOneLine(subject, 120)}")`,
       )
     }
 
     if (commit.body.trim().length > 0) {
-      throw new Error(
-        `Commit ${commit.hash.slice(0, 8)} must not contain commit body; move details to pull request body`,
+      throw new CommitValidationError(
+        `Commit ${commitHash} must not contain commit body; move details to pull request body`,
       )
     }
   }
@@ -1552,7 +1572,10 @@ async function runPlanningSession({
           "Planning phase: produce issue draft update only.",
           "Issue title, issue body, and plan summary MUST be in russian.",
           "Use submit_issue_draft exactly once.",
-          "End assistant response with short 3-5 sentence russian summary.",
+          "End assistant response with a concise russian summary in one paragraph (prefer 3-5 short sentences).",
+          "Focus the summary on new, useful information for the user: what changed in substance, what decisions matter now, and what follow-up is relevant.",
+          "Avoid process checklist narration and avoid describing rule compliance unless it affects user choices.",
+          "Prefer plain prose summary (no lists, no headings, no multiple paragraphs) unless absolutely necessary.",
           `User prompt: ${prompt}`,
         ].join("\n"),
       },
@@ -1691,7 +1714,7 @@ async function createCopilotEnvironment(
     repositoryPath,
     "config",
     "user.email",
-    "2441612+reside-agent[bot]@users.noreply.github.com",
+    "248754993+reside-agent[bot]@users.noreply.github.com",
   ])
   await runCommand(["bun", "install", "--frozen-lockfile"], { cwd: repositoryPath })
 
@@ -2118,6 +2141,25 @@ function summarizeToolArguments(toolName: string, argumentsValue: unknown): stri
 
   const typedArguments = argumentsValue as Record<string, unknown>
 
+  if (toolName === "apply_patch") {
+    const patchInput = typeof typedArguments.input === "string" ? typedArguments.input : ""
+    const files = extractApplyPatchFilePaths(patchInput)
+    const listedFiles = files
+      .slice(0, 5)
+      .map(path => truncateOneLine(path, 120))
+      .join(",")
+    const filesPart =
+      files.length > 0
+        ? `files=${listedFiles}${files.length > 5 ? ` (+${files.length - 5} more)` : ""}`
+        : "files=<unknown>"
+    const explanation =
+      typeof typedArguments.explanation === "string"
+        ? truncateOneLine(typedArguments.explanation, 160)
+        : ""
+
+    return explanation.length > 0 ? `${filesPart} explanation=${explanation}` : filesPart
+  }
+
   if (toolName === "bash") {
     const command = typeof typedArguments.command === "string" ? typedArguments.command : ""
     return `command=${truncateOneLine(command, 1000)}`
@@ -2174,52 +2216,18 @@ function summarizeToolArguments(toolName: string, argumentsValue: unknown): stri
   return summary.length > 0 ? summary : "{}"
 }
 
-function extractBashCommand(toolInvocation: unknown): string {
-  if (!toolInvocation || typeof toolInvocation !== "object") {
-    return ""
+function extractApplyPatchFilePaths(patchInput: string): string[] {
+  if (patchInput.trim().length === 0) {
+    return []
   }
 
-  const invocation = toolInvocation as {
-    toolName?: string
-    arguments?: unknown
-    input?: unknown
-  }
-  if (invocation.toolName !== "bash") {
-    return ""
-  }
+  const matches = [...patchInput.matchAll(/^\*\*\*\s+(?:Update|Add|Delete)\s+File:\s+(.+)$/gm)]
+  const paths = matches
+    .map(match => match[1]?.trim() ?? "")
+    .map(path => path.replace(/\s+->.+$/, "").trim())
+    .filter(path => path.length > 0)
 
-  const candidates = [invocation.arguments, invocation.input]
-  for (const candidate of candidates) {
-    if (!candidate || typeof candidate !== "object") {
-      continue
-    }
-
-    const command = (candidate as { command?: unknown }).command
-    if (typeof command === "string") {
-      return command
-    }
-  }
-
-  return ""
-}
-
-function isForbiddenImplementationGitCommand(command: string): boolean {
-  if (command.trim().length === 0) {
-    return false
-  }
-
-  const normalizedCommand = command.replace(/\s+/g, " ").trim().toLowerCase()
-  const forbiddenPatterns = [
-    /(^|\s)git\s+push(\s|$)/,
-    /(^|\s)git\s+checkout(\s|$)/,
-    /(^|\s)git\s+switch(\s|$)/,
-    /(^|\s)git\s+branch(\s|$)/,
-    /(^|\s)git\s+rebase(\s|$)/,
-    /(^|\s)git\s+cherry-pick(\s|$)/,
-    /(^|\s)git\s+reset(\s|$)/,
-  ]
-
-  return forbiddenPatterns.some(pattern => pattern.test(normalizedCommand))
+  return [...new Set(paths)]
 }
 
 function truncateOneLine(value: string, maxLength: number): string {
@@ -2415,6 +2423,18 @@ async function runCommand(command: string[], options?: { cwd?: string }): Promis
   if (result.exitCode === 0) {
     return
   }
+}
+
+async function getCurrentGitBranch(repositoryPath: string): Promise<string> {
+  const { stdout } = await runCommandWithOutput([
+    "git",
+    "-C",
+    repositoryPath,
+    "branch",
+    "--show-current",
+  ])
+
+  return stdout.trim()
 }
 
 async function runCommandWithOutput(

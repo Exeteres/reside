@@ -281,6 +281,8 @@ export function createNotificationService({
         },
         select: {
           id: true,
+          title: true,
+          content: true,
           messageId: true,
           targetChatId: true,
           allowedActions: true,
@@ -308,6 +310,12 @@ export function createNotificationService({
         request.requiresTextResponse ?? notification.requiresTextResponse
       const nextHasPendingResponse =
         nextAllowedActions.length > 0 || nextRequiresTextResponse === true
+      const hasUrlActions = request.actions.some(action => action.url !== undefined)
+      const isNoopUpdate =
+        notification.title === request.title &&
+        notification.content === request.content &&
+        areStringArraysEqual(notification.allowedActions, nextAllowedActions) &&
+        notification.requiresTextResponse === nextRequiresTextResponse
 
       const shouldReplaceWaitOperation =
         notification.operationId !== null && notification.operation?.status === "PENDING"
@@ -330,13 +338,15 @@ export function createNotificationService({
           avatar === null,
         )
 
-        await bot.api.editMessageText(targetChatId, notification.messageId, messageText, {
-          parse_mode: "HTML",
-          link_preview_options: {
-            is_disabled: true,
-          },
-          reply_markup: replyMarkup,
-        })
+        if (!(isNoopUpdate && !hasUrlActions)) {
+          await bot.api.editMessageText(targetChatId, notification.messageId, messageText, {
+            parse_mode: "HTML",
+            link_preview_options: {
+              is_disabled: true,
+            },
+            reply_markup: replyMarkup,
+          })
+        }
 
         const result = await prisma.$transaction(async tx => {
           if (shouldReplaceWaitOperation && notification.operationId !== null) {
@@ -854,6 +864,14 @@ function isReplyTargetMessageMissingError(error: unknown): boolean {
   }
 
   return String(error).toLowerCase().includes("message to be replied not found")
+}
+
+function areStringArraysEqual(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  return left.every((value, index) => value === right[index])
 }
 
 async function sendAvatarPrivacyModeWarning(args: {

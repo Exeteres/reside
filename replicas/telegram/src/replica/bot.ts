@@ -424,16 +424,6 @@ export async function createTelegramBot(args: {
   })
 
   await bot.init()
-  const commands = await args.prisma.command.findMany({
-    orderBy: [{ name: "asc" }],
-  })
-
-  await bot.api.setMyCommands(
-    commands.map(command => ({
-      command: command.name,
-      description: command.title,
-    })),
-  )
 
   return bot
 }

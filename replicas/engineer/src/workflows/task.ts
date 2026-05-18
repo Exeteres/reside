@@ -176,6 +176,18 @@ export const createTaskCommandHandler = defineCommandHandler({
 
       const implementationResult = finished ?? (await runPromise)
 
+      if (implementationResult.status === "CANCELLED") {
+        await updateNotification({
+          notificationId: implementationNotification.notificationId,
+          title: strings.notifications.taskExecution.doneTitle,
+          content: block(strings.notifications.taskExecution.cancelledSummary),
+          actions: {},
+          requiresTextResponse: false,
+        })
+
+        return
+      }
+
       if (implementationResult.status === "COMPLETED") {
         const terminalReply = await updateNotification({
           notificationId: implementationNotification.notificationId,
@@ -184,27 +196,9 @@ export const createTaskCommandHandler = defineCommandHandler({
             implementationResult.resultSummary ??
               strings.notifications.taskExecution.defaultSummary,
           ),
-          actions: {
-            cancel: {
-              title: strings.notifications.taskExecution.actions.cancel,
-            },
-          },
+          actions: {},
           requiresTextResponse: true,
         })
-
-        if (terminalReply.type === "action") {
-          await activities.requestCancellation({ taskId })
-
-          await updateNotification({
-            notificationId: implementationNotification.notificationId,
-            title: strings.notifications.taskExecution.doneTitle,
-            content: block(strings.notifications.taskExecution.cancelledSummary),
-            actions: {},
-            requiresTextResponse: false,
-          })
-
-          return
-        }
 
         await updateNotification({
           notificationId: implementationNotification.notificationId,
@@ -227,27 +221,9 @@ export const createTaskCommandHandler = defineCommandHandler({
           content: block(
             implementationResult.errorMessage ?? strings.notifications.taskExecution.defaultFailure,
           ),
-          actions: {
-            cancel: {
-              title: strings.notifications.taskExecution.actions.cancel,
-            },
-          },
+          actions: {},
           requiresTextResponse: true,
         })
-
-        if (terminalReply.type === "action") {
-          await activities.requestCancellation({ taskId })
-
-          await updateNotification({
-            notificationId: implementationNotification.notificationId,
-            title: strings.notifications.taskExecution.doneTitle,
-            content: block(strings.notifications.taskExecution.cancelledSummary),
-            actions: {},
-            requiresTextResponse: false,
-          })
-
-          return
-        }
 
         await updateNotification({
           notificationId: implementationNotification.notificationId,
