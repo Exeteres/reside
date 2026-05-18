@@ -387,6 +387,19 @@ export async function createTelegramBot(args: {
       return
     }
 
+    logger.info(
+      {
+        chatId,
+        userId,
+        messageId,
+        actionName,
+        accepted: result.accepted,
+        unauthorized: result.unauthorized,
+        reason: result.reason,
+      },
+      "callback action completion result",
+    )
+
     const applyAcceptedMessageUi = async (): Promise<void> => {
       await clearInlineActions(context, chatId, messageId)
       await appendAcceptedStamp(context, args.prisma, selectedOptionName)
@@ -692,6 +705,7 @@ async function appendAcceptedStamp(
       : strings.worker.bot.acceptedActionSuffix(subjectTitle, selectedOptionName, date, time)
   const suffix = bold(italic(suffixText))
   const updatedMessage = block(renderedNotification, "", suffix).html
+  const preservedUrlOnlyMarkup = resolveUrlOnlyReplyMarkup(context, messageId)
 
   try {
     await context.api.editMessageText(chatId, messageId, updatedMessage, {
@@ -699,9 +713,7 @@ async function appendAcceptedStamp(
       link_preview_options: {
         is_disabled: true,
       },
-      reply_markup: {
-        inline_keyboard: [],
-      },
+      reply_markup: preservedUrlOnlyMarkup,
     })
   } catch (error) {
     logger.warn(
@@ -1144,11 +1156,11 @@ async function clearInlineActions(
   chatId: number,
   messageId: number,
 ): Promise<void> {
+  const preservedUrlOnlyMarkup = resolveUrlOnlyReplyMarkup(context, messageId)
+
   try {
     await context.api.editMessageReplyMarkup(chatId, messageId, {
-      reply_markup: {
-        inline_keyboard: [],
-      },
+      reply_markup: preservedUrlOnlyMarkup,
     })
   } catch (error) {
     logger.warn(
@@ -1160,4 +1172,68 @@ async function clearInlineActions(
       "failed to clear notification actions",
     )
   }
+}
+
+function resolveUrlOnlyReplyMarkup(context: Context, messageId: number) {
+  const keyboard = resolveInlineKeyboardForMessage(context, messageId)
+  const inlineKeyboard: Array<Array<{ text: string; url: string }>> = []
+
+  if (!Array.isArray(keyboard)) {
+    return {
+      inline_keyboard: inlineKeyboard,
+    }
+  }
+
+  for (const row of keyboard) {
+    if (!Array.isArray(row)) {
+      continue
+    }
+
+    const urlButtons: Array<{ text: string; url: string }> = []
+
+    for (const button of row) {
+      if (!button || typeof button !== "object") {
+        continue
+      }
+
+      if (!("text" in button) || !("url" in button)) {
+        continue
+      }
+
+      if (typeof button.text !== "string" || typeof button.url !== "string") {
+        continue
+      }
+
+      urlButtons.push({
+        text: button.text,
+        url: button.url,
+      })
+    }
+
+    if (urlButtons.length > 0) {
+      inlineKeyboard.push(urlButtons)
+    }
+  }
+
+  return {
+    inline_keyboard: inlineKeyboard,
+  }
+}
+
+function resolveInlineKeyboardForMessage(context: Context, messageId: number): unknown {
+  const callbackMessage = context.callbackQuery?.message
+  if (callbackMessage?.message_id === messageId) {
+    return callbackMessage.reply_markup?.inline_keyboard
+  }
+
+  const repliedMessage = context.message?.reply_to_message
+  if (repliedMessage?.message_id === messageId) {
+    return repliedMessage.reply_markup?.inline_keyboard
+  }
+
+  if (context.message?.message_id === messageId) {
+    return context.message.reply_markup?.inline_keyboard
+  }
+
+  return undefined
 }

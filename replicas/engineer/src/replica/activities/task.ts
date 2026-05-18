@@ -14,6 +14,11 @@ import { WellKnownPermissions } from "@reside/registry"
 import { toError } from "@reside/utils"
 import { z } from "zod"
 import { strings } from "../../locale"
+import {
+  CommitValidationError,
+  isConventionalCommitTitle,
+  validateBranchCommitLogOutput,
+} from "./commit-validation"
 
 const COPILOT_SESSION_TIMEOUT_MS = 20 * 60 * 1000
 const PROGRESS_NOTIFICATION_HISTORY_LIMIT = 5
@@ -1108,13 +1113,6 @@ function createPullRequestTool({
   })
 }
 
-class CommitValidationError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "CommitValidationError"
-  }
-}
-
 async function waitForWorkflowRun(input: {
   octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
   owner: string
@@ -1425,62 +1423,7 @@ async function validateBranchCommitMessages(
     `main..${branchName}`,
   ])
 
-  const parts = stdout.split("\u0000")
-  const commits: Array<{ hash: string; subject: string; body: string }> = []
-
-  for (let index = 0; index + 2 < parts.length; index += 3) {
-    const hash = parts[index]?.trim() ?? ""
-    const subject = parts[index + 1] ?? ""
-    const body = parts[index + 2] ?? ""
-
-    if (hash.length === 0) {
-      continue
-    }
-
-    commits.push({ hash, subject, body })
-  }
-
-  if (commits.length === 0) {
-    throw new CommitValidationError("No commits found on branch for pull request")
-  }
-
-  for (const commit of commits) {
-    const commitHash = commit.hash.slice(0, 8)
-    const subject = commit.subject.trim()
-    if (subject.length === 0) {
-      throw new CommitValidationError(`Commit ${commitHash} has empty subject`)
-    }
-
-    if (subject !== commit.subject) {
-      throw new CommitValidationError(
-        `Commit ${commitHash} subject must be a single clean line without surrounding whitespace (subject="${truncateOneLine(commit.subject, 120)}")`,
-      )
-    }
-
-    if (subject !== subject.toLowerCase()) {
-      throw new CommitValidationError(
-        `Commit ${commitHash} subject must be lowercase (subject="${truncateOneLine(subject, 120)}")`,
-      )
-    }
-
-    if (!isConventionalCommitTitle(subject)) {
-      throw new CommitValidationError(
-        `Commit ${commitHash} subject must follow conventional commits format (subject="${truncateOneLine(subject, 120)}")`,
-      )
-    }
-
-    if (commit.body.trim().length > 0) {
-      throw new CommitValidationError(
-        `Commit ${commitHash} must not contain commit body; move details to pull request body`,
-      )
-    }
-  }
-}
-
-function isConventionalCommitTitle(value: string): boolean {
-  return /^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([a-z0-9._/-]+\))?!: .+$/.test(
-    value,
-  )
+  validateBranchCommitLogOutput(stdout)
 }
 
 async function runPlanningSession({
@@ -1571,6 +1514,12 @@ async function runPlanningSession({
           `Repository: ${repository.owner}/${repository.name}`,
           "Planning phase: produce issue draft update only.",
           "Issue title, issue body, and plan summary MUST be in russian.",
+          "Do not invent tasks, requirements, or technical details that are not present in the user prompt or repository evidence.",
+          "If user prompt is high-level or minimal, keep the plan high-level and minimal as well.",
+          "Match detail level to available input; do not add speculative decomposition just to make plan look complete.",
+          "Do not enforce rigid issue-body structure. If you use sectioned structure, only first section 'Context' is required; all other sections are optional.",
+          "If user asks to just deploy replica, plan that intent without any implementation details (implementation agent knows how to deploy without instructions).",
+          "If user asks to create/update replica, assume that replica must be deployed as well and include deploy intent in the plan unless user explicitly states that no deploy is needed.",
           "Use submit_issue_draft exactly once.",
           "End assistant response with a concise russian summary in one paragraph (prefer 3-5 short sentences).",
           "Focus the summary on new, useful information for the user: what changed in substance, what decisions matter now, and what follow-up is relevant.",

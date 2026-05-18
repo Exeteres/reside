@@ -135,6 +135,19 @@ export async function completeOperationFromCallbackAction(args: {
     candidate => candidate.response === null && candidate.allowedActions.includes(args.actionName),
   )
 
+  if (actionableOperation) {
+    logger.info(
+      {
+        operationId: actionableOperation.id,
+        chatId: args.chatId,
+        messageId: args.messageId,
+        actionName: args.actionName,
+        allowedActions: actionableOperation.allowedActions,
+      },
+      "selected pending operation for callback action",
+    )
+  }
+
   if (!actionableOperation) {
     const respondedOperation = chatAuthorizedOperations.find(
       candidate => candidate.response !== null,
@@ -232,7 +245,23 @@ export async function completeOperationFromCallbackAction(args: {
     })
   } catch (error) {
     if (isUniqueConstraintError(error)) {
+      logger.warn(
+        {
+          operationId: actionableOperation.id,
+          actionName: args.actionName,
+        },
+        "notification callback response hit unique constraint",
+      )
+
       if (await hasExistingResponseForPendingOperation(args.prisma, actionableOperation.id)) {
+        logger.info(
+          {
+            operationId: actionableOperation.id,
+            actionName: args.actionName,
+          },
+          "completing operation after duplicate callback response",
+        )
+
         await args.operationService.setCompleted(actionableOperation.id)
         return { accepted: true, unauthorized: false, reason: "accepted" }
       }

@@ -5,7 +5,7 @@ import {
   sendNotification,
   updateNotification,
 } from "@reside/common/workflow"
-import { proxyActivities } from "@temporalio/workflow"
+import { log, proxyActivities } from "@temporalio/workflow"
 import { createTaskCommand, EngineerNotificationChannels } from "../definitions"
 import { strings } from "../locale"
 
@@ -83,12 +83,6 @@ export const createTaskCommandHandler = defineCommandHandler({
             taskId: planning.result.taskId,
           })
 
-          await updateNotification({
-            notificationId: planning.notificationId,
-            title: strings.notifications.taskExecution.doneTitle,
-            content: block(strings.notifications.taskExecution.cancelledSummary),
-          })
-
           return
         }
 
@@ -118,11 +112,21 @@ export const createTaskCommandHandler = defineCommandHandler({
     const taskId = planning.result.taskId
 
     while (true) {
+      log.info("engineer workflow starting implementation iteration", {
+        taskId,
+        hasContextToken: implementationContextToken !== undefined,
+      })
+
       const implementationNotification = await sendNotification({
         contextToken: implementationContextToken,
         channel: EngineerNotificationChannels.TASKS,
         title: strings.notifications.taskExecution.inProgressTitle,
         message: block(strings.notifications.taskExecution.inProgressMessage),
+      })
+
+      log.info("engineer workflow implementation notification sent", {
+        taskId,
+        notificationId: implementationNotification.notificationId,
       })
 
       let finished: ImplementationResult | undefined
@@ -134,6 +138,10 @@ export const createTaskCommandHandler = defineCommandHandler({
         })
         .then(result => {
           finished = result
+          log.info("engineer workflow implementation interaction finished", {
+            taskId,
+            status: result.status,
+          })
           return result
         })
 
@@ -151,12 +159,26 @@ export const createTaskCommandHandler = defineCommandHandler({
           cancelWhen: () => finished !== undefined,
         })
 
+        log.info("engineer workflow received implementation notification reply", {
+          taskId,
+          type: runningReply.type,
+          actionName: runningReply.type === "action" ? runningReply.actionName : undefined,
+        })
+
         if (runningReply.type === "cancelled") {
+          log.info("engineer workflow implementation wait cancelled due to completion", { taskId })
           break
         }
 
         if (runningReply.type === "action") {
+          log.info("engineer workflow requesting task cancellation from action", {
+            taskId,
+            actionName: runningReply.actionName,
+          })
+
           await activities.requestCancellation({ taskId })
+
+          log.info("engineer workflow cancellation request activity completed", { taskId })
 
           await updateNotification({
             notificationId: implementationNotification.notificationId,
@@ -175,6 +197,11 @@ export const createTaskCommandHandler = defineCommandHandler({
       }
 
       const implementationResult = finished ?? (await runPromise)
+
+      log.info("engineer workflow handling implementation result", {
+        taskId,
+        status: implementationResult.status,
+      })
 
       if (implementationResult.status === "CANCELLED") {
         await updateNotification({
