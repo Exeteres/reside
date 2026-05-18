@@ -17,6 +17,12 @@ describe("resolveReplicaSelection", () => {
     expect(replicas.map(replica => replica.name)).toEqual(["infra", "access", "telegram", "alpha"])
   })
 
+  test("includes rate dependencies in sorted order", () => {
+    const replicas = resolveReplicaSelection(topology, ["rate"])
+
+    expect(replicas.map(replica => replica.name)).toEqual(["infra", "access", "telegram", "rate"])
+  })
+
   test("selects only requested replicas when dependency expansion is disabled", () => {
     const replicas = resolveReplicaSelection(topology, ["alpha"], {
       includeDependencies: false,
