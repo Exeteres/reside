@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package reside.common.ping.v1;
+
+import "google/protobuf/empty.proto";
+
+// Provides a lightweight wake-up endpoint for replicas.
+service PingService {
+  // Accepts a ping request and returns an empty response.
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+}

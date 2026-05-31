@@ -1,0 +1,26 @@
+/// Represents a managed HTTP gateway in the cluster.
+model Gateway {
+  /// The unique numeric identifier of the gateway record.
+  id Int @id @default(autoincrement())
+
+  /// The unique gateway name.
+  name String @unique
+
+  /// The owner replica name that requested this gateway.
+  ownerReplicaName String
+
+  /// The display title of the gateway.
+  title String
+
+  /// Optional gateway description.
+  description String?
+
+  /// The timestamp when this record was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this record was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The operations associated with this gateway.
+  operations Operation[]
+}

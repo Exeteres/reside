@@ -1,0 +1,9 @@
+export const POSTGRES_RELEASE_NAME = "postgres"
+export const POSTGRES_SERVICE_NAME = "postgres"
+export const POSTGRES_SERVICE_PORT = 5432
+export const POSTGRES_ADMIN_SECRET_NAME = "postgres-credentials"
+export const POSTGRES_ADMIN_ENDPOINT_KEY = "endpoint"
+export const POSTGRES_ADMIN_USERNAME_KEY = "username"
+export const POSTGRES_ADMIN_PASSWORD_KEY = "password"
+export const POSTGRES_ADMIN_USERNAME = "postgres"
+export const POSTGRES_ADMIN_DATABASE = "postgres"

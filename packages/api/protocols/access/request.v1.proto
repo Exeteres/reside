@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package reside.access.request.v1;
+
+import "google/type/datetime.proto";
+import "google/protobuf/wrappers.proto";
+import "common/operation.v1.proto";
+import "access/definition.v1.proto";
+
+// The status of a permission request set.
+enum PermissionRequestSetStatus {
+  // The request set is pending review.
+  PERMISSION_REQUEST_SET_STATUS_PENDING = 0;
+
+  // The request set has been approved.
+  PERMISSION_REQUEST_SET_STATUS_APPROVED = 1;
+
+  // The request set has been denied.
+  PERMISSION_REQUEST_SET_STATUS_DENIED = 2;
+
+  // The request set expired before review.
+  PERMISSION_REQUEST_SET_STATUS_EXPIRED = 3;
+
+  // The request set was superseded by a newer request set.
+  PERMISSION_REQUEST_SET_STATUS_SUPERSEDED = 4;
+
+  // The request set was cancelled.
+  PERMISSION_REQUEST_SET_STATUS_CANCELLED = 5;
+}
+
+// A requested permission item inside a permission request set.
+message PermissionRequestSetItem {
+  // The permission being requested.
+  reside.access.definition.v1.Permission permission = 1;
+
+  // The optional descriptor of the scope on which the permission is being requested.
+  // Cannot be provided for non-scoped permissions that do not require a scope.
+  google.protobuf.StringValue scope = 2;
+}
+
+// The PermissionRequestSet message represents a request set for one or more permissions.
+message PermissionRequestSet {
+  // The unique identifier of the permission request set.
+  int32 id = 1;
+
+  // The subject being granted by the permission request set (in format "{realm}:{name}").
+  string subject_id = 2;
+
+  // The required permission set name provided by the caller to identify a replaceable active request set.
+  // Scoped to the (subject_id, requested_by_subject_id) pair.
+  string permission_set_name = 3;
+
+  // The requested permission items.
+  repeated PermissionRequestSetItem items = 4;
+
+  // The required reason provided by the requester for why they are requesting this set.
+  string reason = 5;
+
+  // The current status of the permission request set.
+  PermissionRequestSetStatus status = 6;
+
+  // The subject that requested the permission set.
+  // May not match the subject that will be granted the permissions.
+  string requested_by_subject_id = 7;
+
+  // The subject that resolved the permission request set.
+  // This field is only set if the status is APPROVED or DENIED.
+  google.protobuf.StringValue resolved_by_subject_id = 8;
+
+  // The resolution note provided by the reviewer when approving or denying the request set.
+  // This field is only set if the status is APPROVED or DENIED.
+  google.protobuf.StringValue resolution = 9;
+
+  // The ID of the permission request set that superseded this request set, if applicable.
+  int32 superseded_by_request_set_id = 10;
+
+  // The timestamp when the permission request set was created.
+  google.type.DateTime created_at = 11;
+
+  // The timestamp when the permission request set was resolved (approved, denied, expired, cancelled, or superseded).
+  google.type.DateTime resolved_at = 12;
+}
+
+// The input item for requesting a permission in a request set.
+message PermissionRequestItemInput {
+  // The unique name of the permission being requested.
+  string permission_name = 1;
+
+  // The optional descriptor of the scope on which the permission is being requested.
+  // Cannot be provided for non-scoped permissions that do not require a scope.
+  google.protobuf.StringValue scope = 2;
+}
+
+// The request to create a permission request set.
+message RequestPermissionsRequest {
+  // The optional identifier of the subject to which requested permissions will be granted (in format "{realm}:{name}").
+  // If omitted, falls back to requested_by_subject_id from request metadata.
+  google.protobuf.StringValue subject_id = 1;
+
+  // The list of requested permission items.
+  repeated PermissionRequestItemInput items = 2;
+
+  // The required reason provided by the requester for why they are requesting this permission set.
+  string reason = 3;
+
+  // The optional permission set name used to find and supersede the currently active request set before creating a new one.
+  // Scoped to the (subject_id, requested_by_subject_id) pair.
+  // If omitted, defaults to "default".
+  google.protobuf.StringValue permission_set_name = 4;
+}
+
+// The response for creating a permission request set.
+message RequestPermissionsResponse {
+  // The operation used to track asynchronous processing.
+  // Present only when at least one permission is missing and a request set is created.
+  // Omitted when all requested permissions are already granted.
+  reside.common.operation.v1.Operation operation = 1;
+}
+
+// The service for handling permission request sets, allowing subjects to request multiple permissions at once.
+service PermissionRequestService {
+  // Submits a new permission request set for the specified subject and permission items.
+  // Returns an operation for asynchronous tracking only if there are missing permissions to add.
+  // If all requested permissions are already granted, returns an empty response without operation.
+  // Returns PERMISSION_DENIED if at least one requested permission is explicitly restricted.
+  rpc RequestPermissions(RequestPermissionsRequest) returns (RequestPermissionsResponse);
+}

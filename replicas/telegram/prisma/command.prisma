@@ -1,0 +1,31 @@
+/// Represents a command definition registered by a replica for Telegram invocation.
+model Command {
+  /// The unique numeric identifier of the command.
+  id Int @id @default(autoincrement())
+
+  /// The unique command name.
+  name String @unique
+
+  /// The human-readable command title.
+  title String
+
+  /// The optional detailed command description.
+  description String?
+
+  /// The serialized command parameters schema.
+  ///
+  /// [CommandParameters]
+  parameters Json
+
+  /// Whether invocation of this command requires permission checks.
+  isProtected Boolean @default(false)
+
+  /// The gRPC endpoint of the command handler service for this command.
+  callbackEndpoint String
+
+  /// The timestamp when this command definition was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this command definition was last updated.
+  updatedAt DateTime @updatedAt
+}

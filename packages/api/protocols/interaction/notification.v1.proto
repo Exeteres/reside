@@ -1,0 +1,153 @@
+syntax = "proto3";
+
+package reside.interaction.notification.v1;
+
+import "google/protobuf/wrappers.proto";
+import "common/file.v1.proto";
+import "common/operation.v1.proto";
+
+// The well-known icon to be displayed alongside a notification action.
+enum NotificationActionIcon {
+  CONFIRMATION_ACTION_ICON_NONE  = 0;
+  CONFIRMATION_ACTION_ICON_CHECK = 1;
+  CONFIRMATION_ACTION_ICON_CROSS = 2;
+}
+
+// The action that a user can take in response to a notification, represented by a button in the UI.
+message NotificationAction {
+  // The unique name of the action within the notification, used to identify which action was taken by the user in the response.
+  string name = 1;
+
+  // The human-readable title of the action, displayed on the button in the UI.
+  string title = 2;
+
+  // The optional well-known icon to be displayed alongside the action in the UI, used to visually convey the purpose of the action.
+  NotificationActionIcon icon = 3;
+
+  // The optional URL of the action to redirect the user.
+  // If provided, no callback will be triggered.
+  google.protobuf.StringValue url = 4;
+}
+
+// The row of actions in a notification.
+message NotificationActionRow {
+  // The list of actions to be displayed in the same row in the UI.
+  repeated NotificationAction actions = 1;
+}
+
+// The request message for sending a notification to a channel.
+message SendNotificationRequest {
+  // The optional interaction context token to send the notification in response to.
+  // This token is opaque and must not be parsed.
+  // If omitted, the notification is sent to the system chat.
+  optional string context_token = 1;
+
+  // The channel to send the notification to.
+  string channel = 2;
+
+  // The name of the partition inside the channel to send the notification to.
+  // If not provided, the notification will be sent to the default partition.
+  // The partition is used to scope notifications within a channel for some specific entity.
+  // Partitions can be muted independently by the user, so they can be used to avoid sending notifications about some entities that the user is not interested in.
+  google.protobuf.StringValue partition = 3;
+
+  // The human-readable title of the notification.
+  string title = 4;
+
+  // The optional notification content.
+  google.protobuf.StringValue content = 5;
+
+  // The optinal list of images to be displayed in the notification.
+  repeated reside.common.file.v1.InlineFile images = 6;
+
+  // The optional list of files to be attached to the notification.
+  // Unlike images, these files are not actively displayed in the notification, but can be accessed by the user in some other way.
+  repeated reside.common.file.v1.InlineFile attachments = 7;
+
+  // The optional list of action rows that the user can take in response to the notification.
+  // If provided with `requires_text_response` set to true, the user will have choice to either click one of the provided actions or provide a text response.
+  // If all actions are "url-based", no response will be tracked.
+  repeated NotificationActionRow action_rows = 8;
+
+  // Whether the notification needs (or may) text input from the user in response.
+  // If not true, the response to the notification will not be tracked and no operation will be created to await it.
+  google.protobuf.BoolValue requires_text_response = 9;
+
+  // Whether response interaction with this notification is protected by permissions.
+  // If false (default), any user can interact with notification responses.
+  // If true, the interaction implementation may enforce additional authorization checks before accepting responses.
+  google.protobuf.BoolValue protected = 10;
+
+  // Optional subject identifier to send notification on behalf of.
+  // If not provided, the notification is sent on behalf of the calling replica subject.
+  // Implementations may require additional permission checks to allow impersonation.
+  google.protobuf.StringValue send_as_subject_id = 11;
+
+  // Whether callback interactions should avoid delayed "chosen" suffix rendering.
+  // Useful for interactions where immediate in-place UI updates are expected.
+  google.protobuf.BoolValue expect_immediate_feedback = 12;
+}
+
+// The response message for a notification sent to a channel.
+message SendNotificationResponse {
+  // The identifier of the created notification.
+  // This ID is opaque and must not be parsed.
+  string notification_id = 2;
+
+  // The optional operation representing the pending response to the notification.
+  // If the notification has no actions and does not set `requires_text_response` to true, this will be null, as there is no response to await.
+  // Once user takes an action or provides a text response, the operation will be resolved with the NotificationResponse message.
+  reside.common.operation.v1.Operation operation = 1;
+}
+
+// The request message for updating an existing notification.
+message UpdateNotificationRequest {
+  // The identifier of the notification to update.
+  // This ID is opaque and must not be parsed.
+  string notification_id = 1;
+
+  // The updated notification title.
+  string title = 2;
+
+  // The updated notification content.
+  string content = 3;
+
+  // The updated list of action rows available to the user.
+  repeated NotificationActionRow action_rows = 4;
+
+  // The updated text response requirement.
+  // If not provided, the current requirement is preserved.
+  google.protobuf.BoolValue requires_text_response = 5;
+
+  // Whether callback interactions should avoid delayed "chosen" suffix rendering.
+  // If not provided, the current behavior is preserved.
+  google.protobuf.BoolValue expect_immediate_feedback = 6;
+}
+
+// The response message for a notification update operation.
+message UpdateNotificationResponse {
+  // The optional operation representing the pending response to the updated notification.
+  // If no response tracking is required after update, this will be null.
+  reside.common.operation.v1.Operation operation = 1;
+}
+
+// The message representing the user's response to a notification, either by taking one of the provided actions or by providing a text response.
+message NotificationResponse {
+  oneof response {
+    // The name of the action taken by the user, if the user responded by taking one of the provided actions.
+    string action_name = 1;
+
+    // The text response provided by the user, if `requires_text_response` was set to true and the user responded by providing a text response instead of taking one of the provided actions.
+    string text_response = 2;
+  }
+}
+
+// The notification service, which allows sending notifications to users and receiving their responses.
+service NotificationService {
+  // Sends a notification to a channel.
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+
+  // Updates title and content of an existing notification.
+  rpc UpdateNotification(UpdateNotificationRequest) returns (UpdateNotificationResponse);
+}
+

@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package reside.alpha.discovery.v1;
+
+// The request message for reading effective endpoints of the authenticated replica.
+message GetEffectiveEndpointsRequest {}
+
+// The response containing effective endpoint mappings by endpoint slot name.
+message GetEffectiveEndpointsResponse {
+  // The endpoint mapping where key is endpoint slot name and value is resolved endpoint.
+  map<string, string> endpoints = 1;
+}
+
+// Request for resolving the current internal endpoint of a subject.
+message GetSubjectEndpointRequest {
+  // The subject identifier in format "{realm}:{name}".
+  // Currently only "replica" realm is supported.
+  string subject_id = 1;
+}
+
+// Response containing the resolved endpoint.
+message GetSubjectEndpointResponse {
+  // The resolved internal endpoint for the subject.
+  string endpoint = 1;
+}
+
+// The service that exposes effective endpoint discovery for replicas.
+service DiscoveryService {
+  // GetEffectiveEndpoints returns resolved endpoint values for the authenticated replica.
+  rpc GetEffectiveEndpoints(GetEffectiveEndpointsRequest) returns (GetEffectiveEndpointsResponse);
+
+  // GetSubjectEndpoint resolves internal endpoint for the requested subject.
+  rpc GetSubjectEndpoint(GetSubjectEndpointRequest) returns (GetSubjectEndpointResponse);
+}

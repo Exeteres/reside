@@ -1,0 +1,38 @@
+{
+  "name": "@replicas/engineer",
+  "reside": {
+    "image": "ghcr.io/exeteres/reside/replicas/engineer"
+  },
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "bunx tsc -p tsconfig.json --noEmit",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings",
+    "generate": "prisma generate"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.914.0",
+    "@connectrpc/connect-fastify": "catalog:",
+    "@connectrpc/connect": "catalog:",
+    "@temporalio/client": "catalog:",
+    "@temporalio/common": "catalog:",
+    "@temporalio/worker": "catalog:",
+    "@temporalio/workflow": "catalog:",
+    "prisma": "catalog:",
+    "@github/copilot-sdk": "catalog:"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:",
+    "@grpc/grpc-js": "catalog:",
+    "@octokit/auth-app": "catalog:",
+    "@prisma/client": "catalog:",
+    "@reside/api": "workspace:*",
+    "@reside/common": "workspace:*",
+    "@reside/registry": "workspace:*",
+    "@reside/utils": "workspace:*",
+    "octokit": "catalog:",
+    "zod": "catalog:"
+  }
+}

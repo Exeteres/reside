@@ -1,0 +1,8 @@
+{
+  "name": "@reside/utils",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "main": "./src/index.ts"
+}

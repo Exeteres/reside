@@ -1,0 +1,97 @@
+/// The concrete kind of response submitted by a user.
+enum NotificationResponseType {
+  /// The user selected one of the predefined actions.
+  ACTION
+
+  /// The user submitted free text.
+  TEXT
+}
+
+/// Represents a user response to a notification.
+model NotificationResponse {
+  /// The operation identifier resolved by this response.
+  operationId Int @id
+
+  /// The kind of response.
+  type NotificationResponseType
+
+  /// The action name when the response kind is ACTION.
+  actionName String?
+
+  /// The text value when the response kind is TEXT.
+  textResponse String?
+
+  /// The timestamp when the response was created.
+  createdAt DateTime @default(now())
+
+  /// The operation associated with this response.
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+}
+
+/// Represents a sent notification tracked by the replica.
+model Notification {
+  /// The unique numeric identifier of the notification.
+  id Int @id @default(autoincrement())
+
+  /// The optional operation associated with this notification response tracking.
+  operationId Int? @unique
+
+  /// The operation associated with this notification payload.
+  operation Operation? @relation(fields: [operationId], references: [id], onDelete: SetNull)
+
+  /// The Telegram chat identifier where this notification was sent.
+  targetChatId String
+
+  /// The Telegram chat entity where this notification was sent.
+  chat Chat @relation("NotificationTargetChat", fields: [targetChatId], references: [telegramId])
+
+  /// Optional Telegram message identifier this notification replies to.
+  replyToMessageId Int?
+
+  /// The ID of the notification channel associated with this operation.
+  channelId Int
+
+  /// The notification channel associated with this notification.
+  channel NotificationChannel @relation(fields: [channelId], references: [id])
+
+  /// The message identifier this notification is associated with.
+  messageId Int
+
+  /// The subject that called notification sending API.
+  callingSubjectId String?
+
+  /// The effective subject on behalf of which notification was sent.
+  sendAsSubjectId String?
+
+  /// The stored title of this notification.
+  title String
+
+  /// The stored content of this notification.
+  content String
+
+  /// The serialized list of action rows for rendering and pagination.
+  /// [NotificationActionRowsData]
+  actionRows Json
+
+  /// Whether this notification requires text response tracking.
+  requiresTextResponse Boolean @default(false)
+
+  /// Whether interaction with this notification requires permission checks.
+  isProtected Boolean @default(false)
+
+  /// Whether callback selection should avoid accepted/chosen suffix rendering.
+  expectImmediateFeedback Boolean @default(false)
+
+  /// The avatar provisioning request that references this notification.
+  avatarProvisionRequest AvatarProvisionRequest?
+
+  /// The timestamp when this notification was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this notification was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@index([messageId])
+  @@index([channelId])
+  @@index([targetChatId])
+}

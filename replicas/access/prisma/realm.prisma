@@ -1,0 +1,26 @@
+/// Represents a logical grouping of subjects.
+model Realm {
+  /// The unique numeric identifier of the realm.
+  id Int @id @default(autoincrement())
+
+  /// The unique realm name.
+  name String @unique
+
+  /// The human-readable title of the realm.
+  title String
+
+  /// The optional detailed description of the realm.
+  description String?
+
+  /// The endpoint of subject service used to resolve subject display info for this realm.
+  subjectServiceEndpoint String?
+
+  /// The approvers that can review subjects in this realm.
+  approvers Approver[]
+
+  /// The timestamp when the realm was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when the realm was last updated.
+  updatedAt DateTime @updatedAt
+}

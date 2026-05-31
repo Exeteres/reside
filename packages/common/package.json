@@ -1,0 +1,51 @@
+{
+  "name": "@reside/common",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json",
+    "./workflow": "./src/workflow/index.ts",
+    "./prisma": "./src/prisma/index.ts",
+    "./definitions": "./src/definitions/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.914.0",
+    "@bufbuild/protobuf": "catalog:",
+    "@connectrpc/connect": "catalog:",
+    "@connectrpc/connect-fastify": "catalog:",
+    "@connectrpc/connect-node": "catalog:",
+    "@fastify/otel": "catalog:",
+    "@github/copilot-sdk": "catalog:",
+    "@grpc/grpc-js": "catalog:",
+    "@kubernetes/client-node": "catalog:",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "catalog:",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.216.0",
+    "@opentelemetry/instrumentation-pino": "^0.62.0",
+    "@opentelemetry/resources": "^2.7.1",
+    "@opentelemetry/sdk-node": "^0.216.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
+    "@prisma/adapter-pg": "catalog:",
+    "@prisma/client": "catalog:",
+    "@prisma/instrumentation": "catalog:",
+    "@reside/api": "workspace:*",
+    "@reside/registry": "workspace:*",
+    "@reside/utils": "workspace:*",
+    "@temporalio/client": "catalog:",
+    "@temporalio/common": "catalog:",
+    "@temporalio/interceptors-opentelemetry": "^1.16.0",
+    "@temporalio/worker": "catalog:",
+    "@temporalio/workflow": "catalog:",
+    "fastify": "catalog:",
+    "jose": "catalog:",
+    "pg": "catalog:",
+    "pino": "catalog:",
+    "prisma": "catalog:",
+    "type-fest": "^5.4.4",
+    "webpack": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/pg": "catalog:"
+  }
+}

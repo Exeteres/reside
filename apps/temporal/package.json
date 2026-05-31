@@ -1,0 +1,9 @@
+{
+  "name": "@reside/temporal",
+  "scripts": {
+    "publish-image": "cd ../.. && docker build -t ghcr.io/exeteres/reside/temporal:latest -f apps/temporal/Dockerfile . --push"
+  },
+  "reside": {
+    "image": "ghcr.io/exeteres/reside/temporal"
+  }
+}

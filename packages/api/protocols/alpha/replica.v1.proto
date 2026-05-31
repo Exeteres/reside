@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package reside.alpha.replica.v1;
+
+import "google/protobuf/wrappers.proto";
+
+// The public information about a registered replica.
+message ReplicaInfo {
+  // The numeric identifier of the replica.
+  int32 id = 1;
+
+  // The technical name of the replica.
+  string name = 2;
+
+  // The human-readable title of the replica.
+  string title = 3;
+
+  // The optional description of the replica.
+  google.protobuf.StringValue description = 4;
+
+  // The current internal endpoint of the replica.
+  string internal_endpoint = 5;
+
+  // The current public endpoint of the replica if any.
+  google.protobuf.StringValue public_endpoint = 6;
+}
+
+// The request message for listing registered replicas.
+message ListReplicasRequest {}
+
+// The response containing registered replicas.
+message ListReplicasResponse {
+  // The list of registered replicas.
+  repeated ReplicaInfo replicas = 1;
+}
+
+// The service exposing public replica registry information.
+service ReplicaService {
+  // ListReplicas returns the public information about all registered replicas.
+  rpc ListReplicas(ListReplicasRequest) returns (ListReplicasResponse);
+}

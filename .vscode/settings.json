@@ -1,0 +1,4 @@
+{
+  "protobuf.includes": ["${workspaceFolder}/packages/api/protocols"],
+  "protobuf.protoc.options": ["--proto_path=${workspaceFolder}/packages/api/protocols"]
+}

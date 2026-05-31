@@ -1,0 +1,43 @@
+{
+  "name": "@replicas/telegram",
+  "reside": {
+    "image": "ghcr.io/exeteres/reside/replicas/telegram"
+  },
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings",
+    "test": "bun test",
+    "generate": "prisma generate"
+  },
+  "dependencies": {
+    "fastify": "catalog:",
+    "@bufbuild/protobuf": "catalog:",
+    "@connectrpc/connect-fastify": "catalog:",
+    "@connectrpc/connect": "catalog:",
+    "@connectrpc/connect-node": "catalog:",
+    "@temporalio/client": "catalog:",
+    "@temporalio/worker": "catalog:",
+    "@temporalio/workflow": "catalog:",
+    "jose": "catalog:",
+    "prisma": "catalog:"
+  },
+  "devDependencies": {
+    "@grpc/grpc-js": "catalog:",
+    "@kubernetes/client-node": "catalog:",
+    "@opentelemetry/api": "catalog:",
+    "@prisma/client": "catalog:",
+    "@reside/api": "workspace:*",
+    "@reside/common": "workspace:*",
+    "@reside/registry": "workspace:*",
+    "@reside/utils": "workspace:*",
+    "@swc/wasm": "^1.15.18",
+    "@typescript/native-preview": "catalog:",
+    "grammy": "catalog:",
+    "loader-utils": "^3.3.1",
+    "prisma-json-types-generator": "^4.1.1"
+  }
+}

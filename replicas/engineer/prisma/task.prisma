@@ -1,0 +1,64 @@
+enum TaskStatus {
+  // The initial (or clarifying) promt is received and the task is plan is being created/updated.
+  PLANNING
+
+  // The task plan is ready and waiting user approval to start execution.
+  PLAN_READY
+
+  // The task is being worked on by the agent.
+  IN_PROGRESS
+
+  // The task was successfully completed by the agent.
+  // From this state, it can again transition to IN_PROGRESS if the user requests changes.
+  COMPLETED
+
+  // The task was failed due to an error during execution.
+  // From this state, it can again transition to IN_PROGRESS if the user requests changes.
+  FAILED
+
+  // Cancellation was requested while implementation is still running.
+  // Worker must stop the active iteration and move the task to CANCELLED.
+  REQUESTED_CANCELLATION
+
+  // The task was cancelled by the user.
+  // From this state, it can again transition to IN_PROGRESS if the user requests changes.
+  CANCELLED
+}
+
+enum TaskPhase {
+  PLANNING
+  IMPLEMENTATION
+}
+
+model Task {
+  id      Int        @id @default(autoincrement())
+  phase   TaskPhase
+  status  TaskStatus
+  issueId Int?       @unique
+
+  createdBy String
+  updatedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  iterations TaskIteration[]
+}
+
+model TaskIteration {
+  id        Int @id @default(autoincrement())
+  taskId    Int
+  iteration Int
+
+  phase         TaskPhase
+  prompt        String
+  resultSummary String?
+  errorMessage  String?
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, iteration])
+}

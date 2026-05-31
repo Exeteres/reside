@@ -1,0 +1,49 @@
+enum OperationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+/// Represents a long-running operation in the access replica.
+model Operation {
+  /// The unique numeric identifier of the operation record.
+  id Int @id @default(autoincrement())
+
+  /// The user-facing operation title.
+  title String
+
+  /// The user-facing operation description.
+  description String?
+
+  /// The status of the operation.
+  status OperationStatus @default(PENDING)
+
+  /// The machine-readable failure reason.
+  failureReason String?
+
+  /// The human-readable failure message.
+  failureMessage String?
+
+  /// Optional callback endpoint for completion notifications.
+  callbackEndpoint String?
+
+  /// Optional custom payload for completion notifications.
+  customData Json?
+
+  /// The created permission request set associated with this operation.
+  permissionRequestSetId Int? @unique
+
+  /// The created permission request set associated with this operation.
+  permissionRequestSet PermissionRequestSet? @relation(fields: [permissionRequestSetId], references: [id], onDelete: SetNull)
+
+  /// The timestamp when this operation record was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this operation record was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The timestamp when this operation was resolved (succeeded or failed).
+  resolvedAt DateTime?
+
+  @@index([createdAt])
+}

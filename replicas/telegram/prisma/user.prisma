@@ -1,0 +1,31 @@
+/// Represents a Telegram user known to the replica.
+model User {
+  /// The unique numeric identifier of the user record.
+  id Int @id @default(autoincrement())
+
+  /// The Telegram user id.
+  telegramId String @unique
+
+  /// The raw Telegram payload for the user.
+  ///
+  /// [UserData]
+  data Json
+
+  /// The avatars created by this user.
+  createdAvatars Avatar[]
+
+  /// The avatar provisioning requests created by this user.
+  avatarProvisionRequests AvatarProvisionRequest[]
+
+  /// Unauthorized avatar events created by this user.
+  unauthorizedAvatars UnauthorizedAvatar[]
+
+  /// NLS interactions started by this user.
+  naturalLanguageInteractions NaturalLanguageInteraction[]
+
+  /// The timestamp when this user was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this user was last updated.
+  updatedAt DateTime @updatedAt
+}

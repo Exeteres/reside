@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package reside.access.authz.v1;
+
+import "google/protobuf/wrappers.proto";
+
+// The request message to check if a subject has a specific permission on a scope.
+message CheckPermissionRequest {
+  // The unique name of the permission to check.
+  string permission_name = 1;
+
+  // The unique identifier of the subject (in format "{realm}:{name}") for which the permission check is being performed.
+  string subject_id = 2;
+
+  // The scope descriptor for which the permission check is being performed.
+  // This field is optional and must be provided if and only if the permission being checked is scoped.
+  google.protobuf.StringValue scope = 3;
+}
+
+// The response message indicating whether the subject has the specified permission.
+message CheckPermissionResponse {
+  // The boolean value indicating whether the subject has the specified permission.
+  bool authorized = 1;
+}
+
+// The AuthzService defines the RPC method for checking permissions of a subject.
+service AuthzService {
+  // Checks if the specified subject has the given permission on the scope.
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+}

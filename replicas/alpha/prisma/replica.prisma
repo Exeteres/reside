@@ -1,0 +1,118 @@
+/// Represents a registered replica in the cluster.
+model Replica {
+  /// The unique numeric identifier of the replica.
+  id Int @id @default(autoincrement())
+
+  /// The unique technical replica name.
+  name String @unique
+
+  /// The human-readable title of the replica.
+  title String
+
+  /// The optional detailed description of the replica.
+  description String?
+
+  /// The optional URL of the replica avatar.
+  avatarUrl String?
+
+  /// The optional image currently requested for the replica in Kubernetes.
+  image String?
+
+  /// The current internal endpoint of the replica.
+  internalEndpoint String
+
+  /// The current public endpoint of the replica.
+  publicEndpoint String?
+
+  /// Optional Kubernetes node hostname to pin workloads to.
+  node String?
+
+  /// The replica dependency slots that this replica defines.
+  replicaDependencySlots ReplicaDependencySlot[]
+
+  /// The dependency slots where this replica is used as the default target.
+  defaultInReplicaDependencySlots ReplicaDependencySlot[] @relation("ReplicaDependencySlotDefaultReplica")
+
+  /// The dependency slots where this replica is used as the current target.
+  currentInReplicaDependencySlots ReplicaDependencySlot[] @relation("ReplicaDependencySlotCurrentReplica")
+
+  /// The endpoint dependency slots that this replica defines.
+  endpointDependencySlots ReplicaEndpointDependencySlot[]
+
+  /// The registration reconciliation operations associated with this replica.
+  operations Operation[]
+
+  /// The timestamp when the replica was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when the replica was last updated.
+  updatedAt DateTime @updatedAt
+}
+
+/// Represents a dependency slot that targets another replica.
+model ReplicaDependencySlot {
+  /// The unique numeric identifier of the slot.
+  id Int @id @default(autoincrement())
+
+  /// The owning replica identifier.
+  replicaId Int
+
+  /// The owning replica.
+  replica Replica @relation(fields: [replicaId], references: [id], onDelete: Cascade)
+
+  /// The slot name unique within a replica.
+  name String
+
+  /// The default replica identifier initially assigned to this slot.
+  defaultReplicaId Int?
+
+  /// The default replica initially assigned to this slot.
+  defaultReplica Replica? @relation("ReplicaDependencySlotDefaultReplica", fields: [defaultReplicaId], references: [id], onDelete: SetNull)
+
+  /// The current replica identifier assigned to this slot.
+  currentReplicaId Int?
+
+  /// The current replica assigned to this slot.
+  currentReplica Replica? @relation("ReplicaDependencySlotCurrentReplica", fields: [currentReplicaId], references: [id], onDelete: SetNull)
+
+  /// The timestamp when the slot was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when the slot was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@unique([replicaId, name])
+  @@index([replicaId])
+  @@index([defaultReplicaId])
+  @@index([currentReplicaId])
+}
+
+/// Represents a dependency slot that targets an endpoint.
+model ReplicaEndpointDependencySlot {
+  /// The unique numeric identifier of the slot.
+  id Int @id @default(autoincrement())
+
+  /// The owning replica identifier.
+  replicaId Int
+
+  /// The owning replica.
+  replica Replica @relation(fields: [replicaId], references: [id], onDelete: Cascade)
+
+  /// The slot name unique within a replica.
+  name String
+
+  /// The default endpoint initially assigned to this slot.
+  defaultEndpoint String?
+
+  /// The current endpoint assigned to this slot.
+  currentEndpoint String?
+
+  /// The timestamp when the slot was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when the slot was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@unique([replicaId, name])
+  @@index([replicaId])
+}

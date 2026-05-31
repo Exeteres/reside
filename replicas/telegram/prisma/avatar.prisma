@@ -1,0 +1,117 @@
+/// Represents a managed Telegram bot avatar assigned to a replica subject.
+model Avatar {
+  /// The unique numeric identifier of the avatar.
+  id Int @id @default(autoincrement())
+
+  /// The replica subject identifier in the format "replica:<name>".
+  subjectId String @unique
+
+  /// The replica name extracted from the subject.
+  replicaName String @unique
+
+  /// The localized replica title used in user-facing messages.
+  replicaTitle String
+
+  /// The Telegram managed bot identifier.
+  managedBotId String @unique
+
+  /// The Telegram managed bot username.
+  managedBotUsername String @unique
+
+  /// The internal user identifier of the creator if known.
+  createdByUserId Int?
+
+  /// The creator user entity if known.
+  createdByUser User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  /// The current managed bot token in plain text.
+  token String
+
+  /// The timestamp when this avatar was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this avatar was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The provisioning requests linked to this avatar.
+  provisionRequests AvatarProvisionRequest[]
+}
+
+/// Tracks an ongoing avatar provisioning request.
+model AvatarProvisionRequest {
+  /// The unique numeric identifier of the provisioning request.
+  id Int @id @default(autoincrement())
+
+  /// The operation associated with this provisioning request.
+  operationId Int @unique
+
+  /// The operation metadata.
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+
+  /// The replica subject identifier in the format "replica:<name>".
+  subjectId String
+
+  /// The replica name extracted from the subject.
+  replicaName String
+
+  /// The localized replica title used in prompts.
+  replicaTitle String
+
+  /// The username prefix accepted for this provisioning flow.
+  expectedPrefix String
+
+  /// The internal user identifier of the creator if known.
+  createdByUserId Int?
+
+  /// The creator user entity if known.
+  createdByUser User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  /// The optional notification id used for this provisioning flow.
+  notificationId Int? @unique
+
+  /// The optional notification used for this provisioning flow.
+  notification Notification? @relation(fields: [notificationId], references: [id], onDelete: SetNull)
+
+  /// The optional linked avatar created for this provisioning flow.
+  avatarId Int?
+
+  /// The optional linked avatar created for this provisioning flow.
+  avatar Avatar? @relation(fields: [avatarId], references: [id], onDelete: SetNull)
+
+  /// The timestamp when this request was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this request was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@index([expectedPrefix])
+  @@index([subjectId])
+  @@index([avatarId])
+}
+
+/// Represents a managed bot creation event that did not match a valid pending provisioning request.
+model UnauthorizedAvatar {
+  /// The unique numeric identifier of the unauthorized avatar event.
+  id Int @id @default(autoincrement())
+
+  /// The Telegram managed bot identifier if known.
+  managedBotId String?
+
+  /// The Telegram managed bot username.
+  managedBotUsername String
+
+  /// The internal user identifier of the creator if known.
+  createdByUserId Int?
+
+  /// The creator user entity if known.
+  createdByUser User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  /// The rejection reason.
+  reason String
+
+  /// The timestamp when this event was recorded.
+  createdAt DateTime @default(now())
+
+  @@index([managedBotUsername])
+  @@index([reason])
+}

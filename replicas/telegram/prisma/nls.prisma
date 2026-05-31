@@ -1,0 +1,32 @@
+/// Represents a tracked NLS thread bound to a Telegram chat thread.
+model NaturalLanguageInteraction {
+  /// The unique numeric identifier of the interaction.
+  id Int @id @default(autoincrement())
+
+  /// The Telegram chat identifier where interaction started.
+  chatId String
+
+  /// The user identifier that owns this interaction thread.
+  userId Int
+
+  /// The resolved thread identifier used for continuation lookup.
+  threadId Int
+
+  /// The target replica name for this interaction thread.
+  replicaName String
+
+  /// The chat entity this interaction belongs to.
+  chat Chat @relation("NaturalLanguageInteractionChat", fields: [chatId], references: [telegramId], onDelete: Cascade)
+
+  /// The user that started this interaction thread.
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The timestamp when this interaction was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this interaction was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@unique([chatId, threadId])
+  @@index([chatId, userId])
+}

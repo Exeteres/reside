@@ -1,0 +1,25 @@
+/// Represents a Telegram chat known to the replica.
+model Chat {
+  /// The unique numeric identifier of the chat record.
+  id Int @id @default(autoincrement())
+
+  /// The Telegram chat id.
+  telegramId String @unique
+
+  /// The raw Telegram payload for the chat.
+  ///
+  /// [ChatData]
+  data Json
+
+  /// Notifications delivered to this chat.
+  notifications Notification[] @relation("NotificationTargetChat")
+
+  /// Natural language interactions tracked for this chat.
+  naturalLanguageInteractions NaturalLanguageInteraction[] @relation("NaturalLanguageInteractionChat")
+
+  /// The timestamp when this chat was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this chat was last updated.
+  updatedAt DateTime @updatedAt
+}

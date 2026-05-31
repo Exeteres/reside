@@ -1,0 +1,10 @@
+export const TEMPORAL_RELEASE_NAME = "temporal"
+export const TEMPORAL_DATABASE_SECRET_NAME = "database-temporal-postgres"
+export const TEMPORAL_DATABASE_PASSWORD_KEY = "password"
+export const TEMPORAL_DATABASE_USERNAME = "temporal"
+export const TEMPORAL_DEFAULT_DATABASE = "temporal"
+export const TEMPORAL_VISIBILITY_DATABASE = "temporal_visibility"
+export const TEMPORAL_FRONTEND_SERVICE_NAME = "temporal-frontend-headless"
+export const TEMPORAL_FRONTEND_PORT = 7233
+export const TEMPORAL_SERVER_IMAGE_REPOSITORY = "ghcr.io/exeteres/reside/temporal"
+export const TEMPORAL_SERVER_IMAGE_TAG = "latest"

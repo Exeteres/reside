@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package reside.common.file.v1;
+
+// Represents a file that can be embedded in a message without uploading.
+// Should only be used for small files.
+message InlineFile {
+  string name    = 1;
+  bytes  content = 2;
+}

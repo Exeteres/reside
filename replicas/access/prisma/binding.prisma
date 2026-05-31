@@ -1,0 +1,54 @@
+/// Represents a permission granted to a subject, optionally scoped to a scope descriptor.
+model PermissionBinding {
+  /// The unique identifier of the binding record.
+  id BigInt @id @default(autoincrement())
+
+  /// The identifier of the granted permission.
+  permissionId Int
+
+  /// The unique identifier of the subject receiving the permission (in format "{realm}:{name}").
+  subjectId String
+
+  /// The optional scope descriptor for scope-scoped permission grants.
+  scope String?
+
+  /// The optional managed permission set that owns this binding.
+  permissionSetId Int?
+
+  /// The timestamp when this binding was created.
+  createdAt DateTime @default(now())
+
+  /// The permission metadata referenced by this binding.
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  /// The managed permission set metadata referenced by this binding.
+  permissionSet PermissionSet? @relation(fields: [permissionSetId], references: [id], onDelete: SetNull)
+
+  @@unique([permissionId, subjectId, scope])
+  @@index([subjectId, scope])
+  @@index([permissionSetId])
+}
+
+/// Represents an explicit restriction preventing a subject from having a permission.
+model PermissionRestriction {
+  /// The unique identifier of the restriction record.
+  id BigInt @id @default(autoincrement())
+
+  /// The identifier of the restricted permission.
+  permissionId Int
+
+  /// The identifier of the restricted subject (in format "{realm}:{name}").
+  subjectId String
+
+  /// The optional scope descriptor for scope-scoped restrictions.
+  scope String?
+
+  /// The timestamp when this restriction was created.
+  createdAt DateTime @default(now())
+
+  /// The permission metadata referenced by this restriction.
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([permissionId, subjectId, scope])
+  @@index([subjectId, scope])
+}
