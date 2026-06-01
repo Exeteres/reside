@@ -1,5 +1,5 @@
-import { mkdir, rm, stat, writeFile } from "node:fs/promises"
-import { resolve } from "node:path"
+import { copyFile, lstat, mkdir, readdir, readlink, rm, stat, writeFile } from "node:fs/promises"
+import { dirname, resolve } from "node:path"
 import { bundleWorkflowCode } from "build-temporal-workflow"
 
 type BuildReplicaArgs = {
@@ -14,6 +14,7 @@ async function main(): Promise<void> {
   const runtimeOutputPath = resolve(distPath, "main")
   const workflowsSourcePath = resolve(packagePath, "src/workflows/index.ts")
   const prismaConfigSourcePath = resolve(packagePath, "prisma.config.ts")
+  const prismaDirectoryPath = resolve(packagePath, "prisma")
 
   await rm(distPath, {
     recursive: true,
@@ -64,7 +65,49 @@ async function main(): Promise<void> {
     assertBuildResult(prismaConfigResult, "prisma config artifact")
   }
 
+  if (await pathExists(prismaDirectoryPath)) {
+    await materializePrismaSymlinks(prismaDirectoryPath)
+  }
+
   console.info(`Built replica artifacts in ${distPath}`)
+}
+
+async function materializePrismaSymlinks(path: string): Promise<void> {
+  const entries = await readdir(path, {
+    withFileTypes: true,
+  })
+
+  for (const entry of entries) {
+    const entryPath = resolve(path, entry.name)
+
+    if (entry.isDirectory()) {
+      await materializePrismaSymlinks(entryPath)
+      continue
+    }
+
+    const entryStat = await lstat(entryPath)
+    if (!entryStat.isSymbolicLink()) {
+      continue
+    }
+
+    const linkTarget = await readlink(entryPath)
+    const resolvedTargetPath = resolve(dirname(entryPath), linkTarget)
+    const targetStat = await stat(resolvedTargetPath)
+    if (!targetStat.isFile()) {
+      throw new Error(
+        `Unsupported prisma symlink target for "${entryPath}": expected file, got "${resolvedTargetPath}"`,
+      )
+    }
+
+    await copyFile(resolvedTargetPath, `${entryPath}.tmp`)
+    await rm(entryPath, {
+      force: true,
+    })
+    await copyFile(`${entryPath}.tmp`, entryPath)
+    await rm(`${entryPath}.tmp`, {
+      force: true,
+    })
+  }
 }
 
 function parseArgs(args: string[]): BuildReplicaArgs {

@@ -22,3 +22,7 @@ RUN set -eux; \
 RUN curl https://nodejs.org/dist/v24.14.0/node-v24.14.0-linux-x64.tar.xz -o node.tar.xz && \
   tar -xf node.tar.xz -C /usr/local --strip-components=1 && \
   rm node.tar.xz
+
+# install nix
+RUN curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | \
+  sh -s -- install linux --init none --no-confirm --extra-conf "trusted-users = $(whoami)"
