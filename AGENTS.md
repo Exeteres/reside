@@ -32,3 +32,11 @@ In interactive mode, follow these additional rules:
 - Ensure that `bun ci:check-and-fix` in the project root passes before submitting your code.
 - Never run `reside bootstrap` unless the user explicitly approves it in the current chat.
 - Never run `nx show project` in interactive mode.
+
+Commit instructions:
+
+- Use Conventional Commits for all commit messages.
+- Keep commit messages lowercased, as a single line string, without extra details.
+- Group changes logically and create separate commits for separate logical changes.
+- For commit scope, use package or replica names when a commit affects a single package/replica.
+- If one logical change affects multiple packages/replicas, omit scope.
