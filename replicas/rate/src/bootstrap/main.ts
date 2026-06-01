@@ -1,4 +1,9 @@
-import { bootstrapService, defineCommonResources, registerReplica } from "@reside/common"
+import {
+  bootstrapService,
+  defineCommonResources,
+  registerReplica,
+  runPrismaMigrations,
+} from "@reside/common"
 import { rateReplica } from "@reside/registry"
 import { RateNotificationChannels, rateCommand } from "../definitions"
 import { strings } from "../locale"
@@ -11,6 +16,8 @@ await registerReplica({
 })
 
 const services = await createServices()
+
+await runPrismaMigrations(services.pool)
 
 await defineCommonResources({
   services,

@@ -10,7 +10,8 @@
     "typecheck": "tsgo --noEmit --skipLibCheck",
     "biome": "biome check --write --unsafe --error-on-warnings",
     "biome:check": "biome check --error-on-warnings",
-    "test": "bun test"
+    "test": "bun test",
+    "generate": "prisma generate"
   },
   "dependencies": {
     "@github/copilot-sdk": "catalog:",
@@ -19,10 +20,12 @@
     "@temporalio/client": "catalog:",
     "@temporalio/worker": "catalog:",
     "@temporalio/workflow": "catalog:",
+    "prisma": "catalog:",
     "fast-xml-parser": "^5.8.0",
     "fastify": "catalog:"
   },
   "devDependencies": {
+    "@prisma/client": "catalog:",
     "@typescript/native-preview": "catalog:",
     "@reside/api": "workspace:*",
     "@reside/common": "workspace:*",
