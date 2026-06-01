@@ -9,6 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Gateway.ts'
+export type * from './models/MemoryNote.ts'
 export type * from './models/Operation.ts'
 export type * from './models/PostgresDatabase.ts'
 export type * from './models/StorageBucket.ts'

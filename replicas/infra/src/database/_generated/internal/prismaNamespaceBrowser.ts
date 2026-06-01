@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   Gateway: 'Gateway',
+  MemoryNote: 'MemoryNote',
   Operation: 'Operation',
   PostgresDatabase: 'PostgresDatabase',
   StorageBucket: 'StorageBucket',
@@ -85,6 +86,19 @@ export const GatewayScalarFieldEnum = {
 } as const
 
 export type GatewayScalarFieldEnum = (typeof GatewayScalarFieldEnum)[keyof typeof GatewayScalarFieldEnum]
+
+
+export const MemoryNoteScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  content: 'content',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MemoryNoteScalarFieldEnum = (typeof MemoryNoteScalarFieldEnum)[keyof typeof MemoryNoteScalarFieldEnum]
 
 
 export const OperationScalarFieldEnum = {

@@ -77,6 +77,11 @@ export type Chat = Prisma.ChatModel
  */
 export type Command = Prisma.CommandModel
 /**
+ * Model MemoryNote
+ * 
+ */
+export type MemoryNote = Prisma.MemoryNoteModel
+/**
  * Model NaturalLanguageInteraction
  * Represents a tracked NLS thread bound to a Telegram chat thread.
  */

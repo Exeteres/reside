@@ -75,6 +75,7 @@ export const MemoryNoteScalarFieldEnum = {
   title: 'title',
   description: 'description',
   content: 'content',
+  tags: 'tags',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

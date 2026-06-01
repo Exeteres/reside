@@ -47,6 +47,11 @@ export { Prisma }
  */
 export type Gateway = Prisma.GatewayModel
 /**
+ * Model MemoryNote
+ * 
+ */
+export type MemoryNote = Prisma.MemoryNoteModel
+/**
  * Model Operation
  * Represents a workflow-backed operation for a Temporal namespace or PostgreSQL database.
  */

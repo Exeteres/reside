@@ -54,6 +54,7 @@ export const ModelName = {
   Approver: 'Approver',
   PermissionBinding: 'PermissionBinding',
   PermissionRestriction: 'PermissionRestriction',
+  MemoryNote: 'MemoryNote',
   Operation: 'Operation',
   PermissionSet: 'PermissionSet',
   PermissionSetItem: 'PermissionSetItem',
@@ -114,6 +115,19 @@ export const PermissionRestrictionScalarFieldEnum = {
 } as const
 
 export type PermissionRestrictionScalarFieldEnum = (typeof PermissionRestrictionScalarFieldEnum)[keyof typeof PermissionRestrictionScalarFieldEnum]
+
+
+export const MemoryNoteScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  content: 'content',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MemoryNoteScalarFieldEnum = (typeof MemoryNoteScalarFieldEnum)[keyof typeof MemoryNoteScalarFieldEnum]
 
 
 export const OperationScalarFieldEnum = {

@@ -8,6 +8,7 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/MemoryNote.ts'
 export type * from './models/Task.ts'
 export type * from './models/TaskIteration.ts'
 export type * from './commonInputTypes.ts'

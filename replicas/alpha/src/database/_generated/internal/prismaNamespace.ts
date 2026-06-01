@@ -384,6 +384,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
+  MemoryNote: 'MemoryNote',
   Operation: 'Operation',
   Replica: 'Replica',
   ReplicaDependencySlot: 'ReplicaDependencySlot',
@@ -403,10 +404,84 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "operation" | "replica" | "replicaDependencySlot" | "replicaEndpointDependencySlot"
+    modelProps: "memoryNote" | "operation" | "replica" | "replicaDependencySlot" | "replicaEndpointDependencySlot"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
+    MemoryNote: {
+      payload: Prisma.$MemoryNotePayload<ExtArgs>
+      fields: Prisma.MemoryNoteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MemoryNoteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MemoryNoteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        findFirst: {
+          args: Prisma.MemoryNoteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MemoryNoteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        findMany: {
+          args: Prisma.MemoryNoteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        create: {
+          args: Prisma.MemoryNoteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        createMany: {
+          args: Prisma.MemoryNoteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MemoryNoteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        delete: {
+          args: Prisma.MemoryNoteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        update: {
+          args: Prisma.MemoryNoteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        deleteMany: {
+          args: Prisma.MemoryNoteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MemoryNoteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MemoryNoteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        upsert: {
+          args: Prisma.MemoryNoteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        aggregate: {
+          args: Prisma.MemoryNoteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMemoryNote>
+        }
+        groupBy: {
+          args: Prisma.MemoryNoteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MemoryNoteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MemoryNoteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MemoryNoteCountAggregateOutputType> | number
+        }
+      }
+    }
     Operation: {
       payload: Prisma.$OperationPayload<ExtArgs>
       fields: Prisma.OperationFieldRefs
@@ -742,6 +817,19 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const MemoryNoteScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  content: 'content',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MemoryNoteScalarFieldEnum = (typeof MemoryNoteScalarFieldEnum)[keyof typeof MemoryNoteScalarFieldEnum]
+
+
 export const OperationScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -879,6 +967,20 @@ export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
+ * Reference to a field of type 'DateTime'
+ */
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime[]'
+ */
+export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
  * Reference to a field of type 'OperationStatus'
  */
 export type EnumOperationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OperationStatus'>
@@ -903,20 +1005,6 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
-    
-
-
-/**
- * Reference to a field of type 'DateTime'
- */
-export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
-    
-
-
-/**
- * Reference to a field of type 'DateTime[]'
- */
-export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
     
 
 
@@ -1028,6 +1116,7 @@ export type PrismaClientOptions = ({
   comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
+  memoryNote?: Prisma.MemoryNoteOmit
   operation?: Prisma.OperationOmit
   replica?: Prisma.ReplicaOmit
   replicaDependencySlot?: Prisma.ReplicaDependencySlotOmit

@@ -384,6 +384,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
+  MemoryNote: 'MemoryNote',
   Task: 'Task',
   TaskIteration: 'TaskIteration'
 } as const
@@ -401,10 +402,84 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "task" | "taskIteration"
+    modelProps: "memoryNote" | "task" | "taskIteration"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
+    MemoryNote: {
+      payload: Prisma.$MemoryNotePayload<ExtArgs>
+      fields: Prisma.MemoryNoteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MemoryNoteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MemoryNoteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        findFirst: {
+          args: Prisma.MemoryNoteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MemoryNoteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        findMany: {
+          args: Prisma.MemoryNoteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        create: {
+          args: Prisma.MemoryNoteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        createMany: {
+          args: Prisma.MemoryNoteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MemoryNoteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        delete: {
+          args: Prisma.MemoryNoteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        update: {
+          args: Prisma.MemoryNoteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        deleteMany: {
+          args: Prisma.MemoryNoteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MemoryNoteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MemoryNoteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        upsert: {
+          args: Prisma.MemoryNoteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        aggregate: {
+          args: Prisma.MemoryNoteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMemoryNote>
+        }
+        groupBy: {
+          args: Prisma.MemoryNoteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MemoryNoteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MemoryNoteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MemoryNoteCountAggregateOutputType> | number
+        }
+      }
+    }
     Task: {
       payload: Prisma.$TaskPayload<ExtArgs>
       fields: Prisma.TaskFieldRefs
@@ -592,6 +667,19 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const MemoryNoteScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  content: 'content',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MemoryNoteScalarFieldEnum = (typeof MemoryNoteScalarFieldEnum)[keyof typeof MemoryNoteScalarFieldEnum]
+
+
 export const TaskScalarFieldEnum = {
   id: 'id',
   phase: 'phase',
@@ -666,34 +754,6 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'TaskPhase'
- */
-export type EnumTaskPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskPhase'>
-    
-
-
-/**
- * Reference to a field of type 'TaskPhase[]'
- */
-export type ListEnumTaskPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskPhase[]'>
-    
-
-
-/**
- * Reference to a field of type 'TaskStatus'
- */
-export type EnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus'>
-    
-
-
-/**
- * Reference to a field of type 'TaskStatus[]'
- */
-export type ListEnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus[]'>
-    
-
-
-/**
  * Reference to a field of type 'String'
  */
 export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
@@ -718,6 +778,34 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskPhase'
+ */
+export type EnumTaskPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskPhase'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskPhase[]'
+ */
+export type ListEnumTaskPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskPhase[]'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskStatus'
+ */
+export type EnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskStatus[]'
+ */
+export type ListEnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus[]'>
     
 
 
@@ -829,6 +917,7 @@ export type PrismaClientOptions = ({
   comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
+  memoryNote?: Prisma.MemoryNoteOmit
   task?: Prisma.TaskOmit
   taskIteration?: Prisma.TaskIterationOmit
 }

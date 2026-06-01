@@ -33,6 +33,11 @@ export type PermissionBinding = Prisma.PermissionBindingModel
  */
 export type PermissionRestriction = Prisma.PermissionRestrictionModel
 /**
+ * Model MemoryNote
+ * 
+ */
+export type MemoryNote = Prisma.MemoryNoteModel
+/**
  * Model Operation
  * Represents a long-running operation in the access replica.
  */

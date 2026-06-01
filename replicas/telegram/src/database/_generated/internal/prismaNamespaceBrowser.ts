@@ -58,6 +58,7 @@ export const ModelName = {
   NotificationChannel: 'NotificationChannel',
   Chat: 'Chat',
   Command: 'Command',
+  MemoryNote: 'MemoryNote',
   NaturalLanguageInteraction: 'NaturalLanguageInteraction',
   NotificationResponse: 'NotificationResponse',
   Notification: 'Notification',
@@ -175,6 +176,19 @@ export const CommandScalarFieldEnum = {
 } as const
 
 export type CommandScalarFieldEnum = (typeof CommandScalarFieldEnum)[keyof typeof CommandScalarFieldEnum]
+
+
+export const MemoryNoteScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  content: 'content',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MemoryNoteScalarFieldEnum = (typeof MemoryNoteScalarFieldEnum)[keyof typeof MemoryNoteScalarFieldEnum]
 
 
 export const NaturalLanguageInteractionScalarFieldEnum = {

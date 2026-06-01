@@ -385,6 +385,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Gateway: 'Gateway',
+  MemoryNote: 'MemoryNote',
   Operation: 'Operation',
   PostgresDatabase: 'PostgresDatabase',
   StorageBucket: 'StorageBucket',
@@ -404,7 +405,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "gateway" | "operation" | "postgresDatabase" | "storageBucket" | "temporalNamespace"
+    modelProps: "gateway" | "memoryNote" | "operation" | "postgresDatabase" | "storageBucket" | "temporalNamespace"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -479,6 +480,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.GatewayCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.GatewayCountAggregateOutputType> | number
+        }
+      }
+    }
+    MemoryNote: {
+      payload: Prisma.$MemoryNotePayload<ExtArgs>
+      fields: Prisma.MemoryNoteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MemoryNoteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MemoryNoteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        findFirst: {
+          args: Prisma.MemoryNoteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MemoryNoteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        findMany: {
+          args: Prisma.MemoryNoteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        create: {
+          args: Prisma.MemoryNoteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        createMany: {
+          args: Prisma.MemoryNoteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MemoryNoteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        delete: {
+          args: Prisma.MemoryNoteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        update: {
+          args: Prisma.MemoryNoteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        deleteMany: {
+          args: Prisma.MemoryNoteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MemoryNoteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MemoryNoteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>[]
+        }
+        upsert: {
+          args: Prisma.MemoryNoteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MemoryNotePayload>
+        }
+        aggregate: {
+          args: Prisma.MemoryNoteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMemoryNote>
+        }
+        groupBy: {
+          args: Prisma.MemoryNoteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MemoryNoteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MemoryNoteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MemoryNoteCountAggregateOutputType> | number
         }
       }
     }
@@ -830,6 +905,19 @@ export const GatewayScalarFieldEnum = {
 export type GatewayScalarFieldEnum = (typeof GatewayScalarFieldEnum)[keyof typeof GatewayScalarFieldEnum]
 
 
+export const MemoryNoteScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  content: 'content',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MemoryNoteScalarFieldEnum = (typeof MemoryNoteScalarFieldEnum)[keyof typeof MemoryNoteScalarFieldEnum]
+
+
 export const OperationScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -1127,6 +1215,7 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   gateway?: Prisma.GatewayOmit
+  memoryNote?: Prisma.MemoryNoteOmit
   operation?: Prisma.OperationOmit
   postgresDatabase?: Prisma.PostgresDatabaseOmit
   storageBucket?: Prisma.StorageBucketOmit
