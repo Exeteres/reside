@@ -187,23 +187,6 @@
         "zod": "catalog:",
       },
     },
-    "replicas/hello": {
-      "name": "@replicas/hello",
-      "dependencies": {
-        "@connectrpc/connect": "catalog:",
-        "@connectrpc/connect-fastify": "catalog:",
-        "@temporalio/client": "catalog:",
-        "@temporalio/worker": "catalog:",
-        "@temporalio/workflow": "catalog:",
-        "fastify": "catalog:",
-      },
-      "devDependencies": {
-        "@reside/api": "workspace:*",
-        "@reside/common": "workspace:*",
-        "@reside/registry": "workspace:*",
-        "@typescript/native-preview": "catalog:",
-      },
-    },
     "replicas/infra": {
       "name": "@replicas/infra",
       "dependencies": {
@@ -241,8 +224,10 @@
         "@temporalio/workflow": "catalog:",
         "fast-xml-parser": "^5.8.0",
         "fastify": "catalog:",
+        "prisma": "catalog:",
       },
       "devDependencies": {
+        "@prisma/client": "catalog:",
         "@reside/api": "workspace:*",
         "@reside/common": "workspace:*",
         "@reside/registry": "workspace:*",
@@ -931,8 +916,6 @@
     "@replicas/alpha": ["@replicas/alpha@workspace:replicas/alpha"],
 
     "@replicas/engineer": ["@replicas/engineer@workspace:replicas/engineer"],
-
-    "@replicas/hello": ["@replicas/hello@workspace:replicas/hello"],
 
     "@replicas/infra": ["@replicas/infra@workspace:replicas/infra"],
 
