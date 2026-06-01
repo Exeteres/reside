@@ -1,0 +1,46 @@
+/// The result of an approval decision.
+enum ApprovalResult {
+  /// The approval request was escalated.
+  ESCALATED
+
+  /// The approval request was approved.
+  APPROVED
+
+  /// The approval request was rejected.
+  REJECTED
+}
+
+/// Represents an approval request handled by the security replica.
+model ApprovalRequest {
+  /// The unique numeric identifier of the approval request.
+  id Int @id @default(autoincrement())
+
+  /// The operation associated with this approval request.
+  operationId Int @unique
+
+  /// The operation metadata.
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+
+  /// The approval title presented to the judge.
+  title String
+
+  /// The approval content presented to the judge.
+  content String
+
+  /// The resolved approval result.
+  result ApprovalResult?
+
+  /// The resolution note provided by the judge.
+  resolution String?
+
+  /// The timestamp when the request was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when the request was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The timestamp when the approval response was recorded.
+  respondedAt DateTime?
+
+  @@index([createdAt])
+}

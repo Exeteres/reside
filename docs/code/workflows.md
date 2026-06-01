@@ -10,6 +10,7 @@ This document defines the required style for Temporal workflows and activities i
 - Output model names must end with `Output`.
 - Model names are derived from function names: `{X}Input`, `{X}Output` for function `X`.
 - If an input or output object would be empty, omit that model entirely.
+- Do not use replica-name prefixes for Temporal identifiers (workflow IDs, signal names, query names, update names).
 
 ## Definitions placement
 

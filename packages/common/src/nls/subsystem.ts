@@ -20,6 +20,7 @@ import { authenticate } from "../auth"
 import { getReplicaName } from "../kubernetes"
 import { logger } from "../logger"
 import { registerGracefulShutdown } from "../utils"
+import type { MemoryToolTagDefinitions } from "./memory"
 import {
   createLanguageEngine,
   type LanguageEngine,
@@ -36,6 +37,7 @@ export type SetupLanguageSubsystemOptions = {
   title: string
   description: string
   mission: string
+  tags?: MemoryToolTagDefinitions
   storageCredentials?: LanguageEngineStorageCredentials
   tools?: NonNullable<SessionConfig["tools"]>
 }
@@ -46,6 +48,7 @@ export async function setupLanguageSubsystem({
   title,
   description,
   mission,
+  tags,
   storageCredentials,
   tools,
 }: SetupLanguageSubsystemOptions): Promise<void> {
@@ -66,6 +69,7 @@ export async function setupLanguageSubsystem({
         mission,
       }),
       allowedSystemTools: ["ask_replica", "list_replicas"],
+      tags,
       storageCredentials,
       tools: [
         createAskReplicaTool({

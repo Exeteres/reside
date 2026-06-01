@@ -1,3 +1,4 @@
+import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { Operation, PrismaClient } from "../../database"
 import type { AccessActivities } from "../../definitions"
 import { create } from "@bufbuild/protobuf"
@@ -17,6 +18,7 @@ import {
   createOperationActivities,
   type GenericOperationService,
   inline,
+  logger,
   type OperationActivities,
   SPACE,
 } from "@reside/common"
@@ -29,15 +31,19 @@ type EndpointClients = {
 
 const PERMISSION_REQUEST_DENIED_FAILURE_REASON = "PERMISSION_REQUEST_DENIED"
 const PERMISSION_REQUEST_WORKFLOW_FAILED_REASON = "PERMISSION_REQUEST_WORKFLOW_FAILED"
+const TELEGRAM_APPROVER_NAME = "telegram"
+const TELEGRAM_APPROVAL_CHANNEL = "telegram:approval"
 
 type AccessActivityServices = {
   prisma: PrismaClient
   operationService: GenericOperationService<Operation>
+  notificationService?: NotificationServiceClient
 }
 
 export function createAccessActivities({
   prisma,
   operationService,
+  notificationService,
 }: AccessActivityServices): AccessActivities {
   const clientsByEndpoint = new Map<string, EndpointClients>()
   const subjectServiceClientsByEndpoint = new Map<string, SubjectServiceClient>()
@@ -71,6 +77,8 @@ export function createAccessActivities({
 
   return {
     async getApprovalContext({ operationId }) {
+      logger.info('loading approval context operation_id="%s"', operationId)
+
       const operation = await prisma.operation.findUnique({
         where: {
           id: operationId,
@@ -163,6 +171,13 @@ export function createAccessActivities({
         { html: requestSet.reason },
       ).html
 
+      logger.info(
+        'loaded approval context operation_id="%s" request_set_id="%s" approvers_count="%s"',
+        operationId,
+        requestSet.id,
+        approvers.length,
+      )
+
       return {
         requestSetId: requestSet.id,
         operationId,
@@ -172,6 +187,7 @@ export function createAccessActivities({
         approvers: approvers.map(approver => ({
           id: approver.id,
           name: approver.name,
+          title: approver.title,
           priority: approver.priority,
           realms: approver.realms.map(realm => realm.name),
         })),
@@ -179,6 +195,8 @@ export function createAccessActivities({
     },
 
     async requestApproverDecision({ approverId, title, content }) {
+      logger.info('requesting approver decision approver_id="%s"', approverId)
+
       const callbackEndpoint = await resolveApproverCallbackEndpoint(prisma, approverId)
       const clients = getEndpointClients(callbackEndpoint)
 
@@ -189,12 +207,25 @@ export function createAccessActivities({
 
       const operation = await clients.approvalService.approve(requestPayload)
 
+      logger.info(
+        'requested approver decision approver_id="%s" external_operation_id="%s"',
+        approverId,
+        operation.id,
+      )
+
       return {
         operationId: operation.id,
       }
     },
 
     async subscribeToExternalOperationCompletion({ approverId, operationId, workflowId }) {
+      logger.info(
+        'subscribing to approver operation completion approver_id="%s" operation_id="%s" workflow_id="%s"',
+        approverId,
+        operationId,
+        workflowId,
+      )
+
       const callbackEndpoint = await resolveApproverCallbackEndpoint(prisma, approverId)
       const clients = getEndpointClients(callbackEndpoint)
 
@@ -205,6 +236,12 @@ export function createAccessActivities({
     },
 
     async cancelApproverOperation({ approverId, operationId }) {
+      logger.info(
+        'cancelling approver operation approver_id="%s" operation_id="%s"',
+        approverId,
+        operationId,
+      )
+
       const callbackEndpoint = await resolveApproverCallbackEndpoint(prisma, approverId)
       const clients = getEndpointClients(callbackEndpoint)
 
@@ -212,6 +249,8 @@ export function createAccessActivities({
     },
 
     async approvePermissionRequestSet({ operationId, resolution, resolvedBySubjectId }) {
+      logger.info('approving permission request set operation_id="%s"', operationId)
+
       const operation = await prisma.operation.findUnique({
         where: {
           id: operationId,
@@ -319,9 +358,17 @@ export function createAccessActivities({
       await operationService.setCompleted(operationId, {
         permissionRequestSetId: requestSet.id,
       })
+
+      logger.info(
+        'approved permission request set operation_id="%s" request_set_id="%s"',
+        operationId,
+        requestSet.id,
+      )
     },
 
     async rejectPermissionRequestSet({ operationId, resolution, resolvedBySubjectId }) {
+      logger.info('rejecting permission request set operation_id="%s"', operationId)
+
       const operation = await prisma.operation.findUnique({
         where: {
           id: operationId,
@@ -352,9 +399,82 @@ export function createAccessActivities({
         PERMISSION_REQUEST_DENIED_FAILURE_REASON,
         resolution,
       )
+
+      logger.info('rejected permission request set operation_id="%s"', operationId)
+    },
+
+    async notifyApprovedPermissionRequestSet({
+      requestSetId,
+      approverName,
+      approverTitle,
+      resolution,
+    }) {
+      if (approverName.trim().toLowerCase() === TELEGRAM_APPROVER_NAME) {
+        logger.info(
+          'skipping approved request notification for telegram approver request_set_id="%s" approver_name="%s"',
+          requestSetId,
+          approverName,
+        )
+        return
+      }
+
+      if (notificationService === undefined) {
+        logger.info(
+          'skipping approved request notification because interaction dependency is unavailable request_set_id="%s" approver_name="%s"',
+          requestSetId,
+          approverName,
+        )
+        return
+      }
+
+      const normalizedApproverTitle = approverTitle.trim()
+      const normalizedResolution = resolution.trim()
+      const notificationContent = block(
+        inline(
+          bold(strings.notifications.approvedRequest.requestSetLabel),
+          SPACE,
+          String(requestSetId),
+        ),
+        inline(
+          bold(strings.notifications.approvedRequest.approverLabel),
+          SPACE,
+          normalizedApproverTitle.length > 0 ? normalizedApproverTitle : approverName,
+        ),
+        bold(strings.notifications.approvedRequest.resolutionLabel),
+        normalizedResolution.length > 0
+          ? normalizedResolution
+          : strings.notifications.approvedRequest.emptyResolution,
+      ).html
+
+      try {
+        await notificationService.sendNotification({
+          channel: TELEGRAM_APPROVAL_CHANNEL,
+          title: strings.notifications.approvedRequest.title,
+          content: notificationContent,
+        })
+
+        logger.info(
+          'sent approved request notification request_set_id="%s" approver_name="%s" channel="%s"',
+          requestSetId,
+          approverName,
+          TELEGRAM_APPROVAL_CHANNEL,
+        )
+      } catch (error) {
+        const errorToLog = error instanceof Error ? error : new Error(String(error))
+
+        logger.error(
+          { error: errorToLog },
+          'failed to send approved request notification request_set_id="%s" approver_name="%s" channel="%s"',
+          requestSetId,
+          approverName,
+          TELEGRAM_APPROVAL_CHANNEL,
+        )
+      }
     },
 
     async failPermissionRequestSetWorkflowIfPending({ operationId, resolution }) {
+      logger.info('failing approval workflow if pending operation_id="%s"', operationId)
+
       const operation = await prisma.operation.findUnique({
         where: {
           id: operationId,
@@ -369,6 +489,11 @@ export function createAccessActivities({
       }
 
       if (operation.status !== "PENDING") {
+        logger.info(
+          'skipping approval workflow failure because operation is not pending operation_id="%s" operation_status="%s"',
+          operationId,
+          operation.status,
+        )
         return
       }
 
@@ -391,6 +516,8 @@ export function createAccessActivities({
         PERMISSION_REQUEST_WORKFLOW_FAILED_REASON,
         resolution,
       )
+
+      logger.info('failed pending approval workflow operation_id="%s"', operationId)
     },
   }
 }

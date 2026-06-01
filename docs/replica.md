@@ -21,6 +21,8 @@ Each replica package must follow this structure:
 - `src/locale/ru.ts` — Russian locale dictionary (`export const ru = { ... }`) for all user-facing strings.
 - `src/locale/index.ts` — locale entry point that reexports locale as `export const strings = ru`.
 - `src/replica/business/` — business logic units grouped by feature (`{feature}.ts`, `{feature}.test.ts`).
+- `src/replica/services/` — runtime service implementations grouped by feature.
+- `src/replica/services/index.ts` — mandatory barrel entry for service factories used by `src/replica/main.ts`.
 - `src/shared/` — shared module for bootstrap/replica/e2e.
 - `src/shared/services.ts` — mandatory service factory used by all entry points.
 - `src/database/index.ts` — database module entry point (required if replica has DB).
@@ -41,6 +43,7 @@ Replica package root must not contain extra top-level files/directories outside 
 
 Inside `src/replica/`, feature logic belongs to `src/replica/business/`.
 Do not create additional ad-hoc folders (for example, `feature`, `reconcile`, `utils`) unless this handbook is updated first to explicitly allow them.
+Runtime wiring in `src/replica/main.ts` must import service factories from `src/replica/services/index.ts`, not from individual service files.
 
 ## Localization rules
 
@@ -76,6 +79,7 @@ Do not create additional ad-hoc folders (for example, `feature`, `reconcile`, `u
 - Re-export shared workflow helpers (for example `deliverOperationCompletionWorkflow`) only from `src/workflows/index.ts`.
 - Workflow modules must import common workflow helpers only from `@reside/common/workflow` (never from `@reside/common`).
 - Replica workflow-safe constants/schemas must be imported from `../definitions`.
+- Do not use replica-name prefixes for Temporal identifiers (workflow IDs, signals, queries, updates).
 - Keep workflow code deterministic and pure: no direct network/database/filesystem/time/random side effects.
 - Put workflow-safe constants, schemas, and reusable pure helpers in `src/definitions/*`.
 - Place non-deterministic logic (I/O, API calls, DB, wall-clock timers, random generation) in activities or non-workflow runtime layers.

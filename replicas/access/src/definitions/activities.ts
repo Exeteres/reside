@@ -3,6 +3,7 @@ import type { SubscribeToOperationCompletionResponseJson } from "@reside/api/com
 export type ApprovalContextApprover = {
   id: number
   name: string
+  title: string
   priority: number
   realms: string[]
 }
@@ -93,6 +94,28 @@ export type ResolvePermissionRequestSetInput = {
   resolvedBySubjectId: string | null
 }
 
+export type NotifyApprovedPermissionRequestSetInput = {
+  /**
+   * The permission request set identifier.
+   */
+  requestSetId: number
+
+  /**
+   * The approver name that approved the request.
+   */
+  approverName: string
+
+  /**
+   * The approver title to show in notification content.
+   */
+  approverTitle: string
+
+  /**
+   * The approver resolution text.
+   */
+  resolution: string
+}
+
 export type FailPermissionRequestSetWorkflowIfPendingInput = {
   /**
    * The permission request operation identifier.
@@ -139,6 +162,13 @@ export type AccessActivities = {
    * Rejects a permission request set.
    */
   rejectPermissionRequestSet: (input: ResolvePermissionRequestSetInput) => Promise<void>
+
+  /**
+   * Sends a notification about approved permission request set.
+   */
+  notifyApprovedPermissionRequestSet: (
+    input: NotifyApprovedPermissionRequestSetInput,
+  ) => Promise<void>
 
   /**
    * Fails an approval workflow when the operation is still pending.

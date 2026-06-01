@@ -54,6 +54,15 @@ export const ru = {
     permissionsHeader: "Разрешения:",
     reasonHeader: "Причина:",
   },
+  notifications: {
+    approvedRequest: {
+      title: "Запрос разрешений одобрен",
+      requestSetLabel: "Номер запроса:",
+      approverLabel: "Подтверждающий:",
+      resolutionLabel: "Резолюция:",
+      emptyResolution: "(без резолюции)",
+    },
+  },
   e2e: {
     localApproverTitle: "E2E подтверждающий",
     localApproverDescription: "Локальный подтверждающий для e2e",

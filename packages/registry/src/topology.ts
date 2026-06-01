@@ -175,6 +175,26 @@ export const engineerReplica = defineReplica({
   },
 })
 
+export const securityReplica = defineReplica({
+  name: "security",
+  dependencies: {
+    replicas: {
+      access: accessReplica,
+      infra: infraReplica,
+    },
+  },
+  optionalDependencies: {
+    replicas: {
+      interaction: (): Replica => telegramReplica,
+    },
+  },
+  secrets: {
+    copilot: {
+      user_token: "$COPILOT_USER_TOKEN",
+    },
+  },
+})
+
 export const rateReplica = defineReplica({
   name: "rate",
   secrets: {
@@ -196,6 +216,7 @@ export const topology = sortReplicasByDependencies([
   infraReplica,
   telegramReplica,
   engineerReplica,
+  securityReplica,
   alphaReplica,
   rateReplica,
 ])

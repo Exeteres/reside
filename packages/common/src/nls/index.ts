@@ -8,6 +8,7 @@ export {
 export {
   createMemoryTools,
   languageMemorySystemPrompt,
+  type MemoryToolTagDefinitions,
   type MemoryToolServices,
   type MemoryToolsPrisma,
 } from "./memory"

@@ -10,6 +10,7 @@ const {
   cancelApproverOperation,
   approvePermissionRequestSet,
   rejectPermissionRequestSet,
+  notifyApprovedPermissionRequestSet,
   failPermissionRequestSetWorkflowIfPending,
 } = proxyActivities<AccessActivities>({
   scheduleToCloseTimeout: "5 minutes",
@@ -89,6 +90,19 @@ export async function approvePermissionRequestSetWorkflow({
           resolution: approvalResponse.resolution ?? "",
           resolvedBySubjectId: null,
         })
+
+        await notifyApprovedPermissionRequestSet({
+          requestSetId: approvalContext.requestSetId,
+          approverName: approver.name,
+          approverTitle: approver.title,
+          resolution: approvalResponse.resolution ?? "",
+        })
+
+        log.info("processed approved request notification", {
+          operationId,
+          requestSetId: approvalContext.requestSetId,
+          approverName: approver.name,
+        })
         return
       }
 
@@ -111,17 +125,28 @@ export async function approvePermissionRequestSetWorkflow({
     })
   } catch (error) {
     if (isCancellation(error)) {
+      log.info("approval workflow cancelled", { operationId })
+
       if (currentApproverOperation !== undefined) {
+        log.info("cancelling active approver operation", {
+          operationId,
+          approverId: currentApproverOperation.approverId,
+          approverOperationId: currentApproverOperation.operationId,
+        })
         await cancelApproverOperation(currentApproverOperation)
       }
 
       return
     }
 
+    log.error("approval workflow failed, marking operation as failed", { operationId })
+
     await failPermissionRequestSetWorkflowIfPending({
       operationId,
       resolution: strings.common.approvalWorkflowFailed,
     })
+
+    log.info("marked approval operation as failed", { operationId })
 
     return
   }

@@ -235,6 +235,28 @@
         "zod": "catalog:",
       },
     },
+    "replicas/security": {
+      "name": "@replicas/security",
+      "dependencies": {
+        "@connectrpc/connect": "catalog:",
+        "@connectrpc/connect-fastify": "catalog:",
+        "@github/copilot-sdk": "catalog:",
+        "@grpc/grpc-js": "catalog:",
+        "@temporalio/client": "catalog:",
+        "@temporalio/worker": "catalog:",
+        "@temporalio/workflow": "catalog:",
+        "fastify": "catalog:",
+        "prisma": "catalog:",
+      },
+      "devDependencies": {
+        "@prisma/client": "catalog:",
+        "@reside/api": "workspace:*",
+        "@reside/common": "workspace:*",
+        "@reside/registry": "workspace:*",
+        "@typescript/native-preview": "catalog:",
+        "zod": "catalog:",
+      },
+    },
     "replicas/telegram": {
       "name": "@replicas/telegram",
       "dependencies": {
@@ -920,6 +942,8 @@
     "@replicas/infra": ["@replicas/infra@workspace:replicas/infra"],
 
     "@replicas/rate": ["@replicas/rate@workspace:replicas/rate"],
+
+    "@replicas/security": ["@replicas/security@workspace:replicas/security"],
 
     "@replicas/telegram": ["@replicas/telegram@workspace:replicas/telegram"],
 
