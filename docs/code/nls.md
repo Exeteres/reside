@@ -29,3 +29,20 @@ This document defines required rules for connecting `setupLanguageSubsystem` and
 - Prefer a single object argument deconstructed in function signature.
 - Extract factory dependency argument type into a named alias.
 - Keep dependency shapes compatible with passing replica `services` directly when practical.
+
+## Memory integration
+
+- `services.prisma` is required for NLS engine setup.
+- Keep memory schema in replica Prisma via a relative symlink to `packages/common/prisma/memory.prisma`.
+- Ensure replica services expose Prisma client as `services.prisma` (same object passed to `setupLanguageSubsystem`).
+- Run Prisma migration in replica bootstrap before starting runtime.
+- Do not register memory tools manually: they are attached by `createLanguageEngine` automatically.
+
+Practical integration flow:
+
+- 1. Add `prisma/memory.prisma` symlink to shared memory schema.
+- 2. Ensure `prisma/schema.prisma` contains generator/datasource and client output to `src/database/_generated`.
+- 3. Add `prisma.config.ts` with `definePrismaConfig()`.
+- 4. In `src/shared/services.ts`, create Prisma client and return it as `prisma` in `services`.
+- 5. In bootstrap, call `runPrismaMigrations(services.pool)` before resource definitions.
+- 6. Call `setupLanguageSubsystem({ services, ... })` without extra memory-tool wiring.
