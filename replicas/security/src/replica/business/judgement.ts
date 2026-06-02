@@ -16,7 +16,7 @@ export function buildJudgementPrompt(args: {
     "2) Then find relevant allow rules in memory.",
     "3) If no allow rule matches, or any escalation rule matches, choose ESCALATED.",
     "4) Never deny the request.",
-    "5) You must call exactly one decision tool with a short resolution.",
+    "5) You must call exactly one decision tool with a short resolution in Russian.",
     "",
     `Decision token: ${args.decisionToken}`,
     "You must pass this token to exactly one decision tool.",

@@ -32,7 +32,7 @@ await defineCommonResources({
     items: [
       {
         permissionName: WellKnownPermissions.ACCESS_APPROVER_MANAGE,
-        scope: "security:40:replica:security",
+        scope: "security:40:replica:telegram",
       },
     ],
   })

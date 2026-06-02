@@ -387,6 +387,79 @@ export async function updateNotificationForReplica(
   }
 }
 
+export async function deleteNotificationForReplica(
+  prisma: PrismaClient,
+  createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
+  loadDeliveryConfig: () => Promise<{ botToken: string; systemChatId: string }>,
+  input: { notificationId: string },
+): Promise<void> {
+  const notificationId = parseNotificationId(input.notificationId)
+
+  const notification = await prisma.notification.findFirst({
+    where: {
+      id: notificationId,
+    },
+    select: {
+      id: true,
+      targetChatId: true,
+      messageId: true,
+      sendAsSubjectId: true,
+      operationId: true,
+      operation: {
+        select: {
+          status: true,
+        },
+      },
+    },
+  })
+
+  if (notification === null) {
+    throw new ConnectError(`Notification "${input.notificationId}" was not found`, Code.NotFound)
+  }
+
+  const senderAvatar =
+    notification.sendAsSubjectId === null
+      ? null
+      : await prisma.avatar.findUnique({
+          where: {
+            subjectId: notification.sendAsSubjectId,
+          },
+          select: {
+            token: true,
+          },
+        })
+
+  const deliveryConfig = await loadDeliveryConfig()
+  const botToken = senderAvatar?.token ?? deliveryConfig.botToken
+  const bot = createTelegramBotClient(botToken, {
+    role: "notification.delete",
+  })
+
+  await bot.api.deleteMessage(notification.targetChatId, notification.messageId)
+
+  await prisma.$transaction(async tx => {
+    if (notification.operationId !== null && notification.operation?.status === "PENDING") {
+      await tx.operation.update({
+        where: {
+          id: notification.operationId,
+        },
+        data: {
+          status: "FAILED",
+          failureReason: "NOTIFICATION_DELETED",
+          failureMessage: "Notification was deleted",
+          resolvedAt: new Date(),
+        },
+      })
+    }
+
+    await tx.notification.delete({
+      where: {
+        id: notification.id,
+      },
+    })
+  })
+}
+
 export function parseNotificationId(notificationId: string): number {
   if (notificationId.length === 0) {
     throw new ConnectError("Notification id is required", Code.InvalidArgument)

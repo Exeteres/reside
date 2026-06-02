@@ -1,13 +1,19 @@
 import type { AuthzServiceClient } from "@reside/api/access/authz.v1"
 import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
-import type { NaturalLanguageServiceClient } from "@reside/api/interaction/nls.v1"
+import type {
+  AskStreamResponse,
+  NaturalLanguageServiceClient,
+} from "@reside/api/interaction/nls.v1"
 import type { PrismaClient } from "../../database"
 import { strings } from "../../locale"
 import { canAskNls, requestNlsAskPermission } from "./authorization"
 import { createTelegramBotClient } from "./bot-client"
 import { resolveNlsMessageThreadId } from "./bot-command"
 import { mapReplicaCallErrorMessage } from "./bot-replica-call"
+
+const GROUP_STREAM_EDIT_INTERVAL_MS = 1000
+const GROUP_TYPING_INTERVAL_MS = 5000
 
 export async function handleNlsMessage(args: {
   prisma: PrismaClient
@@ -21,6 +27,7 @@ export async function handleNlsMessage(args: {
   userId: number
   message: {
     message_id: number
+    is_topic_message?: boolean
     message_thread_id?: number
     reply_to_message?: {
       message_thread_id?: number
@@ -31,6 +38,7 @@ export async function handleNlsMessage(args: {
 }): Promise<void> {
   const telegramBotClientFactory = args.createTelegramBotClient ?? createTelegramBotClient
   const messageThreadId = resolveNlsMessageThreadId(args.message)
+  const draftMessageThreadId = resolveNlsDraftMessageThreadId(args.message)
   const chatId = String(args.chatId)
   const telegramUserId = String(args.userId)
 
@@ -62,10 +70,12 @@ export async function handleNlsMessage(args: {
   }
 
   if (interaction.user.telegramId !== telegramUserId) {
+    const replyBot = telegramBotClientFactory(args.managerToken, {
+      role: "worker.nls-reply",
+    })
+
     await sendNlsReplyMessage({
-      createTelegramBotClient: telegramBotClientFactory,
-      managerToken: args.managerToken,
-      avatarToken: null,
+      bot: replyBot,
       chatId: args.chatId,
       replyToMessageId: args.message.message_id,
       text: strings.worker.bot.nlsSessionOwnedByAnotherUser(interaction.replicaName),
@@ -92,10 +102,12 @@ export async function handleNlsMessage(args: {
     }
 
     const botToken = await resolveReplicaAvatarToken(args.prisma, interaction.replicaName)
+    const replyBot = telegramBotClientFactory(botToken ?? args.managerToken, {
+      role: "worker.nls-reply",
+    })
+
     await sendNlsReplyMessage({
-      createTelegramBotClient: telegramBotClientFactory,
-      managerToken: args.managerToken,
-      avatarToken: botToken,
+      bot: replyBot,
       chatId: args.chatId,
       replyToMessageId: args.message.message_id,
       text: strings.common.accessDenied,
@@ -104,32 +116,65 @@ export async function handleNlsMessage(args: {
   }
 
   const avatarToken = await resolveReplicaAvatarToken(args.prisma, interaction.replicaName)
-
-  await setNlsInProgressReaction({
-    createTelegramBotClient: telegramBotClientFactory,
-    managerToken: args.managerToken,
-    avatarToken,
-    chatId: args.chatId,
-    messageId: args.message.message_id,
+  const replyBot = telegramBotClientFactory(avatarToken ?? args.managerToken, {
+    role: "worker.nls-reply",
   })
+  const groupChat = isGroupChat(args.chatId)
+  const draftId = resolveNlsReplyDraftId(args.message.message_id)
+
+  if (!groupChat) {
+    await sendNlsReplyDraftMessage({
+      bot: replyBot,
+      chatId: args.chatId,
+      messageThreadId: draftMessageThreadId,
+      draftId,
+      text: "",
+    })
+  }
 
   try {
     const endpoint = await args.discoveryService.getSubjectEndpoint({
       subjectId: toSubjectId,
     })
 
-    const nlsResponse = await args.getNaturalLanguageClient(endpoint.endpoint).ask({
+    const nlsFrames = args.getNaturalLanguageClient(endpoint.endpoint).askStream({
       text: args.text,
       subjectId: fromSubjectId,
     })
 
+    if (groupChat) {
+      const finalText = await streamNlsReplyGroupFrames({
+        bot: replyBot,
+        chatId: args.chatId,
+        messageThreadId: draftMessageThreadId,
+        replyToMessageId: args.message.message_id,
+        frames: nlsFrames,
+      })
+
+      if (finalText.trim().length === 0) {
+        throw new Error("NLS returned empty streamed response")
+      }
+
+      return
+    }
+
+    const finalText = await streamNlsReplyDraftFrames({
+      bot: replyBot,
+      chatId: args.chatId,
+      messageThreadId: draftMessageThreadId,
+      draftId,
+      frames: nlsFrames,
+    })
+
+    if (finalText.trim().length === 0) {
+      throw new Error("NLS returned empty streamed response")
+    }
+
     await sendNlsReplyMessage({
-      createTelegramBotClient: telegramBotClientFactory,
-      managerToken: args.managerToken,
-      avatarToken,
+      bot: replyBot,
       chatId: args.chatId,
       replyToMessageId: args.message.message_id,
-      text: nlsResponse.text,
+      text: finalText,
     })
   } catch (error) {
     const mappedMessage = mapReplicaCallErrorMessage(error, {
@@ -138,9 +183,7 @@ export async function handleNlsMessage(args: {
     })
 
     await sendNlsReplyMessage({
-      createTelegramBotClient: telegramBotClientFactory,
-      managerToken: args.managerToken,
-      avatarToken,
+      bot: replyBot,
       chatId: args.chatId,
       replyToMessageId: args.message.message_id,
       text: mappedMessage,
@@ -238,38 +281,244 @@ async function resolveReplicaAvatarToken(
   return avatar?.token ?? null
 }
 
-async function setNlsInProgressReaction(args: {
-  createTelegramBotClient: typeof createTelegramBotClient
-  managerToken: string
-  avatarToken: string | null
+function resolveNlsReplyDraftId(messageId: number): number {
+  return messageId === 0 ? 1 : messageId
+}
+
+function resolveNlsDraftMessageThreadId(message: {
+  is_topic_message?: boolean
+  message_thread_id?: number
+}): number | undefined {
+  if (message.is_topic_message !== true) {
+    return undefined
+  }
+
+  const directThreadId = message.message_thread_id
+  if (typeof directThreadId === "number" && Number.isInteger(directThreadId)) {
+    return directThreadId
+  }
+
+  return undefined
+}
+
+async function sendNlsReplyDraftMessage(args: {
+  bot: ReturnType<typeof createTelegramBotClient>
   chatId: number
-  messageId: number
+  messageThreadId?: number
+  draftId: number
+  text: string
 }): Promise<void> {
-  const reactionBot = args.createTelegramBotClient(args.avatarToken ?? args.managerToken, {
-    role: "worker.nls-reaction",
+  await args.bot.api.sendMessageDraft(args.chatId, args.draftId, args.text, {
+    message_thread_id: args.messageThreadId,
+    parse_mode: "HTML",
+  })
+}
+
+async function streamNlsReplyDraftFrames(args: {
+  bot: ReturnType<typeof createTelegramBotClient>
+  chatId: number
+  messageThreadId?: number
+  draftId: number
+  frames: AsyncIterable<AskStreamResponse>
+}): Promise<string> {
+  let finalText = ""
+  let hasFrame = false
+
+  for await (const frame of args.frames) {
+    if (frame.reset && hasFrame) {
+      await sendNlsReplyDraftMessage({
+        bot: args.bot,
+        chatId: args.chatId,
+        messageThreadId: args.messageThreadId,
+        draftId: args.draftId,
+        text: "",
+      })
+    }
+
+    await sendNlsReplyDraftMessage({
+      bot: args.bot,
+      chatId: args.chatId,
+      messageThreadId: args.messageThreadId,
+      draftId: args.draftId,
+      text: frame.text,
+    })
+
+    hasFrame = true
+    finalText = frame.text
+  }
+
+  return finalText
+}
+
+async function streamNlsReplyGroupFrames(args: {
+  bot: ReturnType<typeof createTelegramBotClient>
+  chatId: number
+  messageThreadId?: number
+  replyToMessageId: number
+  frames: AsyncIterable<AskStreamResponse>
+}): Promise<string> {
+  const stopTypingLoop = startTypingStatusLoop({
+    bot: args.bot,
+    chatId: args.chatId,
+    messageThreadId: args.messageThreadId,
   })
 
-  await reactionBot.api.setMessageReaction(args.chatId, args.messageId, [
-    {
-      type: "emoji",
-      emoji: "👀",
-    },
-  ])
+  try {
+    const iterator = args.frames[Symbol.asyncIterator]()
+
+    let firstFrame = await iterator.next()
+    while (!firstFrame.done && firstFrame.value.text.trim().length === 0) {
+      firstFrame = await iterator.next()
+    }
+
+    if (firstFrame.done) {
+      return ""
+    }
+
+    const firstText = firstFrame.value.text
+
+    const sentMessage = await args.bot.api.sendMessage(args.chatId, firstText, {
+      parse_mode: "HTML",
+      link_preview_options: {
+        is_disabled: true,
+      },
+      reply_parameters: {
+        message_id: args.replyToMessageId,
+      },
+      message_thread_id: args.messageThreadId,
+    })
+
+    const streamedMessageId = sentMessage.message_id
+    let finalText = firstText
+    let displayedText = firstText
+    let lastEditAt = 0
+    let latestPendingText = ""
+    let hasPendingUpdate = false
+    let streamCompleted = false
+    let streamError: unknown
+
+    const readFrames = (async () => {
+      while (true) {
+        const frame = await iterator.next()
+        if (frame.done) {
+          streamCompleted = true
+          return
+        }
+
+        if (frame.value.text.trim().length === 0) {
+          continue
+        }
+
+        latestPendingText = frame.value.text
+        hasPendingUpdate = true
+      }
+    })().catch(error => {
+      streamError = error
+      streamCompleted = true
+    })
+
+    while (!streamCompleted || hasPendingUpdate) {
+      if (!hasPendingUpdate) {
+        await Bun.sleep(50)
+        continue
+      }
+
+      await throttleStreamEdit(lastEditAt)
+
+      if (!hasPendingUpdate) {
+        continue
+      }
+
+      const nextText = latestPendingText
+      hasPendingUpdate = false
+
+      if (nextText === displayedText) {
+        continue
+      }
+
+      await args.bot.api.editMessageText(args.chatId, streamedMessageId, nextText, {
+        parse_mode: "HTML",
+        link_preview_options: {
+          is_disabled: true,
+        },
+      })
+
+      lastEditAt = Date.now()
+      displayedText = nextText
+      finalText = nextText
+    }
+
+    await readFrames
+
+    if (streamError) {
+      throw streamError
+    }
+
+    return finalText
+  } finally {
+    stopTypingLoop()
+  }
+}
+
+async function sendTypingStatus(args: {
+  bot: ReturnType<typeof createTelegramBotClient>
+  chatId: number
+  messageThreadId?: number
+}): Promise<void> {
+  const options =
+    args.messageThreadId === undefined
+      ? undefined
+      : {
+          message_thread_id: args.messageThreadId,
+        }
+
+  await args.bot.api.sendChatAction(args.chatId, "typing", options)
+}
+
+async function throttleStreamEdit(lastEditAt: number): Promise<void> {
+  const now = Date.now()
+  const elapsed = now - lastEditAt
+
+  if (lastEditAt > 0 && elapsed < GROUP_STREAM_EDIT_INTERVAL_MS) {
+    await Bun.sleep(GROUP_STREAM_EDIT_INTERVAL_MS - elapsed)
+  }
+}
+
+function startTypingStatusLoop(args: {
+  bot: ReturnType<typeof createTelegramBotClient>
+  chatId: number
+  messageThreadId?: number
+}): () => void {
+  let stopped = false
+
+  void (async () => {
+    while (!stopped) {
+      try {
+        await sendTypingStatus(args)
+      } catch {
+        // no-op
+      }
+
+      await Bun.sleep(GROUP_TYPING_INTERVAL_MS)
+    }
+  })()
+
+  return () => {
+    stopped = true
+  }
+}
+
+function isGroupChat(chatId: number): boolean {
+  return chatId < 0
 }
 
 async function sendNlsReplyMessage(args: {
-  createTelegramBotClient: typeof createTelegramBotClient
-  managerToken: string
-  avatarToken: string | null
+  bot: ReturnType<typeof createTelegramBotClient>
   chatId: number
   replyToMessageId: number
   text: string
 }): Promise<void> {
-  const replyBot = args.createTelegramBotClient(args.avatarToken ?? args.managerToken, {
-    role: "worker.nls-reply",
-  })
-
-  await replyBot.api.sendMessage(args.chatId, args.text, {
+  await args.bot.api.sendMessage(args.chatId, args.text, {
     parse_mode: "HTML",
     link_preview_options: {
       is_disabled: true,

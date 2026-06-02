@@ -7,6 +7,7 @@ import { OperationService, OperationSubscriptionService } from "@reside/api/comm
 import { PingService } from "@reside/api/common/ping.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
 import {
+  createInteractionActivities,
   createOperationSubscriptionService,
   createPingService,
   createServer,
@@ -59,6 +60,10 @@ await startTemporalWorker({
   activities: {
     ...services.operationService.activities,
     ...createAccessActivities(services),
+    ...createInteractionActivities(
+      services.notificationService,
+      services.interactionOperationService,
+    ),
   },
 })
 

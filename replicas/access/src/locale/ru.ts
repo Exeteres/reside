@@ -62,6 +62,42 @@ export const ru = {
       resolutionLabel: "Резолюция:",
       emptyResolution: "(без резолюции)",
     },
+    nonTelegramApprover: {
+      requested: {
+        title: "Ожидается решение подтверждающего",
+        requestSetLabel: "Номер запроса:",
+        approverLabel: "Подтверждающий:",
+        statusLabel: "Статус:",
+        statusValue: "Ожидание решения",
+      },
+      approved: {
+        title: "Подтверждающий одобрил запрос",
+        requestSetLabel: "Номер запроса:",
+        approverLabel: "Подтверждающий:",
+        statusLabel: "Статус:",
+        statusValue: "Одобрено",
+        resolutionLabel: "Резолюция:",
+        emptyResolution: "(без резолюции)",
+      },
+      rejected: {
+        title: "Подтверждающий отклонил запрос",
+        requestSetLabel: "Номер запроса:",
+        approverLabel: "Подтверждающий:",
+        statusLabel: "Статус:",
+        statusValue: "Отклонено",
+        resolutionLabel: "Резолюция:",
+        emptyResolution: "(без резолюции)",
+      },
+    },
+  },
+  workflow: {
+    previousEscalation: {
+      header: "Произошла эскалация!",
+      approverTitleLabel: "Подтверждающий:",
+      resolutionLabel: "Резолюция:",
+      emptyResolution: "(без резолюции)",
+      fallbackApproverTitle: "(без названия)",
+    },
   },
   e2e: {
     localApproverTitle: "E2E подтверждающий",

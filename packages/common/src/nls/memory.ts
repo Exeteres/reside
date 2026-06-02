@@ -32,6 +32,7 @@ const languageMemorySystemPromptBase = [
   "Memory workflow:",
   "- use a short descriptive title (few words, max 20 chars); title does not need to be unique.",
   "- keep description concise (max 80 chars) and content factual.",
+  "- write note title, description, and content in the same language as the user interaction that produced the note.",
   "- do not include the current timestamp in content; creation and update timestamps are stored automatically.",
   "- before adding new memory, search existing notes and reuse/update when possible.",
   "- keep notes compact and practical: clear title, concise description, factual content.",
@@ -160,7 +161,8 @@ export function createMemoryTools({
 
   return [
     defineTool("find_notes", {
-      description: "Finds the most relevant memory notes for a search pattern.",
+      description:
+        'Finds the most relevant memory notes for a search pattern. Search uses PostgreSQL websearch syntax: multiple words are AND by default (for example, "alpha beta"), use "OR" explicitly for OR (for example, "alpha OR beta").',
       parameters: findNotesParametersSchema,
       handler: async ({ search, tags }) => {
         const normalizedSearch = search.trim()

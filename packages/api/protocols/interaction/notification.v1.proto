@@ -3,6 +3,7 @@ syntax = "proto3";
 package reside.interaction.notification.v1;
 
 import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
 import "common/file.v1.proto";
 import "common/operation.v1.proto";
 
@@ -131,6 +132,13 @@ message UpdateNotificationResponse {
   reside.common.operation.v1.Operation operation = 1;
 }
 
+// The request message for deleting an existing notification.
+message DeleteNotificationRequest {
+  // The identifier of the notification to delete.
+  // This ID is opaque and must not be parsed.
+  string notification_id = 1;
+}
+
 // The message representing the user's response to a notification, either by taking one of the provided actions or by providing a text response.
 message NotificationResponse {
   oneof response {
@@ -149,5 +157,8 @@ service NotificationService {
 
   // Updates title and content of an existing notification.
   rpc UpdateNotification(UpdateNotificationRequest) returns (UpdateNotificationResponse);
+
+  // Deletes an existing notification.
+  rpc DeleteNotification(DeleteNotificationRequest) returns (google.protobuf.Empty);
 }
 

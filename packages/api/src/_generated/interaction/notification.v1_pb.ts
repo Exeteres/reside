@@ -4,8 +4,8 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { BoolValueJson, StringValueJson } from "@bufbuild/protobuf/wkt";
-import { file_google_protobuf_wrappers } from "@bufbuild/protobuf/wkt";
+import type { BoolValueJson, EmptySchema, StringValueJson } from "@bufbuild/protobuf/wkt";
+import { file_google_protobuf_empty, file_google_protobuf_wrappers } from "@bufbuild/protobuf/wkt";
 import type { InlineFile, InlineFileJson } from "../common/file.v1_pb";
 import { file_common_file_v1 } from "../common/file.v1_pb";
 import type { Operation, OperationJson } from "../common/operation.v1_pb";
@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/notification.v1.proto.
  */
 export const file_interaction_notification_v1: GenFile = /*@__PURE__*/
-  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24i5gQKF1NlbmROb3RpZmljYXRpb25SZXF1ZXN0EhoKDWNvbnRleHRfdG9rZW4YASABKAlIAIgBARIPCgdjaGFubmVsGAIgASgJEi8KCXBhcnRpdGlvbhgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRINCgV0aXRsZRgEIAEoCRItCgdjb250ZW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKBmltYWdlcxgGIAMoCzIhLnJlc2lkZS5jb21tb24uZmlsZS52MS5JbmxpbmVGaWxlEjYKC2F0dGFjaG1lbnRzGAcgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSTgoLYWN0aW9uX3Jvd3MYCCADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxI6ChZyZXF1aXJlc190ZXh0X3Jlc3BvbnNlGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRItCglwcm90ZWN0ZWQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEjgKEnNlbmRfYXNfc3ViamVjdF9pZBgLIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRI9ChlleHBlY3RfaW1tZWRpYXRlX2ZlZWRiYWNrGAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZUIQCg5fY29udGV4dF90b2tlbiJtChhTZW5kTm90aWZpY2F0aW9uUmVzcG9uc2USFwoPbm90aWZpY2F0aW9uX2lkGAIgASgJEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiKfAgoZVXBkYXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkSDQoFdGl0bGUYAiABKAkSDwoHY29udGVudBgDIAEoCRJOCgthY3Rpb25fcm93cxgEIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uQWN0aW9uUm93EjoKFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYBSABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEj0KGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYBiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlIlYKGlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiJSChROb3RpZmljYXRpb25SZXNwb25zZRIVCgthY3Rpb25fbmFtZRgBIAEoCUgAEhcKDXRleHRfcmVzcG9uc2UYAiABKAlIAEIKCghyZXNwb25zZSqDAQoWTm90aWZpY2F0aW9uQWN0aW9uSWNvbhIhCh1DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fTk9ORRAAEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DSEVDSxABEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DUk9TUxACMrsCChNOb3RpZmljYXRpb25TZXJ2aWNlEo0BChBTZW5kTm90aWZpY2F0aW9uEjsucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5TZW5kTm90aWZpY2F0aW9uUmVxdWVzdBo8LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuU2VuZE5vdGlmaWNhdGlvblJlc3BvbnNlEpMBChJVcGRhdGVOb3RpZmljYXRpb24SPS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlVwZGF0ZU5vdGlmaWNhdGlvblJlcXVlc3QaPi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlYgZwcm90bzM", [file_google_protobuf_wrappers, file_common_file_v1, file_common_operation_v1]);
+  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24i5gQKF1NlbmROb3RpZmljYXRpb25SZXF1ZXN0EhoKDWNvbnRleHRfdG9rZW4YASABKAlIAIgBARIPCgdjaGFubmVsGAIgASgJEi8KCXBhcnRpdGlvbhgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRINCgV0aXRsZRgEIAEoCRItCgdjb250ZW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKBmltYWdlcxgGIAMoCzIhLnJlc2lkZS5jb21tb24uZmlsZS52MS5JbmxpbmVGaWxlEjYKC2F0dGFjaG1lbnRzGAcgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSTgoLYWN0aW9uX3Jvd3MYCCADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxI6ChZyZXF1aXJlc190ZXh0X3Jlc3BvbnNlGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRItCglwcm90ZWN0ZWQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEjgKEnNlbmRfYXNfc3ViamVjdF9pZBgLIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRI9ChlleHBlY3RfaW1tZWRpYXRlX2ZlZWRiYWNrGAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZUIQCg5fY29udGV4dF90b2tlbiJtChhTZW5kTm90aWZpY2F0aW9uUmVzcG9uc2USFwoPbm90aWZpY2F0aW9uX2lkGAIgASgJEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiKfAgoZVXBkYXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkSDQoFdGl0bGUYAiABKAkSDwoHY29udGVudBgDIAEoCRJOCgthY3Rpb25fcm93cxgEIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uQWN0aW9uUm93EjoKFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYBSABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEj0KGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYBiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlIlYKGlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiI0ChlEZWxldGVOb3RpZmljYXRpb25SZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCSJSChROb3RpZmljYXRpb25SZXNwb25zZRIVCgthY3Rpb25fbmFtZRgBIAEoCUgAEhcKDXRleHRfcmVzcG9uc2UYAiABKAlIAEIKCghyZXNwb25zZSqDAQoWTm90aWZpY2F0aW9uQWN0aW9uSWNvbhIhCh1DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fTk9ORRAAEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DSEVDSxABEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DUk9TUxACMqgDChNOb3RpZmljYXRpb25TZXJ2aWNlEo0BChBTZW5kTm90aWZpY2F0aW9uEjsucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5TZW5kTm90aWZpY2F0aW9uUmVxdWVzdBo8LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuU2VuZE5vdGlmaWNhdGlvblJlc3BvbnNlEpMBChJVcGRhdGVOb3RpZmljYXRpb24SPS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlVwZGF0ZU5vdGlmaWNhdGlvblJlcXVlc3QaPi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEmsKEkRlbGV0ZU5vdGlmaWNhdGlvbhI9LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuRGVsZXRlTm90aWZpY2F0aW9uUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
 
 /**
  * The action that a user can take in response to a notification, represented by a button in the UI.
@@ -553,6 +553,43 @@ export const UpdateNotificationResponseSchema: GenMessage<UpdateNotificationResp
   messageDesc(file_interaction_notification_v1, 5);
 
 /**
+ * The request message for deleting an existing notification.
+ *
+ * @generated from message reside.interaction.notification.v1.DeleteNotificationRequest
+ */
+export type DeleteNotificationRequest = Message<"reside.interaction.notification.v1.DeleteNotificationRequest"> & {
+  /**
+   * The identifier of the notification to delete.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string notification_id = 1;
+   */
+  notificationId: string;
+};
+
+/**
+ * The request message for deleting an existing notification.
+ *
+ * @generated from message reside.interaction.notification.v1.DeleteNotificationRequest
+ */
+export type DeleteNotificationRequestJson = {
+  /**
+   * The identifier of the notification to delete.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string notification_id = 1;
+   */
+  notificationId?: string;
+};
+
+/**
+ * Describes the message reside.interaction.notification.v1.DeleteNotificationRequest.
+ * Use `create(DeleteNotificationRequestSchema)` to create a new message.
+ */
+export const DeleteNotificationRequestSchema: GenMessage<DeleteNotificationRequest, {jsonType: DeleteNotificationRequestJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_notification_v1, 6);
+
+/**
  * The message representing the user's response to a notification, either by taking one of the provided actions or by providing a text response.
  *
  * @generated from message reside.interaction.notification.v1.NotificationResponse
@@ -606,7 +643,7 @@ export type NotificationResponseJson = {
  * Use `create(NotificationResponseSchema)` to create a new message.
  */
 export const NotificationResponseSchema: GenMessage<NotificationResponse, {jsonType: NotificationResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 6);
+  messageDesc(file_interaction_notification_v1, 7);
 
 /**
  * The well-known icon to be displayed alongside a notification action.
@@ -668,6 +705,16 @@ export const NotificationService: GenService<{
     methodKind: "unary";
     input: typeof UpdateNotificationRequestSchema;
     output: typeof UpdateNotificationResponseSchema;
+  },
+  /**
+   * Deletes an existing notification.
+   *
+   * @generated from rpc reside.interaction.notification.v1.NotificationService.DeleteNotification
+   */
+  deleteNotification: {
+    methodKind: "unary";
+    input: typeof DeleteNotificationRequestSchema;
+    output: typeof EmptySchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_interaction_notification_v1, 0);

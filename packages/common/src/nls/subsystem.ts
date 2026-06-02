@@ -9,6 +9,7 @@ import { DiscoveryService, type DiscoveryServiceClient } from "@reside/api/alpha
 import { ReplicaService, type ReplicaServiceClient } from "@reside/api/alpha/replica.v1"
 import {
   AskResponseSchema,
+  AskStreamResponseSchema,
   NaturalLanguageService,
   type NaturalLanguageServiceClient,
   type NaturalLanguageServiceImplementation,
@@ -68,7 +69,7 @@ export async function setupLanguageSubsystem({
         description,
         mission,
       }),
-      allowedSystemTools: ["ask_replica", "list_replicas"],
+      allowedSystemTools: ["web_fetch", "bash", "report_intent"],
       tags,
       storageCredentials,
       tools: [
@@ -108,54 +109,123 @@ function createNaturalLanguageService(
 ): NaturalLanguageServiceImplementation {
   return {
     async ask(request, context: HandlerContext) {
-      const requester = await authenticate(context)
-      const effectiveFromSubjectId = request.subjectId ?? requester.subjectId
-
-      if (!effectiveFromSubjectId) {
-        throw new ConnectError("subject_id is required", Code.InvalidArgument)
-      }
-
-      assertSubjectId(effectiveFromSubjectId, "subject_id")
-
-      if (request.subjectId !== undefined && request.subjectId !== requester.subjectId) {
-        const { realm } = splitSubjectId(effectiveFromSubjectId)
-
-        const impersonationCheck = await services.authzService.checkPermission({
-          permissionName: WellKnownPermissions.INTERACTION_NLS_IMPERSONATE,
-          subjectId: requester.subjectId,
-          scope: realm,
-        })
-
-        if (!impersonationCheck.authorized) {
-          throw new ConnectError(
-            `Subject "${requester.subjectId}" is not allowed to impersonate realm "${realm}"`,
-            Code.PermissionDenied,
-          )
-        }
-      }
-
-      const localSubjectId = `replica:${getReplicaName()}`
-      const askCheck = await services.authzService.checkPermission({
-        permissionName: WellKnownPermissions.INTERACTION_NLS_ASK,
-        subjectId: effectiveFromSubjectId,
-        scope: localSubjectId,
-      })
-
-      if (!askCheck.authorized) {
-        throw new ConnectError(
-          `Subject "${effectiveFromSubjectId}" is not allowed to ask "${localSubjectId}"`,
-          Code.PermissionDenied,
-        )
-      }
-
-      const prompt = request.text.trim()
-      if (prompt.length === 0) {
-        throw new ConnectError("text must not be empty", Code.InvalidArgument)
-      }
-
-      const text = await subsystem.ask(effectiveFromSubjectId, prompt)
+      const { subjectId, prompt } = await authorizeAskRequest(services, request, context)
+      const text = await subsystem.ask(subjectId, prompt)
       return create(AskResponseSchema, { text })
     },
+    async *askStream(request, context: HandlerContext) {
+      const { subjectId, prompt } = await authorizeAskRequest(services, request, context)
+      const frameQueue: Array<{ text: string; reset: boolean }> = []
+      let queueNotifier: (() => void) | undefined
+      let streamCompleted = false
+      let streamError: unknown
+
+      const notifyQueue = () => {
+        if (!queueNotifier) {
+          return
+        }
+
+        queueNotifier()
+        queueNotifier = undefined
+      }
+
+      const runStream = subsystem
+        .askStream(subjectId, prompt, async frame => {
+          frameQueue.push(frame)
+          notifyQueue()
+        })
+        .catch(error => {
+          streamError = error
+        })
+        .finally(() => {
+          streamCompleted = true
+          notifyQueue()
+        })
+
+      while (!streamCompleted || frameQueue.length > 0) {
+        if (frameQueue.length === 0) {
+          await new Promise<void>(resolve => {
+            queueNotifier = resolve
+          })
+          continue
+        }
+
+        const frame = frameQueue.shift()
+        if (!frame) {
+          continue
+        }
+
+        yield create(AskStreamResponseSchema, {
+          text: frame.text,
+          reset: frame.reset,
+        })
+      }
+
+      await runStream
+
+      if (streamError) {
+        throw normalizeError(streamError)
+      }
+    },
+  }
+}
+
+async function authorizeAskRequest(
+  services: LanguageEngineServices,
+  request: {
+    text: string
+    subjectId?: string
+  },
+  context: HandlerContext,
+): Promise<{ subjectId: string; prompt: string }> {
+  const requester = await authenticate(context)
+  const effectiveFromSubjectId = request.subjectId ?? requester.subjectId
+
+  if (!effectiveFromSubjectId) {
+    throw new ConnectError("subject_id is required", Code.InvalidArgument)
+  }
+
+  assertSubjectId(effectiveFromSubjectId, "subject_id")
+
+  if (request.subjectId !== undefined && request.subjectId !== requester.subjectId) {
+    const { realm } = splitSubjectId(effectiveFromSubjectId)
+
+    const impersonationCheck = await services.authzService.checkPermission({
+      permissionName: WellKnownPermissions.INTERACTION_NLS_IMPERSONATE,
+      subjectId: requester.subjectId,
+      scope: realm,
+    })
+
+    if (!impersonationCheck.authorized) {
+      throw new ConnectError(
+        `Subject "${requester.subjectId}" is not allowed to impersonate realm "${realm}"`,
+        Code.PermissionDenied,
+      )
+    }
+  }
+
+  const localSubjectId = `replica:${getReplicaName()}`
+  const askCheck = await services.authzService.checkPermission({
+    permissionName: WellKnownPermissions.INTERACTION_NLS_ASK,
+    subjectId: effectiveFromSubjectId,
+    scope: localSubjectId,
+  })
+
+  if (!askCheck.authorized) {
+    throw new ConnectError(
+      `Subject "${effectiveFromSubjectId}" is not allowed to ask "${localSubjectId}"`,
+      Code.PermissionDenied,
+    )
+  }
+
+  const prompt = request.text.trim()
+  if (prompt.length === 0) {
+    throw new ConnectError("text must not be empty", Code.InvalidArgument)
+  }
+
+  return {
+    subjectId: effectiveFromSubjectId,
+    prompt,
   }
 }
 

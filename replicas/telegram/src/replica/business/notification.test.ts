@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test"
 import { mockDeepFn } from "@reside/common/testing"
 import {
   assertActionRows,
+  deleteNotificationForReplica,
   parseNotificationId,
   sendNotificationForReplica,
   updateNotificationForReplica,
@@ -26,6 +27,7 @@ type TelegramBotLike = {
       text: string,
       options?: Record<string, unknown>,
     ) => Promise<unknown>
+    deleteMessage: (chatId: string, messageId: number) => Promise<true>
     sendPhoto: (...args: unknown[]) => Promise<{ message_id: number }>
     sendDocument: (...args: unknown[]) => Promise<{ message_id: number }>
     sendMediaGroup: (...args: unknown[]) => Promise<{ message_id: number }[]>
@@ -553,5 +555,111 @@ describe("updateNotificationForReplica", () => {
     expect(editedText).toContain("New title")
     expect(editedText).toContain("New content")
     expect(editedText).not.toContain("Sender")
+  })
+})
+
+describe("deleteNotificationForReplica", () => {
+  test("throws when notification does not exist", () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    prisma.notification.findFirst.mockResolvedValue(null as never)
+
+    expect(
+      deleteNotificationForReplica(
+        prisma,
+        () => bot,
+        async () => ({
+          botToken: "token",
+          systemChatId: "-1001",
+        }),
+        {
+          notificationId: "7",
+        },
+      ),
+    ).rejects.toThrow('Notification "7" was not found')
+  })
+
+  test("deletes telegram message and notification with pending operation cleanup", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    prisma.notification.findFirst.mockResolvedValue({
+      id: 7,
+      targetChatId: "-1001",
+      messageId: 900,
+      sendAsSubjectId: "replica:demo",
+      operationId: 42,
+      operation: {
+        status: "PENDING",
+      },
+    } as never)
+    prisma.avatar.findUnique.mockResolvedValue({ token: "avatar-token" } as never)
+    bot.api.deleteMessage.mockResolvedValue(true as never)
+    prisma.operation.update.mockResolvedValue({ id: 42 } as never)
+    prisma.notification.delete.mockResolvedValue({ id: 7 } as never)
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: TransactionPrisma) => Promise<unknown>) => {
+        return await callback(prisma as unknown as TransactionPrisma)
+      },
+    )
+
+    await deleteNotificationForReplica(
+      prisma,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      {
+        notificationId: "7",
+      },
+    )
+
+    expect(bot.api.deleteMessage.spy()).toHaveBeenCalledTimes(1)
+    expect(bot.api.deleteMessage.spy()).toHaveBeenCalledWith("-1001", 900)
+    expect(prisma.operation.update.spy()).toHaveBeenCalledTimes(1)
+    expect(prisma.notification.delete.spy()).toHaveBeenCalledTimes(1)
+  })
+
+  test("deletes notification without operation update when operation is not pending", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    prisma.notification.findFirst.mockResolvedValue({
+      id: 7,
+      targetChatId: "-1001",
+      messageId: 900,
+      sendAsSubjectId: null,
+      operationId: 42,
+      operation: {
+        status: "COMPLETED",
+      },
+    } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    bot.api.deleteMessage.mockResolvedValue(true as never)
+    prisma.notification.delete.mockResolvedValue({ id: 7 } as never)
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: TransactionPrisma) => Promise<unknown>) => {
+        return await callback(prisma as unknown as TransactionPrisma)
+      },
+    )
+
+    await deleteNotificationForReplica(
+      prisma,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      {
+        notificationId: "7",
+      },
+    )
+
+    expect(prisma.operation.update.spy()).toHaveBeenCalledTimes(0)
+    expect(prisma.notification.delete.spy()).toHaveBeenCalledTimes(1)
   })
 })

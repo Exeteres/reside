@@ -41,6 +41,11 @@ export type LanguageEngineServices = Pick<
 
 export type LanguageEngine = {
   ask: (sessionId: string, text: string) => Promise<string>
+  askStream: (
+    sessionId: string,
+    text: string,
+    onFrame: (frame: { text: string; reset: boolean }) => Promise<void>,
+  ) => Promise<string>
   stop: () => Promise<void>
 }
 
@@ -145,86 +150,16 @@ export async function createLanguageEngine(
 
   return {
     ask: async (sessionId, text) => {
-      const normalizedSessionId = normalizeSessionId(sessionId)
-      const normalizedText = text.trim()
-      if (normalizedText.length === 0) {
-        throw new Error("text must not be empty")
-      }
-
-      return await runWithSessionLock(sessionLocks, normalizedSessionId, async () => {
-        const copilotClient = currentCopilotClient
-        if (!copilotClient) {
-          const reason = lastCopilotError ? ` Last error: ${lastCopilotError}` : ""
-          throw new Error(`Copilot client is not initialized.${reason}`)
-        }
-
-        const sessionDirPath = join(workspacePath, NLS_SESSION_DIR)
-        await mkdir(sessionDirPath, { recursive: true })
-
-        const environment: {
-          sessionId: string | undefined
-          sessionDirPath: string
-        } = {
-          sessionDirPath,
-          sessionId: await restoreSessionArchive(
-            storageBucketService,
-            sessionDirPath,
-            sessionPrefix,
-            normalizedSessionId,
-          ),
-        }
-
-        const sessionConfig: SessionConfig = {
-          model,
-          workingDirectory: workspacePath,
-          configDir: sessionDirPath,
-          systemMessage: {
-            mode: "append",
-            content: systemPrompt,
-          },
-          onPermissionRequest: async () => ({ kind: "approved" }),
-          tools: engineTools,
-          hooks: {
-            onPreToolUse: async toolInvocation => {
-              if (allowedSystemTools.has(toolInvocation.toolName)) {
-                return {
-                  permissionDecision: "allow" as const,
-                }
-              }
-
-              return {
-                permissionDecision: "deny" as const,
-                permissionDecisionReason: `Tool "${toolInvocation.toolName}" is not allowed in language engine`,
-              }
-            },
-          },
-        }
-
-        const session = await createOrResumeSession(copilotClient, environment, sessionConfig)
-
-        try {
-          const finalMessage = await session.sendAndWait({ prompt: normalizedText })
-          const responseText = normalizeAgentResponse(finalMessage).trim()
-
-          if (responseText.length === 0) {
-            throw new Error("NLS returned empty response")
-          }
-
-          return responseText
-        } finally {
-          await session.disconnect()
-
-          const currentSessionId = environment.sessionId?.trim()
-          if (currentSessionId) {
-            await uploadSessionArchive(
-              storageBucketService,
-              environment.sessionDirPath,
-              sessionPrefix,
-              normalizedSessionId,
-              currentSessionId,
-            )
-          }
-        }
+      return await runLanguageEngineSession({
+        sessionId,
+        text,
+      })
+    },
+    askStream: async (sessionId, text, onFrame) => {
+      return await runLanguageEngineSession({
+        sessionId,
+        text,
+        onFrame,
       })
     },
     stop: async () => {
@@ -235,6 +170,329 @@ export async function createLanguageEngine(
       }
     },
   }
+
+  async function runLanguageEngineSession(args: {
+    sessionId: string
+    text: string
+    onFrame?: (frame: { text: string; reset: boolean }) => Promise<void>
+  }): Promise<string> {
+    const normalizedSessionId = normalizeSessionId(args.sessionId)
+    const normalizedText = args.text.trim()
+    if (normalizedText.length === 0) {
+      throw new Error("text must not be empty")
+    }
+
+    return await runWithSessionLock(sessionLocks, normalizedSessionId, async () => {
+      const copilotClient = currentCopilotClient
+      if (!copilotClient) {
+        const reason = lastCopilotError ? ` Last error: ${lastCopilotError}` : ""
+        throw new Error(`Copilot client is not initialized.${reason}`)
+      }
+
+      const sessionDirPath = join(workspacePath, NLS_SESSION_DIR)
+      await mkdir(sessionDirPath, { recursive: true })
+
+      const environment: {
+        sessionId: string | undefined
+        sessionDirPath: string
+      } = {
+        sessionDirPath,
+        sessionId: await restoreSessionArchive(
+          storageBucketService,
+          sessionDirPath,
+          sessionPrefix,
+          normalizedSessionId,
+        ),
+      }
+
+      const sessionConfig: SessionConfig = {
+        model,
+        streaming: true,
+        workingDirectory: workspacePath,
+        configDir: sessionDirPath,
+        systemMessage: {
+          mode: "append",
+          content: systemPrompt,
+        },
+        onPermissionRequest: async () => ({ kind: "approved" }),
+        tools: engineTools,
+        hooks: {
+          onPreToolUse: async toolInvocation => {
+            if (allowedSystemTools.has(toolInvocation.toolName)) {
+              return {
+                permissionDecision: "allow" as const,
+              }
+            }
+
+            return {
+              permissionDecision: "deny" as const,
+              permissionDecisionReason: `Tool "${toolInvocation.toolName}" is not allowed in language engine`,
+            }
+          },
+        },
+      }
+
+      const session = await createOrResumeSession(copilotClient, environment, sessionConfig)
+      const unsubscribeRealtimeLogs = registerLanguageSessionLogs(session, normalizedSessionId)
+      let unsubscribeAssistantMessage: (() => void) | undefined
+      let unsubscribeAssistantMessageDelta: (() => void) | undefined
+      let frameChain = Promise.resolve()
+      let hasStreamedFrame = false
+      let lastStreamedText = ""
+      let currentStreamMessageId: string | undefined
+      const streamedTextByMessageId = new Map<string, string>()
+      const deltaSeenMessageIds = new Set<string>()
+
+      const queueFrame = (frame: { text: string; reset: boolean }) => {
+        frameChain = frameChain
+          .then(async () => {
+            hasStreamedFrame = true
+            lastStreamedText = frame.text
+            await args.onFrame?.(frame)
+          })
+          .catch(error => {
+            logger.warn({ error: normalizeError(error) }, "nls stream frame callback failed")
+          })
+      }
+
+      if (args.onFrame) {
+        unsubscribeAssistantMessageDelta = session.on("assistant.message_delta", event => {
+          const deltaContent = event.data.deltaContent
+          if (deltaContent.length === 0) {
+            return
+          }
+
+          const messageId = event.data.messageId
+          const previousText = streamedTextByMessageId.get(messageId) ?? ""
+          const nextText = `${previousText}${deltaContent}`
+          const reset = currentStreamMessageId !== messageId
+
+          streamedTextByMessageId.set(messageId, nextText)
+          deltaSeenMessageIds.add(messageId)
+          currentStreamMessageId = messageId
+
+          queueFrame({
+            text: nextText,
+            reset,
+          })
+        })
+
+        unsubscribeAssistantMessage = session.on("assistant.message", event => {
+          const frameText = normalizeAgentResponse(event.data.content).trim()
+          if (frameText.length === 0) {
+            return
+          }
+
+          const messageId = event.data.messageId
+          const hasDeltaFrames = deltaSeenMessageIds.has(messageId)
+          const accumulatedText = streamedTextByMessageId.get(messageId) ?? ""
+
+          if (!hasDeltaFrames) {
+            const reset = currentStreamMessageId !== messageId
+            currentStreamMessageId = messageId
+
+            queueFrame({
+              text: frameText,
+              reset,
+            })
+            return
+          }
+
+          if (accumulatedText !== frameText) {
+            streamedTextByMessageId.set(messageId, frameText)
+            queueFrame({
+              text: frameText,
+              reset: false,
+            })
+          }
+        })
+      }
+
+      try {
+        logger.info(
+          'nls session prompt session_id="%s" prompt="%s"',
+          normalizedSessionId,
+          truncateOneLine(normalizedText, 1000),
+        )
+
+        const finalMessage = await session.sendAndWait({ prompt: normalizedText })
+        const responseText = normalizeAgentResponse(finalMessage).trim()
+
+        if (responseText.length === 0) {
+          throw new Error("NLS returned empty response")
+        }
+
+        if (args.onFrame) {
+          await frameChain
+
+          if (!hasStreamedFrame || lastStreamedText !== responseText) {
+            await args.onFrame({
+              text: responseText,
+              reset: !hasStreamedFrame,
+            })
+          }
+        }
+
+        return responseText
+      } finally {
+        unsubscribeRealtimeLogs()
+        unsubscribeAssistantMessageDelta?.()
+        unsubscribeAssistantMessage?.()
+        await session.disconnect()
+
+        const currentSessionId = environment.sessionId?.trim()
+        if (currentSessionId) {
+          await uploadSessionArchive(
+            storageBucketService,
+            environment.sessionDirPath,
+            sessionPrefix,
+            normalizedSessionId,
+            currentSessionId,
+          )
+        }
+      }
+    })
+  }
+}
+
+function registerLanguageSessionLogs(session: CopilotSession, sessionId: string): () => void {
+  const unsubscribers = [
+    session.on("assistant.message", event => {
+      const content = event.data.content.trim()
+      if (content.length === 0) {
+        return
+      }
+
+      logger.info(
+        'nls assistant message session_id="%s" message_id="%s" content="%s"',
+        sessionId,
+        event.data.messageId,
+        truncateOneLine(content, 2000),
+      )
+    }),
+    session.on("tool.execution_start", event => {
+      const argumentSummary = summarizeToolArguments(event.data.toolName, event.data.arguments)
+
+      logger.info(
+        'nls tool execution started session_id="%s" tool_name="%s" tool_call_id="%s" args="%s"',
+        sessionId,
+        event.data.toolName,
+        event.data.toolCallId,
+        argumentSummary,
+      )
+    }),
+  ]
+
+  return () => {
+    for (const unsubscribe of unsubscribers) {
+      unsubscribe()
+    }
+  }
+}
+
+function summarizeToolArguments(toolName: string, argumentsValue: unknown): string {
+  if (!argumentsValue || typeof argumentsValue !== "object") {
+    return "{}"
+  }
+
+  const typedArguments = argumentsValue as Record<string, unknown>
+
+  if (toolName === "apply_patch") {
+    const patchInput = typeof typedArguments.input === "string" ? typedArguments.input : ""
+    const files = extractApplyPatchFilePaths(patchInput)
+    const listedFiles = files
+      .slice(0, 5)
+      .map(path => truncateOneLine(path, 120))
+      .join(",")
+    const filesPart =
+      files.length > 0
+        ? `files=${listedFiles}${files.length > 5 ? ` (+${files.length - 5} more)` : ""}`
+        : "files=<unknown>"
+    const explanation =
+      typeof typedArguments.explanation === "string"
+        ? truncateOneLine(typedArguments.explanation, 160)
+        : ""
+
+    return explanation.length > 0 ? `${filesPart} explanation=${explanation}` : filesPart
+  }
+
+  if (toolName === "bash") {
+    const command = typeof typedArguments.command === "string" ? typedArguments.command : ""
+    return `command=${truncateOneLine(command, 1000)}`
+  }
+
+  const pathKeys = [
+    "filePath",
+    "path",
+    "dirPath",
+    "workspaceRoot",
+    "workingDirectory",
+    "includePattern",
+    "query",
+  ]
+
+  const pathParts = pathKeys
+    .map(key => {
+      const value = typedArguments[key]
+      if (typeof value !== "string" || value.length === 0) {
+        return undefined
+      }
+
+      return `${key}=${truncateOneLine(value, 180)}`
+    })
+    .filter((value): value is string => Boolean(value))
+
+  if (pathParts.length > 0) {
+    return pathParts.join(" ")
+  }
+
+  const summary = Object.entries(typedArguments)
+    .filter(([key]) => !["content", "newCode", "codeSnippet", "prompt"].includes(key))
+    .map(([key, value]) => {
+      if (typeof value === "string") {
+        return `${key}=${truncateOneLine(value, 120)}`
+      }
+
+      if (typeof value === "number" || typeof value === "boolean") {
+        return `${key}=${String(value)}`
+      }
+
+      if (Array.isArray(value)) {
+        return `${key}=[${value.length}]`
+      }
+
+      if (value && typeof value === "object") {
+        return `${key}={...}`
+      }
+
+      return `${key}=null`
+    })
+    .join(" ")
+
+  return summary.length > 0 ? summary : "{}"
+}
+
+function extractApplyPatchFilePaths(patchInput: string): string[] {
+  if (patchInput.trim().length === 0) {
+    return []
+  }
+
+  const matches = [...patchInput.matchAll(/^\*\*\*\s+(?:Update|Add|Delete)\s+File:\s+(.+)$/gm)]
+  const paths = matches
+    .map(match => match[1]?.trim() ?? "")
+    .map(path => path.replace(/\s+->.+$/, "").trim())
+    .filter(path => path.length > 0)
+
+  return [...new Set(paths)]
+}
+
+function truncateOneLine(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+
+  return `${normalized.slice(0, maxLength)}...`
 }
 
 function collectCustomToolNames(

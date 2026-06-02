@@ -1,4 +1,3 @@
-import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { Operation, PrismaClient } from "../../database"
 import type { AccessActivities } from "../../definitions"
 import { create } from "@bufbuild/protobuf"
@@ -31,19 +30,15 @@ type EndpointClients = {
 
 const PERMISSION_REQUEST_DENIED_FAILURE_REASON = "PERMISSION_REQUEST_DENIED"
 const PERMISSION_REQUEST_WORKFLOW_FAILED_REASON = "PERMISSION_REQUEST_WORKFLOW_FAILED"
-const TELEGRAM_APPROVER_NAME = "telegram"
-const TELEGRAM_APPROVAL_CHANNEL = "telegram:approval"
 
 type AccessActivityServices = {
   prisma: PrismaClient
   operationService: GenericOperationService<Operation>
-  notificationService?: NotificationServiceClient
 }
 
 export function createAccessActivities({
   prisma,
   operationService,
-  notificationService,
 }: AccessActivityServices): AccessActivities {
   const clientsByEndpoint = new Map<string, EndpointClients>()
   const subjectServiceClientsByEndpoint = new Map<string, SubjectServiceClient>()
@@ -401,75 +396,6 @@ export function createAccessActivities({
       )
 
       logger.info('rejected permission request set operation_id="%s"', operationId)
-    },
-
-    async notifyApprovedPermissionRequestSet({
-      requestSetId,
-      approverName,
-      approverTitle,
-      resolution,
-    }) {
-      if (approverName.trim().toLowerCase() === TELEGRAM_APPROVER_NAME) {
-        logger.info(
-          'skipping approved request notification for telegram approver request_set_id="%s" approver_name="%s"',
-          requestSetId,
-          approverName,
-        )
-        return
-      }
-
-      if (notificationService === undefined) {
-        logger.info(
-          'skipping approved request notification because interaction dependency is unavailable request_set_id="%s" approver_name="%s"',
-          requestSetId,
-          approverName,
-        )
-        return
-      }
-
-      const normalizedApproverTitle = approverTitle.trim()
-      const normalizedResolution = resolution.trim()
-      const notificationContent = block(
-        inline(
-          bold(strings.notifications.approvedRequest.requestSetLabel),
-          SPACE,
-          String(requestSetId),
-        ),
-        inline(
-          bold(strings.notifications.approvedRequest.approverLabel),
-          SPACE,
-          normalizedApproverTitle.length > 0 ? normalizedApproverTitle : approverName,
-        ),
-        bold(strings.notifications.approvedRequest.resolutionLabel),
-        normalizedResolution.length > 0
-          ? normalizedResolution
-          : strings.notifications.approvedRequest.emptyResolution,
-      ).html
-
-      try {
-        await notificationService.sendNotification({
-          channel: TELEGRAM_APPROVAL_CHANNEL,
-          title: strings.notifications.approvedRequest.title,
-          content: notificationContent,
-        })
-
-        logger.info(
-          'sent approved request notification request_set_id="%s" approver_name="%s" channel="%s"',
-          requestSetId,
-          approverName,
-          TELEGRAM_APPROVAL_CHANNEL,
-        )
-      } catch (error) {
-        const errorToLog = error instanceof Error ? error : new Error(String(error))
-
-        logger.error(
-          { error: errorToLog },
-          'failed to send approved request notification request_set_id="%s" approver_name="%s" channel="%s"',
-          requestSetId,
-          approverName,
-          TELEGRAM_APPROVAL_CHANNEL,
-        )
-      }
     },
 
     async failPermissionRequestSetWorkflowIfPending({ operationId, resolution }) {

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/nls.v1.proto.
  */
 export const file_interaction_nls_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEiTAoKQXNrUmVxdWVzdBIMCgR0ZXh0GAEgASgJEjAKCnN1YmplY3RfaWQYAiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUiGwoLQXNrUmVzcG9uc2USDAoEdGV4dBgBIAEoCTJuChZOYXR1cmFsTGFuZ3VhZ2VTZXJ2aWNlElQKA0FzaxIlLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdBomLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVzcG9uc2ViBnByb3RvMw", [file_google_protobuf_wrappers]);
+  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEiTAoKQXNrUmVxdWVzdBIMCgR0ZXh0GAEgASgJEjAKCnN1YmplY3RfaWQYAiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUiGwoLQXNrUmVzcG9uc2USDAoEdGV4dBgBIAEoCSIwChFBc2tTdHJlYW1SZXNwb25zZRIMCgR0ZXh0GAEgASgJEg0KBXJlc2V0GAIgASgIMtIBChZOYXR1cmFsTGFuZ3VhZ2VTZXJ2aWNlElQKA0FzaxIlLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdBomLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVzcG9uc2USYgoJQXNrU3RyZWFtEiUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXF1ZXN0GiwucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tTdHJlYW1SZXNwb25zZTABYgZwcm90bzM", [file_google_protobuf_wrappers]);
 
 /**
  * Request for asking the replica natural language subsystem.
@@ -101,6 +101,59 @@ export const AskResponseSchema: GenMessage<AskResponse, {jsonType: AskResponseJs
   messageDesc(file_interaction_nls_v1, 1);
 
 /**
+ * Streaming response frame from the natural language subsystem.
+ *
+ * @generated from message reside.interaction.nls.v1.AskStreamResponse
+ */
+export type AskStreamResponse = Message<"reside.interaction.nls.v1.AskStreamResponse"> & {
+  /**
+   * The full current text for this frame.
+   * Consumers should replace previously rendered text with this value.
+   *
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * Whether this frame starts a new assistant message and resets previous output.
+   * This is useful when the agent emits a new final message after tool calls.
+   *
+   * @generated from field: bool reset = 2;
+   */
+  reset: boolean;
+};
+
+/**
+ * Streaming response frame from the natural language subsystem.
+ *
+ * @generated from message reside.interaction.nls.v1.AskStreamResponse
+ */
+export type AskStreamResponseJson = {
+  /**
+   * The full current text for this frame.
+   * Consumers should replace previously rendered text with this value.
+   *
+   * @generated from field: string text = 1;
+   */
+  text?: string;
+
+  /**
+   * Whether this frame starts a new assistant message and resets previous output.
+   * This is useful when the agent emits a new final message after tool calls.
+   *
+   * @generated from field: bool reset = 2;
+   */
+  reset?: boolean;
+};
+
+/**
+ * Describes the message reside.interaction.nls.v1.AskStreamResponse.
+ * Use `create(AskStreamResponseSchema)` to create a new message.
+ */
+export const AskStreamResponseSchema: GenMessage<AskStreamResponse, {jsonType: AskStreamResponseJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_nls_v1, 2);
+
+/**
  * The service implemented by replicas to provide natural language interactions.
  *
  * @generated from service reside.interaction.nls.v1.NaturalLanguageService
@@ -115,6 +168,16 @@ export const NaturalLanguageService: GenService<{
     methodKind: "unary";
     input: typeof AskRequestSchema;
     output: typeof AskResponseSchema;
+  },
+  /**
+   * Asks the target replica and streams full-message frames while response is being generated.
+   *
+   * @generated from rpc reside.interaction.nls.v1.NaturalLanguageService.AskStream
+   */
+  askStream: {
+    methodKind: "server_streaming";
+    input: typeof AskRequestSchema;
+    output: typeof AskStreamResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_interaction_nls_v1, 0);

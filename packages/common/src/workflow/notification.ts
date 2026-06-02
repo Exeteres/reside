@@ -6,6 +6,7 @@ import type {
   NotificationResponseJson,
 } from "@reside/api/interaction/notification.v1"
 import {
+  DeleteNotificationRequestSchema,
   NotificationActionRowSchema,
   NotificationActionSchema,
   SendNotificationRequestSchema,
@@ -395,6 +396,26 @@ export async function updateNotification<
     TRequiresTextResponse,
     TCancelWhen
   >
+}
+
+/**
+ * Deletes an existing notification by its identifier.
+ *
+ * @param notificationId The notification identifier to delete.
+ */
+export async function deleteNotification(notificationId: string): Promise<void> {
+  const { deleteNotification } = proxyActivities<InteractionActivities>({
+    startToCloseTimeout: "5 minutes",
+    retry: {
+      initialInterval: "10 seconds",
+    },
+  })
+
+  const request = create(DeleteNotificationRequestSchema, {
+    notificationId,
+  })
+
+  await deleteNotification(request)
 }
 
 async function waitNotificationOutput<

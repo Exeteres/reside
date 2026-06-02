@@ -20,8 +20,22 @@ message AskResponse {
   string text = 1;
 }
 
+// Streaming response frame from the natural language subsystem.
+message AskStreamResponse {
+  // The full current text for this frame.
+  // Consumers should replace previously rendered text with this value.
+  string text = 1;
+
+  // Whether this frame starts a new assistant message and resets previous output.
+  // This is useful when the agent emits a new final message after tool calls.
+  bool reset = 2;
+}
+
 // The service implemented by replicas to provide natural language interactions.
 service NaturalLanguageService {
   // Asks the target replica and returns a plain text answer.
   rpc Ask(AskRequest) returns (AskResponse);
+
+  // Asks the target replica and streams full-message frames while response is being generated.
+  rpc AskStream(AskRequest) returns (stream AskStreamResponse);
 }

@@ -18,6 +18,7 @@ import {
 } from "../business/config"
 import {
   assertActionRows,
+  deleteNotificationForReplica,
   parseNotificationId,
   sendNotificationForReplica,
   updateNotificationForReplica,
@@ -142,6 +143,29 @@ export function createNotificationService({
       } catch (error) {
         logger.error({ error }, "failed to update telegram notification")
         throw new ConnectError("Failed to update telegram notification", Code.Internal)
+      }
+    },
+
+    async deleteNotification(request, context) {
+      const { name: replicaName } = await authenticateReplica(context)
+
+      logger.info(
+        "deleteNotification requested by replica %s for notificationId %s",
+        replicaName,
+        request.notificationId,
+      )
+
+      try {
+        parseNotificationId(request.notificationId)
+
+        await deleteNotificationForReplica(prisma, createTelegramBotClient, loadDeliveryConfig, {
+          notificationId: request.notificationId,
+        })
+
+        return {}
+      } catch (error) {
+        logger.error({ error }, "failed to delete telegram notification")
+        throw new ConnectError("Failed to delete telegram notification", Code.Internal)
       }
     },
   }

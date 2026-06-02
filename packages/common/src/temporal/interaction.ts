@@ -1,6 +1,7 @@
 import {
   SendNotificationResponseSchema,
   UpdateNotificationResponseSchema,
+  type DeleteNotificationRequest,
   type NotificationServiceClient,
   type SendNotificationRequest,
   type UpdateNotificationRequest,
@@ -29,6 +30,12 @@ export function createInteractionActivities(
       const response = await notificationService.updateNotification(request)
 
       return toJson(UpdateNotificationResponseSchema, response)
+    },
+
+    deleteNotification: async (request: DeleteNotificationRequest) => {
+      await notificationService.deleteNotification(request)
+
+      return {}
     },
 
     ...createOperationActivities(interactionOperationService),

@@ -70,6 +70,7 @@ export type TelegramBotLike = {
         reply_markup?: InlineKeyboardMarkup
       },
     ): Promise<unknown>
+    deleteMessage(chatId: string, messageId: number): Promise<true>
     sendPhoto(
       chatId: string,
       photo: InputFile,
