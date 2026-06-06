@@ -4,10 +4,18 @@ import type { Client } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../../database"
 import { create } from "@bufbuild/protobuf"
 import { Code, ConnectError } from "@connectrpc/connect"
+import { CoreV1Api } from "@kubernetes/client-node"
 import { EnsureAvatarResponseSchema } from "@reside/api/interaction/avatar.v1"
-import { authenticateReplica, logger } from "@reside/common"
+import { authenticateReplica, getReplicaNamespace, kubeConfig, logger } from "@reside/common"
 import { WellKnownPermissions } from "@reside/registry"
-import { ensureAvatarProvision } from "../business/avatar"
+import { ensureAvatarProvision, updateAvatarVersionTag } from "../business/avatar"
+import { createTelegramBotClient } from "../business/bot-client"
+import {
+  loadTelegramConfigState,
+  TELEGRAM_CONFIG_MAP_NAME,
+  TELEGRAM_SYSTEM_CHAT_ID_KEY,
+} from "../business/config"
+import { loadTelegramSecretState, TELEGRAM_SECRET_NAME } from "../business/secret"
 
 export function createAvatarService(
   services: CommonServices<"access"> & {
@@ -16,6 +24,9 @@ export function createAvatarService(
     temporalClient: Client
   },
 ): AvatarServiceImplementation {
+  const namespace = getReplicaNamespace()
+  const coreApi = kubeConfig.makeApiClient(CoreV1Api)
+
   return {
     async ensureAvatar(request, context) {
       const { name: replicaName } = await authenticateReplica(context)
@@ -67,6 +78,72 @@ export function createAvatarService(
       return create(EnsureAvatarResponseSchema, {
         operation: await services.operationService.toApiOperation(outcome.operationId),
       })
+    },
+
+    async updateAvatarVersion(request, context) {
+      const identity = await authenticateReplica(context)
+      if (identity.name !== "alpha") {
+        throw new ConnectError(
+          `Replica "${identity.name}" is not allowed to update avatar versions`,
+          Code.PermissionDenied,
+        )
+      }
+
+      const replicaName = request.replicaName.trim()
+      const newVersion = request.newVersion.trim()
+
+      if (replicaName.length === 0) {
+        throw new ConnectError("replicaName must not be empty", Code.InvalidArgument)
+      }
+
+      if (newVersion.length === 0) {
+        throw new ConnectError("newVersion must not be empty", Code.InvalidArgument)
+      }
+
+      try {
+        const [secretState, configState] = await Promise.all([
+          loadTelegramSecretState(coreApi, namespace),
+          loadTelegramConfigState(coreApi, namespace),
+        ])
+
+        if (!secretState.botToken) {
+          throw new ConnectError(
+            `Secret "${TELEGRAM_SECRET_NAME}" must contain "bot_token"`,
+            Code.FailedPrecondition,
+          )
+        }
+
+        if (!configState.systemChatId) {
+          throw new ConnectError(
+            `ConfigMap "${TELEGRAM_CONFIG_MAP_NAME}" must contain "${TELEGRAM_SYSTEM_CHAT_ID_KEY}"`,
+            Code.FailedPrecondition,
+          )
+        }
+
+        await updateAvatarVersionTag(services.prisma, createTelegramBotClient, {
+          managerBotToken: secretState.botToken,
+          systemChatId: configState.systemChatId,
+          replicaName,
+          newVersion,
+        })
+
+        return {}
+      } catch (error) {
+        const errorObject = error instanceof Error ? error : new Error(String(error))
+
+        logger.error(
+          { error: errorObject },
+          'failed to update avatar version replica_name="%s" new_version="%s"',
+          replicaName,
+          newVersion,
+        )
+
+        if (error instanceof ConnectError) {
+          throw error
+        }
+
+        throw new ConnectError("Failed to update avatar version", Code.Internal)
+      }
     },
   }
 }

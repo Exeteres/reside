@@ -4,6 +4,27 @@ import type { PrismaClient } from "../../database"
 import { logger } from "@reside/common"
 import { avatarManagedBotCreatedSignal, getAvatarProvisionWorkflowId } from "../../definitions"
 
+type AvatarBotJoinedChatEvent = {
+  chatId: string | number
+  managedBotId: string
+  managedBotUsername: string | undefined
+}
+
+const AVATAR_MINIMAL_ADMIN_PERMISSIONS = {
+  can_manage_chat: true,
+  can_delete_messages: false,
+  can_manage_video_chats: false,
+  can_restrict_members: false,
+  can_promote_members: false,
+  can_change_info: false,
+  can_invite_users: false,
+  can_post_messages: false,
+  can_edit_messages: false,
+  can_pin_messages: false,
+  can_manage_topics: false,
+  is_anonymous: false,
+}
+
 export async function handleManagedBotLifecycleUpdate(
   args: {
     prisma: PrismaClient
@@ -12,6 +33,11 @@ export async function handleManagedBotLifecycleUpdate(
   context: Context,
   managerBot: Bot<Context>,
 ): Promise<void> {
+  const avatarBotJoinedEvents = extractAvatarBotJoinedChatEvents(context.update)
+  if (avatarBotJoinedEvents.length > 0) {
+    await handleAvatarBotJoinedChats(args, managerBot, avatarBotJoinedEvents)
+  }
+
   const managedBotCreated = extractManagedBotCreatedEvent(context.update)
   if (managedBotCreated) {
     await handleManagedBotCreated(args, context, managedBotCreated)
@@ -21,6 +47,70 @@ export async function handleManagedBotLifecycleUpdate(
   if (managedBotUpdated) {
     await handleManagedBotUpdated(args, managerBot, managedBotUpdated)
   }
+}
+
+async function handleAvatarBotJoinedChats(
+  args: {
+    prisma: PrismaClient
+  },
+  managerBot: Bot<Context>,
+  joinedEvents: AvatarBotJoinedChatEvent[],
+): Promise<void> {
+  for (const joinedEvent of joinedEvents) {
+    const avatar = await findAvatarByBotIdentity(args.prisma, joinedEvent)
+    if (!avatar) {
+      continue
+    }
+
+    const managedBotId = Number(joinedEvent.managedBotId)
+    if (!Number.isInteger(managedBotId)) {
+      continue
+    }
+
+    await managerBot.api.promoteChatMember(
+      joinedEvent.chatId,
+      managedBotId,
+      AVATAR_MINIMAL_ADMIN_PERMISSIONS,
+    )
+
+    logger.info(
+      {
+        avatarId: avatar.id,
+        chatId: joinedEvent.chatId,
+        managedBotId,
+      },
+      "promoted avatar bot to admin with minimal permissions",
+    )
+  }
+}
+
+async function findAvatarByBotIdentity(
+  prisma: PrismaClient,
+  joinedEvent: AvatarBotJoinedChatEvent,
+): Promise<{ id: number } | null> {
+  const managedBotUsername = joinedEvent.managedBotUsername?.trim()
+
+  const orClauses = [
+    {
+      managedBotId: joinedEvent.managedBotId,
+    },
+    ...(managedBotUsername
+      ? [
+          {
+            managedBotUsername,
+          },
+        ]
+      : []),
+  ]
+
+  return await prisma.avatar.findFirst({
+    where: {
+      OR: orClauses,
+    },
+    select: {
+      id: true,
+    },
+  })
 }
 
 async function handleManagedBotCreated(
@@ -219,6 +309,36 @@ export function extractManagedBotUpdatedEvent(update: unknown):
   }
 }
 
+export function extractAvatarBotJoinedChatEvents(update: unknown): AvatarBotJoinedChatEvent[] {
+  if (!isRecord(update)) {
+    return []
+  }
+
+  const message = toRecord(update.message)
+  const messageChat = toRecord(message?.chat)
+  const chatId = toStringOrNumberValue(messageChat?.id)
+
+  if (chatId === undefined) {
+    return []
+  }
+
+  const newChatMembers = toRecordArray(message?.new_chat_members ?? message?.newChatMembers)
+  if (newChatMembers.length === 0) {
+    return []
+  }
+
+  return newChatMembers
+    .filter(member => member.is_bot === true || member.isBot === true)
+    .map(member => {
+      return {
+        chatId,
+        managedBotId: toStringValue(member.id) ?? "",
+        managedBotUsername: toStringValue(member.username),
+      }
+    })
+    .filter(event => event.managedBotId.length > 0)
+}
+
 function extractManagedBotIdentity(payload: Record<string, unknown>):
   | {
       managedBotId: string
@@ -313,4 +433,20 @@ function toStringValue(value: unknown): string | undefined {
   }
 
   return undefined
+}
+
+function toStringOrNumberValue(value: unknown): string | number | undefined {
+  if (typeof value === "string" || typeof value === "number") {
+    return value
+  }
+
+  return undefined
+}
+
+function toRecordArray(value: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.filter(isRecord)
 }

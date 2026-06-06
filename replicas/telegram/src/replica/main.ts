@@ -80,9 +80,11 @@ server.post(TELEGRAM_WEBHOOK_PATH, async (request: FastifyRequest, reply: Fastif
       request.body,
     )
   } catch (error) {
+    const errorObject = error instanceof Error ? error : new Error(String(error))
+
     logger.error(
       {
-        error: error instanceof Error ? error.message : String(error),
+        error: errorObject,
       },
       "failed to handle telegram webhook update",
     )
@@ -152,9 +154,11 @@ if (stopSignal.stopped) {
           break
         }
 
+        const errorObject = error instanceof Error ? error : new Error(String(error))
+
         logger.error(
           {
-            error: error instanceof Error ? error.message : String(error),
+            error: errorObject,
           },
           "failed to reconcile telegram bot secret",
         )

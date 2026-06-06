@@ -3,6 +3,7 @@ syntax = "proto3";
 package reside.interaction.avatar.v1;
 
 import "common/operation.v1.proto";
+import "google/protobuf/empty.proto";
 
 // The request message for ensuring that the caller replica has its managed avatar bot configured.
 message EnsureAvatarRequest {
@@ -17,8 +18,20 @@ message EnsureAvatarResponse {
   reside.common.operation.v1.Operation operation = 1;
 }
 
+// The request message for updating managed avatar version tag in system chat.
+message UpdateAvatarVersionRequest {
+  // The target replica technical name.
+  string replica_name = 1;
+
+  // The new replica version to publish in avatar admin tag.
+  string new_version = 2;
+}
+
 // The avatar service for managed bot provisioning.
 service AvatarService {
   // Ensures a managed avatar bot exists for the caller replica.
   rpc EnsureAvatar(EnsureAvatarRequest) returns (EnsureAvatarResponse);
+
+  // Updates managed avatar bot admin tag in system chat for the given replica.
+  rpc UpdateAvatarVersion(UpdateAvatarVersionRequest) returns (google.protobuf.Empty);
 }

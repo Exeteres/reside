@@ -6,13 +6,15 @@ import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegen
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Operation, OperationJson } from "../common/operation.v1_pb";
 import { file_common_operation_v1 } from "../common/operation.v1_pb";
+import type { EmptySchema } from "@bufbuild/protobuf/wkt";
+import { file_google_protobuf_empty } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file interaction/avatar.v1.proto.
  */
 export const file_interaction_avatar_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChtpbnRlcmFjdGlvbi9hdmF0YXIudjEucHJvdG8SHHJlc2lkZS5pbnRlcmFjdGlvbi5hdmF0YXIudjEiLAoTRW5zdXJlQXZhdGFyUmVxdWVzdBIVCg1yZXBsaWNhX3RpdGxlGAEgASgJIlAKFEVuc3VyZUF2YXRhclJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbjKGAQoNQXZhdGFyU2VydmljZRJ1CgxFbnN1cmVBdmF0YXISMS5yZXNpZGUuaW50ZXJhY3Rpb24uYXZhdGFyLnYxLkVuc3VyZUF2YXRhclJlcXVlc3QaMi5yZXNpZGUuaW50ZXJhY3Rpb24uYXZhdGFyLnYxLkVuc3VyZUF2YXRhclJlc3BvbnNlYgZwcm90bzM", [file_common_operation_v1]);
+  fileDesc("ChtpbnRlcmFjdGlvbi9hdmF0YXIudjEucHJvdG8SHHJlc2lkZS5pbnRlcmFjdGlvbi5hdmF0YXIudjEiLAoTRW5zdXJlQXZhdGFyUmVxdWVzdBIVCg1yZXBsaWNhX3RpdGxlGAEgASgJIlAKFEVuc3VyZUF2YXRhclJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiJHChpVcGRhdGVBdmF0YXJWZXJzaW9uUmVxdWVzdBIUCgxyZXBsaWNhX25hbWUYASABKAkSEwoLbmV3X3ZlcnNpb24YAiABKAky7wEKDUF2YXRhclNlcnZpY2USdQoMRW5zdXJlQXZhdGFyEjEucmVzaWRlLmludGVyYWN0aW9uLmF2YXRhci52MS5FbnN1cmVBdmF0YXJSZXF1ZXN0GjIucmVzaWRlLmludGVyYWN0aW9uLmF2YXRhci52MS5FbnN1cmVBdmF0YXJSZXNwb25zZRJnChNVcGRhdGVBdmF0YXJWZXJzaW9uEjgucmVzaWRlLmludGVyYWN0aW9uLmF2YXRhci52MS5VcGRhdGVBdmF0YXJWZXJzaW9uUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_common_operation_v1, file_google_protobuf_empty]);
 
 /**
  * The request message for ensuring that the caller replica has its managed avatar bot configured.
@@ -87,6 +89,55 @@ export const EnsureAvatarResponseSchema: GenMessage<EnsureAvatarResponse, {jsonT
   messageDesc(file_interaction_avatar_v1, 1);
 
 /**
+ * The request message for updating managed avatar version tag in system chat.
+ *
+ * @generated from message reside.interaction.avatar.v1.UpdateAvatarVersionRequest
+ */
+export type UpdateAvatarVersionRequest = Message<"reside.interaction.avatar.v1.UpdateAvatarVersionRequest"> & {
+  /**
+   * The target replica technical name.
+   *
+   * @generated from field: string replica_name = 1;
+   */
+  replicaName: string;
+
+  /**
+   * The new replica version to publish in avatar admin tag.
+   *
+   * @generated from field: string new_version = 2;
+   */
+  newVersion: string;
+};
+
+/**
+ * The request message for updating managed avatar version tag in system chat.
+ *
+ * @generated from message reside.interaction.avatar.v1.UpdateAvatarVersionRequest
+ */
+export type UpdateAvatarVersionRequestJson = {
+  /**
+   * The target replica technical name.
+   *
+   * @generated from field: string replica_name = 1;
+   */
+  replicaName?: string;
+
+  /**
+   * The new replica version to publish in avatar admin tag.
+   *
+   * @generated from field: string new_version = 2;
+   */
+  newVersion?: string;
+};
+
+/**
+ * Describes the message reside.interaction.avatar.v1.UpdateAvatarVersionRequest.
+ * Use `create(UpdateAvatarVersionRequestSchema)` to create a new message.
+ */
+export const UpdateAvatarVersionRequestSchema: GenMessage<UpdateAvatarVersionRequest, {jsonType: UpdateAvatarVersionRequestJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_avatar_v1, 2);
+
+/**
  * The avatar service for managed bot provisioning.
  *
  * @generated from service reside.interaction.avatar.v1.AvatarService
@@ -101,6 +152,16 @@ export const AvatarService: GenService<{
     methodKind: "unary";
     input: typeof EnsureAvatarRequestSchema;
     output: typeof EnsureAvatarResponseSchema;
+  },
+  /**
+   * Updates managed avatar bot admin tag in system chat for the given replica.
+   *
+   * @generated from rpc reside.interaction.avatar.v1.AvatarService.UpdateAvatarVersion
+   */
+  updateAvatarVersion: {
+    methodKind: "unary";
+    input: typeof UpdateAvatarVersionRequestSchema;
+    output: typeof EmptySchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_interaction_avatar_v1, 0);

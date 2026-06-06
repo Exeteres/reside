@@ -1,7 +1,12 @@
-import { describe, expect, test } from "bun:test"
+import type { Context } from "grammy"
+import type { PrismaClient } from "../../database"
+import { describe, expect, mock, test } from "bun:test"
+import { mockDeepFn } from "@reside/common/testing"
 import {
+  extractAvatarBotJoinedChatEvents,
   extractManagedBotCreatedEvent,
   extractManagedBotUpdatedEvent,
+  handleManagedBotLifecycleUpdate,
   isManagedBotUsernameAccepted,
   isManagedBotUsernamePattern,
 } from "./bot-managed"
@@ -63,6 +68,149 @@ describe("extractManagedBotUpdatedEvent", () => {
 
   test("returns undefined for malformed payload", () => {
     expect(extractManagedBotUpdatedEvent({ managed_bot: {} })).toBeUndefined()
+  })
+})
+
+describe("extractAvatarBotJoinedChatEvents", () => {
+  test("extracts bot members added to chat", () => {
+    const payload = {
+      message: {
+        chat: {
+          id: -100123,
+        },
+        new_chat_members: [
+          {
+            id: 101,
+            username: "reside_alpha_helper_bot",
+            is_bot: true,
+          },
+          {
+            id: 102,
+            username: "human_user",
+            is_bot: false,
+          },
+        ],
+      },
+    }
+
+    expect(extractAvatarBotJoinedChatEvents(payload)).toEqual([
+      {
+        chatId: -100123,
+        managedBotId: "101",
+        managedBotUsername: "reside_alpha_helper_bot",
+      },
+    ])
+  })
+
+  test("returns empty list for malformed payload", () => {
+    expect(extractAvatarBotJoinedChatEvents({})).toEqual([])
+  })
+})
+
+describe("handleManagedBotLifecycleUpdate", () => {
+  test("promotes known avatar bot when it is added to chat", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    prisma.avatar.findFirst.mockResolvedValue({ id: 77 } as never)
+
+    const promoteChatMember = mock(async () => true)
+    const managerBot = {
+      api: {
+        promoteChatMember,
+      },
+    } as unknown as {
+      api: {
+        promoteChatMember: (
+          chatId: number | string,
+          userId: number,
+          permissions: Record<string, boolean>,
+        ) => Promise<boolean>
+      }
+    }
+
+    const context = {
+      update: {
+        message: {
+          chat: {
+            id: -1001,
+          },
+          new_chat_members: [
+            {
+              id: 123,
+              username: "reside_alpha_bot",
+              is_bot: true,
+            },
+          ],
+        },
+      },
+    } as unknown as Context
+
+    await handleManagedBotLifecycleUpdate(
+      {
+        prisma,
+        temporalClient: mockDeepFn(),
+      },
+      context,
+      managerBot as never,
+    )
+
+    expect(prisma.avatar.findFirst.spy()).toHaveBeenCalledTimes(1)
+    expect(promoteChatMember).toHaveBeenCalledWith(
+      -1001,
+      123,
+      expect.objectContaining({
+        can_manage_chat: true,
+        can_promote_members: false,
+      }),
+    )
+  })
+
+  test("does not promote unknown bot", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    prisma.avatar.findFirst.mockResolvedValue(null as never)
+
+    const promoteChatMember = mock(async () => true)
+    const managerBot = {
+      api: {
+        promoteChatMember,
+      },
+    } as unknown as {
+      api: {
+        promoteChatMember: (
+          chatId: number | string,
+          userId: number,
+          permissions: Record<string, boolean>,
+        ) => Promise<boolean>
+      }
+    }
+
+    const context = {
+      update: {
+        message: {
+          chat: {
+            id: -1001,
+          },
+          new_chat_members: [
+            {
+              id: 456,
+              username: "some_other_bot",
+              is_bot: true,
+            },
+          ],
+        },
+      },
+    } as unknown as Context
+
+    await handleManagedBotLifecycleUpdate(
+      {
+        prisma,
+        temporalClient: mockDeepFn(),
+      },
+      context,
+      managerBot as never,
+    )
+
+    expect(prisma.avatar.findFirst.spy()).toHaveBeenCalledTimes(1)
+    expect(promoteChatMember).toHaveBeenCalledTimes(0)
   })
 })
 
