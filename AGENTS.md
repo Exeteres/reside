@@ -8,8 +8,10 @@ Some simple rules to follow:
 - Before writing code for replicas, read `docs/replica.md` and follow the defined structure and patterns.
 - When implementing new replica or API, follow the structure and patterns of existing replicas and APIs as closely as possible.
 - Try to use LSP tools to check your code first.
-- For business feature changes, write or update tests that cover the changed behavior when it is reasonable.
 - All titles/descriptions in UI in the project must be in Russian, but all code and comments must be in English.
+- After each meaningful change in a replica, update its version and changelog using `scripts/update-version.ts`.
+- Dependency-only changes (packages or other replicas) must not cause a replica version bump.
+- Backward-incompatible (major) changes are forbidden, and major version bumps are forbidden as well.
 
 Rule routing (load additional rules by situation):
 

@@ -70,6 +70,7 @@ Runtime wiring in `src/replica/main.ts` must import service factories from `src/
 
 - Worker runtime wiring is defined directly in `src/replica/main.ts`.
 - Worker entry point may host non-Temporal background logic when needed.
+- Keep replicas non-long-running by default; add long-running runtime loops only when they are strictly required by business behavior.
 
 ## Temporal worker pattern and helpers
 
@@ -78,6 +79,7 @@ Runtime wiring in `src/replica/main.ts` must import service factories from `src/
 - `src/workflows/index.ts` must be the workflow bundle entrypoint.
 - Re-export shared workflow helpers (for example `deliverOperationCompletionWorkflow`) only from `src/workflows/index.ts`.
 - Workflow modules must import common workflow helpers only from `@reside/common/workflow` (never from `@reside/common`).
+- Long-living periodic workflow behavior must be implemented as long-running workflows with `safeSleep` loops, not via Temporal Cron schedules.
 - Replica workflow-safe constants/schemas must be imported from `../definitions`.
 - Do not use replica-name prefixes for Temporal identifiers (workflow IDs, signals, queries, updates).
 - Keep workflow code deterministic and pure: no direct network/database/filesystem/time/random side effects.

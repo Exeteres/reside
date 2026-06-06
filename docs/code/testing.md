@@ -2,6 +2,10 @@
 
 This document defines testing conventions for ReSide TypeScript code.
 
+## Business Feature Coverage
+
+For business feature changes, write new tests or update existing tests to cover changed behavior when it is reasonable.
+
 ## Async Matchers
 
 Do not use `await` before `expect(...).rejects` or `expect(...).resolves`.

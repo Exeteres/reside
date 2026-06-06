@@ -61,6 +61,15 @@ This document defines the required style for Temporal workflows and activities i
 - Workflow functions must destructure input arguments in the function signature.
 - Activities in workflows must be obtained via destructuring from `proxyActivities`.
 - Workflow code must call activities with a single args object.
+- Do not embed raw Markdown or raw HTML templates in localization files.
+- Build formatted notification/message content in workflow/activity code via message helpers (`block`, `inline`, `bold`, etc.).
+- Pass helper results directly to `sendNotification` (`message: block(...)`), do not pass `.html` (`message: block(...).html`).
+- Notifications sent by workflow/business logic as system-originated events must set `system: true` in `sendNotification` calls.
+- Tests must not target workflow functions directly.
+- Testing Temporal functionality at feature/business/service layers is allowed.
+- Long-running workflows that wait between iterations must use `safeSleep` from `@reside/common/workflow`.
+- Replicas with long-living periodic behavior must start long-running workflows and implement delays via `safeSleep`; do not use Temporal Cron schedules.
+- Runtime wiring for such workflows must include `createSleepActivities(...)` in worker activities so workflow sleeps remain suspendable and resumable.
 
 ## Temporal error handling
 
@@ -118,7 +127,7 @@ export async function waitForReplicaRegistrationWorkflow({
       return;
     }
 
-    await sleepSafely(5_000);
+    await safeSleep(5_000);
   }
 }
 ```

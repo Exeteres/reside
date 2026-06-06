@@ -602,6 +602,8 @@ export function createTaskActivities({
                 "For simple or tightly related changes prefer a single commit; for larger or clearly separable phases prefer multiple focused commits.",
                 "If create_pull_request fails with commit validation, rewrite invalid commit message(s) first (at minimum amend latest commit), then retry create_pull_request.",
                 "Before calling deploy_replica, commit your changes. If you are confident deploy is safe without PR, you may deploy directly.",
+                "deploy_replica can be called without version bump when no meaningful replica changes were made.",
+                "Do not bump replica version for dependency-only changes (packages or other replicas) or when there is no meaningful behavior change.",
                 "When repository review is needed, call create_pull_request with your own descriptive title before deploy.",
                 "PR title must be a regular capitalized title and MUST NOT be a conventional-commit title.",
                 "All details belong to PR body, not commit body.",

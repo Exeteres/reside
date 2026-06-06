@@ -119,6 +119,7 @@ Many replicas use a workflow/operation pattern.
   - `bun prisma migrate reset --force`
 - Create migration:
   - `bun prisma migrate dev --name <name>`
+- Never create or edit Prisma migration SQL files manually.
 - Migration naming:
   - first migration must be `init`
   - later migrations must be short descriptive names of what changed

@@ -1,5 +1,6 @@
 {
   "name": "@replicas/rate",
+  "version": "0.1.0",
   "reside": {
     "image": "ghcr.io/exeteres/reside/replicas/rate"
   },
