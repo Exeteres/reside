@@ -140,15 +140,6 @@ export async function updateAvatarVersionTag(
     newVersion: string
   },
 ): Promise<void> {
-  if (args.replicaName === "telegram") {
-    logger.info(
-      'ignoring avatar version tag update for telegram replica new_version="%s"',
-      args.newVersion,
-    )
-
-    return
-  }
-
   logger.info(
     'updating avatar version tag replica_name="%s" new_version="%s" system_chat_id="%s"',
     args.replicaName,
@@ -170,8 +161,12 @@ export async function updateAvatarVersionTag(
   })
 
   if (avatar === null) {
-    logger.warn('avatar was not found for version tag update replica_name="%s"', args.replicaName)
-    throw new Error(`Avatar for replica "${args.replicaName}" was not found`)
+    logger.info(
+      'skipping avatar version tag update because avatar was not found replica_name="%s"',
+      args.replicaName,
+    )
+
+    return
   }
 
   const managedBotIdRaw = Number(avatar.managedBotId)

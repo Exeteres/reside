@@ -138,28 +138,7 @@ describe("updateAvatarVersionTag", () => {
     expect(setChatAdministratorCustomTitle).toHaveBeenCalledWith("-1001", 321, "v1.2.3")
   })
 
-  test("throws when avatar is missing", async () => {
-    const prisma = mockDeepFn<PrismaClient>()
-    prisma.avatar.findUnique.mockResolvedValue(null as never)
-
-    const createTelegramBotClient = mock((_token: string, _args: { role?: string }) => ({
-      api: {
-        getMe: mock(async () => ({ id: 999 })),
-        setChatAdministratorCustomTitle: mock(async () => ({})),
-      },
-    }))
-
-    expect(
-      updateAvatarVersionTag(prisma, createTelegramBotClient, {
-        managerBotToken: "manager-token",
-        systemChatId: "-1001",
-        replicaName: "alpha",
-        newVersion: "1.2.3",
-      }),
-    ).rejects.toThrow('Avatar for replica "alpha" was not found')
-  })
-
-  test("ignores telegram replica update when avatar is missing", async () => {
+  test("skips update when avatar is missing", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     prisma.avatar.findUnique.mockResolvedValue(null as never)
 
@@ -173,12 +152,12 @@ describe("updateAvatarVersionTag", () => {
     await updateAvatarVersionTag(prisma, createTelegramBotClient, {
       managerBotToken: "manager-token",
       systemChatId: "-1001",
-      replicaName: "telegram",
+      replicaName: "alpha",
       newVersion: "1.2.3",
     })
 
-    expect(prisma.avatar.findUnique.spy()).toHaveBeenCalledTimes(0)
-    expect(createTelegramBotClient).toHaveBeenCalledTimes(0)
+    expect(prisma.avatar.findUnique.spy()).toHaveBeenCalledTimes(1)
+    expect(createTelegramBotClient).toHaveBeenCalledTimes(1)
     expect(setChatAdministratorCustomTitle).toHaveBeenCalledTimes(0)
   })
 })
