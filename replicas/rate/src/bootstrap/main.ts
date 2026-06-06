@@ -32,4 +32,4 @@ await defineCommonResources({
   ],
 })
 
-await bootstrapService({ longRunning: true })
+await bootstrapService()

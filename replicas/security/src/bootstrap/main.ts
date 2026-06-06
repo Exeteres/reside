@@ -53,4 +53,4 @@ await services.accessDefinitionService.putApprover({
   callbackEndpoint: getReplicaCallbackEndpoint(),
 })
 
-await bootstrapService({ longRunning: true })
+await bootstrapService()

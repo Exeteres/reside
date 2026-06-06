@@ -1,9 +1,31 @@
 import Fastify, { type FastifyInstance } from "fastify"
+import { ConnectError, type Interceptor } from "@connectrpc/connect"
+import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
 import FastifyOtelInstrumentation from "@fastify/otel"
-import type { CommonServices } from "./services"
 import { registerGracefulShutdown } from "./utils"
 import { logger } from "./logger"
 import type { TracerProvider } from "@opentelemetry/api"
+
+const connectRpcErrorLoggingInterceptor: Interceptor = next => async request => {
+  try {
+    return await next(request)
+  } catch (error) {
+    if (error instanceof ConnectError) {
+      throw error
+    }
+
+    const errorObject = error instanceof Error ? error : new Error(String(error))
+
+    logger.error(
+      { error: errorObject },
+      'connect rpc request failed service="%s" method="%s"',
+      request.service.typeName,
+      request.method.name,
+    )
+
+    throw error
+  }
+}
 
 /**
  * Creates and configures a Fastify server instance with OpenTelemetry instrumentation.
@@ -15,6 +37,25 @@ export async function createServer(services: { tracerProvider?: TracerProvider }
   const server = Fastify({
     disableRequestLogging: true,
   })
+
+  const register = server.register.bind(server)
+  server.register = ((plugin, opts) => {
+    const pluginCandidate = plugin as unknown
+    if (pluginCandidate === fastifyConnectPlugin && opts && typeof opts === "object") {
+      const optionsWithInterceptors = opts as {
+        interceptors?: Interceptor[]
+      }
+
+      if (!optionsWithInterceptors.interceptors?.includes(connectRpcErrorLoggingInterceptor)) {
+        optionsWithInterceptors.interceptors = [
+          ...(optionsWithInterceptors.interceptors ?? []),
+          connectRpcErrorLoggingInterceptor,
+        ]
+      }
+    }
+
+    return register(plugin, opts)
+  }) as typeof server.register
 
   const fastifyOtelInstrumentation = new FastifyOtelInstrumentation()
   if (services.tracerProvider) {
