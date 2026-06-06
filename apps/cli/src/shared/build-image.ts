@@ -35,6 +35,7 @@ export async function buildPackageImage(
   const replicaPath = relative(rootPath, packagePath).replaceAll("\\", "/")
   const hasPrismaDirectory = await pathExists(resolve(packagePath, "prisma"))
   const hasPrismaConfig = await pathExists(resolve(packagePath, "prisma.config.ts"))
+  const hasChangelog = await pathExists(resolve(packagePath, "CHANGELOG.md"))
   const hasWorkflows = await pathExists(resolve(packagePath, "src/workflows/index.ts"))
   const hasAssetsDirectory = await pathExists(resolve(packagePath, "assets"))
 
@@ -43,6 +44,7 @@ export async function buildPackageImage(
     reside: config.reside,
     workspacePackages,
     replicaPath,
+    hasChangelog,
     hasWorkflows,
     hasPrismaDirectory,
     hasPrismaConfig,

@@ -6,6 +6,7 @@ export type CreateDockerfileArgs = {
   reside: ResidePackageMetadata
   workspacePackages: WorkspacePackagePath[]
   replicaPath: string
+  hasChangelog: boolean
   hasWorkflows: boolean
   hasPrismaDirectory: boolean
   hasPrismaConfig: boolean
@@ -75,6 +76,10 @@ export function createDockerfile(args: CreateDockerfileArgs): string {
   lines.push("")
   lines.push("# copy app metadata and runtime resources")
   lines.push(`COPY --from=build /app/${args.replicaPath}/package.json /app/package.json`)
+
+  if (args.hasChangelog) {
+    lines.push(`COPY --from=build /app/${args.replicaPath}/CHANGELOG.md /app/CHANGELOG.md`)
+  }
 
   if (args.hasPrismaConfig) {
     lines.push(
