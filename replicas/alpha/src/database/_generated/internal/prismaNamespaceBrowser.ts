@@ -115,6 +115,8 @@ export const ReplicaScalarFieldEnum = {
   internalEndpoint: 'internalEndpoint',
   publicEndpoint: 'publicEndpoint',
   node: 'node',
+  version: 'version',
+  changes: 'changes',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

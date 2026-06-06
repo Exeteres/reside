@@ -25,6 +25,8 @@ export function createReplicaManagementActivities({
           internalEndpoint: true,
           publicEndpoint: true,
           node: true,
+          version: true,
+          changes: true,
         },
         orderBy: [{ title: "asc" }, { name: "asc" }],
       })

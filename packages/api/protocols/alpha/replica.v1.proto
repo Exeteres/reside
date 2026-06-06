@@ -23,6 +23,12 @@ message ReplicaInfo {
 
   // The current public endpoint of the replica if any.
   google.protobuf.StringValue public_endpoint = 6;
+
+  // The optional semantic version of the replica.
+  google.protobuf.StringValue version = 7;
+
+  // The optional latest changelog entry for the current replica version.
+  google.protobuf.StringValue changes = 8;
 }
 
 // The request message for listing registered replicas.

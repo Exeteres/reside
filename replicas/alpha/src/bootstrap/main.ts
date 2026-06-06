@@ -48,6 +48,10 @@ await defineCommonResources({
       name: AlphaNotificationChannels.REPLICAS,
       title: strings.bootstrap.channels.replicas.title,
     },
+    {
+      name: AlphaNotificationChannels.RELEASE_NOTES,
+      title: strings.bootstrap.channels.releaseNotes.title,
+    },
   ],
 })
 

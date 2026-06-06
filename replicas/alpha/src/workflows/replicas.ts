@@ -151,5 +151,13 @@ function renderReplicaDetails(replica: RegisteredReplicaSummary): string {
     lines.push(strings.workflows.replicas.details.node(replica.node))
   }
 
+  if (replica.version !== null) {
+    lines.push(strings.workflows.replicas.details.version(replica.version))
+  }
+
+  if (replica.changes !== null) {
+    lines.push(strings.workflows.replicas.details.changes(replica.changes))
+  }
+
   return lines.join("\n")
 }

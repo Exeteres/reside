@@ -14,6 +14,8 @@ describe("listReplicaInfos", () => {
         description: null,
         internalEndpoint: "http://alpha",
         publicEndpoint: null,
+        version: null,
+        changes: null,
       },
       {
         id: 2,
@@ -22,6 +24,8 @@ describe("listReplicaInfos", () => {
         description: "Messenger",
         internalEndpoint: "http://telegram",
         publicEndpoint: "https://telegram.example",
+        version: "1.2.3",
+        changes: "- Added release notes",
       },
     ] as never)
 
@@ -35,6 +39,8 @@ describe("listReplicaInfos", () => {
         description: true,
         internalEndpoint: true,
         publicEndpoint: true,
+        version: true,
+        changes: true,
       },
       orderBy: [{ name: "asc" }],
     })
@@ -47,6 +53,8 @@ describe("listReplicaInfos", () => {
           description: undefined,
           internalEndpoint: "http://alpha",
           publicEndpoint: undefined,
+          version: undefined,
+          changes: undefined,
         },
         {
           id: 2,
@@ -55,6 +63,8 @@ describe("listReplicaInfos", () => {
           description: "Messenger",
           internalEndpoint: "http://telegram",
           publicEndpoint: "https://telegram.example",
+          version: "1.2.3",
+          changes: "- Added release notes",
         },
       ],
     })

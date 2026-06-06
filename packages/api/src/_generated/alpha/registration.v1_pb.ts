@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file alpha/registration.v1.proto.
  */
 export const file_alpha_registration_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChthbHBoYS9yZWdpc3RyYXRpb24udjEucHJvdG8SHHJlc2lkZS5hbHBoYS5yZWdpc3RyYXRpb24udjEiYQoVUmVwbGljYURlcGVuZGVuY3lTbG90EgwKBG5hbWUYASABKAkSOgoUZGVmYXVsdF9yZXBsaWNhX25hbWUYAiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUiZQodUmVwbGljYUVuZHBvaW50RGVwZW5kZW5jeVNsb3QSDAoEbmFtZRgBIAEoCRI2ChBkZWZhdWx0X2VuZHBvaW50GAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIu8CChZSZWdpc3RlclJlcGxpY2FSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEjAKCmF2YXRhcl91cmwYAyABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSGQoRaW50ZXJuYWxfZW5kcG9pbnQYBCABKAkSNQoPcHVibGljX2VuZHBvaW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlElEKFHJlcGxpY2FfZGVwZW5kZW5jaWVzGAYgAygLMjMucmVzaWRlLmFscGhhLnJlZ2lzdHJhdGlvbi52MS5SZXBsaWNhRGVwZW5kZW5jeVNsb3QSWgoVZW5kcG9pbnRfZGVwZW5kZW5jaWVzGAcgAygLMjsucmVzaWRlLmFscGhhLnJlZ2lzdHJhdGlvbi52MS5SZXBsaWNhRW5kcG9pbnREZXBlbmRlbmN5U2xvdDJ2ChNSZWdpc3RyYXRpb25TZXJ2aWNlEl8KD1JlZ2lzdGVyUmVwbGljYRI0LnJlc2lkZS5hbHBoYS5yZWdpc3RyYXRpb24udjEuUmVnaXN0ZXJSZXBsaWNhUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_wrappers, file_google_protobuf_empty]);
+  fileDesc("ChthbHBoYS9yZWdpc3RyYXRpb24udjEucHJvdG8SHHJlc2lkZS5hbHBoYS5yZWdpc3RyYXRpb24udjEiYQoVUmVwbGljYURlcGVuZGVuY3lTbG90EgwKBG5hbWUYASABKAkSOgoUZGVmYXVsdF9yZXBsaWNhX25hbWUYAiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUiZQodUmVwbGljYUVuZHBvaW50RGVwZW5kZW5jeVNsb3QSDAoEbmFtZRgBIAEoCRI2ChBkZWZhdWx0X2VuZHBvaW50GAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIs0DChZSZWdpc3RlclJlcGxpY2FSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEjAKCmF2YXRhcl91cmwYAyABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSGQoRaW50ZXJuYWxfZW5kcG9pbnQYBCABKAkSNQoPcHVibGljX2VuZHBvaW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlElEKFHJlcGxpY2FfZGVwZW5kZW5jaWVzGAYgAygLMjMucmVzaWRlLmFscGhhLnJlZ2lzdHJhdGlvbi52MS5SZXBsaWNhRGVwZW5kZW5jeVNsb3QSWgoVZW5kcG9pbnRfZGVwZW5kZW5jaWVzGAcgAygLMjsucmVzaWRlLmFscGhhLnJlZ2lzdHJhdGlvbi52MS5SZXBsaWNhRW5kcG9pbnREZXBlbmRlbmN5U2xvdBItCgd2ZXJzaW9uGAggASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEi0KB2NoYW5nZXMYCSABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUydgoTUmVnaXN0cmF0aW9uU2VydmljZRJfCg9SZWdpc3RlclJlcGxpY2ESNC5yZXNpZGUuYWxwaGEucmVnaXN0cmF0aW9uLnYxLlJlZ2lzdGVyUmVwbGljYVJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHliBnByb3RvMw", [file_google_protobuf_wrappers, file_google_protobuf_empty]);
 
 /**
  * The message describing the dependency slot for the replica dependency.
@@ -169,6 +169,20 @@ export type RegisterReplicaRequest = Message<"reside.alpha.registration.v1.Regis
    * @generated from field: repeated reside.alpha.registration.v1.ReplicaEndpointDependencySlot endpoint_dependencies = 7;
    */
   endpointDependencies: ReplicaEndpointDependencySlot[];
+
+  /**
+   * The optional semantic version of the replica.
+   *
+   * @generated from field: google.protobuf.StringValue version = 8;
+   */
+  version?: string;
+
+  /**
+   * The optional latest changelog entry for the current replica version.
+   *
+   * @generated from field: google.protobuf.StringValue changes = 9;
+   */
+  changes?: string;
 };
 
 /**
@@ -228,6 +242,20 @@ export type RegisterReplicaRequestJson = {
    * @generated from field: repeated reside.alpha.registration.v1.ReplicaEndpointDependencySlot endpoint_dependencies = 7;
    */
   endpointDependencies?: ReplicaEndpointDependencySlotJson[];
+
+  /**
+   * The optional semantic version of the replica.
+   *
+   * @generated from field: google.protobuf.StringValue version = 8;
+   */
+  version?: StringValueJson;
+
+  /**
+   * The optional latest changelog entry for the current replica version.
+   *
+   * @generated from field: google.protobuf.StringValue changes = 9;
+   */
+  changes?: StringValueJson;
 };
 
 /**

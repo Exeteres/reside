@@ -1,6 +1,19 @@
 import type { RegisterReplicaRequest } from "@reside/api/alpha/registration.v1"
 import type { PrismaClient } from "../../database"
+import type { NotifyReplicaReleaseNotesWorkflowInput } from "../../definitions"
 import { Code, ConnectError } from "@connectrpc/connect"
+import { DEFAULT_TEMPORAL_TASK_QUEUE } from "@reside/common"
+import {
+  type Client,
+  WorkflowExecutionAlreadyStartedError,
+  WorkflowIdReusePolicy,
+} from "@temporalio/client"
+
+const RELEASE_NOTES_WORKFLOW_TYPE = "notifyReplicaReleaseNotesWorkflow"
+
+export type RegisterReplicaDefinitionOutput = {
+  releaseNotes: NotifyReplicaReleaseNotesWorkflowInput | null
+}
 
 export async function registerReplicaDefinition({
   prisma,
@@ -10,12 +23,14 @@ export async function registerReplicaDefinition({
   prisma: PrismaClient
   replicaName: string
   request: RegisterReplicaRequest
-}) {
+}): Promise<RegisterReplicaDefinitionOutput> {
   const title = request.title.trim()
   const description = toNullableText(request.description)
   const avatarUrl = toNullableText(request.avatarUrl)
   const internalEndpoint = request.internalEndpoint.trim()
   const publicEndpoint = toNullableText(request.publicEndpoint)
+  const version = toNullableText(request.version)
+  const changes = toNullableText(request.changes)
 
   assertRequiredValue(title, "title")
   assertRequiredValue(internalEndpoint, "internalEndpoint")
@@ -43,7 +58,26 @@ export async function registerReplicaDefinition({
 
   const defaultReplicaByName = new Map(defaultReplicas.map(replica => [replica.name, replica.id]))
 
+  let releaseNotes: NotifyReplicaReleaseNotesWorkflowInput | null = null
+
   await prisma.$transaction(async tx => {
+    const existingReplica = await tx.replica.findUnique({
+      where: {
+        name: replicaName,
+      },
+      select: {
+        version: true,
+        changes: true,
+      },
+    })
+
+    const nextChanges = resolveNextChanges({
+      previousVersion: existingReplica?.version ?? null,
+      previousChanges: existingReplica?.changes ?? null,
+      nextVersion: version,
+      requestedChanges: changes,
+    })
+
     const replica = await tx.replica.upsert({
       where: {
         name: replicaName,
@@ -55,6 +89,8 @@ export async function registerReplicaDefinition({
         avatarUrl,
         internalEndpoint,
         publicEndpoint,
+        version,
+        changes: nextChanges,
       },
       update: {
         title,
@@ -62,8 +98,23 @@ export async function registerReplicaDefinition({
         avatarUrl,
         internalEndpoint,
         publicEndpoint,
+        version,
+        changes: nextChanges,
       },
     })
+
+    if (
+      version !== null &&
+      ((existingReplica === null && version.length > 0) || existingReplica?.version !== version)
+    ) {
+      releaseNotes = {
+        replicaName,
+        replicaTitle: title,
+        oldVersion: existingReplica?.version ?? null,
+        newVersion: version,
+        changes: nextChanges,
+      }
+    }
 
     const requestedReplicaSlotNames = normalizedReplicaSlots.map(slot => slot.name)
     await tx.replicaDependencySlot.deleteMany({
@@ -130,6 +181,58 @@ export async function registerReplicaDefinition({
       })
     }
   })
+
+  return {
+    releaseNotes,
+  }
+}
+
+function resolveNextChanges(args: {
+  previousVersion: string | null
+  previousChanges: string | null
+  nextVersion: string | null
+  requestedChanges: string | null
+}): string | null {
+  if (args.nextVersion === null) {
+    return null
+  }
+
+  if (args.previousVersion === null) {
+    return args.requestedChanges
+  }
+
+  if (args.previousVersion !== args.nextVersion) {
+    return args.requestedChanges
+  }
+
+  // keep stored changes for unchanged versions, ignore newly reported changes
+  return args.previousChanges
+}
+
+export async function startReplicaReleaseNotesWorkflow(
+  temporalClient: Client,
+  input: NotifyReplicaReleaseNotesWorkflowInput,
+): Promise<void> {
+  try {
+    await temporalClient.workflow.start(RELEASE_NOTES_WORKFLOW_TYPE, {
+      args: [input],
+      workflowId: `notify-replica-release-notes-${input.replicaName}-${input.newVersion}`,
+      taskQueue: DEFAULT_TEMPORAL_TASK_QUEUE,
+      workflowIdReusePolicy: WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+    })
+
+    return
+  } catch (error) {
+    if (error instanceof WorkflowExecutionAlreadyStartedError) {
+      return
+    }
+
+    if (error instanceof Error) {
+      throw new ConnectError(error.message, Code.Internal)
+    }
+
+    throw new ConnectError("Failed to schedule replica release notes workflow", Code.Internal)
+  }
 }
 
 type NormalizedReplicaDependencySlot = {

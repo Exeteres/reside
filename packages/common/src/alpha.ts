@@ -1,6 +1,8 @@
 import type { Replica } from "@reside/registry"
 import { RegistrationService } from "@reside/api/alpha/registration.v1"
 import { alphaReplica, getAllDependencies } from "@reside/registry"
+import { readFile } from "node:fs/promises"
+import path from "node:path"
 import { createChannel, createClient } from "./api"
 import { getReplicaEndpoint } from "./kubernetes"
 import { logger } from "./logger"
@@ -9,6 +11,13 @@ export type RegisterReplicaOptions<TReplica extends Replica = Replica> = {
   replica: TReplica
   title: string
   description: string
+  version?: string
+  changes?: string
+}
+
+type ReplicaReleaseMetadata = {
+  version: string | undefined
+  changes: string | undefined
 }
 
 /**
@@ -22,8 +31,12 @@ export async function registerReplica<TReplica extends Replica>({
   replica,
   title,
   description,
+  version,
+  changes,
 }: RegisterReplicaOptions<TReplica>): Promise<void> {
   try {
+    const metadata = await loadReplicaReleaseMetadata(process.cwd())
+
     const channel = createChannel(alphaReplica.endpoint)
 
     const allDependencies = getAllDependencies(replica)
@@ -51,10 +64,73 @@ export async function registerReplica<TReplica extends Replica>({
       internalEndpoint: getReplicaEndpoint(),
       replicaDependencies,
       endpointDependencies,
+      version: version?.trim() || metadata.version,
+      changes:
+        (version?.trim() || metadata.version) !== undefined
+          ? changes?.trim() || metadata.changes
+          : undefined,
     })
 
     logger.info('replica "%s" was registered in alpha successfully', replica.name)
   } catch (error) {
     logger.error(error, 'failed to register replica "%s" in alpha, not retrying', replica.name)
   }
+}
+
+async function loadReplicaReleaseMetadata(cwd: string): Promise<ReplicaReleaseMetadata> {
+  const packageJsonPath = path.join(cwd, "package.json")
+  const changelogPath = path.join(cwd, "CHANGELOG.md")
+
+  const [version, changes] = await Promise.all([
+    loadVersionFromPackageJson(packageJsonPath),
+    loadLatestChangelogEntry(changelogPath),
+  ])
+
+  return {
+    version,
+    changes,
+  }
+}
+
+async function loadVersionFromPackageJson(packageJsonPath: string): Promise<string | undefined> {
+  try {
+    const content = await readFile(packageJsonPath, "utf8")
+    const parsed = JSON.parse(content) as {
+      version?: unknown
+    }
+
+    if (typeof parsed.version !== "string") {
+      return undefined
+    }
+
+    const normalizedVersion = parsed.version.trim()
+    return normalizedVersion.length > 0 ? normalizedVersion : undefined
+  } catch {
+    return undefined
+  }
+}
+
+async function loadLatestChangelogEntry(changelogPath: string): Promise<string | undefined> {
+  try {
+    const content = await readFile(changelogPath, "utf8")
+    return extractLatestChangelogEntry(content)
+  } catch {
+    return undefined
+  }
+}
+
+export function extractLatestChangelogEntry(changelog: string): string | undefined {
+  const normalized = changelog.replace(/\r\n/g, "\n")
+  const firstSectionStart = normalized.search(/^##\s+/m)
+  if (firstSectionStart === -1) {
+    return undefined
+  }
+
+  const remaining = normalized.slice(firstSectionStart)
+  const nextSectionOffset = remaining.slice(1).search(/\n##\s+/m)
+  const firstSection =
+    nextSectionOffset === -1 ? remaining : remaining.slice(0, nextSectionOffset + 1)
+
+  const body = firstSection.replace(/^##\s+.+$/m, "").trim()
+  return body.length > 0 ? body : undefined
 }

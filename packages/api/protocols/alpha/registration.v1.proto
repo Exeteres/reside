@@ -48,6 +48,12 @@ message RegisterReplicaRequest {
   // If endpoint value is not provided or overriden and matching resolved replica dependency slot is occupied,
   // the endpoint value from the occupied replica will be used.
   repeated ReplicaEndpointDependencySlot endpoint_dependencies = 7;
+
+  // The optional semantic version of the replica.
+  google.protobuf.StringValue version = 8;
+
+  // The optional latest changelog entry for the current replica version.
+  google.protobuf.StringValue changes = 9;
 }
 
 // The service that must be used by all replicas to register themselves in the cluster.

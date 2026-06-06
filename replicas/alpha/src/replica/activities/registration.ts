@@ -1,3 +1,4 @@
+import type { AvatarServiceClient } from "@reside/api/interaction/avatar.v1"
 import type { GenericOperationService } from "@reside/common"
 import type { Operation, PrismaClient } from "../../database"
 import type { RegistrationActivities } from "../../definitions"
@@ -12,11 +13,13 @@ import {
 type RegistrationActivityServices = {
   prisma: PrismaClient
   operationService: GenericOperationService<Operation>
+  avatarService: AvatarServiceClient
 }
 
 export function createRegistrationActivities({
   prisma,
   operationService,
+  avatarService,
 }: RegistrationActivityServices): RegistrationActivities {
   const customObjectsApi = kubeConfig.makeApiClient(CustomObjectsApi)
 
@@ -71,6 +74,13 @@ export function createRegistrationActivities({
       return {
         status: "completed",
       }
+    },
+
+    async updateReplicaAvatarVersionTag({ replicaName, newVersion }) {
+      await avatarService.updateAvatarVersion({
+        replicaName,
+        newVersion,
+      })
     },
   }
 }

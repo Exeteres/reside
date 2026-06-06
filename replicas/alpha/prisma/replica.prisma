@@ -27,6 +27,12 @@ model Replica {
   /// Optional Kubernetes node hostname to pin workloads to.
   node String?
 
+  /// The optional semantic version of the replica.
+  version String?
+
+  /// The optional latest changelog entry for the current replica version.
+  changes String?
+
   /// The replica dependency slots that this replica defines.
   replicaDependencySlots ReplicaDependencySlot[]
 

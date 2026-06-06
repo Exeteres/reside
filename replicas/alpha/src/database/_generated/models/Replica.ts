@@ -44,6 +44,8 @@ export type ReplicaMinAggregateOutputType = {
   internalEndpoint: string | null
   publicEndpoint: string | null
   node: string | null
+  version: string | null
+  changes: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -58,6 +60,8 @@ export type ReplicaMaxAggregateOutputType = {
   internalEndpoint: string | null
   publicEndpoint: string | null
   node: string | null
+  version: string | null
+  changes: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -72,6 +76,8 @@ export type ReplicaCountAggregateOutputType = {
   internalEndpoint: number
   publicEndpoint: number
   node: number
+  version: number
+  changes: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -96,6 +102,8 @@ export type ReplicaMinAggregateInputType = {
   internalEndpoint?: true
   publicEndpoint?: true
   node?: true
+  version?: true
+  changes?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -110,6 +118,8 @@ export type ReplicaMaxAggregateInputType = {
   internalEndpoint?: true
   publicEndpoint?: true
   node?: true
+  version?: true
+  changes?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -124,6 +134,8 @@ export type ReplicaCountAggregateInputType = {
   internalEndpoint?: true
   publicEndpoint?: true
   node?: true
+  version?: true
+  changes?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -225,6 +237,8 @@ export type ReplicaGroupByOutputType = {
   internalEndpoint: string
   publicEndpoint: string | null
   node: string | null
+  version: string | null
+  changes: string | null
   createdAt: Date
   updatedAt: Date
   _count: ReplicaCountAggregateOutputType | null
@@ -262,6 +276,8 @@ export type ReplicaWhereInput = {
   internalEndpoint?: Prisma.StringFilter<"Replica"> | string
   publicEndpoint?: Prisma.StringNullableFilter<"Replica"> | string | null
   node?: Prisma.StringNullableFilter<"Replica"> | string | null
+  version?: Prisma.StringNullableFilter<"Replica"> | string | null
+  changes?: Prisma.StringNullableFilter<"Replica"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Replica"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Replica"> | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotListRelationFilter
@@ -281,6 +297,8 @@ export type ReplicaOrderByWithRelationInput = {
   internalEndpoint?: Prisma.SortOrder
   publicEndpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   node?: Prisma.SortOrderInput | Prisma.SortOrder
+  version?: Prisma.SortOrderInput | Prisma.SortOrder
+  changes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   replicaDependencySlots?: Prisma.ReplicaDependencySlotOrderByRelationAggregateInput
@@ -303,6 +321,8 @@ export type ReplicaWhereUniqueInput = Prisma.AtLeast<{
   internalEndpoint?: Prisma.StringFilter<"Replica"> | string
   publicEndpoint?: Prisma.StringNullableFilter<"Replica"> | string | null
   node?: Prisma.StringNullableFilter<"Replica"> | string | null
+  version?: Prisma.StringNullableFilter<"Replica"> | string | null
+  changes?: Prisma.StringNullableFilter<"Replica"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Replica"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Replica"> | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotListRelationFilter
@@ -322,6 +342,8 @@ export type ReplicaOrderByWithAggregationInput = {
   internalEndpoint?: Prisma.SortOrder
   publicEndpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   node?: Prisma.SortOrderInput | Prisma.SortOrder
+  version?: Prisma.SortOrderInput | Prisma.SortOrder
+  changes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ReplicaCountOrderByAggregateInput
@@ -344,6 +366,8 @@ export type ReplicaScalarWhereWithAggregatesInput = {
   internalEndpoint?: Prisma.StringWithAggregatesFilter<"Replica"> | string
   publicEndpoint?: Prisma.StringNullableWithAggregatesFilter<"Replica"> | string | null
   node?: Prisma.StringNullableWithAggregatesFilter<"Replica"> | string | null
+  version?: Prisma.StringNullableWithAggregatesFilter<"Replica"> | string | null
+  changes?: Prisma.StringNullableWithAggregatesFilter<"Replica"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Replica"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Replica"> | Date | string
 }
@@ -357,6 +381,8 @@ export type ReplicaCreateInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotCreateNestedManyWithoutReplicaInput
@@ -376,6 +402,8 @@ export type ReplicaUncheckedCreateInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedCreateNestedManyWithoutReplicaInput
@@ -394,6 +422,8 @@ export type ReplicaUpdateInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUpdateManyWithoutReplicaNestedInput
@@ -413,6 +443,8 @@ export type ReplicaUncheckedUpdateInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedUpdateManyWithoutReplicaNestedInput
@@ -432,6 +464,8 @@ export type ReplicaCreateManyInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -445,6 +479,8 @@ export type ReplicaUpdateManyMutationInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -459,6 +495,8 @@ export type ReplicaUncheckedUpdateManyInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -478,6 +516,8 @@ export type ReplicaCountOrderByAggregateInput = {
   internalEndpoint?: Prisma.SortOrder
   publicEndpoint?: Prisma.SortOrder
   node?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  changes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -496,6 +536,8 @@ export type ReplicaMaxOrderByAggregateInput = {
   internalEndpoint?: Prisma.SortOrder
   publicEndpoint?: Prisma.SortOrder
   node?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  changes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -510,6 +552,8 @@ export type ReplicaMinOrderByAggregateInput = {
   internalEndpoint?: Prisma.SortOrder
   publicEndpoint?: Prisma.SortOrder
   node?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  changes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -608,6 +652,8 @@ export type ReplicaCreateWithoutOperationsInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotCreateNestedManyWithoutReplicaInput
@@ -626,6 +672,8 @@ export type ReplicaUncheckedCreateWithoutOperationsInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedCreateNestedManyWithoutReplicaInput
@@ -659,6 +707,8 @@ export type ReplicaUpdateWithoutOperationsInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUpdateManyWithoutReplicaNestedInput
@@ -677,6 +727,8 @@ export type ReplicaUncheckedUpdateWithoutOperationsInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedUpdateManyWithoutReplicaNestedInput
@@ -694,6 +746,8 @@ export type ReplicaCreateWithoutReplicaDependencySlotsInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   defaultInReplicaDependencySlots?: Prisma.ReplicaDependencySlotCreateNestedManyWithoutDefaultReplicaInput
@@ -712,6 +766,8 @@ export type ReplicaUncheckedCreateWithoutReplicaDependencySlotsInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   defaultInReplicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedCreateNestedManyWithoutDefaultReplicaInput
@@ -734,6 +790,8 @@ export type ReplicaCreateWithoutDefaultInReplicaDependencySlotsInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotCreateNestedManyWithoutReplicaInput
@@ -752,6 +810,8 @@ export type ReplicaUncheckedCreateWithoutDefaultInReplicaDependencySlotsInput = 
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedCreateNestedManyWithoutReplicaInput
@@ -774,6 +834,8 @@ export type ReplicaCreateWithoutCurrentInReplicaDependencySlotsInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotCreateNestedManyWithoutReplicaInput
@@ -792,6 +854,8 @@ export type ReplicaUncheckedCreateWithoutCurrentInReplicaDependencySlotsInput = 
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedCreateNestedManyWithoutReplicaInput
@@ -825,6 +889,8 @@ export type ReplicaUpdateWithoutReplicaDependencySlotsInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   defaultInReplicaDependencySlots?: Prisma.ReplicaDependencySlotUpdateManyWithoutDefaultReplicaNestedInput
@@ -843,6 +909,8 @@ export type ReplicaUncheckedUpdateWithoutReplicaDependencySlotsInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   defaultInReplicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedUpdateManyWithoutDefaultReplicaNestedInput
@@ -871,6 +939,8 @@ export type ReplicaUpdateWithoutDefaultInReplicaDependencySlotsInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUpdateManyWithoutReplicaNestedInput
@@ -889,6 +959,8 @@ export type ReplicaUncheckedUpdateWithoutDefaultInReplicaDependencySlotsInput = 
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedUpdateManyWithoutReplicaNestedInput
@@ -917,6 +989,8 @@ export type ReplicaUpdateWithoutCurrentInReplicaDependencySlotsInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUpdateManyWithoutReplicaNestedInput
@@ -935,6 +1009,8 @@ export type ReplicaUncheckedUpdateWithoutCurrentInReplicaDependencySlotsInput = 
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedUpdateManyWithoutReplicaNestedInput
@@ -952,6 +1028,8 @@ export type ReplicaCreateWithoutEndpointDependencySlotsInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotCreateNestedManyWithoutReplicaInput
@@ -970,6 +1048,8 @@ export type ReplicaUncheckedCreateWithoutEndpointDependencySlotsInput = {
   internalEndpoint: string
   publicEndpoint?: string | null
   node?: string | null
+  version?: string | null
+  changes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedCreateNestedManyWithoutReplicaInput
@@ -1003,6 +1083,8 @@ export type ReplicaUpdateWithoutEndpointDependencySlotsInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUpdateManyWithoutReplicaNestedInput
@@ -1021,6 +1103,8 @@ export type ReplicaUncheckedUpdateWithoutEndpointDependencySlotsInput = {
   internalEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   publicEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   node?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replicaDependencySlots?: Prisma.ReplicaDependencySlotUncheckedUpdateManyWithoutReplicaNestedInput
@@ -1106,6 +1190,8 @@ export type ReplicaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   internalEndpoint?: boolean
   publicEndpoint?: boolean
   node?: boolean
+  version?: boolean
+  changes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   replicaDependencySlots?: boolean | Prisma.Replica$replicaDependencySlotsArgs<ExtArgs>
@@ -1126,6 +1212,8 @@ export type ReplicaSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   internalEndpoint?: boolean
   publicEndpoint?: boolean
   node?: boolean
+  version?: boolean
+  changes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["replica"]>
@@ -1140,6 +1228,8 @@ export type ReplicaSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   internalEndpoint?: boolean
   publicEndpoint?: boolean
   node?: boolean
+  version?: boolean
+  changes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["replica"]>
@@ -1154,11 +1244,13 @@ export type ReplicaSelectScalar = {
   internalEndpoint?: boolean
   publicEndpoint?: boolean
   node?: boolean
+  version?: boolean
+  changes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ReplicaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "title" | "description" | "avatarUrl" | "image" | "internalEndpoint" | "publicEndpoint" | "node" | "createdAt" | "updatedAt", ExtArgs["result"]["replica"]>
+export type ReplicaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "title" | "description" | "avatarUrl" | "image" | "internalEndpoint" | "publicEndpoint" | "node" | "version" | "changes" | "createdAt" | "updatedAt", ExtArgs["result"]["replica"]>
 export type ReplicaInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   replicaDependencySlots?: boolean | Prisma.Replica$replicaDependencySlotsArgs<ExtArgs>
   defaultInReplicaDependencySlots?: boolean | Prisma.Replica$defaultInReplicaDependencySlotsArgs<ExtArgs>
@@ -1231,6 +1323,14 @@ export type $ReplicaPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
      * Optional Kubernetes node hostname to pin workloads to.
      */
     node: string | null
+    /**
+     * The optional semantic version of the replica.
+     */
+    version: string | null
+    /**
+     * The optional latest changelog entry for the current replica version.
+     */
+    changes: string | null
     /**
      * The timestamp when the replica was created.
      */
@@ -1676,6 +1776,8 @@ export interface ReplicaFieldRefs {
   readonly internalEndpoint: Prisma.FieldRef<"Replica", 'String'>
   readonly publicEndpoint: Prisma.FieldRef<"Replica", 'String'>
   readonly node: Prisma.FieldRef<"Replica", 'String'>
+  readonly version: Prisma.FieldRef<"Replica", 'String'>
+  readonly changes: Prisma.FieldRef<"Replica", 'String'>
   readonly createdAt: Prisma.FieldRef<"Replica", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Replica", 'DateTime'>
 }

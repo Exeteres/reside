@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file alpha/replica.v1.proto.
  */
 export const file_alpha_replica_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChZhbHBoYS9yZXBsaWNhLnYxLnByb3RvEhdyZXNpZGUuYWxwaGEucmVwbGljYS52MSK7AQoLUmVwbGljYUluZm8SCgoCaWQYASABKAUSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRIxCgtkZXNjcmlwdGlvbhgEIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIZChFpbnRlcm5hbF9lbmRwb2ludBgFIAEoCRI1Cg9wdWJsaWNfZW5kcG9pbnQYBiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUiFQoTTGlzdFJlcGxpY2FzUmVxdWVzdCJOChRMaXN0UmVwbGljYXNSZXNwb25zZRI2CghyZXBsaWNhcxgBIAMoCzIkLnJlc2lkZS5hbHBoYS5yZXBsaWNhLnYxLlJlcGxpY2FJbmZvMn0KDlJlcGxpY2FTZXJ2aWNlEmsKDExpc3RSZXBsaWNhcxIsLnJlc2lkZS5hbHBoYS5yZXBsaWNhLnYxLkxpc3RSZXBsaWNhc1JlcXVlc3QaLS5yZXNpZGUuYWxwaGEucmVwbGljYS52MS5MaXN0UmVwbGljYXNSZXNwb25zZWIGcHJvdG8z", [file_google_protobuf_wrappers]);
+  fileDesc("ChZhbHBoYS9yZXBsaWNhLnYxLnByb3RvEhdyZXNpZGUuYWxwaGEucmVwbGljYS52MSKZAgoLUmVwbGljYUluZm8SCgoCaWQYASABKAUSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRIxCgtkZXNjcmlwdGlvbhgEIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIZChFpbnRlcm5hbF9lbmRwb2ludBgFIAEoCRI1Cg9wdWJsaWNfZW5kcG9pbnQYBiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSLQoHdmVyc2lvbhgHIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRItCgdjaGFuZ2VzGAggASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIhUKE0xpc3RSZXBsaWNhc1JlcXVlc3QiTgoUTGlzdFJlcGxpY2FzUmVzcG9uc2USNgoIcmVwbGljYXMYASADKAsyJC5yZXNpZGUuYWxwaGEucmVwbGljYS52MS5SZXBsaWNhSW5mbzJ9Cg5SZXBsaWNhU2VydmljZRJrCgxMaXN0UmVwbGljYXMSLC5yZXNpZGUuYWxwaGEucmVwbGljYS52MS5MaXN0UmVwbGljYXNSZXF1ZXN0Gi0ucmVzaWRlLmFscGhhLnJlcGxpY2EudjEuTGlzdFJlcGxpY2FzUmVzcG9uc2ViBnByb3RvMw", [file_google_protobuf_wrappers]);
 
 /**
  * The public information about a registered replica.
@@ -61,6 +61,20 @@ export type ReplicaInfo = Message<"reside.alpha.replica.v1.ReplicaInfo"> & {
    * @generated from field: google.protobuf.StringValue public_endpoint = 6;
    */
   publicEndpoint?: string;
+
+  /**
+   * The optional semantic version of the replica.
+   *
+   * @generated from field: google.protobuf.StringValue version = 7;
+   */
+  version?: string;
+
+  /**
+   * The optional latest changelog entry for the current replica version.
+   *
+   * @generated from field: google.protobuf.StringValue changes = 8;
+   */
+  changes?: string;
 };
 
 /**
@@ -110,6 +124,20 @@ export type ReplicaInfoJson = {
    * @generated from field: google.protobuf.StringValue public_endpoint = 6;
    */
   publicEndpoint?: StringValueJson;
+
+  /**
+   * The optional semantic version of the replica.
+   *
+   * @generated from field: google.protobuf.StringValue version = 7;
+   */
+  version?: StringValueJson;
+
+  /**
+   * The optional latest changelog entry for the current replica version.
+   *
+   * @generated from field: google.protobuf.StringValue changes = 8;
+   */
+  changes?: StringValueJson;
 };
 
 /**

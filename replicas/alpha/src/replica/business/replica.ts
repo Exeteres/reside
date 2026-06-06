@@ -9,6 +9,8 @@ export async function listReplicaInfos(prisma: PrismaClient) {
       description: true,
       internalEndpoint: true,
       publicEndpoint: true,
+      version: true,
+      changes: true,
     },
     orderBy: [{ name: "asc" }],
   })
@@ -21,6 +23,8 @@ export async function listReplicaInfos(prisma: PrismaClient) {
       description: replica.description ?? undefined,
       internalEndpoint: replica.internalEndpoint,
       publicEndpoint: replica.publicEndpoint ?? undefined,
+      version: replica.version ?? undefined,
+      changes: replica.changes ?? undefined,
     })),
   }
 }

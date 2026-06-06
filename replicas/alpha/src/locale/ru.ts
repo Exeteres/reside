@@ -38,6 +38,9 @@ export const ru = {
       replicas: {
         title: "Реестр реплик",
       },
+      releaseNotes: {
+        title: "Релизные заметки реплик",
+      },
     },
     realm: {
       description: "Здесь живут реплики.",
@@ -88,6 +91,8 @@ export const ru = {
         internalEndpoint: (endpoint: string) => `Внутренний endpoint: ${endpoint}`,
         publicEndpoint: (endpoint: string) => `Публичный endpoint: ${endpoint}`,
         node: (node: string) => `Узел: ${node}`,
+        version: (version: string) => `Версия: v${version}`,
+        changes: (changes: string) => `Изменения: ${changes}`,
       },
     },
     replicaNode: {
@@ -114,6 +119,13 @@ export const ru = {
             ? `Не удалось назначить узел "${nodeName}" для реплики "${replicaName}": ${errorMessage}`
             : `Не удалось обновить узел для реплики "${replicaName}": ${errorMessage}`,
       },
+    },
+    releaseNotes: {
+      title: "Реплика обновлена",
+      replicaLabel: "Реплика:",
+      versionLabel: "Версия:",
+      changesLabel: "Изменения:",
+      unknownChanges: "Нет описания изменений.",
     },
   },
 }

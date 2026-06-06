@@ -6,6 +6,8 @@ export type RegisteredReplicaSummary = {
   internalEndpoint: string
   publicEndpoint: string | null
   node: string | null
+  version: string | null
+  changes: string | null
 }
 
 export type SetReplicaNodeInput = {
@@ -32,6 +34,18 @@ export type ReconcileRegistrationOperationInput = {
    * The registration operation identifier.
    */
   operationId: number
+}
+
+export type UpdateReplicaAvatarVersionTagInput = {
+  /**
+   * The target replica technical name.
+   */
+  replicaName: string
+
+  /**
+   * The new replica version.
+   */
+  newVersion: string
 }
 
 export type ReconcileRegistrationOperationStatus = "completed" | "pending"
@@ -74,4 +88,9 @@ export type RegistrationActivities = {
   reconcileRegistrationOperation: (
     input: ReconcileRegistrationOperationInput,
   ) => Promise<ReconcileRegistrationOperationOutput>
+
+  /**
+   * Updates managed avatar version tag for a replica in Telegram system chat.
+   */
+  updateReplicaAvatarVersionTag: (input: UpdateReplicaAvatarVersionTagInput) => Promise<void>
 }
