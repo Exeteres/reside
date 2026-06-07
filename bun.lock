@@ -86,6 +86,7 @@
         "@opentelemetry/resources": "^2.7.1",
         "@opentelemetry/sdk-node": "^0.216.0",
         "@opentelemetry/semantic-conventions": "^1.40.0",
+        "@paralleldrive/cuid2": "catalog:",
         "@prisma/adapter-pg": "catalog:",
         "@prisma/client": "catalog:",
         "@prisma/instrumentation": "catalog:",
@@ -97,6 +98,7 @@
         "@temporalio/interceptors-opentelemetry": "^1.16.0",
         "@temporalio/worker": "catalog:",
         "@temporalio/workflow": "catalog:",
+        "cbor2": "catalog:",
         "fastify": "catalog:",
         "jose": "catalog:",
         "pg": "catalog:",
@@ -118,6 +120,7 @@
     },
     "replicas/access": {
       "name": "@replicas/access",
+      "version": "0.1.1",
       "dependencies": {
         "@connectrpc/connect": "catalog:",
         "@connectrpc/connect-fastify": "catalog:",
@@ -139,6 +142,7 @@
     },
     "replicas/alpha": {
       "name": "@replicas/alpha",
+      "version": "0.1.0",
       "dependencies": {
         "@connectrpc/connect": "catalog:",
         "@connectrpc/connect-fastify": "catalog:",
@@ -163,6 +167,7 @@
     },
     "replicas/engineer": {
       "name": "@replicas/engineer",
+      "version": "0.1.0",
       "dependencies": {
         "@aws-sdk/client-s3": "^3.914.0",
         "@connectrpc/connect": "catalog:",
@@ -189,6 +194,7 @@
     },
     "replicas/infra": {
       "name": "@replicas/infra",
+      "version": "0.1.1",
       "dependencies": {
         "@connectrpc/connect": "catalog:",
         "@connectrpc/connect-fastify": "catalog:",
@@ -215,6 +221,7 @@
     },
     "replicas/rate": {
       "name": "@replicas/rate",
+      "version": "0.1.0",
       "dependencies": {
         "@connectrpc/connect": "catalog:",
         "@connectrpc/connect-fastify": "catalog:",
@@ -237,6 +244,7 @@
     },
     "replicas/security": {
       "name": "@replicas/security",
+      "version": "0.1.0",
       "dependencies": {
         "@connectrpc/connect": "catalog:",
         "@connectrpc/connect-fastify": "catalog:",
@@ -259,6 +267,7 @@
     },
     "replicas/telegram": {
       "name": "@replicas/telegram",
+      "version": "0.1.6",
       "dependencies": {
         "@bufbuild/protobuf": "catalog:",
         "@connectrpc/connect": "catalog:",
@@ -270,6 +279,7 @@
         "fastify": "catalog:",
         "jose": "catalog:",
         "prisma": "catalog:",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@grpc/grpc-js": "catalog:",
@@ -312,6 +322,7 @@
     "@opentelemetry/resources": "^2.0.1",
     "@opentelemetry/sdk-node": "^0.206.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
+    "@paralleldrive/cuid2": "^3.3.0",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "@prisma/instrumentation": "^7.4.2",
@@ -323,6 +334,7 @@
     "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",
     "@typescript/native-preview": "^7.0.0-dev.20260309.1",
+    "cbor2": "^2.3.0",
     "citty": "^0.2.1",
     "consola": "^3.4.2",
     "fastify": "^5.4.0",
@@ -456,6 +468,8 @@
     "@connectrpc/connect-fastify": ["@connectrpc/connect-fastify@2.1.1", "", { "peerDependencies": { "@bufbuild/protobuf": "^2.7.0", "@connectrpc/connect": "2.1.1", "@connectrpc/connect-node": "2.1.1", "fastify": "^4.22.1 || ^5.1.0" } }, "sha512-UMkdus491H+iUTQE/wnZjaiX6oQ3+GH7gfE5kq2AtXZEZ4IV02bOmTYZS+jfu63+MMeyAkacgfruCYfvwqYzxA=="],
 
     "@connectrpc/connect-node": ["@connectrpc/connect-node@2.1.1", "", { "peerDependencies": { "@bufbuild/protobuf": "^2.7.0", "@connectrpc/connect": "2.1.1" } }, "sha512-s3TfsI1XF+n+1z6MBS9rTnFsxxR4Rw5wmdEnkQINli81ESGxcsfaEet8duzq8LVuuCupmhUsgpRo0Nv9pZkufg=="],
+
+    "@cto.af/wtf8": ["@cto.af/wtf8@0.0.5", "", {}, "sha512-LfUFi+Vv4eDzj+XAtR89e3wwjXA/NZjUSwU5NhwbBrLecxPaBYFy3exCuc1j+D4UZeOVdqlsl8G7LmOt18V0tg=="],
 
     "@electric-sql/pglite": ["@electric-sql/pglite@0.3.15", "", {}, "sha512-Cj++n1Mekf9ETfdc16TlDi+cDDQF0W7EcbyRHYOAeZdsAe8M/FJg18itDTSwyHfar2WIezawM9o0EKaRGVKygQ=="],
 
@@ -648,6 +662,8 @@
     "@mrleebo/prisma-ast": ["@mrleebo/prisma-ast@0.13.1", "", { "dependencies": { "chevrotain": "^10.5.0", "lilconfig": "^2.1.0" } }, "sha512-XyroGQXcHrZdvmrGJvsA9KNeOOgGMg1Vg9OlheUsBOSKznLMDl+YChxbkboRHvtFYJEMRYmlV3uoo/njCw05iw=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@0.2.4", "", { "dependencies": { "@emnapi/core": "^1.1.0", "@emnapi/runtime": "^1.1.0", "@tybys/wasm-util": "^0.9.0" } }, "sha512-9zESzOO5aDByvhIAsOy9TbpZ0Ur2AJbUI7UT73kcUTS2mxAMHOBaa1st/jAymNoCtvrit99kkzT1FZuXVcgfIQ=="],
+
+    "@noble/hashes": ["@noble/hashes@2.2.0", "", {}, "sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg=="],
 
     "@nodable/entities": ["@nodable/entities@2.1.0", "", {}, "sha512-nyT7T3nbMyBI/lvr6L5TyWbFJAI9FTgVRakNoBqCD+PmID8DzFrrNdLLtHMwMszOtqZa8PAOV24ZqDnQrhQINA=="],
 
@@ -876,6 +892,8 @@
     "@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.40.0", "", {}, "sha512-cifvXDhcqMwwTlTK04GBNeIe7yyo28Mfby85QXFe1Yk8nmi36Ab/5UQwptOx84SsoGNRg+EVSjwzfSZMy6pmlw=="],
 
     "@opentelemetry/sql-common": ["@opentelemetry/sql-common@0.41.2", "", { "dependencies": { "@opentelemetry/core": "^2.0.0" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0" } }, "sha512-4mhWm3Z8z+i508zQJ7r6Xi7y4mmoJpdvH0fZPFRkWrdp5fq7hhZ2HhYokEOLkfqSMgPR4Z9EyB3DBkbKGOqZiQ=="],
+
+    "@paralleldrive/cuid2": ["@paralleldrive/cuid2@3.3.0", "", { "dependencies": { "@noble/hashes": "^2.0.1", "bignumber.js": "^9.3.1", "error-causes": "^3.0.2" }, "bin": { "cuid2": "bin/cuid2.js" } }, "sha512-OqiFvSOF0dBSesELYY2CAMa4YINvlLpvKOz/rv6NeZEqiyttlHgv98Juwv4Ch+GrEV7IZ8jfI2VcEoYUjXXCjw=="],
 
     "@pinojs/redact": ["@pinojs/redact@0.4.0", "", {}, "sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg=="],
 
@@ -1215,6 +1233,8 @@
 
     "caniuse-lite": ["caniuse-lite@1.0.30001777", "", {}, "sha512-tmN+fJxroPndC74efCdp12j+0rk0RHwV5Jwa1zWaFVyw2ZxAuPeG8ZgWC3Wz7uSjT3qMRQ5XHZ4COgQmsCMJAQ=="],
 
+    "cbor2": ["cbor2@2.3.0", "", { "dependencies": { "@cto.af/wtf8": "0.0.5" } }, "sha512-76WB3hq8BoaGkMkBVJ27fW5LJU+qqDLEpgRNCG/SYKhODWXpVPOTD4UcUto3IEzYLA52nsvbhb0wabhHDn3qXg=="],
+
     "chalk": ["chalk@4.1.2", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA=="],
 
     "chardet": ["chardet@2.1.1", "", {}, "sha512-PsezH1rqdV9VvyNhxxOW32/d75r01NY7TQCmOqomRo15ZSOKbpTFVsfjghxo6JloQUCGnH4k1LGu0R4yCLlWQQ=="],
@@ -1304,6 +1324,8 @@
     "enquirer": ["enquirer@2.3.6", "", { "dependencies": { "ansi-colors": "^4.1.1" } }, "sha512-yjNnPr315/FjS4zIsUxYguYUPP2e1NK4d7E7ZOLiyYCcbFBiTMyID+2wvm2w6+pZ/odMA7cRkjhsPbltwBOrLg=="],
 
     "environment": ["environment@1.1.0", "", {}, "sha512-xUtoPkMggbz0MPyPiIWr1Kp4aeWJjDZ6SMvURhimjdZgsRuDplF5/s9hcgGhyXMhs+6vpnuoiZ2kFiu3FMnS8Q=="],
+
+    "error-causes": ["error-causes@3.0.2", "", {}, "sha512-i0B8zq1dHL6mM85FGoxaJnVtx6LD5nL2v0hlpGdntg5FOSyzQ46c9lmz5qx0xRS2+PWHGOHcYxGIBC5Le2dRMw=="],
 
     "es-define-property": ["es-define-property@1.0.1", "", {}, "sha512-e3nRfgfUZ4rNGL232gUgX06QNyyez04KdjFrF+LTRoOXmrOgFKDg4BCdsjW8EnT69eqdYGmRpJwiPVYNrCaW3g=="],
 

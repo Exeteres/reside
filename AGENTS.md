@@ -5,6 +5,7 @@ Some simple rules to follow:
 - Before doing anything, read `README.md`.
 - Before working with some specific replicas, read their docs in `replicas/*/README.md`.
 - Before writing code, read `docs/code/style.md`.
+- Before changing code that stores, processes, exposes, logs, or routes personal information, read `docs/code/encryption.md` and follow it strictly.
 - Before writing code for replicas, read `docs/replica.md` and follow the defined structure and patterns.
 - When implementing new replica or API, follow the structure and patterns of existing replicas and APIs as closely as possible.
 - Try to use LSP tools to check your code first.
@@ -18,6 +19,7 @@ Rule routing (load additional rules by situation):
 - For type modeling, aliases, unions, array typing, type references, and generics, load `docs/code/types.md`.
 - For error creation, wrapping, error taxonomy, and workflow error handling, load `docs/code/errors.md`.
 - For logging format, structured logging conventions, and error logging shape, load `docs/code/logging.md`.
+- For encryption, personal information storage, decrypted data handling, hashing requirements, NLS/LLM personal information boundaries, and plaintext logging restrictions, load `docs/code/encryption.md`.
 - For service implementation patterns, dependency wiring, and service factory conventions, load `docs/code/services.md`.
 - For Temporal activity/workflow contracts, naming, signals, and retry/error patterns, load `docs/code/workflows.md`.
 - For business-layer design, dependency injection for functions, and testability/mocking boundaries, load `docs/code/business.md`.
@@ -25,6 +27,7 @@ Rule routing (load additional rules by situation):
 - For replica structure, boundaries, entrypoints, and composition rules, load `docs/replica.md`.
 - For Prisma schema modeling, relations, indexes, configs, and migration naming/workflow, load `docs/design/prisma.md`.
 - For API/protocol work, additionally load `docs/design/api.md` and follow existing protocol/generated code patterns.
+- For any code that may touch personal information, load `docs/code/encryption.md` even when the primary task is Prisma, business logic, services, logging, NLS, workflows, API, or tests.
 - For tasks touching multiple concerns, load all relevant rule files above before editing and resolve conflicts by choosing the more specific rule document.
 - Before submitting code changes, verify that each touched area follows its routed rule documents, not only `docs/code/style.md`.
 
