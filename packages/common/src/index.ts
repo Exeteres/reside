@@ -13,6 +13,7 @@ export {
   runPrismaMigrations,
   startTemporalWorker,
 } from "./database"
+export * from "./encryption"
 export {
   applyObject,
   createAuthInterceptor,
@@ -28,6 +29,7 @@ export {
   subscribeToSecret,
 } from "./kubernetes"
 export { logger } from "./logger"
+export { rhid } from "./rhid"
 export { setupTelemetry, type TelemetryInfraService } from "./telemetry"
 export {
   createGenericOperationService,

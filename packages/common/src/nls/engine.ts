@@ -4,9 +4,10 @@ import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { CopilotClient, type CopilotSession, type SessionConfig } from "@github/copilot-sdk"
-import { z } from "zod"
+import type { Pool } from "pg"
 import { createStorageBucketService, type StorageBucketService } from "../database"
-import { getReplicaName, subscribeToSecret } from "../kubernetes"
+import { crypto } from "../encryption"
+import { getReplicaName } from "../kubernetes"
 import { logger } from "../logger"
 import {
   createLanguageMemorySystemPrompt,
@@ -24,10 +25,6 @@ const STORAGE_INIT_RETRY_MS = 1000
 const STORAGE_INIT_MAX_ATTEMPTS = 5
 const STORAGE_OPERATION_WAIT_TIMEOUT_MS = 30_000
 
-const copilotSecretSchema = z.object({
-  user_token: z.string().min(1),
-})
-
 export type LanguageEngineServices = Pick<
   CommonServices<"access" | "infra">,
   | "authzService"
@@ -36,17 +33,23 @@ export type LanguageEngineServices = Pick<
   | "permissionRequestService"
   | "accessOperationService"
 > & {
+  pool: Pool
   prisma: MemoryToolsPrisma
 }
 
 export type LanguageEngine = {
-  ask: (sessionId: string, text: string) => Promise<string>
+  ask: (sessionId: string, text: string, options?: LanguageEngineAskOptions) => Promise<string>
   askStream: (
     sessionId: string,
     text: string,
     onFrame: (frame: { text: string; reset: boolean }) => Promise<void>,
+    options?: LanguageEngineAskOptions,
   ) => Promise<string>
   stop: () => Promise<void>
+}
+
+export type LanguageEngineAskOptions = {
+  systemPrompt?: string
 }
 
 export type LanguageEngineStorageCredentials = {
@@ -96,43 +99,14 @@ export async function createLanguageEngine(
       : createStorageBucketServiceFromCredentials(args.storageCredentials)
 
   let currentCopilotClient: CopilotClient | undefined
-  let lastCopilotError: string | undefined
-  let resolveReady: (() => void) | undefined
-  const readyPromise = new Promise<void>(resolve => {
-    resolveReady = resolve
+  const copilotToken = await crypto.getSecret("copilot-token")
+  const nextClient = new CopilotClient({
+    githubToken: copilotToken,
+    useLoggedInUser: false,
   })
-
-  const stopCopilotSubscription = startSubscription(subscribeToSecret("copilot"), async secret => {
-    try {
-      const parsed = copilotSecretSchema.parse(secret)
-
-      if (currentCopilotClient) {
-        await currentCopilotClient.stop()
-      }
-
-      const nextClient = new CopilotClient({
-        githubToken: parsed.user_token,
-        useLoggedInUser: false,
-      })
-      await nextClient.start()
-      currentCopilotClient = nextClient
-      lastCopilotError = undefined
-
-      if (resolveReady) {
-        resolveReady()
-        resolveReady = undefined
-      }
-
-      logger.info("nls copilot client initialized")
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      lastCopilotError = message
-
-      logger.warn({ error: message }, "nls failed to initialize copilot client")
-    }
-  })
-
-  await readyPromise
+  await nextClient.start()
+  currentCopilotClient = nextClient
+  logger.info("nls copilot client initialized")
 
   const sessionLocks = new Map<string, Promise<void>>()
 
@@ -149,22 +123,22 @@ export async function createLanguageEngine(
   }
 
   return {
-    ask: async (sessionId, text) => {
+    ask: async (sessionId, text, options) => {
       return await runLanguageEngineSession({
         sessionId,
         text,
+        systemPrompt: options?.systemPrompt,
       })
     },
-    askStream: async (sessionId, text, onFrame) => {
+    askStream: async (sessionId, text, onFrame, options) => {
       return await runLanguageEngineSession({
         sessionId,
         text,
         onFrame,
+        systemPrompt: options?.systemPrompt,
       })
     },
     stop: async () => {
-      await stopCopilotSubscription()
-
       if (currentCopilotClient) {
         await currentCopilotClient.stop()
       }
@@ -174,6 +148,7 @@ export async function createLanguageEngine(
   async function runLanguageEngineSession(args: {
     sessionId: string
     text: string
+    systemPrompt?: string
     onFrame?: (frame: { text: string; reset: boolean }) => Promise<void>
   }): Promise<string> {
     const normalizedSessionId = normalizeSessionId(args.sessionId)
@@ -185,8 +160,7 @@ export async function createLanguageEngine(
     return await runWithSessionLock(sessionLocks, normalizedSessionId, async () => {
       const copilotClient = currentCopilotClient
       if (!copilotClient) {
-        const reason = lastCopilotError ? ` Last error: ${lastCopilotError}` : ""
-        throw new Error(`Copilot client is not initialized.${reason}`)
+        throw new Error("Copilot client is not initialized")
       }
 
       const sessionDirPath = join(workspacePath, NLS_SESSION_DIR)
@@ -212,7 +186,7 @@ export async function createLanguageEngine(
         configDir: sessionDirPath,
         systemMessage: {
           mode: "append",
-          content: systemPrompt,
+          content: [systemPrompt, args.systemPrompt?.trim()].filter(Boolean).join("\n\n"),
         },
         onPermissionRequest: async () => ({ kind: "approved" }),
         tools: engineTools,
@@ -419,6 +393,11 @@ function summarizeToolArguments(toolName: string, argumentsValue: unknown): stri
   if (toolName === "bash") {
     const command = typeof typedArguments.command === "string" ? typedArguments.command : ""
     return `command=${truncateOneLine(command, 1000)}`
+  }
+
+  if (toolName === "query_database") {
+    const sql = typeof typedArguments.sql === "string" ? typedArguments.sql : ""
+    return `sql_length=${sql.length}`
   }
 
   const pathKeys = [
@@ -787,39 +766,6 @@ function normalizeAgentResponse(response: unknown): string {
 function ensureWebCryptoGlobals(): void {
   if (!globalThis.crypto) {
     globalThis.crypto = webcrypto as unknown as Crypto
-  }
-}
-
-function startSubscription<T>(
-  iterable: AsyncIterable<T>,
-  onValue: (value: T) => Promise<void>,
-): () => Promise<void> {
-  const iterator = iterable[Symbol.asyncIterator]()
-  let isStopped = false
-
-  const loop = (async () => {
-    while (!isStopped) {
-      const next = await iterator.next()
-      if (next.done || isStopped) {
-        break
-      }
-
-      await onValue(next.value)
-    }
-  })().catch(error => {
-    logger.error({ error }, "nls subscription loop failed")
-  })
-
-  return async () => {
-    isStopped = true
-
-    try {
-      void iterator.return?.()
-    } catch {
-      // no-op
-    }
-
-    await loop
   }
 }
 

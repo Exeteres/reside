@@ -9,6 +9,8 @@ type CachedToken = {
   expiresAt: number
 }
 
+const DEFAULT_AUDIENCE_CACHE_KEY = "__default__"
+
 /**
  * Normalizes a gRPC target or endpoint into an audience value used in Kubernetes TokenRequest.
  *
@@ -77,13 +79,30 @@ export function normalizeAudienceEndpoint(audience: string): string {
  * The token expires after 15 minutes.
  *
  * @param audience The intended audience for the token, typically the gRPC service endpoint.
+ * If omitted, the token is requested without an audience to use Kubernetes default audience.
  * @returns The minted OIDC token as a string.
  * @throws If the token request fails or the response is invalid.
  */
-async function requestTokenForAudience(audience: string): Promise<string> {
-  logger.info('requesting kubernetes service account token for audience "%s"', audience)
+async function requestTokenForAudience(audience?: string): Promise<string> {
+  if (audience === undefined) {
+    logger.info("requesting kubernetes service account token with default audience")
+  } else {
+    logger.info('requesting kubernetes service account token for audience "%s"', audience)
+  }
 
   const coreApi = kubeConfig.makeApiClient(CoreV1Api)
+  const tokenRequestSpec =
+    audience === undefined
+      ? ({
+          expirationSeconds: 900,
+        } as {
+          audiences: string[]
+          expirationSeconds: number
+        })
+      : {
+          audiences: [audience],
+          expirationSeconds: 900,
+        }
 
   const tokenRequest = await coreApi.createNamespacedServiceAccountToken({
     name: getReplicaServiceAccountName(),
@@ -91,21 +110,23 @@ async function requestTokenForAudience(audience: string): Promise<string> {
     body: {
       apiVersion: "authentication.k8s.io/v1",
       kind: "TokenRequest",
-      spec: {
-        audiences: [audience],
-        expirationSeconds: 900, // 15 minutes
-      },
+      spec: tokenRequestSpec,
     },
   })
 
   const token = tokenRequest.status?.token
   if (!token || token.length === 0) {
+    const targetAudience = audience ?? "default"
     throw new Error(
-      `Failed to obtain token for audience "${audience}": Token is missing in response`,
+      `Failed to obtain token for audience "${targetAudience}": Token is missing in response`,
     )
   }
 
-  logger.info('received kubernetes service account token for audience "%s"', audience)
+  if (audience === undefined) {
+    logger.info("received kubernetes service account token with default audience")
+  } else {
+    logger.info('received kubernetes service account token for audience "%s"', audience)
+  }
 
   return token
 }
@@ -118,23 +139,33 @@ const tokenEventEmitter = new EventEmitter()
  * Retrieves a cached token for the specified audience or requests a new one if the cached token is missing or expired.
  *
  * @param audience The intended audience for the token, typically the gRPC service endpoint.
+ * If omitted, the token is requested without an audience to use Kubernetes default audience.
  * @returns A valid OIDC token as a string.
  * @throws If the token request fails or the response is invalid.
  */
-export async function getTokenForAudience(audience: string): Promise<string> {
-  audience = normalizeAudienceEndpoint(audience)
+export async function getTokenForAudience(audience?: string): Promise<string> {
+  const normalizedAudience = audience ? normalizeAudienceEndpoint(audience) : undefined
+  const cacheKey = normalizedAudience ?? DEFAULT_AUDIENCE_CACHE_KEY
 
-  const cached = tokenCache.get(audience)
+  const cached = tokenCache.get(cacheKey)
   const now = Date.now()
 
   if (cached && cached.expiresAt > now) {
-    logger.trace('using cached token for audience "%s"', audience)
+    if (normalizedAudience === undefined) {
+      logger.trace("using cached token with default audience")
+    } else {
+      logger.trace('using cached token for audience "%s"', normalizedAudience)
+    }
     return cached.token
   }
 
-  const pendingRequest = pendingTokenRequests.get(audience)
+  const pendingRequest = pendingTokenRequests.get(cacheKey)
   if (pendingRequest) {
-    logger.debug('waiting for in-flight token request for audience "%s"', audience)
+    if (normalizedAudience === undefined) {
+      logger.debug("waiting for in-flight token request with default audience")
+    } else {
+      logger.debug('waiting for in-flight token request for audience "%s"', normalizedAudience)
+    }
     const pendingToken = await pendingRequest
 
     return pendingToken.token
@@ -142,32 +173,40 @@ export async function getTokenForAudience(audience: string): Promise<string> {
 
   const tokenRequest = (async (): Promise<CachedToken> => {
     try {
-      const token = await requestTokenForAudience(audience)
+      const token = await requestTokenForAudience(normalizedAudience)
       const cacheEntry = {
         token,
         // cache the token with an expiration time 1 minute before the actual expiration to account for clock skew
         expiresAt: Date.now() + 14 * 60 * 1000,
       }
 
-      tokenCache.set(audience, cacheEntry)
-      logger.debug('cached token for audience "%s"', audience)
-      tokenEventEmitter.emit(`tokenRefreshed:${audience}`, token)
+      tokenCache.set(cacheKey, cacheEntry)
+      if (normalizedAudience === undefined) {
+        logger.debug("cached token with default audience")
+      } else {
+        logger.debug('cached token for audience "%s"', normalizedAudience)
+        tokenEventEmitter.emit(`tokenRefreshed:${normalizedAudience}`, token)
+      }
 
       return cacheEntry
     } catch (error) {
-      logger.error({ error }, 'failed to request token for audience "%s"', audience)
+      if (normalizedAudience === undefined) {
+        logger.error({ error }, "failed to request token with default audience")
+      } else {
+        logger.error({ error }, 'failed to request token for audience "%s"', normalizedAudience)
+      }
       throw error
     }
   })()
 
-  pendingTokenRequests.set(audience, tokenRequest)
+  pendingTokenRequests.set(cacheKey, tokenRequest)
 
   try {
     const requestedToken = await tokenRequest
 
     return requestedToken.token
   } finally {
-    pendingTokenRequests.delete(audience)
+    pendingTokenRequests.delete(cacheKey)
   }
 }
 

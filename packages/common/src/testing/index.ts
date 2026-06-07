@@ -3,4 +3,5 @@
 
 export { mockDeepFn } from "./mock-deep-fn"
 export { mockFn } from "./mock-fn"
+export { testCrypto } from "./test-crypto"
 export type { DeepMockProxy, MockFnWithSpy, MockProxy } from "./types"

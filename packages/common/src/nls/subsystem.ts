@@ -20,6 +20,7 @@ import { createChannel, createClient } from "../api"
 import { authenticate } from "../auth"
 import { getReplicaName } from "../kubernetes"
 import { logger } from "../logger"
+import { rhid } from "../rhid"
 import { registerGracefulShutdown } from "../utils"
 import type { MemoryToolTagDefinitions } from "./memory"
 import {
@@ -31,6 +32,8 @@ import {
 
 const NLS_DEFAULT_MODEL = "gpt-5-mini"
 const NLS_SESSION_PREFIX = "sessions"
+const DATABASE_QUERY_MAX_ROWS = 100
+const DATABASE_QUERY_MAX_VALUE_LENGTH = 2000
 
 export type SetupLanguageSubsystemOptions = {
   services: LanguageEngineServices
@@ -80,6 +83,9 @@ export async function setupLanguageSubsystem({
         createListReplicasTool({
           alphaReplicaService,
         }),
+        createQueryDatabaseTool({
+          services,
+        }),
         ...(tools ?? []),
       ],
     })
@@ -109,12 +115,22 @@ function createNaturalLanguageService(
 ): NaturalLanguageServiceImplementation {
   return {
     async ask(request, context: HandlerContext) {
-      const { subjectId, prompt } = await authorizeAskRequest(services, request, context)
-      const text = await subsystem.ask(subjectId, prompt)
+      const { subjectId, prompt, subjectInfo } = await authorizeAskRequest(
+        services,
+        request,
+        context,
+      )
+      const text = await subsystem.ask(subjectId, prompt, {
+        systemPrompt: await buildRequestSystemPrompt(subjectId, subjectInfo),
+      })
       return create(AskResponseSchema, { text })
     },
     async *askStream(request, context: HandlerContext) {
-      const { subjectId, prompt } = await authorizeAskRequest(services, request, context)
+      const { subjectId, prompt, subjectInfo } = await authorizeAskRequest(
+        services,
+        request,
+        context,
+      )
       const frameQueue: Array<{ text: string; reset: boolean }> = []
       let queueNotifier: (() => void) | undefined
       let streamCompleted = false
@@ -130,10 +146,17 @@ function createNaturalLanguageService(
       }
 
       const runStream = subsystem
-        .askStream(subjectId, prompt, async frame => {
-          frameQueue.push(frame)
-          notifyQueue()
-        })
+        .askStream(
+          subjectId,
+          prompt,
+          async frame => {
+            frameQueue.push(frame)
+            notifyQueue()
+          },
+          {
+            systemPrompt: await buildRequestSystemPrompt(subjectId, subjectInfo),
+          },
+        )
         .catch(error => {
           streamError = error
         })
@@ -175,9 +198,10 @@ async function authorizeAskRequest(
   request: {
     text: string
     subjectId?: string
+    subjectInfo?: Record<string, string>
   },
   context: HandlerContext,
-): Promise<{ subjectId: string; prompt: string }> {
+): Promise<{ subjectId: string; prompt: string; subjectInfo: Record<string, string> }> {
   const requester = await authenticate(context)
   const effectiveFromSubjectId = request.subjectId ?? requester.subjectId
 
@@ -223,9 +247,12 @@ async function authorizeAskRequest(
     throw new ConnectError("text must not be empty", Code.InvalidArgument)
   }
 
+  const subjectInfo = request.subjectInfo ?? {}
+
   return {
     subjectId: effectiveFromSubjectId,
     prompt,
+    subjectInfo,
   }
 }
 
@@ -280,7 +307,47 @@ function buildReplicaSystemPrompt(args: {
     "- list_replicas shows available replicas and their endpoints.",
     "- use internet tools to provide up-to-date information.",
     "- use bash and other tools to perform complex tasks and complex calculations.",
+    "- You may see ECIDs in the form enc:<replica>:<id>; treat them as opaque encrypted content identifiers.",
+    "- You can include ECIDs in responses when the user needs to receive or pass around protected content.",
+    "- Do not try to decrypt, inspect, transform, summarize, translate, or rewrite ECID content.",
+    "- If the user asks to transform content identified only by an ECID, say that you have no access to the actual content and can only return or route the ECID unchanged.",
   ].join("\n")
+}
+
+async function buildRequestSystemPrompt(
+  subjectId: string,
+  subjectInfo: Record<string, string>,
+): Promise<string> {
+  const subjectContext =
+    splitSubjectId(subjectId).realm === "replica" ? subjectId : hashSubjectId(subjectId)
+  const subjectInfoLines = Object.entries(subjectInfo)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `- ${key}: ${value}`)
+
+  return [
+    "Current interaction context:",
+    `- Subject ID for this interaction: ${subjectContext}`,
+    "- If the subject ID is an RHID, treat it as an opaque stable identifier for this user in this replica and never claim to know the underlying plaintext subject.",
+    "- If your answer can use ECIDs directly without complex transformations, reply naturally as if you know the value and provide ECIDs in place of plaintext values.",
+    "- For simple identity-style questions (for example: who is them), answer directly using the available ECID-based references instead of saying that the value is inaccessible.",
+    "- Subject info provided by the caller (list all keys and values exactly as provided):",
+    ...(subjectInfoLines.length > 0 ? subjectInfoLines : ["- none"]),
+  ].join("\n")
+}
+
+function hashSubjectId(subjectId: string): string {
+  try {
+    return rhid(subjectId)
+  } catch (error) {
+    logger.warn(
+      {
+        error: normalizeError(error),
+      },
+      "nls could not hash interaction subject id",
+    )
+
+    return "unavailable"
+  }
 }
 
 function createAskReplicaTool(args: {
@@ -386,4 +453,69 @@ function createListReplicasTool(args: { alphaReplicaService: ReplicaServiceClien
       }
     },
   })
+}
+
+function createQueryDatabaseTool(args: { services: LanguageEngineServices }) {
+  return defineTool("query_database", {
+    description:
+      "Runs an arbitrary SQL query against this replica database and returns rows as structured data.",
+    parameters: z.object({
+      sql: z.string().min(1),
+    }),
+    handler: async ({ sql }) => {
+      const query = sql.trim()
+
+      try {
+        if (query.length === 0) {
+          throw new Error("sql must not be empty")
+        }
+
+        const result = await args.services.pool.query(query)
+        const rows = result.rows.slice(0, DATABASE_QUERY_MAX_ROWS).map(row => normalizeSqlRow(row))
+
+        return {
+          command: result.command,
+          rowCount: result.rowCount,
+          returnedRows: result.rows.length,
+          rowsTruncated: result.rows.length > rows.length,
+          rows,
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+
+        logger.warn(
+          {
+            error: errorMessage,
+          },
+          "nls query_database failed",
+        )
+
+        return {
+          response: `Failed to query database: ${errorMessage}`,
+        }
+      }
+    },
+  })
+}
+
+function normalizeSqlRow(row: unknown): unknown {
+  if (!row || typeof row !== "object") {
+    return row
+  }
+
+  return Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [key, normalizeSqlValue(value)]),
+  )
+}
+
+function normalizeSqlValue(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value
+  }
+
+  if (value.length <= DATABASE_QUERY_MAX_VALUE_LENGTH) {
+    return value
+  }
+
+  return `${value.slice(0, DATABASE_QUERY_MAX_VALUE_LENGTH)}...<truncated>`
 }

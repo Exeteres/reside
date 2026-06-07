@@ -31,6 +31,7 @@ import { DiscoveryService, type DiscoveryServiceClient } from "@reside/api/alpha
 import type { TracerProvider } from "@opentelemetry/api"
 import { createChannels, createClient } from "./api"
 import { TimerService, type TimerServiceClient } from "@reside/api/infra/timer.v1"
+import { VaultService, type VaultServiceClient } from "@reside/api/infra/vault.v1"
 import { setupTelemetry } from "./telemetry"
 import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
 
@@ -49,6 +50,7 @@ type CommonServiceMap<TEndpoints extends Record<string, string>> = Record<never,
         observabilityService: ObservabilityServiceClient
         gatewayService: GatewayServiceClient
         timerService: TimerServiceClient
+        vaultService: VaultServiceClient
         infraOperationService: OperationServiceClient
         tracerProvider?: TracerProvider
       }
@@ -106,6 +108,7 @@ export async function createCommonServices<TEndpoints extends Record<string, str
     services.observabilityService = createClient(ObservabilityService, channels.infra)
     services.gatewayService = createClient(GatewayService, channels.infra)
     services.timerService = createClient(TimerService, channels.infra)
+    services.vaultService = createClient(VaultService, channels.infra)
     services.infraOperationService = createClient(OperationService, channels.infra)
 
     const telemetry = await setupTelemetry(services.observabilityService)
