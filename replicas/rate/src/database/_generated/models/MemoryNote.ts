@@ -396,10 +396,6 @@ export type MemoryNoteCreatetagsInput = {
   set: string[]
 }
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string
-}
-
 export type MemoryNoteUpdatetagsInput = {
   set?: string[]
   push?: string | string[]

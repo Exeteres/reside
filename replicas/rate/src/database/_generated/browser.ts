@@ -18,6 +18,11 @@ export { Prisma }
 export * as $Enums from './enums.ts'
 export * from './enums.ts';
 /**
+ * Model EncryptedContent
+ * 
+ */
+export type EncryptedContent = Prisma.EncryptedContentModel
+/**
  * Model MemoryNote
  * 
  */

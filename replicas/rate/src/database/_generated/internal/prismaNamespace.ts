@@ -384,6 +384,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
+  EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote'
 } as const
 
@@ -400,10 +401,84 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "memoryNote"
+    modelProps: "encryptedContent" | "memoryNote"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
+    EncryptedContent: {
+      payload: Prisma.$EncryptedContentPayload<ExtArgs>
+      fields: Prisma.EncryptedContentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EncryptedContentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EncryptedContentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        findFirst: {
+          args: Prisma.EncryptedContentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EncryptedContentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        findMany: {
+          args: Prisma.EncryptedContentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        create: {
+          args: Prisma.EncryptedContentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        createMany: {
+          args: Prisma.EncryptedContentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EncryptedContentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        delete: {
+          args: Prisma.EncryptedContentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        update: {
+          args: Prisma.EncryptedContentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        deleteMany: {
+          args: Prisma.EncryptedContentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EncryptedContentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EncryptedContentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        upsert: {
+          args: Prisma.EncryptedContentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        aggregate: {
+          args: Prisma.EncryptedContentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEncryptedContent>
+        }
+        groupBy: {
+          args: Prisma.EncryptedContentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EncryptedContentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EncryptedContentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EncryptedContentCountAggregateOutputType> | number
+        }
+      }
+    }
     MemoryNote: {
       payload: Prisma.$MemoryNotePayload<ExtArgs>
       fields: Prisma.MemoryNoteFieldRefs
@@ -517,6 +592,14 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const EncryptedContentScalarFieldEnum = {
+  ecid: 'ecid',
+  data: 'data'
+} as const
+
+export type EncryptedContentScalarFieldEnum = (typeof EncryptedContentScalarFieldEnum)[keyof typeof EncryptedContentScalarFieldEnum]
+
+
 export const MemoryNoteScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -553,20 +636,6 @@ export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
 /**
- * Reference to a field of type 'Int'
- */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-/**
- * Reference to a field of type 'Int[]'
- */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-/**
  * Reference to a field of type 'String'
  */
 export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
@@ -577,6 +646,20 @@ export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
  * Reference to a field of type 'String[]'
  */
 export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+/**
+ * Reference to a field of type 'Int[]'
+ */
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -702,6 +785,7 @@ export type PrismaClientOptions = ({
   comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
+  encryptedContent?: Prisma.EncryptedContentOmit
   memoryNote?: Prisma.MemoryNoteOmit
 }
 
