@@ -1,7 +1,8 @@
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
 import type { AuthzServiceClientLike, SubjectServiceClientLike } from "./notification-types"
 import { Code, ConnectError } from "@connectrpc/connect"
-import { logger } from "@reside/common"
+import { logger, rhid } from "@reside/common"
 import { WellKnownPermissions } from "@reside/registry"
 import { decryptInteractionContextToken } from "../../shared"
 
@@ -90,18 +91,24 @@ export async function parseInteractionContextToken(
 }
 
 export async function ensureTargetChatExists(
+  crypto: ResideCrypto,
   prisma: PrismaClient,
   targetChatId: string,
-): Promise<void> {
-  await prisma.chat.upsert({
+): Promise<{ id: number }> {
+  const telegramRhid = rhid(targetChatId)
+  const dataEcid = await crypto.encrypt({ id: targetChatId })
+
+  return await prisma.chat.upsert({
     where: {
-      telegramId: targetChatId,
+      telegramRhid,
     },
     create: {
-      telegramId: targetChatId,
-      data: {} as unknown as PrismaJson.ChatData,
+      telegramRhid,
+      dataEcid,
     },
-    update: {},
+    update: {
+      dataEcid,
+    },
     select: {
       id: true,
     },

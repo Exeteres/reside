@@ -1,7 +1,11 @@
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
+import { rhid } from "@reside/common"
+import { encryptedStringSchema } from "../../definitions"
 import { strings } from "../../locale"
 
 export async function resolveTelegramSubjectDisplayInfo(
+  crypto: ResideCrypto,
   prisma: PrismaClient,
   subjectId: string,
 ): Promise<{ title: string }> {
@@ -12,11 +16,14 @@ export async function resolveTelegramSubjectDisplayInfo(
 
   const user = await prisma.user.findUnique({
     where: {
-      telegramId: parsedSubject.userId,
+      telegramRhid: rhid(parsedSubject.userId),
     },
     select: {
-      telegramId: true,
-      data: true,
+      telegramRhid: true,
+      telegramUserIdEcid: true,
+      usernameEcid: true,
+      firstNameEcid: true,
+      lastNameEcid: true,
     },
   })
 
@@ -24,9 +31,28 @@ export async function resolveTelegramSubjectDisplayInfo(
     throw new Error(`Subject "${subjectId}" was not found`)
   }
 
+  const username = await decryptOptionalString(crypto, user.usernameEcid)
+  const firstName = await decryptOptionalString(crypto, user.firstNameEcid)
+  const lastName = await decryptOptionalString(crypto, user.lastNameEcid)
+
   return {
-    title: toTelegramUserTitle(user.telegramId, user.data as PrismaJson.UserData),
+    title: toTelegramUserTitle(parsedSubject.userId, {
+      username,
+      first_name: firstName,
+      last_name: lastName,
+    } as PrismaJson.UserData),
   }
+}
+
+async function decryptOptionalString(
+  crypto: ResideCrypto,
+  ecid: string | null,
+): Promise<string | undefined> {
+  if (ecid === null) {
+    return undefined
+  }
+
+  return await crypto.decrypt(encryptedStringSchema, ecid)
 }
 
 export function parseTelegramSubjectId(subjectId: string): { userId: string } | null {
@@ -44,7 +70,7 @@ export function parseTelegramSubjectId(subjectId: string): { userId: string } | 
   return { userId }
 }
 
-export function toTelegramUserTitle(telegramId: string, data: PrismaJson.UserData): string {
+export function toTelegramUserTitle(fallbackId: string, data: PrismaJson.UserData): string {
   if (typeof data.username === "string" && data.username.length > 0) {
     return data.username
   }
@@ -56,5 +82,5 @@ export function toTelegramUserTitle(telegramId: string, data: PrismaJson.UserDat
     return fullName
   }
 
-  return strings.server.subject.userById(telegramId)
+  return strings.server.subject.userById(fallbackId)
 }

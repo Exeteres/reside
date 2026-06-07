@@ -1,8 +1,13 @@
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
 import type { Bot, Context } from "grammy"
 import type { PrismaClient } from "../../database"
-import { logger } from "@reside/common"
-import { avatarManagedBotCreatedSignal, getAvatarProvisionWorkflowId } from "../../definitions"
+import { logger, rhid } from "@reside/common"
+import {
+  avatarManagedBotCreatedSignal,
+  encryptedStringSchema,
+  getAvatarProvisionWorkflowId,
+} from "../../definitions"
 
 type AvatarBotJoinedChatEvent = {
   chatId: string | number
@@ -29,6 +34,7 @@ export async function handleManagedBotLifecycleUpdate(
   args: {
     prisma: PrismaClient
     temporalClient: Client
+    crypto: ResideCrypto
   },
   context: Context,
   managerBot: Bot<Context>,
@@ -117,6 +123,7 @@ async function handleManagedBotCreated(
   args: {
     prisma: PrismaClient
     temporalClient: Client
+    crypto: ResideCrypto
   },
   context: Context,
   managedBotCreated: {
@@ -124,7 +131,7 @@ async function handleManagedBotCreated(
     managedBotUsername: string
   },
 ): Promise<void> {
-  const createdByUserId = await resolveCreatorUserId(args.prisma, context.from)
+  const createdByUserId = await resolveCreatorUserId(args.crypto, args.prisma, context.from)
 
   const pendingRequests = await args.prisma.avatarProvisionRequest.findMany({
     where: {
@@ -184,6 +191,7 @@ async function handleManagedBotCreated(
 async function handleManagedBotUpdated(
   args: {
     prisma: PrismaClient
+    crypto: ResideCrypto
   },
   managerBot: Bot<Context>,
   managedBotUpdated: {
@@ -259,7 +267,7 @@ async function handleManagedBotUpdated(
     data: {
       managedBotId: managedBotUpdated.managedBotId,
       managedBotUsername: managedBotUpdated.managedBotUsername,
-      token: nextToken,
+      tokenEcid: await args.crypto.encrypt(nextToken),
     },
   })
 }
@@ -385,6 +393,7 @@ export function isManagedBotUsernamePattern(username: string): boolean {
 }
 
 async function resolveCreatorUserId(
+  crypto: ResideCrypto,
   prisma: PrismaClient,
   user: Context["from"] | undefined,
 ): Promise<number | null> {
@@ -392,23 +401,109 @@ async function resolveCreatorUserId(
     return null
   }
 
-  const userEntity = await prisma.user.upsert({
+  const telegramRhid = rhid(String(user.id))
+  const telegramUserId = String(user.id)
+  const username = toOptionalNonEmptyString(user.username)
+  const firstName = toOptionalNonEmptyString(user.first_name)
+  const lastName = toOptionalNonEmptyString(user.last_name)
+
+  const existingUser = await prisma.user.findUnique({
     where: {
-      telegramId: String(user.id),
-    },
-    create: {
-      telegramId: String(user.id),
-      data: user as unknown as PrismaJson.UserData,
-    },
-    update: {
-      data: user as unknown as PrismaJson.UserData,
+      telegramRhid,
     },
     select: {
       id: true,
+      telegramUserIdEcid: true,
+      usernameEcid: true,
+      firstNameEcid: true,
+      lastNameEcid: true,
     },
   })
 
-  return userEntity.id
+  if (!existingUser) {
+    const userEntity = await prisma.user.create({
+      data: {
+        telegramRhid,
+        telegramUserIdEcid: await crypto.encrypt(telegramUserId),
+        usernameEcid: username === undefined ? null : await crypto.encrypt(username),
+        firstNameEcid: firstName === undefined ? null : await crypto.encrypt(firstName),
+        lastNameEcid: lastName === undefined ? null : await crypto.encrypt(lastName),
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    return userEntity.id
+  }
+
+  const updateData: {
+    telegramUserIdEcid?: string
+    usernameEcid?: string | null
+    firstNameEcid?: string | null
+    lastNameEcid?: string | null
+  } = {}
+
+  const currentTelegramUserId = await crypto.decrypt(
+    encryptedStringSchema,
+    existingUser.telegramUserIdEcid,
+  )
+  if (currentTelegramUserId !== telegramUserId) {
+    updateData.telegramUserIdEcid = await crypto.encrypt(telegramUserId)
+  }
+
+  const currentUsername = await decryptOptionalString(crypto, existingUser.usernameEcid)
+  if (currentUsername !== username) {
+    updateData.usernameEcid = username === undefined ? null : await crypto.encrypt(username)
+  }
+
+  const currentFirstName = await decryptOptionalString(crypto, existingUser.firstNameEcid)
+  if (currentFirstName !== firstName) {
+    updateData.firstNameEcid = firstName === undefined ? null : await crypto.encrypt(firstName)
+  }
+
+  const currentLastName = await decryptOptionalString(crypto, existingUser.lastNameEcid)
+  if (currentLastName !== lastName) {
+    updateData.lastNameEcid = lastName === undefined ? null : await crypto.encrypt(lastName)
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await prisma.user.update({
+      where: {
+        telegramRhid,
+      },
+      data: updateData,
+      select: {
+        id: true,
+      },
+    })
+  }
+
+  return existingUser.id
+}
+
+async function decryptOptionalString(
+  crypto: ResideCrypto,
+  ecid: string | null,
+): Promise<string | undefined> {
+  if (ecid === null) {
+    return undefined
+  }
+
+  return await crypto.decrypt(encryptedStringSchema, ecid)
+}
+
+function toOptionalNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined
+  }
+
+  const normalized = value.trim()
+  if (normalized.length === 0) {
+    return undefined
+  }
+
+  return normalized
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

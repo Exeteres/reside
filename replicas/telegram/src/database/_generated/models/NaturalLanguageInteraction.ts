@@ -30,21 +30,21 @@ export type AggregateNaturalLanguageInteraction = {
 
 export type NaturalLanguageInteractionAvgAggregateOutputType = {
   id: number | null
+  chatId: number | null
   userId: number | null
-  threadId: number | null
 }
 
 export type NaturalLanguageInteractionSumAggregateOutputType = {
   id: number | null
+  chatId: number | null
   userId: number | null
-  threadId: number | null
 }
 
 export type NaturalLanguageInteractionMinAggregateOutputType = {
   id: number | null
-  chatId: string | null
+  chatId: number | null
   userId: number | null
-  threadId: number | null
+  threadRhid: string | null
   replicaName: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -52,9 +52,9 @@ export type NaturalLanguageInteractionMinAggregateOutputType = {
 
 export type NaturalLanguageInteractionMaxAggregateOutputType = {
   id: number | null
-  chatId: string | null
+  chatId: number | null
   userId: number | null
-  threadId: number | null
+  threadRhid: string | null
   replicaName: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -64,7 +64,7 @@ export type NaturalLanguageInteractionCountAggregateOutputType = {
   id: number
   chatId: number
   userId: number
-  threadId: number
+  threadRhid: number
   replicaName: number
   createdAt: number
   updatedAt: number
@@ -74,21 +74,21 @@ export type NaturalLanguageInteractionCountAggregateOutputType = {
 
 export type NaturalLanguageInteractionAvgAggregateInputType = {
   id?: true
+  chatId?: true
   userId?: true
-  threadId?: true
 }
 
 export type NaturalLanguageInteractionSumAggregateInputType = {
   id?: true
+  chatId?: true
   userId?: true
-  threadId?: true
 }
 
 export type NaturalLanguageInteractionMinAggregateInputType = {
   id?: true
   chatId?: true
   userId?: true
-  threadId?: true
+  threadRhid?: true
   replicaName?: true
   createdAt?: true
   updatedAt?: true
@@ -98,7 +98,7 @@ export type NaturalLanguageInteractionMaxAggregateInputType = {
   id?: true
   chatId?: true
   userId?: true
-  threadId?: true
+  threadRhid?: true
   replicaName?: true
   createdAt?: true
   updatedAt?: true
@@ -108,7 +108,7 @@ export type NaturalLanguageInteractionCountAggregateInputType = {
   id?: true
   chatId?: true
   userId?: true
-  threadId?: true
+  threadRhid?: true
   replicaName?: true
   createdAt?: true
   updatedAt?: true
@@ -203,9 +203,9 @@ export type NaturalLanguageInteractionGroupByArgs<ExtArgs extends runtime.Types.
 
 export type NaturalLanguageInteractionGroupByOutputType = {
   id: number
-  chatId: string
+  chatId: number
   userId: number
-  threadId: number
+  threadRhid: string
   replicaName: string
   createdAt: Date
   updatedAt: Date
@@ -236,9 +236,9 @@ export type NaturalLanguageInteractionWhereInput = {
   OR?: Prisma.NaturalLanguageInteractionWhereInput[]
   NOT?: Prisma.NaturalLanguageInteractionWhereInput | Prisma.NaturalLanguageInteractionWhereInput[]
   id?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
-  chatId?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
+  chatId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
   userId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
-  threadId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
+  threadRhid?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   replicaName?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   createdAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
@@ -250,7 +250,7 @@ export type NaturalLanguageInteractionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadId?: Prisma.SortOrder
+  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -260,25 +260,25 @@ export type NaturalLanguageInteractionOrderByWithRelationInput = {
 
 export type NaturalLanguageInteractionWhereUniqueInput = Prisma.AtLeast<{
   id?: number
-  chatId_threadId?: Prisma.NaturalLanguageInteractionChatIdThreadIdCompoundUniqueInput
+  chatId_threadRhid?: Prisma.NaturalLanguageInteractionChatIdThreadRhidCompoundUniqueInput
   AND?: Prisma.NaturalLanguageInteractionWhereInput | Prisma.NaturalLanguageInteractionWhereInput[]
   OR?: Prisma.NaturalLanguageInteractionWhereInput[]
   NOT?: Prisma.NaturalLanguageInteractionWhereInput | Prisma.NaturalLanguageInteractionWhereInput[]
-  chatId?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
+  chatId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
   userId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
-  threadId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
+  threadRhid?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   replicaName?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   createdAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
   chat?: Prisma.XOR<Prisma.ChatScalarRelationFilter, Prisma.ChatWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "id" | "chatId_threadId">
+}, "id" | "chatId_threadRhid">
 
 export type NaturalLanguageInteractionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadId?: Prisma.SortOrder
+  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -294,16 +294,16 @@ export type NaturalLanguageInteractionScalarWhereWithAggregatesInput = {
   OR?: Prisma.NaturalLanguageInteractionScalarWhereWithAggregatesInput[]
   NOT?: Prisma.NaturalLanguageInteractionScalarWhereWithAggregatesInput | Prisma.NaturalLanguageInteractionScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"NaturalLanguageInteraction"> | number
-  chatId?: Prisma.StringWithAggregatesFilter<"NaturalLanguageInteraction"> | string
+  chatId?: Prisma.IntWithAggregatesFilter<"NaturalLanguageInteraction"> | number
   userId?: Prisma.IntWithAggregatesFilter<"NaturalLanguageInteraction"> | number
-  threadId?: Prisma.IntWithAggregatesFilter<"NaturalLanguageInteraction"> | number
+  threadRhid?: Prisma.StringWithAggregatesFilter<"NaturalLanguageInteraction"> | string
   replicaName?: Prisma.StringWithAggregatesFilter<"NaturalLanguageInteraction"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"NaturalLanguageInteraction"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"NaturalLanguageInteraction"> | Date | string
 }
 
 export type NaturalLanguageInteractionCreateInput = {
-  threadId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -313,16 +313,16 @@ export type NaturalLanguageInteractionCreateInput = {
 
 export type NaturalLanguageInteractionUncheckedCreateInput = {
   id?: number
-  chatId: string
+  chatId: number
   userId: number
-  threadId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type NaturalLanguageInteractionUpdateInput = {
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -332,9 +332,9 @@ export type NaturalLanguageInteractionUpdateInput = {
 
 export type NaturalLanguageInteractionUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
   userId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -342,16 +342,16 @@ export type NaturalLanguageInteractionUncheckedUpdateInput = {
 
 export type NaturalLanguageInteractionCreateManyInput = {
   id?: number
-  chatId: string
+  chatId: number
   userId: number
-  threadId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type NaturalLanguageInteractionUpdateManyMutationInput = {
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -359,9 +359,9 @@ export type NaturalLanguageInteractionUpdateManyMutationInput = {
 
 export type NaturalLanguageInteractionUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
   userId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -377,16 +377,16 @@ export type NaturalLanguageInteractionOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type NaturalLanguageInteractionChatIdThreadIdCompoundUniqueInput = {
-  chatId: string
-  threadId: number
+export type NaturalLanguageInteractionChatIdThreadRhidCompoundUniqueInput = {
+  chatId: number
+  threadRhid: string
 }
 
 export type NaturalLanguageInteractionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadId?: Prisma.SortOrder
+  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -394,15 +394,15 @@ export type NaturalLanguageInteractionCountOrderByAggregateInput = {
 
 export type NaturalLanguageInteractionAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadId?: Prisma.SortOrder
 }
 
 export type NaturalLanguageInteractionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadId?: Prisma.SortOrder
+  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -412,7 +412,7 @@ export type NaturalLanguageInteractionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadId?: Prisma.SortOrder
+  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -420,8 +420,8 @@ export type NaturalLanguageInteractionMinOrderByAggregateInput = {
 
 export type NaturalLanguageInteractionSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadId?: Prisma.SortOrder
 }
 
 export type NaturalLanguageInteractionCreateNestedManyWithoutChatInput = {
@@ -509,7 +509,7 @@ export type NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput 
 }
 
 export type NaturalLanguageInteractionCreateWithoutChatInput = {
-  threadId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -519,7 +519,7 @@ export type NaturalLanguageInteractionCreateWithoutChatInput = {
 export type NaturalLanguageInteractionUncheckedCreateWithoutChatInput = {
   id?: number
   userId: number
-  threadId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -556,16 +556,16 @@ export type NaturalLanguageInteractionScalarWhereInput = {
   OR?: Prisma.NaturalLanguageInteractionScalarWhereInput[]
   NOT?: Prisma.NaturalLanguageInteractionScalarWhereInput | Prisma.NaturalLanguageInteractionScalarWhereInput[]
   id?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
-  chatId?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
+  chatId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
   userId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
-  threadId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
+  threadRhid?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   replicaName?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   createdAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
 }
 
 export type NaturalLanguageInteractionCreateWithoutUserInput = {
-  threadId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -574,8 +574,8 @@ export type NaturalLanguageInteractionCreateWithoutUserInput = {
 
 export type NaturalLanguageInteractionUncheckedCreateWithoutUserInput = {
   id?: number
-  chatId: string
-  threadId: number
+  chatId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -610,14 +610,14 @@ export type NaturalLanguageInteractionUpdateManyWithWhereWithoutUserInput = {
 export type NaturalLanguageInteractionCreateManyChatInput = {
   id?: number
   userId: number
-  threadId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type NaturalLanguageInteractionUpdateWithoutChatInput = {
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -627,7 +627,7 @@ export type NaturalLanguageInteractionUpdateWithoutChatInput = {
 export type NaturalLanguageInteractionUncheckedUpdateWithoutChatInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   userId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -636,7 +636,7 @@ export type NaturalLanguageInteractionUncheckedUpdateWithoutChatInput = {
 export type NaturalLanguageInteractionUncheckedUpdateManyWithoutChatInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   userId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -644,15 +644,15 @@ export type NaturalLanguageInteractionUncheckedUpdateManyWithoutChatInput = {
 
 export type NaturalLanguageInteractionCreateManyUserInput = {
   id?: number
-  chatId: string
-  threadId: number
+  chatId: number
+  threadRhid: string
   replicaName: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type NaturalLanguageInteractionUpdateWithoutUserInput = {
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -661,8 +661,8 @@ export type NaturalLanguageInteractionUpdateWithoutUserInput = {
 
 export type NaturalLanguageInteractionUncheckedUpdateWithoutUserInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -670,8 +670,8 @@ export type NaturalLanguageInteractionUncheckedUpdateWithoutUserInput = {
 
 export type NaturalLanguageInteractionUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string
-  threadId?: Prisma.IntFieldUpdateOperationsInput | number
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -683,7 +683,7 @@ export type NaturalLanguageInteractionSelect<ExtArgs extends runtime.Types.Exten
   id?: boolean
   chatId?: boolean
   userId?: boolean
-  threadId?: boolean
+  threadRhid?: boolean
   replicaName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -695,7 +695,7 @@ export type NaturalLanguageInteractionSelectCreateManyAndReturn<ExtArgs extends 
   id?: boolean
   chatId?: boolean
   userId?: boolean
-  threadId?: boolean
+  threadRhid?: boolean
   replicaName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -707,7 +707,7 @@ export type NaturalLanguageInteractionSelectUpdateManyAndReturn<ExtArgs extends 
   id?: boolean
   chatId?: boolean
   userId?: boolean
-  threadId?: boolean
+  threadRhid?: boolean
   replicaName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -719,13 +719,13 @@ export type NaturalLanguageInteractionSelectScalar = {
   id?: boolean
   chatId?: boolean
   userId?: boolean
-  threadId?: boolean
+  threadRhid?: boolean
   replicaName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type NaturalLanguageInteractionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "chatId" | "userId" | "threadId" | "replicaName" | "createdAt" | "updatedAt", ExtArgs["result"]["naturalLanguageInteraction"]>
+export type NaturalLanguageInteractionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "chatId" | "userId" | "threadRhid" | "replicaName" | "createdAt" | "updatedAt", ExtArgs["result"]["naturalLanguageInteraction"]>
 export type NaturalLanguageInteractionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -757,17 +757,17 @@ export type $NaturalLanguageInteractionPayload<ExtArgs extends runtime.Types.Ext
      */
     id: number
     /**
-     * The Telegram chat identifier where interaction started.
+     * The internal chat identifier where interaction started.
      */
-    chatId: string
+    chatId: number
     /**
      * The user identifier that owns this interaction thread.
      */
     userId: number
     /**
-     * The resolved thread identifier used for continuation lookup.
+     * The RHID of the resolved Telegram thread identifier used for continuation lookup.
      */
-    threadId: number
+    threadRhid: string
     /**
      * The target replica name for this interaction thread.
      */
@@ -1206,9 +1206,9 @@ export interface Prisma__NaturalLanguageInteractionClient<T, Null = never, ExtAr
  */
 export interface NaturalLanguageInteractionFieldRefs {
   readonly id: Prisma.FieldRef<"NaturalLanguageInteraction", 'Int'>
-  readonly chatId: Prisma.FieldRef<"NaturalLanguageInteraction", 'String'>
+  readonly chatId: Prisma.FieldRef<"NaturalLanguageInteraction", 'Int'>
   readonly userId: Prisma.FieldRef<"NaturalLanguageInteraction", 'Int'>
-  readonly threadId: Prisma.FieldRef<"NaturalLanguageInteraction", 'Int'>
+  readonly threadRhid: Prisma.FieldRef<"NaturalLanguageInteraction", 'String'>
   readonly replicaName: Prisma.FieldRef<"NaturalLanguageInteraction", 'String'>
   readonly createdAt: Prisma.FieldRef<"NaturalLanguageInteraction", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"NaturalLanguageInteraction", 'DateTime'>

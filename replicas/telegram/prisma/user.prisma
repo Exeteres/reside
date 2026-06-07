@@ -3,13 +3,32 @@ model User {
   /// The unique numeric identifier of the user record.
   id Int @id @default(autoincrement())
 
-  /// The Telegram user id.
-  telegramId String @unique
+  /// The RHID of the Telegram user id.
+  telegramRhid String @unique()
 
-  /// The raw Telegram payload for the user.
-  ///
-  /// [UserData]
-  data Json
+  /// The ECID of the Telegram user id.
+  telegramUserIdEcid String @unique()
+
+  /// The encrypted Telegram user id.
+  telegramUserId EncryptedContent @relation(name: "UserTelegramUserId", fields: [telegramUserIdEcid], references: [ecid])
+
+  /// The ECID of the Telegram username.
+  usernameEcid String? @unique()
+
+  /// The encrypted Telegram username.
+  username EncryptedContent? @relation(name: "UserUsername", fields: [usernameEcid], references: [ecid])
+
+  /// The ECID of the Telegram first name.
+  firstNameEcid String? @unique()
+
+  /// The encrypted Telegram first name.
+  firstName EncryptedContent? @relation(name: "UserFirstName", fields: [firstNameEcid], references: [ecid])
+
+  /// The ECID of the Telegram last name.
+  lastNameEcid String? @unique()
+
+  /// The encrypted Telegram last name.
+  lastName EncryptedContent? @relation(name: "UserLastName", fields: [lastNameEcid], references: [ecid])
 
   /// The avatars created by this user.
   createdAvatars Avatar[]

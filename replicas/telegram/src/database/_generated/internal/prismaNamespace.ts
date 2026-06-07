@@ -391,6 +391,7 @@ export const ModelName = {
   NotificationChannel: 'NotificationChannel',
   Chat: 'Chat',
   Command: 'Command',
+  EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   NaturalLanguageInteraction: 'NaturalLanguageInteraction',
   NotificationResponse: 'NotificationResponse',
@@ -412,7 +413,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "approvalRequest" | "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "chat" | "command" | "memoryNote" | "naturalLanguageInteraction" | "notificationResponse" | "notification" | "operation" | "user"
+    modelProps: "approvalRequest" | "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "chat" | "command" | "encryptedContent" | "memoryNote" | "naturalLanguageInteraction" | "notificationResponse" | "notification" | "operation" | "user"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -934,6 +935,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    EncryptedContent: {
+      payload: Prisma.$EncryptedContentPayload<ExtArgs>
+      fields: Prisma.EncryptedContentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EncryptedContentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EncryptedContentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        findFirst: {
+          args: Prisma.EncryptedContentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EncryptedContentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        findMany: {
+          args: Prisma.EncryptedContentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        create: {
+          args: Prisma.EncryptedContentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        createMany: {
+          args: Prisma.EncryptedContentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EncryptedContentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        delete: {
+          args: Prisma.EncryptedContentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        update: {
+          args: Prisma.EncryptedContentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        deleteMany: {
+          args: Prisma.EncryptedContentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EncryptedContentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EncryptedContentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        upsert: {
+          args: Prisma.EncryptedContentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        aggregate: {
+          args: Prisma.EncryptedContentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEncryptedContent>
+        }
+        groupBy: {
+          args: Prisma.EncryptedContentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EncryptedContentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EncryptedContentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EncryptedContentCountAggregateOutputType> | number
+        }
+      }
+    }
     MemoryNote: {
       payload: Prisma.$MemoryNotePayload<ExtArgs>
       fields: Prisma.MemoryNoteFieldRefs
@@ -1440,7 +1515,7 @@ export const AvatarScalarFieldEnum = {
   managedBotId: 'managedBotId',
   managedBotUsername: 'managedBotUsername',
   createdByUserId: 'createdByUserId',
-  token: 'token',
+  tokenEcid: 'tokenEcid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1489,8 +1564,8 @@ export type NotificationChannelScalarFieldEnum = (typeof NotificationChannelScal
 
 export const ChatScalarFieldEnum = {
   id: 'id',
-  telegramId: 'telegramId',
-  data: 'data',
+  telegramRhid: 'telegramRhid',
+  dataEcid: 'dataEcid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1513,6 +1588,14 @@ export const CommandScalarFieldEnum = {
 export type CommandScalarFieldEnum = (typeof CommandScalarFieldEnum)[keyof typeof CommandScalarFieldEnum]
 
 
+export const EncryptedContentScalarFieldEnum = {
+  ecid: 'ecid',
+  data: 'data'
+} as const
+
+export type EncryptedContentScalarFieldEnum = (typeof EncryptedContentScalarFieldEnum)[keyof typeof EncryptedContentScalarFieldEnum]
+
+
 export const MemoryNoteScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -1530,7 +1613,7 @@ export const NaturalLanguageInteractionScalarFieldEnum = {
   id: 'id',
   chatId: 'chatId',
   userId: 'userId',
-  threadId: 'threadId',
+  threadRhid: 'threadRhid',
   replicaName: 'replicaName',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1543,7 +1626,7 @@ export const NotificationResponseScalarFieldEnum = {
   operationId: 'operationId',
   type: 'type',
   actionName: 'actionName',
-  textResponse: 'textResponse',
+  textResponseEcid: 'textResponseEcid',
   createdAt: 'createdAt'
 } as const
 
@@ -1553,10 +1636,10 @@ export type NotificationResponseScalarFieldEnum = (typeof NotificationResponseSc
 export const NotificationScalarFieldEnum = {
   id: 'id',
   operationId: 'operationId',
-  targetChatId: 'targetChatId',
-  replyToMessageId: 'replyToMessageId',
+  chatId: 'chatId',
   channelId: 'channelId',
-  messageId: 'messageId',
+  messageRhid: 'messageRhid',
+  messageEcid: 'messageEcid',
   callingSubjectId: 'callingSubjectId',
   sendAsSubjectId: 'sendAsSubjectId',
   title: 'title',
@@ -1591,8 +1674,11 @@ export type OperationScalarFieldEnum = (typeof OperationScalarFieldEnum)[keyof t
 
 export const UserScalarFieldEnum = {
   id: 'id',
-  telegramId: 'telegramId',
-  data: 'data',
+  telegramRhid: 'telegramRhid',
+  telegramUserIdEcid: 'telegramUserIdEcid',
+  usernameEcid: 'usernameEcid',
+  firstNameEcid: 'firstNameEcid',
+  lastNameEcid: 'lastNameEcid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1874,6 +1960,7 @@ export type GlobalOmitConfig = {
   notificationChannel?: Prisma.NotificationChannelOmit
   chat?: Prisma.ChatOmit
   command?: Prisma.CommandOmit
+  encryptedContent?: Prisma.EncryptedContentOmit
   memoryNote?: Prisma.MemoryNoteOmit
   naturalLanguageInteraction?: Prisma.NaturalLanguageInteractionOmit
   notificationResponse?: Prisma.NotificationResponseOmit

@@ -24,8 +24,11 @@ model Avatar {
   /// The creator user entity if known.
   createdByUser User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
 
-  /// The current managed bot token in plain text.
-  token String
+  /// The ECID of the current managed bot token.
+  tokenEcid String @unique
+
+  /// The encrypted current managed bot token.
+  token EncryptedContent @relation(name: "AvatarToken", fields: [tokenEcid], references: [ecid])
 
   /// The timestamp when this avatar was created.
   createdAt DateTime @default(now())

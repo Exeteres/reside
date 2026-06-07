@@ -1,3 +1,4 @@
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
 import type {
   AuthzServiceClientLike,
@@ -7,7 +8,14 @@ import type {
   UpdateNotificationInput,
 } from "./notification-types"
 import { Code, ConnectError } from "@connectrpc/connect"
+import { rhid } from "@reside/common"
+import {
+  encryptedStringSchema,
+  getTelegramMessageChatId,
+  telegramSentMessageSchema,
+} from "../../definitions"
 import { strings } from "../../locale"
+import { createEcidTextSubstitutor } from "./ecid-substitution"
 import {
   ensureTargetChatExists,
   parseInteractionContextToken,
@@ -32,6 +40,7 @@ const RESPONSE_OPERATION_TITLE = strings.server.notification.responseOperationTi
 const TELEGRAM_REPLICA_SUBJECT_ID = "replica:telegram"
 
 export async function sendNotificationForReplica(
+  crypto: ResideCrypto,
   prisma: PrismaClient,
   authzService: AuthzServiceClientLike,
   subjectService: SubjectServiceClientLike,
@@ -40,6 +49,8 @@ export async function sendNotificationForReplica(
   replicaName: string,
   input: SendNotificationInput,
 ): Promise<{ notificationId: string; operationId: number | undefined }> {
+  const ecidSubstitutor = createEcidTextSubstitutor(crypto)
+
   assertChannelName(input.channel)
   assertActionRows(input.actionRows)
 
@@ -74,16 +85,19 @@ export async function sendNotificationForReplica(
       subjectId: senderSubjectId,
     },
     select: {
-      token: true,
+      tokenEcid: true,
     },
   })
 
   const isTelegramReplicaSender = senderSubjectId === TELEGRAM_REPLICA_SUBJECT_ID
 
+  const renderedTitle = await ecidSubstitutor.substituteInText(input.title)
+  const renderedContent = await ecidSubstitutor.substituteInText(input.content ?? "")
+
   const messageText = toTelegramMessageText(
     {
-      title: input.title,
-      content: input.content,
+      title: renderedTitle,
+      content: renderedContent,
     },
     senderDisplayTitle,
     avatar === null && !isTelegramReplicaSender,
@@ -94,8 +108,10 @@ export async function sendNotificationForReplica(
     input.contextToken,
     deliveryConfig.systemChatId,
   )
+  const avatarToken =
+    avatar === null ? undefined : await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)
   const effectiveAvatarToken =
-    avatar?.token ?? (isTelegramReplicaSender ? deliveryConfig.botToken : undefined)
+    avatarToken ?? (isTelegramReplicaSender ? deliveryConfig.botToken : undefined)
   const botToken = effectiveAvatarToken ?? deliveryConfig.botToken
   const bot = createTelegramBotClient(botToken, {
     role: "notification.send",
@@ -105,7 +121,7 @@ export async function sendNotificationForReplica(
   const replyToMessageId = interactionContext.messageId
   const isAvatarSender = effectiveAvatarToken !== undefined
 
-  await ensureTargetChatExists(prisma, targetChatId)
+  const targetChat = await ensureTargetChatExists(crypto, prisma, targetChatId)
 
   const sendResult =
     isAvatarSender && replyToMessageId !== undefined
@@ -122,7 +138,7 @@ export async function sendNotificationForReplica(
           replyToMessageId,
         )
       : {
-          sentMessageId: await sendNotificationWithReplyFallback(
+          ...(await sendNotificationWithReplyFallback(
             bot,
             targetChatId,
             senderSubjectId,
@@ -133,15 +149,17 @@ export async function sendNotificationForReplica(
             messageText,
             replyMarkup,
             undefined,
-          ).then(result => result.sentMessageId),
+          )),
           usedReplyFallback: false,
         }
 
   const sentMessageId = sendResult.sentMessageId
+  const sentMessageEcid = await crypto.encrypt(sendResult.sentMessage)
   const usedReplyFallback = sendResult.usedReplyFallback
 
   if (usedReplyFallback && senderSubjectId !== TELEGRAM_REPLICA_SUBJECT_ID) {
     await sendAvatarPrivacyModeWarning(
+      crypto,
       prisma,
       createTelegramBotClient,
       deliveryConfig.botToken,
@@ -155,10 +173,10 @@ export async function sendNotificationForReplica(
     const notification = await prisma.notification.create({
       data: {
         operationId: null,
-        targetChatId,
-        replyToMessageId,
+        chatId: targetChat.id,
         channelId: channel.id,
-        messageId: sentMessageId,
+        messageRhid: rhid(sentMessageId),
+        messageEcid: sentMessageEcid,
         callingSubjectId: replicaSubjectId,
         sendAsSubjectId: senderSubjectId,
         title: input.title,
@@ -192,10 +210,10 @@ export async function sendNotificationForReplica(
     const notification = await tx.notification.create({
       data: {
         operationId: operation.id,
-        targetChatId,
-        replyToMessageId,
+        chatId: targetChat.id,
         channelId: channel.id,
-        messageId: sentMessageId,
+        messageRhid: rhid(sentMessageId),
+        messageEcid: sentMessageEcid,
         callingSubjectId: replicaSubjectId,
         sendAsSubjectId: senderSubjectId,
         title: input.title,
@@ -222,6 +240,7 @@ export async function sendNotificationForReplica(
 }
 
 export async function updateNotificationForReplica(
+  crypto: ResideCrypto,
   prisma: PrismaClient,
   subjectService: SubjectServiceClientLike,
   createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
@@ -229,6 +248,8 @@ export async function updateNotificationForReplica(
   replicaName: string,
   input: UpdateNotificationInput,
 ): Promise<{ operationId: number | undefined }> {
+  const ecidSubstitutor = createEcidTextSubstitutor(crypto)
+
   const notificationId = parseNotificationId(input.notificationId)
   assertActionRows(input.actionRows)
 
@@ -244,7 +265,7 @@ export async function updateNotificationForReplica(
       subjectId: senderSubjectId,
     },
     select: {
-      token: true,
+      tokenEcid: true,
     },
   })
 
@@ -262,8 +283,7 @@ export async function updateNotificationForReplica(
       id: true,
       title: true,
       content: true,
-      messageId: true,
-      targetChatId: true,
+      messageEcid: true,
       actionRows: true,
       requiresTextResponse: true,
       operationId: true,
@@ -297,25 +317,33 @@ export async function updateNotificationForReplica(
     notification.operationId !== null && notification.operation?.status === "PENDING"
 
   const deliveryConfig = await loadDeliveryConfig()
+  const avatarToken =
+    avatar === null ? undefined : await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)
   const effectiveAvatarToken =
-    avatar?.token ?? (isTelegramReplicaSender ? deliveryConfig.botToken : undefined)
+    avatarToken ?? (isTelegramReplicaSender ? deliveryConfig.botToken : undefined)
   const botToken = effectiveAvatarToken ?? deliveryConfig.botToken
   const bot = createTelegramBotClient(botToken, {
     role: "notification.update",
   })
   const replyMarkup = toInlineKeyboardMarkupFromActionRows(input.actionRows)
 
+  const renderedTitle = await ecidSubstitutor.substituteInText(input.title)
+  const renderedContent = await ecidSubstitutor.substituteInText(input.content)
+
   const messageText = toTelegramMessageTextValue(
     {
-      title: input.title,
-      content: input.content,
+      title: renderedTitle,
+      content: renderedContent,
     },
     senderDisplayTitle,
     avatar === null && !isTelegramReplicaSender,
   )
 
+  const telegramMessage = await crypto.decrypt(telegramSentMessageSchema, notification.messageEcid)
+  const targetChatId = getTelegramMessageChatId(telegramMessage)
+
   if (!(isNoopUpdate && !hasUrlActions)) {
-    await bot.api.editMessageText(notification.targetChatId, notification.messageId, messageText, {
+    await bot.api.editMessageText(targetChatId, telegramMessage.message_id, messageText, {
       parse_mode: "HTML",
       link_preview_options: {
         is_disabled: true,
@@ -388,6 +416,7 @@ export async function updateNotificationForReplica(
 }
 
 export async function deleteNotificationForReplica(
+  crypto: ResideCrypto,
   prisma: PrismaClient,
   createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
   loadDeliveryConfig: () => Promise<{ botToken: string; systemChatId: string }>,
@@ -401,8 +430,7 @@ export async function deleteNotificationForReplica(
     },
     select: {
       id: true,
-      targetChatId: true,
-      messageId: true,
+      messageEcid: true,
       sendAsSubjectId: true,
       operationId: true,
       operation: {
@@ -425,17 +453,22 @@ export async function deleteNotificationForReplica(
             subjectId: notification.sendAsSubjectId,
           },
           select: {
-            token: true,
+            tokenEcid: true,
           },
         })
 
   const deliveryConfig = await loadDeliveryConfig()
-  const botToken = senderAvatar?.token ?? deliveryConfig.botToken
+  const senderAvatarToken =
+    senderAvatar === null
+      ? undefined
+      : await crypto.decrypt(encryptedStringSchema, senderAvatar.tokenEcid)
+  const botToken = senderAvatarToken ?? deliveryConfig.botToken
   const bot = createTelegramBotClient(botToken, {
     role: "notification.delete",
   })
 
-  await bot.api.deleteMessage(notification.targetChatId, notification.messageId)
+  const telegramMessage = await crypto.decrypt(telegramSentMessageSchema, notification.messageEcid)
+  await bot.api.deleteMessage(getTelegramMessageChatId(telegramMessage), telegramMessage.message_id)
 
   await prisma.$transaction(async tx => {
     if (notification.operationId !== null && notification.operation?.status === "PENDING") {

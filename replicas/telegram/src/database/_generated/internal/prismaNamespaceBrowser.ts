@@ -58,6 +58,7 @@ export const ModelName = {
   NotificationChannel: 'NotificationChannel',
   Chat: 'Chat',
   Command: 'Command',
+  EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   NaturalLanguageInteraction: 'NaturalLanguageInteraction',
   NotificationResponse: 'NotificationResponse',
@@ -105,7 +106,7 @@ export const AvatarScalarFieldEnum = {
   managedBotId: 'managedBotId',
   managedBotUsername: 'managedBotUsername',
   createdByUserId: 'createdByUserId',
-  token: 'token',
+  tokenEcid: 'tokenEcid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -154,8 +155,8 @@ export type NotificationChannelScalarFieldEnum = (typeof NotificationChannelScal
 
 export const ChatScalarFieldEnum = {
   id: 'id',
-  telegramId: 'telegramId',
-  data: 'data',
+  telegramRhid: 'telegramRhid',
+  dataEcid: 'dataEcid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -178,6 +179,14 @@ export const CommandScalarFieldEnum = {
 export type CommandScalarFieldEnum = (typeof CommandScalarFieldEnum)[keyof typeof CommandScalarFieldEnum]
 
 
+export const EncryptedContentScalarFieldEnum = {
+  ecid: 'ecid',
+  data: 'data'
+} as const
+
+export type EncryptedContentScalarFieldEnum = (typeof EncryptedContentScalarFieldEnum)[keyof typeof EncryptedContentScalarFieldEnum]
+
+
 export const MemoryNoteScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -195,7 +204,7 @@ export const NaturalLanguageInteractionScalarFieldEnum = {
   id: 'id',
   chatId: 'chatId',
   userId: 'userId',
-  threadId: 'threadId',
+  threadRhid: 'threadRhid',
   replicaName: 'replicaName',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -208,7 +217,7 @@ export const NotificationResponseScalarFieldEnum = {
   operationId: 'operationId',
   type: 'type',
   actionName: 'actionName',
-  textResponse: 'textResponse',
+  textResponseEcid: 'textResponseEcid',
   createdAt: 'createdAt'
 } as const
 
@@ -218,10 +227,10 @@ export type NotificationResponseScalarFieldEnum = (typeof NotificationResponseSc
 export const NotificationScalarFieldEnum = {
   id: 'id',
   operationId: 'operationId',
-  targetChatId: 'targetChatId',
-  replyToMessageId: 'replyToMessageId',
+  chatId: 'chatId',
   channelId: 'channelId',
-  messageId: 'messageId',
+  messageRhid: 'messageRhid',
+  messageEcid: 'messageEcid',
   callingSubjectId: 'callingSubjectId',
   sendAsSubjectId: 'sendAsSubjectId',
   title: 'title',
@@ -256,8 +265,11 @@ export type OperationScalarFieldEnum = (typeof OperationScalarFieldEnum)[keyof t
 
 export const UserScalarFieldEnum = {
   id: 'id',
-  telegramId: 'telegramId',
-  data: 'data',
+  telegramRhid: 'telegramRhid',
+  telegramUserIdEcid: 'telegramUserIdEcid',
+  usernameEcid: 'usernameEcid',
+  firstNameEcid: 'firstNameEcid',
+  lastNameEcid: 'lastNameEcid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

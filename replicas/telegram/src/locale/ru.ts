@@ -156,5 +156,19 @@ export const ru = {
       chatById: (chatId: string | number) => `Чат ${chatId}`,
       userById: (userId: string | number) => `Пользователь ${userId}`,
     },
+    ecidSubstitution: {
+      decryptReason: "Для отображения зашифрованных данных пользователю",
+      unavailableValue: "ДАННЫЕ НЕДОСТУПНЫ",
+      nullValue: "пустое значение",
+      booleanTrue: "да",
+      booleanFalse: "нет",
+      emptyArray: "пустой массив",
+      objectWithFieldCount: (fieldCount: number) => `объект с ${fieldCount} полями`,
+      arrayOfObjects: (count: number) => `массив из ${count} объектов`,
+      arrayWithElementCount: (count: number) => `массив из ${count} элементов`,
+      stringArrayTwo: (first: string, second: string) => `${first} и ${second}`,
+      stringArrayMany: (first: string, second: string, restCount: number) =>
+        `${first}, ${second} и ещё ${restCount} элементов`,
+    },
   },
 }

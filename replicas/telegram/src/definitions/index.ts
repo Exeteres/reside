@@ -1,5 +1,6 @@
 export * from "./activities"
 export * from "./channels"
+export * from "./encryption"
 export * from "./errors"
 export * from "./webhook"
 export * from "./workflows"

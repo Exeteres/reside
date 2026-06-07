@@ -1,6 +1,6 @@
 import type { PrismaClient } from "../../database"
 import { describe, expect, test } from "bun:test"
-import { mockDeepFn } from "@reside/common/testing"
+import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import {
   assertActionRows,
   deleteNotificationForReplica,
@@ -32,6 +32,17 @@ type TelegramBotLike = {
     sendDocument: (...args: unknown[]) => Promise<{ message_id: number }>
     sendMediaGroup: (...args: unknown[]) => Promise<{ message_id: number }[]>
   }
+}
+
+process.env.REPLICA_NAME = "telegram"
+
+async function encryptTelegramMessage(messageId: number, chatId = "-1001"): Promise<string> {
+  return await testCrypto.encrypt({
+    message_id: messageId,
+    chat: {
+      id: chatId,
+    },
+  })
 }
 
 describe("parseNotificationId", () => {
@@ -76,6 +87,7 @@ describe("sendNotificationForReplica", () => {
 
     expect(
       sendNotificationForReplica(
+        testCrypto,
         prisma,
         authzService,
         subjectService,
@@ -120,6 +132,7 @@ describe("sendNotificationForReplica", () => {
     bot.api.sendMessage.mockResolvedValue({ message_id: 123 } as never)
 
     const result = await sendNotificationForReplica(
+      testCrypto,
       prisma,
       authzService,
       subjectService,
@@ -178,6 +191,7 @@ describe("sendNotificationForReplica", () => {
     )
 
     const result = await sendNotificationForReplica(
+      testCrypto,
       prisma,
       authzService,
       subjectService,
@@ -236,6 +250,7 @@ describe("sendNotificationForReplica", () => {
     bot.api.sendMessage.mockResolvedValue({ message_id: 123 } as never)
 
     await sendNotificationForReplica(
+      testCrypto,
       prisma,
       authzService,
       subjectService,
@@ -276,6 +291,7 @@ describe("updateNotificationForReplica", () => {
 
     expect(
       updateNotificationForReplica(
+        testCrypto,
         prisma,
         subjectService,
         () => bot,
@@ -308,6 +324,7 @@ describe("updateNotificationForReplica", () => {
 
     expect(
       updateNotificationForReplica(
+        testCrypto,
         prisma,
         subjectService,
         () => bot,
@@ -340,8 +357,7 @@ describe("updateNotificationForReplica", () => {
       id: 7,
       title: "Old title",
       content: "Old content",
-      messageId: 900,
-      targetChatId: "-1001",
+      messageEcid: await encryptTelegramMessage(900),
       actionRows: [],
       requiresTextResponse: false,
       operationId: null,
@@ -357,6 +373,7 @@ describe("updateNotificationForReplica", () => {
     )
 
     const result = await updateNotificationForReplica(
+      testCrypto,
       prisma,
       subjectService,
       () => bot,
@@ -393,8 +410,7 @@ describe("updateNotificationForReplica", () => {
       id: 7,
       title: "Old title",
       content: "Old content",
-      messageId: 900,
-      targetChatId: "-1001",
+      messageEcid: await encryptTelegramMessage(900),
       actionRows: [],
       requiresTextResponse: false,
       operationId: null,
@@ -411,6 +427,7 @@ describe("updateNotificationForReplica", () => {
     )
 
     const result = await updateNotificationForReplica(
+      testCrypto,
       prisma,
       subjectService,
       () => bot,
@@ -454,8 +471,7 @@ describe("updateNotificationForReplica", () => {
       id: 7,
       title: "Old title",
       content: "Old content",
-      messageId: 900,
-      targetChatId: "-1001",
+      messageEcid: await encryptTelegramMessage(900),
       actionRows: [
         {
           actions: [
@@ -482,6 +498,7 @@ describe("updateNotificationForReplica", () => {
     )
 
     const result = await updateNotificationForReplica(
+      testCrypto,
       prisma,
       subjectService,
       () => bot,
@@ -517,8 +534,7 @@ describe("updateNotificationForReplica", () => {
       id: 7,
       title: "Old title",
       content: "Old content",
-      messageId: 900,
-      targetChatId: "-1001",
+      messageEcid: await encryptTelegramMessage(900),
       actionRows: [],
       requiresTextResponse: false,
       operationId: null,
@@ -534,6 +550,7 @@ describe("updateNotificationForReplica", () => {
     )
 
     await updateNotificationForReplica(
+      testCrypto,
       prisma,
       subjectService,
       () => bot,
@@ -567,6 +584,7 @@ describe("deleteNotificationForReplica", () => {
 
     expect(
       deleteNotificationForReplica(
+        testCrypto,
         prisma,
         () => bot,
         async () => ({
@@ -586,15 +604,16 @@ describe("deleteNotificationForReplica", () => {
 
     prisma.notification.findFirst.mockResolvedValue({
       id: 7,
-      targetChatId: "-1001",
-      messageId: 900,
+      messageEcid: await encryptTelegramMessage(900),
       sendAsSubjectId: "replica:demo",
       operationId: 42,
       operation: {
         status: "PENDING",
       },
     } as never)
-    prisma.avatar.findUnique.mockResolvedValue({ token: "avatar-token" } as never)
+    prisma.avatar.findUnique.mockResolvedValue({
+      tokenEcid: await testCrypto.encrypt("avatar-token"),
+    } as never)
     bot.api.deleteMessage.mockResolvedValue(true as never)
     prisma.operation.update.mockResolvedValue({ id: 42 } as never)
     prisma.notification.delete.mockResolvedValue({ id: 7 } as never)
@@ -606,6 +625,7 @@ describe("deleteNotificationForReplica", () => {
     )
 
     await deleteNotificationForReplica(
+      testCrypto,
       prisma,
       () => bot,
       async () => ({
@@ -629,8 +649,7 @@ describe("deleteNotificationForReplica", () => {
 
     prisma.notification.findFirst.mockResolvedValue({
       id: 7,
-      targetChatId: "-1001",
-      messageId: 900,
+      messageEcid: await encryptTelegramMessage(900),
       sendAsSubjectId: null,
       operationId: 42,
       operation: {
@@ -648,6 +667,7 @@ describe("deleteNotificationForReplica", () => {
     )
 
     await deleteNotificationForReplica(
+      testCrypto,
       prisma,
       () => bot,
       async () => ({

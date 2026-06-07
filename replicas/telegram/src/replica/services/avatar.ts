@@ -1,5 +1,6 @@
 import type { AvatarServiceImplementation } from "@reside/api/interaction/avatar.v1"
 import type { CommonServices, GenericOperationService } from "@reside/common"
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../../database"
 import { create } from "@bufbuild/protobuf"
@@ -15,13 +16,14 @@ import {
   TELEGRAM_CONFIG_MAP_NAME,
   TELEGRAM_SYSTEM_CHAT_ID_KEY,
 } from "../business/config"
-import { loadTelegramSecretState, TELEGRAM_SECRET_NAME } from "../business/secret"
+import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "../business/secret"
 
 export function createAvatarService(
   services: CommonServices<"access"> & {
     prisma: PrismaClient
     operationService: GenericOperationService<Operation>
     temporalClient: Client
+    crypto: ResideCrypto
   },
 ): AvatarServiceImplementation {
   const namespace = getReplicaNamespace()
@@ -102,13 +104,13 @@ export function createAvatarService(
 
       try {
         const [secretState, configState] = await Promise.all([
-          loadTelegramSecretState(coreApi, namespace),
+          loadTelegramSecretState(services.crypto),
           loadTelegramConfigState(coreApi, namespace),
         ])
 
         if (!secretState.botToken) {
           throw new ConnectError(
-            `Secret "${TELEGRAM_SECRET_NAME}" must contain "bot_token"`,
+            `Vault secret key "${TELEGRAM_BOT_TOKEN_SECRET_KEY}" must contain token value`,
             Code.FailedPrecondition,
           )
         }

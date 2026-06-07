@@ -4,12 +4,14 @@ import type { DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
 import type { CommandHandlerServiceClient } from "@reside/api/interaction/command.v1"
 import type { NaturalLanguageServiceClient } from "@reside/api/interaction/nls.v1"
 import type { GenericOperationService, MessageElement } from "@reside/common"
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../../database"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import { NaturalLanguageService } from "@reside/api/interaction/nls.v1"
-import { block, bold, createChannel, createClient, italic, logger } from "@reside/common"
+import { block, bold, createChannel, createClient, italic, logger, rhid } from "@reside/common"
 import { type Bot, type BotError, type Context, GrammyError, HttpError } from "grammy"
+import { encryptedStringSchema } from "../../definitions"
 import { strings } from "../../locale"
 import { createInteractionContextToken } from "../../shared"
 import {
@@ -56,6 +58,7 @@ export async function createTelegramBot(args: {
   permissionRequestService: PermissionRequestServiceClient
   temporalClient: Client
   superAdminUserId: string | undefined
+  crypto: ResideCrypto
 }): Promise<Bot<Context>> {
   const bot = createTelegramBotClient(args.token, {
     role: "manager",
@@ -164,7 +167,7 @@ export async function createTelegramBot(args: {
 
     logger.debug("received text message event chatId=%s userId=%s", chatId, userId)
 
-    await ensureTelegramEntities(args.prisma, context)
+    await ensureTelegramEntities(args.crypto, args.prisma, context)
 
     const interactionContext = await buildInteractionContext(context, {
       messageId: message.message_id,
@@ -220,6 +223,7 @@ export async function createTelegramBot(args: {
           discoveryService: args.discoveryService,
           authzService: args.authzService,
           permissionRequestService: args.permissionRequestService,
+          crypto: args.crypto,
           getNaturalLanguageClient,
           managerToken: args.token,
           chatId,
@@ -264,6 +268,7 @@ export async function createTelegramBot(args: {
     }
     try {
       result = await completeOperationFromTextReply({
+        crypto: args.crypto,
         prisma: args.prisma,
         operationService: args.operationService,
         chatId,
@@ -330,6 +335,7 @@ export async function createTelegramBot(args: {
           discoveryService: args.discoveryService,
           authzService: args.authzService,
           permissionRequestService: args.permissionRequestService,
+          crypto: args.crypto,
           getNaturalLanguageClient,
           managerToken: args.token,
           chatId,
@@ -383,11 +389,12 @@ export async function createTelegramBot(args: {
 
     const selectedOptionName = resolveCallbackOptionTitle(context, actionName)
 
-    await ensureTelegramEntities(args.prisma, context)
+    await ensureTelegramEntities(args.crypto, args.prisma, context)
 
     let result: CallbackCompletionResult
     try {
       result = await completeOperationFromCallbackAction({
+        crypto: args.crypto,
         prisma: args.prisma,
         operationService: args.operationService,
         chatId,
@@ -484,7 +491,11 @@ export async function createTelegramBot(args: {
 
   return bot
 }
-async function ensureTelegramEntities(prisma: PrismaClient, context: Context): Promise<void> {
+async function ensureTelegramEntities(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  context: Context,
+): Promise<void> {
   const chat = context.chat
   const user = context.from
 
@@ -494,45 +505,153 @@ async function ensureTelegramEntities(prisma: PrismaClient, context: Context): P
   const chatEntity =
     chatId === null
       ? null
-      : await prisma.chat.upsert({
-          where: {
-            telegramId: chatId,
-          },
-          create: {
-            telegramId: chatId,
-            data: chat as unknown as PrismaJson.ChatData,
-          },
-          update: {
-            data: chat as unknown as PrismaJson.ChatData,
-          },
-          select: {
-            id: true,
-          },
-        })
+      : await upsertTelegramChat(crypto, prisma, chatId, chat as unknown as PrismaJson.ChatData)
 
   const userEntity =
     userId === null
       ? null
-      : await prisma.user.upsert({
-          where: {
-            telegramId: userId,
-          },
-          create: {
-            telegramId: userId,
-            data: user as unknown as PrismaJson.UserData,
-          },
-          update: {
-            data: user as unknown as PrismaJson.UserData,
-          },
-          select: {
-            id: true,
-          },
-        })
+      : await upsertTelegramUser(crypto, prisma, userId, user as unknown as PrismaJson.UserData)
 
   void chatEntity
   void userEntity
 
   return
+}
+
+async function upsertTelegramChat(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  telegramChatId: string,
+  data: PrismaJson.ChatData,
+): Promise<{ id: number }> {
+  const telegramRhid = rhid(telegramChatId)
+  const dataEcid = await crypto.encrypt(data)
+
+  return await prisma.chat.upsert({
+    where: {
+      telegramRhid,
+    },
+    create: {
+      telegramRhid,
+      dataEcid,
+    },
+    update: {
+      dataEcid,
+    },
+    select: {
+      id: true,
+    },
+  })
+}
+
+async function upsertTelegramUser(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  telegramUserId: string,
+  data: PrismaJson.UserData,
+): Promise<{ id: number }> {
+  const telegramRhid = rhid(telegramUserId)
+  const username = toOptionalNonEmptyString(data.username)
+  const firstName = toOptionalNonEmptyString(data.first_name)
+  const lastName = toOptionalNonEmptyString(data.last_name)
+
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      telegramRhid,
+    },
+    select: {
+      id: true,
+      telegramUserIdEcid: true,
+      usernameEcid: true,
+      firstNameEcid: true,
+      lastNameEcid: true,
+    },
+  })
+
+  if (!existingUser) {
+    return await prisma.user.create({
+      data: {
+        telegramRhid,
+        telegramUserIdEcid: await crypto.encrypt(telegramUserId),
+        usernameEcid: username === undefined ? null : await crypto.encrypt(username),
+        firstNameEcid: firstName === undefined ? null : await crypto.encrypt(firstName),
+        lastNameEcid: lastName === undefined ? null : await crypto.encrypt(lastName),
+      },
+      select: {
+        id: true,
+      },
+    })
+  }
+
+  const updateData: {
+    telegramUserIdEcid?: string
+    usernameEcid?: string | null
+    firstNameEcid?: string | null
+    lastNameEcid?: string | null
+  } = {}
+
+  const currentTelegramUserId = await crypto.decrypt(
+    encryptedStringSchema,
+    existingUser.telegramUserIdEcid,
+  )
+  if (currentTelegramUserId !== telegramUserId) {
+    updateData.telegramUserIdEcid = await crypto.encrypt(telegramUserId)
+  }
+
+  const currentUsername = await decryptOptionalString(crypto, existingUser.usernameEcid)
+  if (currentUsername !== username) {
+    updateData.usernameEcid = username === undefined ? null : await crypto.encrypt(username)
+  }
+
+  const currentFirstName = await decryptOptionalString(crypto, existingUser.firstNameEcid)
+  if (currentFirstName !== firstName) {
+    updateData.firstNameEcid = firstName === undefined ? null : await crypto.encrypt(firstName)
+  }
+
+  const currentLastName = await decryptOptionalString(crypto, existingUser.lastNameEcid)
+  if (currentLastName !== lastName) {
+    updateData.lastNameEcid = lastName === undefined ? null : await crypto.encrypt(lastName)
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return {
+      id: existingUser.id,
+    }
+  }
+
+  return await prisma.user.update({
+    where: {
+      telegramRhid,
+    },
+    data: updateData,
+    select: {
+      id: true,
+    },
+  })
+}
+
+async function decryptOptionalString(
+  crypto: ResideCrypto,
+  ecid: string | null,
+): Promise<string | undefined> {
+  if (ecid === null) {
+    return undefined
+  }
+
+  return await crypto.decrypt(encryptedStringSchema, ecid)
+}
+
+function toOptionalNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined
+  }
+
+  const normalized = value.trim()
+  if (normalized.length === 0) {
+    return undefined
+  }
+
+  return normalized
 }
 
 async function buildInteractionContext(
@@ -584,7 +703,10 @@ async function appendAcceptedStamp(
 
   const notification = await prisma.notification.findFirst({
     where: {
-      messageId,
+      messageRhid: rhid(messageId),
+      chat: {
+        telegramRhid: rhid(String(chatId)),
+      },
     },
     select: {
       title: true,
@@ -651,7 +773,10 @@ async function handleNotificationPaginationAction(
 
   const notification = await prisma.notification.findFirst({
     where: {
-      messageId,
+      messageRhid: rhid(messageId),
+      chat: {
+        telegramRhid: rhid(String(chatId)),
+      },
     },
     select: {
       actionRows: true,

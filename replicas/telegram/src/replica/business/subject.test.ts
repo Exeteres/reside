@@ -1,11 +1,14 @@
 import type { PrismaClient } from "../../database"
 import { describe, expect, test } from "bun:test"
-import { mockDeepFn } from "@reside/common/testing"
+import { rhid } from "@reside/common"
+import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import {
   parseTelegramSubjectId,
   resolveTelegramSubjectDisplayInfo,
   toTelegramUserTitle,
 } from "./subject"
+
+process.env.REPLICA_NAME = "telegram"
 
 describe("parseTelegramSubjectId", () => {
   test("parses telegram subject id", () => {
@@ -35,21 +38,25 @@ describe("toTelegramUserTitle", () => {
 describe("resolveTelegramSubjectDisplayInfo", () => {
   test("loads user by parsed telegram id and returns computed title", async () => {
     const prisma = mockDeepFn<PrismaClient>()
+    const telegramUserIdEcid = await testCrypto.encrypt("123")
+    const usernameEcid = await testCrypto.encrypt("nick")
+
     prisma.user.findUnique.mockResolvedValue({
-      telegramId: "123",
-      data: {
-        username: "nick",
-      },
+      telegramRhid: rhid("123"),
+      telegramUserIdEcid,
+      usernameEcid,
+      firstNameEcid: null,
+      lastNameEcid: null,
     } as never)
 
-    const result = await resolveTelegramSubjectDisplayInfo(prisma, "telegram:123")
+    const result = await resolveTelegramSubjectDisplayInfo(testCrypto, prisma, "telegram:123")
 
     expect(result.title).toBe("nick")
     expect(prisma.user.findUnique.spy()).toHaveBeenCalledTimes(1)
     expect(prisma.user.findUnique.spy()).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          telegramId: "123",
+          telegramRhid: rhid("123"),
         },
       }),
     )
@@ -58,7 +65,7 @@ describe("resolveTelegramSubjectDisplayInfo", () => {
   test("throws when subject id format is invalid", () => {
     const prisma = mockDeepFn<PrismaClient>()
 
-    expect(resolveTelegramSubjectDisplayInfo(prisma, "invalid")).rejects.toThrow(
+    expect(resolveTelegramSubjectDisplayInfo(testCrypto, prisma, "invalid")).rejects.toThrow(
       'Subject ID must match format "telegram:{userId}"',
     )
     expect(prisma.user.findUnique.spy()).toHaveBeenCalledTimes(0)
@@ -68,7 +75,7 @@ describe("resolveTelegramSubjectDisplayInfo", () => {
     const prisma = mockDeepFn<PrismaClient>()
     prisma.user.findUnique.mockResolvedValue(null as never)
 
-    expect(resolveTelegramSubjectDisplayInfo(prisma, "telegram:404")).rejects.toThrow(
+    expect(resolveTelegramSubjectDisplayInfo(testCrypto, prisma, "telegram:404")).rejects.toThrow(
       'Subject "telegram:404" was not found',
     )
     expect(prisma.user.findUnique.spy()).toHaveBeenCalledTimes(1)

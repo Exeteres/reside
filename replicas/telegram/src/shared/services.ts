@@ -10,11 +10,12 @@ import {
   createGenericOperationService,
   createPostgresPool,
   createTemporalClient,
+  crypto,
 } from "@reside/common"
 import { telegramReplica } from "@reside/registry"
 import { isGrpcServiceError } from "@temporalio/client"
 import { PrismaClient } from "../database"
-import { approvalCancelSignal, getApprovalWorkflowId } from "../definitions"
+import { approvalCancelSignal, encryptedStringSchema, getApprovalWorkflowId } from "../definitions"
 
 export async function createServices() {
   const services = await createCommonServices(telegramReplica.endpoints)
@@ -92,12 +93,12 @@ export async function createServices() {
         }
       }
 
-      if (!response.textResponse) {
+      if (!response.textResponseEcid) {
         throw new Error(`Operation "${operationId}" TEXT response has no textResponse`)
       }
 
       return {
-        textResponse: response.textResponse,
+        textResponse: await crypto.decrypt(encryptedStringSchema, response.textResponseEcid),
         contextToken,
       }
     },

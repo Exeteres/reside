@@ -1,6 +1,7 @@
 import type { GenericOperationService } from "@reside/common"
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { Operation, PrismaClient } from "../../database"
-import { logger } from "@reside/common"
+import { logger, rhid } from "@reside/common"
 import { isRecord } from "@reside/utils"
 import { createInteractionContextToken } from "../../shared"
 import { getNotificationCallbackActionNames } from "./notification-pagination"
@@ -15,6 +16,7 @@ export type CallbackCompletionResult =
     }
 
 export async function completeOperationFromTextReply(args: {
+  crypto: ResideCrypto
   prisma: PrismaClient
   operationService: GenericOperationService<Operation>
   chatId: number
@@ -35,7 +37,7 @@ export async function completeOperationFromTextReply(args: {
 
   const operation = operations.find(
     candidate =>
-      candidate.response === null && isChatAuthorized(candidate.targetChatId, args.chatId),
+      candidate.response === null && isChatAuthorized(candidate.targetChatRhid, args.chatId),
   )
 
   if (!operation) {
@@ -65,7 +67,7 @@ export async function completeOperationFromTextReply(args: {
         operationId: operation.id,
         type: "TEXT",
         actionName: null,
-        textResponse: args.textResponse,
+        textResponseEcid: await args.crypto.encrypt(args.textResponse),
       },
     })
 
@@ -113,6 +115,7 @@ export async function completeOperationFromTextReply(args: {
 }
 
 export async function completeOperationFromCallbackAction(args: {
+  crypto: ResideCrypto
   prisma: PrismaClient
   operationService: GenericOperationService<Operation>
   chatId: number
@@ -127,7 +130,7 @@ export async function completeOperationFromCallbackAction(args: {
   })
 
   const chatAuthorizedOperations = operations.filter(candidate =>
-    isChatAuthorized(candidate.targetChatId, args.chatId),
+    isChatAuthorized(candidate.targetChatRhid, args.chatId),
   )
 
   logger.debug(
@@ -256,7 +259,7 @@ export async function completeOperationFromCallbackAction(args: {
         operationId: actionableOperation.id,
         type: "ACTION",
         actionName: args.actionName,
-        textResponse: null,
+        textResponseEcid: null,
       },
     })
   } catch (error) {
@@ -343,13 +346,13 @@ async function getPendingOperationsByMessage(
     callbackActionNames: string[]
     channelName: string | null
     isProtected: boolean
-    targetChatId: string
+    targetChatRhid: string
     response: { operationId: number } | null
   }>
 > {
   const records = await prisma.notification.findMany({
     where: {
-      messageId: args.messageId,
+      messageRhid: rhid(args.messageId),
       operation: {
         status: "PENDING",
       },
@@ -363,7 +366,11 @@ async function getPendingOperationsByMessage(
           name: true,
         },
       },
-      targetChatId: true,
+      chat: {
+        select: {
+          telegramRhid: true,
+        },
+      },
       operation: {
         select: {
           id: true,
@@ -391,15 +398,15 @@ async function getPendingOperationsByMessage(
         callbackActionNames: getNotificationCallbackActionNames(record.actionRows),
         channelName: record.channel.name,
         isProtected: record.isProtected,
-        targetChatId: record.targetChatId,
+        targetChatRhid: record.chat.telegramRhid,
         response: record.operation.notificationResponse,
       },
     ]
   })
 }
 
-function isChatAuthorized(targetChatId: string, chatId: number): boolean {
-  return targetChatId === String(chatId)
+function isChatAuthorized(targetChatRhid: string, chatId: number): boolean {
+  return targetChatRhid === rhid(String(chatId))
 }
 
 async function findRespondedOperationByMessage(
@@ -408,7 +415,7 @@ async function findRespondedOperationByMessage(
 ): Promise<{ id: number } | null> {
   const notification = await prisma.notification.findFirst({
     where: {
-      messageId: args.messageId,
+      messageRhid: rhid(args.messageId),
       operation: {
         notificationResponse: {
           isNot: null,
@@ -421,7 +428,11 @@ async function findRespondedOperationByMessage(
           id: true,
         },
       },
-      targetChatId: true,
+      chat: {
+        select: {
+          telegramRhid: true,
+        },
+      },
     },
     orderBy: {
       id: "desc",
@@ -432,7 +443,7 @@ async function findRespondedOperationByMessage(
     return null
   }
 
-  if (!isChatAuthorized(notification.targetChatId, args.chatId)) {
+  if (!isChatAuthorized(notification.chat.telegramRhid, args.chatId)) {
     return null
   }
 

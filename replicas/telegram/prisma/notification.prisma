@@ -18,8 +18,11 @@ model NotificationResponse {
   /// The action name when the response kind is ACTION.
   actionName String?
 
-  /// The text value when the response kind is TEXT.
-  textResponse String?
+  /// The ECID of the text value when the response kind is TEXT.
+  textResponseEcid String? @unique
+
+  /// The encrypted text value when the response kind is TEXT.
+  textResponse EncryptedContent? @relation(name: "NotificationResponseText", fields: [textResponseEcid], references: [ecid])
 
   /// The timestamp when the response was created.
   createdAt DateTime @default(now())
@@ -39,14 +42,11 @@ model Notification {
   /// The operation associated with this notification payload.
   operation Operation? @relation(fields: [operationId], references: [id], onDelete: SetNull)
 
-  /// The Telegram chat identifier where this notification was sent.
-  targetChatId String
+  /// The internal chat identifier where this notification was sent.
+  chatId Int
 
   /// The Telegram chat entity where this notification was sent.
-  chat Chat @relation("NotificationTargetChat", fields: [targetChatId], references: [telegramId])
-
-  /// Optional Telegram message identifier this notification replies to.
-  replyToMessageId Int?
+  chat Chat @relation("NotificationTargetChat", fields: [chatId], references: [id])
 
   /// The ID of the notification channel associated with this operation.
   channelId Int
@@ -54,13 +54,19 @@ model Notification {
   /// The notification channel associated with this notification.
   channel NotificationChannel @relation(fields: [channelId], references: [id])
 
-  /// The message identifier this notification is associated with.
-  messageId Int
+  /// The RHID of the Telegram message identifier this notification is associated with.
+  messageRhid String
 
-  /// The subject that called notification sending API.
+  /// The ECID of the raw Telegram message payload returned by Telegram.
+  messageEcid String @unique
+
+  /// The encrypted raw Telegram message payload returned by Telegram.
+  message EncryptedContent @relation(name: "NotificationMessage", fields: [messageEcid], references: [ecid])
+
+  /// The replica subject that called notification sending API.
   callingSubjectId String?
 
-  /// The effective subject on behalf of which notification was sent.
+  /// The effective replica subject on behalf of which notification was sent.
   sendAsSubjectId String?
 
   /// The stored title of this notification.
@@ -91,7 +97,7 @@ model Notification {
   /// The timestamp when this notification was last updated.
   updatedAt DateTime @updatedAt
 
-  @@index([messageId])
+  @@unique([chatId, messageRhid])
   @@index([channelId])
-  @@index([targetChatId])
+  @@index([chatId])
 }

@@ -77,6 +77,11 @@ export type Chat = Prisma.ChatModel
  */
 export type Command = Prisma.CommandModel
 /**
+ * Model EncryptedContent
+ * 
+ */
+export type EncryptedContent = Prisma.EncryptedContentModel
+/**
  * Model MemoryNote
  * 
  */

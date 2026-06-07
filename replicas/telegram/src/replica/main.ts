@@ -13,11 +13,13 @@ import {
   createOperationSubscriptionService,
   createPingService,
   createServer,
+  crypto,
   defineGateway,
   getReplicaNamespace,
   kubeConfig,
   logger,
   registerGracefulShutdown,
+  setupEncryption,
   setupLanguageSubsystem,
   startTemporalWorker,
 } from "@reside/common"
@@ -39,13 +41,15 @@ const SECRET_POLL_INTERVAL_MS = 5_000
 const services = await createServices()
 const server = await createServer(services)
 
+await setupEncryption({ services, server })
+
 await server.register(fastifyConnectPlugin, {
   routes(router) {
     router.service(DefinitionService, createDefinitionService(services))
-    router.service(NotificationService, createNotificationService(services))
+    router.service(NotificationService, createNotificationService({ ...services, crypto }))
     router.service(ApprovalService, createApprovalService(services))
-    router.service(AvatarService, createAvatarService(services))
-    router.service(SubjectService, createSubjectService(services))
+    router.service(AvatarService, createAvatarService({ ...services, crypto }))
+    router.service(SubjectService, createSubjectService({ ...services, crypto }))
     router.service(PingService, createPingService())
     router.service(OperationService, services.operationService.implementation)
     router.service(
@@ -71,7 +75,7 @@ const { endpoint: telegramGatewayEndpoint } = await defineGateway({
 })
 
 const webhookUrl = createWebhookUrl(telegramGatewayEndpoint)
-const botRuntime = createBotRuntime({ services, webhookUrl })
+const botRuntime = createBotRuntime({ services: { ...services, crypto }, webhookUrl })
 
 server.post(TELEGRAM_WEBHOOK_PATH, async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -124,6 +128,7 @@ if (stopSignal.stopped) {
         permissionRequestService: services.permissionRequestService,
         gatewayService: services.gatewayService,
         infraOperationService: services.infraOperationService,
+        crypto,
       }),
     },
   })
@@ -136,7 +141,7 @@ if (stopSignal.stopped) {
     while (!stopSignal.stopped) {
       try {
         const [secretState, configState] = await Promise.all([
-          loadTelegramSecretState(coreApi, namespace),
+          loadTelegramSecretState(crypto),
           loadTelegramConfigState(coreApi, namespace),
         ])
 

@@ -1,6 +1,7 @@
 import type { PrismaClient } from "../../database"
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
-import { mockDeepFn } from "@reside/common/testing"
+import { rhid } from "@reside/common"
+import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import { createInteractionContextToken, TELEGRAM_INTERACTION_CONTEXT_ENV_NAME } from "../../shared"
 import {
   ensureTargetChatExists,
@@ -147,17 +148,24 @@ describe("parseInteractionContextToken", () => {
 })
 
 describe("ensureTargetChatExists", () => {
-  test("upserts chat by telegram id", async () => {
+  test("upserts chat by telegram rhid", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     prisma.chat.upsert.mockResolvedValue({ id: 1 } as never)
 
-    await ensureTargetChatExists(prisma, "-555")
+    await ensureTargetChatExists(testCrypto, prisma, "-555")
 
     expect(prisma.chat.upsert.spy()).toHaveBeenCalledTimes(1)
     expect(prisma.chat.upsert.spy()).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          telegramId: "-555",
+          telegramRhid: rhid("-555"),
+        },
+        update: {
+          dataEcid: expect.any(String),
+        },
+        create: {
+          telegramRhid: rhid("-555"),
+          dataEcid: expect.any(String),
         },
       }),
     )

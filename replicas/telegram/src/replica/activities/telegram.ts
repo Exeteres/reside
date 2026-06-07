@@ -3,6 +3,7 @@ import type { PermissionRequestServiceClient } from "@reside/api/access/request.
 import type { DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { GatewayServiceClient } from "@reside/api/infra/gateway.v1"
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { Operation, PrismaClient } from "../../database"
 import type { ApprovalActionName, TelegramActivities } from "../../definitions"
 import { createHash } from "node:crypto"
@@ -31,11 +32,12 @@ import {
   kubeConfig,
 } from "@reside/common"
 import { WellKnownPermissions } from "@reside/registry"
-import { TELEGRAM_GATEWAY_NAME } from "../../definitions"
+import { encryptedStringSchema, TELEGRAM_GATEWAY_NAME } from "../../definitions"
 import { strings } from "../../locale"
 import { createTelegramBotClient } from "../business/bot-client"
 import { createWebhookUrl } from "../business/bot-runtime"
-import { loadTelegramSecretState, TELEGRAM_SECRET_NAME } from "../business/secret"
+import { createEcidTextSubstitutor } from "../business/ecid-substitution"
+import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "../business/secret"
 
 type TelegramActivityServices = {
   prisma: PrismaClient
@@ -45,6 +47,7 @@ type TelegramActivityServices = {
   permissionRequestService: PermissionRequestServiceClient
   gatewayService: GatewayServiceClient
   infraOperationService: OperationServiceClient
+  crypto: ResideCrypto
 }
 
 export function createTelegramActivities({
@@ -55,12 +58,15 @@ export function createTelegramActivities({
   permissionRequestService,
   gatewayService,
   infraOperationService,
+  crypto,
 }: TelegramActivityServices): TelegramActivities {
+  const ecidSubstitutor = createEcidTextSubstitutor(crypto)
+
   const commandHandlerClients = new Map<string, CommandHandlerServiceClient>()
   const nlsClients = new Map<string, NaturalLanguageServiceClient>()
 
-  const namespace = getReplicaNamespace()
-  const coreApi = kubeConfig.makeApiClient(CoreV1Api)
+  const _namespace = getReplicaNamespace()
+  const _coreApi = kubeConfig.makeApiClient(CoreV1Api)
   let webhookUrlPromise: Promise<string> | undefined
 
   const loadWebhookUrl = async (): Promise<string> => {
@@ -219,7 +225,7 @@ export function createTelegramActivities({
           },
           select: {
             replicaName: true,
-            token: true,
+            tokenEcid: true,
             managedBotUsername: true,
           },
         })
@@ -228,7 +234,7 @@ export function createTelegramActivities({
           return {
             found: true,
             replicaName: mentionedAvatar.replicaName,
-            avatarToken: mentionedAvatar.token,
+            avatarToken: await crypto.decrypt(encryptedStringSchema, mentionedAvatar.tokenEcid),
             managedBotUsername: mentionedAvatar.managedBotUsername,
           }
         }
@@ -244,7 +250,7 @@ export function createTelegramActivities({
           },
           select: {
             replicaName: true,
-            token: true,
+            tokenEcid: true,
             managedBotUsername: true,
           },
         })
@@ -253,7 +259,7 @@ export function createTelegramActivities({
           return {
             found: true,
             replicaName: repliedAvatar.replicaName,
-            avatarToken: repliedAvatar.token,
+            avatarToken: await crypto.decrypt(encryptedStringSchema, repliedAvatar.tokenEcid),
             managedBotUsername: repliedAvatar.managedBotUsername,
           }
         }
@@ -266,7 +272,7 @@ export function createTelegramActivities({
           },
           select: {
             replicaName: true,
-            token: true,
+            tokenEcid: true,
             managedBotUsername: true,
           },
         })
@@ -275,7 +281,7 @@ export function createTelegramActivities({
           return {
             found: true,
             replicaName: currentAvatar.replicaName,
-            avatarToken: currentAvatar.token,
+            avatarToken: await crypto.decrypt(encryptedStringSchema, currentAvatar.tokenEcid),
             managedBotUsername: currentAvatar.managedBotUsername,
           }
         }
@@ -330,7 +336,9 @@ export function createTelegramActivities({
         role: "activity.nls-reply",
       })
 
-      await replyBot.api.sendMessage(input.chatId, input.text, {
+      const text = await ecidSubstitutor.substituteInText(input.text)
+
+      await replyBot.api.sendMessage(input.chatId, text, {
         parse_mode: "HTML",
         link_preview_options: {
           is_disabled: true,
@@ -398,9 +406,11 @@ export function createTelegramActivities({
         )
       }
 
-      const secretState = await loadTelegramSecretState(coreApi, namespace)
+      const secretState = await loadTelegramSecretState(crypto)
       if (!secretState.botToken) {
-        throw new Error(`Secret "${TELEGRAM_SECRET_NAME}" must contain "bot_token"`)
+        throw new Error(
+          `Vault secret key "${TELEGRAM_BOT_TOKEN_SECRET_KEY}" must contain token value`,
+        )
       }
 
       const managerBot = createTelegramBotClient(secretState.botToken, {
@@ -436,9 +446,11 @@ export function createTelegramActivities({
         )
       }
 
-      const secretState = await loadTelegramSecretState(coreApi, namespace)
+      const secretState = await loadTelegramSecretState(crypto)
       if (!secretState.botToken) {
-        throw new Error(`Secret "${TELEGRAM_SECRET_NAME}" must contain "bot_token"`)
+        throw new Error(
+          `Vault secret key "${TELEGRAM_BOT_TOKEN_SECRET_KEY}" must contain token value`,
+        )
       }
 
       const managerBot = createTelegramBotClient(secretState.botToken, {
@@ -457,6 +469,8 @@ export function createTelegramActivities({
         allowed_updates: ["callback_query"],
       })
 
+      const tokenEcid = await crypto.encrypt(replacement)
+
       await prisma.$transaction(async tx => {
         const avatar = await tx.avatar.upsert({
           where: {
@@ -469,14 +483,14 @@ export function createTelegramActivities({
             managedBotId: input.managedBotId,
             managedBotUsername: input.managedBotUsername,
             createdByUserId: request.createdByUserId,
-            token: replacement,
+            tokenEcid,
           },
           update: {
             replicaTitle: request.replicaTitle,
             managedBotId: input.managedBotId,
             managedBotUsername: input.managedBotUsername,
             createdByUserId: request.createdByUserId,
-            token: replacement,
+            tokenEcid,
           },
           select: {
             id: true,

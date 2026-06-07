@@ -1,4 +1,5 @@
 import type { NotificationServiceImplementation } from "@reside/api/interaction/notification.v1"
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { Operation, PrismaClient } from "../../database"
 import { Code, ConnectError } from "@connectrpc/connect"
 import { CoreV1Api } from "@kubernetes/client-node"
@@ -23,27 +24,29 @@ import {
   sendNotificationForReplica,
   updateNotificationForReplica,
 } from "../business/notification"
-import { loadTelegramSecretState, TELEGRAM_SECRET_NAME } from "../business/secret"
+import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "../business/secret"
 
 export function createNotificationService({
   prisma,
   authzService,
   subjectService,
   operationService,
+  crypto,
 }: CommonServices<"access"> & {
   prisma: PrismaClient
   operationService: GenericOperationService<Operation>
+  crypto: ResideCrypto
 }): NotificationServiceImplementation {
   const namespace = getReplicaNamespace()
   const coreApi = kubeConfig.makeApiClient(CoreV1Api)
 
   async function loadDeliveryConfig(): Promise<{ botToken: string; systemChatId: string }> {
-    const secretState = await loadTelegramSecretState(coreApi, namespace)
+    const secretState = await loadTelegramSecretState(crypto)
     const configState = await loadTelegramConfigState(coreApi, namespace)
 
     if (!secretState.botToken) {
       throw new ConnectError(
-        `Secret "${TELEGRAM_SECRET_NAME}" must contain "bot_token"`,
+        `Vault secret key "${TELEGRAM_BOT_TOKEN_SECRET_KEY}" must contain token value`,
         Code.FailedPrecondition,
       )
     }
@@ -73,6 +76,7 @@ export function createNotificationService({
 
       try {
         const result = await sendNotificationForReplica(
+          crypto,
           prisma,
           authzService,
           subjectService,
@@ -120,6 +124,7 @@ export function createNotificationService({
         assertActionRows(request.actionRows)
 
         const result = await updateNotificationForReplica(
+          crypto,
           prisma,
           subjectService,
           createTelegramBotClient,
@@ -158,9 +163,15 @@ export function createNotificationService({
       try {
         parseNotificationId(request.notificationId)
 
-        await deleteNotificationForReplica(prisma, createTelegramBotClient, loadDeliveryConfig, {
-          notificationId: request.notificationId,
-        })
+        await deleteNotificationForReplica(
+          crypto,
+          prisma,
+          createTelegramBotClient,
+          loadDeliveryConfig,
+          {
+            notificationId: request.notificationId,
+          },
+        )
 
         return {}
       } catch (error) {

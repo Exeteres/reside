@@ -4,7 +4,8 @@ import type { DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
 import type { NaturalLanguageServiceClient } from "@reside/api/interaction/nls.v1"
 import type { PrismaClient } from "../../database"
 import { describe, expect, mock, test } from "bun:test"
-import { mockDeepFn } from "@reside/common/testing"
+import { rhid } from "@reside/common"
+import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import { strings } from "../../locale"
 import { handleNlsMessage } from "./bot-nls"
 
@@ -17,6 +18,14 @@ type TelegramBotLike = {
   }
 }
 
+process.env.REPLICA_NAME = "telegram"
+
+type MockPrismaClient = ReturnType<typeof mockDeepFn<PrismaClient>>
+
+function mockTelegramChat(prisma: MockPrismaClient): void {
+  prisma.chat.findUnique.mockResolvedValue({ id: 10 } as never)
+}
+
 describe("handleNlsMessage", () => {
   test("returns early when continuation interaction is missing", async () => {
     const prisma = mockDeepFn<PrismaClient>()
@@ -26,6 +35,7 @@ describe("handleNlsMessage", () => {
     const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
+    mockTelegramChat(prisma)
     prisma.naturalLanguageInteraction.findUnique.mockResolvedValue(null as never)
 
     await handleNlsMessage({
@@ -33,6 +43,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",
@@ -49,16 +60,16 @@ describe("handleNlsMessage", () => {
     expect(discoveryService.getSubjectEndpoint.spy()).toHaveBeenCalledTimes(0)
     expect(prisma.naturalLanguageInteraction.findUnique.spy()).toHaveBeenCalledWith({
       where: {
-        chatId_threadId: {
-          chatId: "10",
-          threadId: 30,
+        chatId_threadRhid: {
+          chatId: 10,
+          threadRhid: rhid(30),
         },
       },
       select: {
         replicaName: true,
         user: {
           select: {
-            telegramId: true,
+            telegramRhid: true,
           },
         },
       },
@@ -73,6 +84,7 @@ describe("handleNlsMessage", () => {
     const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
+    mockTelegramChat(prisma)
     prisma.naturalLanguageInteraction.findUnique.mockResolvedValue(null as never)
 
     await handleNlsMessage({
@@ -80,6 +92,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",
@@ -97,16 +110,16 @@ describe("handleNlsMessage", () => {
 
     expect(prisma.naturalLanguageInteraction.findUnique.spy()).toHaveBeenCalledWith({
       where: {
-        chatId_threadId: {
-          chatId: "10",
-          threadId: 99,
+        chatId_threadRhid: {
+          chatId: 10,
+          threadRhid: rhid(99),
         },
       },
       select: {
         replicaName: true,
         user: {
           select: {
-            telegramId: true,
+            telegramRhid: true,
           },
         },
       },
@@ -121,6 +134,7 @@ describe("handleNlsMessage", () => {
     const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
+    mockTelegramChat(prisma)
     prisma.avatar.findFirst.mockResolvedValue(null as never)
 
     await handleNlsMessage({
@@ -128,6 +142,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",
@@ -164,13 +179,15 @@ describe("handleNlsMessage", () => {
     const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
+    mockTelegramChat(prisma)
     prisma.avatar.findFirst.mockResolvedValue({
       replicaName: "alpha",
     } as never)
     prisma.user.findUnique.mockResolvedValue({
       id: 55,
-      telegramId: "20",
+      telegramRhid: rhid("20"),
     } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
     prisma.naturalLanguageInteraction.upsert.mockResolvedValue({ id: 1 } as never)
     authzService.checkPermission.mockResolvedValue({ authorized: false } as never)
     permissionRequestService.requestPermissions.mockResolvedValue({} as never)
@@ -180,6 +197,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",
@@ -194,15 +212,15 @@ describe("handleNlsMessage", () => {
 
     expect(prisma.naturalLanguageInteraction.upsert.spy()).toHaveBeenCalledWith({
       where: {
-        chatId_threadId: {
-          chatId: "10",
-          threadId: 30,
+        chatId_threadRhid: {
+          chatId: 10,
+          threadRhid: rhid(30),
         },
       },
       create: {
-        chatId: "10",
+        chatId: 10,
         userId: 55,
-        threadId: 30,
+        threadRhid: rhid(30),
         replicaName: "alpha",
       },
       update: {
@@ -224,10 +242,11 @@ describe("handleNlsMessage", () => {
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
     telegramBot.api.sendMessage.mockResolvedValue({} as never)
+    mockTelegramChat(prisma)
     prisma.naturalLanguageInteraction.findUnique.mockResolvedValue({
       replicaName: "alpha",
       user: {
-        telegramId: "777",
+        telegramRhid: rhid("777"),
       },
     } as never)
 
@@ -236,6 +255,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",
@@ -266,6 +286,7 @@ describe("handleNlsMessage", () => {
     const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
+    mockTelegramChat(prisma)
     prisma.avatar.findFirst.mockResolvedValue({
       replicaName: "alpha",
     } as never)
@@ -276,6 +297,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",
@@ -302,10 +324,11 @@ describe("handleNlsMessage", () => {
     const telegramBot = mockDeepFn<TelegramBotLike>()
     const createTelegramBotClient = mock((_token: string, _args: { role?: string }) => telegramBot)
 
+    mockTelegramChat(prisma)
     prisma.naturalLanguageInteraction.findUnique.mockResolvedValue({
       replicaName: "alpha",
       user: {
-        telegramId: "20",
+        telegramRhid: rhid("20"),
       },
     } as never)
     prisma.avatar.findUnique.mockResolvedValue(null as never)
@@ -325,6 +348,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: createTelegramBotClient as never,
       managerToken: "manager-token",
@@ -344,6 +368,7 @@ describe("handleNlsMessage", () => {
     expect(nlsClient.askStream.spy()).toHaveBeenCalledWith({
       text: "hello",
       subjectId: "telegram:20",
+      subjectInfo: {},
     })
     expect(telegramBot.api.sendMessageDraft.spy()).toHaveBeenCalledTimes(2)
     expect(telegramBot.api.sendMessageDraft.spy()).toHaveBeenNthCalledWith(1, 10, 30, "", {
@@ -364,10 +389,11 @@ describe("handleNlsMessage", () => {
     const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
+    mockTelegramChat(prisma)
     prisma.naturalLanguageInteraction.findUnique.mockResolvedValue({
       replicaName: "alpha",
       user: {
-        telegramId: "20",
+        telegramRhid: rhid("20"),
       },
     } as never)
     prisma.avatar.findUnique.mockResolvedValue(null as never)
@@ -387,6 +413,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",
@@ -420,10 +447,11 @@ describe("handleNlsMessage", () => {
     const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
+    mockTelegramChat(prisma)
     prisma.naturalLanguageInteraction.findUnique.mockResolvedValue({
       replicaName: "alpha",
       user: {
-        telegramId: "20",
+        telegramRhid: rhid("20"),
       },
     } as never)
     prisma.avatar.findUnique.mockResolvedValue(null as never)
@@ -444,6 +472,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",
@@ -471,10 +500,11 @@ describe("handleNlsMessage", () => {
     const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
     const telegramBot = mockDeepFn<TelegramBotLike>()
 
+    mockTelegramChat(prisma)
     prisma.naturalLanguageInteraction.findUnique.mockResolvedValue({
       replicaName: "alpha",
       user: {
-        telegramId: "20",
+        telegramRhid: rhid("20"),
       },
     } as never)
     prisma.avatar.findUnique.mockResolvedValue(null as never)
@@ -503,6 +533,7 @@ describe("handleNlsMessage", () => {
       discoveryService,
       authzService,
       permissionRequestService,
+      crypto: testCrypto,
       getNaturalLanguageClient: () => nlsClient,
       createTelegramBotClient: (() => telegramBot) as never,
       managerToken: "manager-token",

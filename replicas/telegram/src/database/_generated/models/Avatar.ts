@@ -46,7 +46,7 @@ export type AvatarMinAggregateOutputType = {
   managedBotId: string | null
   managedBotUsername: string | null
   createdByUserId: number | null
-  token: string | null
+  tokenEcid: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -59,7 +59,7 @@ export type AvatarMaxAggregateOutputType = {
   managedBotId: string | null
   managedBotUsername: string | null
   createdByUserId: number | null
-  token: string | null
+  tokenEcid: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -72,7 +72,7 @@ export type AvatarCountAggregateOutputType = {
   managedBotId: number
   managedBotUsername: number
   createdByUserId: number
-  token: number
+  tokenEcid: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -97,7 +97,7 @@ export type AvatarMinAggregateInputType = {
   managedBotId?: true
   managedBotUsername?: true
   createdByUserId?: true
-  token?: true
+  tokenEcid?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -110,7 +110,7 @@ export type AvatarMaxAggregateInputType = {
   managedBotId?: true
   managedBotUsername?: true
   createdByUserId?: true
-  token?: true
+  tokenEcid?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -123,7 +123,7 @@ export type AvatarCountAggregateInputType = {
   managedBotId?: true
   managedBotUsername?: true
   createdByUserId?: true
-  token?: true
+  tokenEcid?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -223,7 +223,7 @@ export type AvatarGroupByOutputType = {
   managedBotId: string
   managedBotUsername: string
   createdByUserId: number | null
-  token: string
+  tokenEcid: string
   createdAt: Date
   updatedAt: Date
   _count: AvatarCountAggregateOutputType | null
@@ -259,10 +259,11 @@ export type AvatarWhereInput = {
   managedBotId?: Prisma.StringFilter<"Avatar"> | string
   managedBotUsername?: Prisma.StringFilter<"Avatar"> | string
   createdByUserId?: Prisma.IntNullableFilter<"Avatar"> | number | null
-  token?: Prisma.StringFilter<"Avatar"> | string
+  tokenEcid?: Prisma.StringFilter<"Avatar"> | string
   createdAt?: Prisma.DateTimeFilter<"Avatar"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Avatar"> | Date | string
   createdByUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  token?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
   provisionRequests?: Prisma.AvatarProvisionRequestListRelationFilter
 }
 
@@ -274,10 +275,11 @@ export type AvatarOrderByWithRelationInput = {
   managedBotId?: Prisma.SortOrder
   managedBotUsername?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
-  token?: Prisma.SortOrder
+  tokenEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   createdByUser?: Prisma.UserOrderByWithRelationInput
+  token?: Prisma.EncryptedContentOrderByWithRelationInput
   provisionRequests?: Prisma.AvatarProvisionRequestOrderByRelationAggregateInput
 }
 
@@ -287,17 +289,18 @@ export type AvatarWhereUniqueInput = Prisma.AtLeast<{
   replicaName?: string
   managedBotId?: string
   managedBotUsername?: string
+  tokenEcid?: string
   AND?: Prisma.AvatarWhereInput | Prisma.AvatarWhereInput[]
   OR?: Prisma.AvatarWhereInput[]
   NOT?: Prisma.AvatarWhereInput | Prisma.AvatarWhereInput[]
   replicaTitle?: Prisma.StringFilter<"Avatar"> | string
   createdByUserId?: Prisma.IntNullableFilter<"Avatar"> | number | null
-  token?: Prisma.StringFilter<"Avatar"> | string
   createdAt?: Prisma.DateTimeFilter<"Avatar"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Avatar"> | Date | string
   createdByUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  token?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
   provisionRequests?: Prisma.AvatarProvisionRequestListRelationFilter
-}, "id" | "subjectId" | "replicaName" | "managedBotId" | "managedBotUsername">
+}, "id" | "subjectId" | "replicaName" | "managedBotId" | "managedBotUsername" | "tokenEcid">
 
 export type AvatarOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -307,7 +310,7 @@ export type AvatarOrderByWithAggregationInput = {
   managedBotId?: Prisma.SortOrder
   managedBotUsername?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
-  token?: Prisma.SortOrder
+  tokenEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.AvatarCountOrderByAggregateInput
@@ -328,7 +331,7 @@ export type AvatarScalarWhereWithAggregatesInput = {
   managedBotId?: Prisma.StringWithAggregatesFilter<"Avatar"> | string
   managedBotUsername?: Prisma.StringWithAggregatesFilter<"Avatar"> | string
   createdByUserId?: Prisma.IntNullableWithAggregatesFilter<"Avatar"> | number | null
-  token?: Prisma.StringWithAggregatesFilter<"Avatar"> | string
+  tokenEcid?: Prisma.StringWithAggregatesFilter<"Avatar"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Avatar"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Avatar"> | Date | string
 }
@@ -339,10 +342,10 @@ export type AvatarCreateInput = {
   replicaTitle: string
   managedBotId: string
   managedBotUsername: string
-  token: string
   createdAt?: Date | string
   updatedAt?: Date | string
   createdByUser?: Prisma.UserCreateNestedOneWithoutCreatedAvatarsInput
+  token: Prisma.EncryptedContentCreateNestedOneWithoutAvatarTokenInput
   provisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutAvatarInput
 }
 
@@ -354,7 +357,7 @@ export type AvatarUncheckedCreateInput = {
   managedBotId: string
   managedBotUsername: string
   createdByUserId?: number | null
-  token: string
+  tokenEcid: string
   createdAt?: Date | string
   updatedAt?: Date | string
   provisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutAvatarInput
@@ -366,10 +369,10 @@ export type AvatarUpdateInput = {
   replicaTitle?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
-  token?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdByUser?: Prisma.UserUpdateOneWithoutCreatedAvatarsNestedInput
+  token?: Prisma.EncryptedContentUpdateOneRequiredWithoutAvatarTokenNestedInput
   provisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutAvatarNestedInput
 }
 
@@ -381,7 +384,7 @@ export type AvatarUncheckedUpdateInput = {
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
   createdByUserId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  token?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenEcid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   provisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutAvatarNestedInput
@@ -395,7 +398,7 @@ export type AvatarCreateManyInput = {
   managedBotId: string
   managedBotUsername: string
   createdByUserId?: number | null
-  token: string
+  tokenEcid: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -406,7 +409,6 @@ export type AvatarUpdateManyMutationInput = {
   replicaTitle?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
-  token?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -419,7 +421,7 @@ export type AvatarUncheckedUpdateManyInput = {
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
   createdByUserId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  token?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenEcid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -432,7 +434,7 @@ export type AvatarCountOrderByAggregateInput = {
   managedBotId?: Prisma.SortOrder
   managedBotUsername?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
-  token?: Prisma.SortOrder
+  tokenEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -450,7 +452,7 @@ export type AvatarMaxOrderByAggregateInput = {
   managedBotId?: Prisma.SortOrder
   managedBotUsername?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
-  token?: Prisma.SortOrder
+  tokenEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -463,7 +465,7 @@ export type AvatarMinOrderByAggregateInput = {
   managedBotId?: Prisma.SortOrder
   managedBotUsername?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
-  token?: Prisma.SortOrder
+  tokenEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -510,6 +512,38 @@ export type AvatarUpdateOneWithoutProvisionRequestsNestedInput = {
   delete?: Prisma.AvatarWhereInput | boolean
   connect?: Prisma.AvatarWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.AvatarUpdateToOneWithWhereWithoutProvisionRequestsInput, Prisma.AvatarUpdateWithoutProvisionRequestsInput>, Prisma.AvatarUncheckedUpdateWithoutProvisionRequestsInput>
+}
+
+export type AvatarCreateNestedOneWithoutTokenInput = {
+  create?: Prisma.XOR<Prisma.AvatarCreateWithoutTokenInput, Prisma.AvatarUncheckedCreateWithoutTokenInput>
+  connectOrCreate?: Prisma.AvatarCreateOrConnectWithoutTokenInput
+  connect?: Prisma.AvatarWhereUniqueInput
+}
+
+export type AvatarUncheckedCreateNestedOneWithoutTokenInput = {
+  create?: Prisma.XOR<Prisma.AvatarCreateWithoutTokenInput, Prisma.AvatarUncheckedCreateWithoutTokenInput>
+  connectOrCreate?: Prisma.AvatarCreateOrConnectWithoutTokenInput
+  connect?: Prisma.AvatarWhereUniqueInput
+}
+
+export type AvatarUpdateOneWithoutTokenNestedInput = {
+  create?: Prisma.XOR<Prisma.AvatarCreateWithoutTokenInput, Prisma.AvatarUncheckedCreateWithoutTokenInput>
+  connectOrCreate?: Prisma.AvatarCreateOrConnectWithoutTokenInput
+  upsert?: Prisma.AvatarUpsertWithoutTokenInput
+  disconnect?: Prisma.AvatarWhereInput | boolean
+  delete?: Prisma.AvatarWhereInput | boolean
+  connect?: Prisma.AvatarWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AvatarUpdateToOneWithWhereWithoutTokenInput, Prisma.AvatarUpdateWithoutTokenInput>, Prisma.AvatarUncheckedUpdateWithoutTokenInput>
+}
+
+export type AvatarUncheckedUpdateOneWithoutTokenNestedInput = {
+  create?: Prisma.XOR<Prisma.AvatarCreateWithoutTokenInput, Prisma.AvatarUncheckedCreateWithoutTokenInput>
+  connectOrCreate?: Prisma.AvatarCreateOrConnectWithoutTokenInput
+  upsert?: Prisma.AvatarUpsertWithoutTokenInput
+  disconnect?: Prisma.AvatarWhereInput | boolean
+  delete?: Prisma.AvatarWhereInput | boolean
+  connect?: Prisma.AvatarWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AvatarUpdateToOneWithWhereWithoutTokenInput, Prisma.AvatarUpdateWithoutTokenInput>, Prisma.AvatarUncheckedUpdateWithoutTokenInput>
 }
 
 export type AvatarCreateNestedManyWithoutCreatedByUserInput = {
@@ -560,10 +594,10 @@ export type AvatarCreateWithoutProvisionRequestsInput = {
   replicaTitle: string
   managedBotId: string
   managedBotUsername: string
-  token: string
   createdAt?: Date | string
   updatedAt?: Date | string
   createdByUser?: Prisma.UserCreateNestedOneWithoutCreatedAvatarsInput
+  token: Prisma.EncryptedContentCreateNestedOneWithoutAvatarTokenInput
 }
 
 export type AvatarUncheckedCreateWithoutProvisionRequestsInput = {
@@ -574,7 +608,7 @@ export type AvatarUncheckedCreateWithoutProvisionRequestsInput = {
   managedBotId: string
   managedBotUsername: string
   createdByUserId?: number | null
-  token: string
+  tokenEcid: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -601,10 +635,10 @@ export type AvatarUpdateWithoutProvisionRequestsInput = {
   replicaTitle?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
-  token?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdByUser?: Prisma.UserUpdateOneWithoutCreatedAvatarsNestedInput
+  token?: Prisma.EncryptedContentUpdateOneRequiredWithoutAvatarTokenNestedInput
 }
 
 export type AvatarUncheckedUpdateWithoutProvisionRequestsInput = {
@@ -615,9 +649,75 @@ export type AvatarUncheckedUpdateWithoutProvisionRequestsInput = {
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
   createdByUserId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  token?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenEcid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type AvatarCreateWithoutTokenInput = {
+  subjectId: string
+  replicaName: string
+  replicaTitle: string
+  managedBotId: string
+  managedBotUsername: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  createdByUser?: Prisma.UserCreateNestedOneWithoutCreatedAvatarsInput
+  provisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutAvatarInput
+}
+
+export type AvatarUncheckedCreateWithoutTokenInput = {
+  id?: number
+  subjectId: string
+  replicaName: string
+  replicaTitle: string
+  managedBotId: string
+  managedBotUsername: string
+  createdByUserId?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  provisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutAvatarInput
+}
+
+export type AvatarCreateOrConnectWithoutTokenInput = {
+  where: Prisma.AvatarWhereUniqueInput
+  create: Prisma.XOR<Prisma.AvatarCreateWithoutTokenInput, Prisma.AvatarUncheckedCreateWithoutTokenInput>
+}
+
+export type AvatarUpsertWithoutTokenInput = {
+  update: Prisma.XOR<Prisma.AvatarUpdateWithoutTokenInput, Prisma.AvatarUncheckedUpdateWithoutTokenInput>
+  create: Prisma.XOR<Prisma.AvatarCreateWithoutTokenInput, Prisma.AvatarUncheckedCreateWithoutTokenInput>
+  where?: Prisma.AvatarWhereInput
+}
+
+export type AvatarUpdateToOneWithWhereWithoutTokenInput = {
+  where?: Prisma.AvatarWhereInput
+  data: Prisma.XOR<Prisma.AvatarUpdateWithoutTokenInput, Prisma.AvatarUncheckedUpdateWithoutTokenInput>
+}
+
+export type AvatarUpdateWithoutTokenInput = {
+  subjectId?: Prisma.StringFieldUpdateOperationsInput | string
+  replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  replicaTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
+  managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdByUser?: Prisma.UserUpdateOneWithoutCreatedAvatarsNestedInput
+  provisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutAvatarNestedInput
+}
+
+export type AvatarUncheckedUpdateWithoutTokenInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  subjectId?: Prisma.StringFieldUpdateOperationsInput | string
+  replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  replicaTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
+  managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
+  createdByUserId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  provisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutAvatarNestedInput
 }
 
 export type AvatarCreateWithoutCreatedByUserInput = {
@@ -626,9 +726,9 @@ export type AvatarCreateWithoutCreatedByUserInput = {
   replicaTitle: string
   managedBotId: string
   managedBotUsername: string
-  token: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  token: Prisma.EncryptedContentCreateNestedOneWithoutAvatarTokenInput
   provisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutAvatarInput
 }
 
@@ -639,7 +739,7 @@ export type AvatarUncheckedCreateWithoutCreatedByUserInput = {
   replicaTitle: string
   managedBotId: string
   managedBotUsername: string
-  token: string
+  tokenEcid: string
   createdAt?: Date | string
   updatedAt?: Date | string
   provisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutAvatarInput
@@ -682,7 +782,7 @@ export type AvatarScalarWhereInput = {
   managedBotId?: Prisma.StringFilter<"Avatar"> | string
   managedBotUsername?: Prisma.StringFilter<"Avatar"> | string
   createdByUserId?: Prisma.IntNullableFilter<"Avatar"> | number | null
-  token?: Prisma.StringFilter<"Avatar"> | string
+  tokenEcid?: Prisma.StringFilter<"Avatar"> | string
   createdAt?: Prisma.DateTimeFilter<"Avatar"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Avatar"> | Date | string
 }
@@ -694,7 +794,7 @@ export type AvatarCreateManyCreatedByUserInput = {
   replicaTitle: string
   managedBotId: string
   managedBotUsername: string
-  token: string
+  tokenEcid: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -705,9 +805,9 @@ export type AvatarUpdateWithoutCreatedByUserInput = {
   replicaTitle?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
-  token?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  token?: Prisma.EncryptedContentUpdateOneRequiredWithoutAvatarTokenNestedInput
   provisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutAvatarNestedInput
 }
 
@@ -718,7 +818,7 @@ export type AvatarUncheckedUpdateWithoutCreatedByUserInput = {
   replicaTitle?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
-  token?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenEcid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   provisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutAvatarNestedInput
@@ -731,7 +831,7 @@ export type AvatarUncheckedUpdateManyWithoutCreatedByUserInput = {
   replicaTitle?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotId?: Prisma.StringFieldUpdateOperationsInput | string
   managedBotUsername?: Prisma.StringFieldUpdateOperationsInput | string
-  token?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenEcid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -775,10 +875,11 @@ export type AvatarSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   managedBotId?: boolean
   managedBotUsername?: boolean
   createdByUserId?: boolean
-  token?: boolean
+  tokenEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdByUser?: boolean | Prisma.Avatar$createdByUserArgs<ExtArgs>
+  token?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
   provisionRequests?: boolean | Prisma.Avatar$provisionRequestsArgs<ExtArgs>
   _count?: boolean | Prisma.AvatarCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["avatar"]>
@@ -791,10 +892,11 @@ export type AvatarSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   managedBotId?: boolean
   managedBotUsername?: boolean
   createdByUserId?: boolean
-  token?: boolean
+  tokenEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdByUser?: boolean | Prisma.Avatar$createdByUserArgs<ExtArgs>
+  token?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["avatar"]>
 
 export type AvatarSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -805,10 +907,11 @@ export type AvatarSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   managedBotId?: boolean
   managedBotUsername?: boolean
   createdByUserId?: boolean
-  token?: boolean
+  tokenEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdByUser?: boolean | Prisma.Avatar$createdByUserArgs<ExtArgs>
+  token?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["avatar"]>
 
 export type AvatarSelectScalar = {
@@ -819,22 +922,25 @@ export type AvatarSelectScalar = {
   managedBotId?: boolean
   managedBotUsername?: boolean
   createdByUserId?: boolean
-  token?: boolean
+  tokenEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AvatarOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "subjectId" | "replicaName" | "replicaTitle" | "managedBotId" | "managedBotUsername" | "createdByUserId" | "token" | "createdAt" | "updatedAt", ExtArgs["result"]["avatar"]>
+export type AvatarOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "subjectId" | "replicaName" | "replicaTitle" | "managedBotId" | "managedBotUsername" | "createdByUserId" | "tokenEcid" | "createdAt" | "updatedAt", ExtArgs["result"]["avatar"]>
 export type AvatarInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdByUser?: boolean | Prisma.Avatar$createdByUserArgs<ExtArgs>
+  token?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
   provisionRequests?: boolean | Prisma.Avatar$provisionRequestsArgs<ExtArgs>
   _count?: boolean | Prisma.AvatarCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AvatarIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdByUser?: boolean | Prisma.Avatar$createdByUserArgs<ExtArgs>
+  token?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
 }
 export type AvatarIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdByUser?: boolean | Prisma.Avatar$createdByUserArgs<ExtArgs>
+  token?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
 }
 
 export type $AvatarPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -844,6 +950,10 @@ export type $AvatarPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
      * The creator user entity if known.
      */
     createdByUser: Prisma.$UserPayload<ExtArgs> | null
+    /**
+     * The encrypted current managed bot token.
+     */
+    token: Prisma.$EncryptedContentPayload<ExtArgs>
     /**
      * The provisioning requests linked to this avatar.
      */
@@ -879,9 +989,9 @@ export type $AvatarPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
      */
     createdByUserId: number | null
     /**
-     * The current managed bot token in plain text.
+     * The ECID of the current managed bot token.
      */
-    token: string
+    tokenEcid: string
     /**
      * The timestamp when this avatar was created.
      */
@@ -1285,6 +1395,7 @@ readonly fields: AvatarFieldRefs;
 export interface Prisma__AvatarClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   createdByUser<T extends Prisma.Avatar$createdByUserArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Avatar$createdByUserArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  token<T extends Prisma.EncryptedContentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContentDefaultArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   provisionRequests<T extends Prisma.Avatar$provisionRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Avatar$provisionRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvatarProvisionRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1322,7 +1433,7 @@ export interface AvatarFieldRefs {
   readonly managedBotId: Prisma.FieldRef<"Avatar", 'String'>
   readonly managedBotUsername: Prisma.FieldRef<"Avatar", 'String'>
   readonly createdByUserId: Prisma.FieldRef<"Avatar", 'Int'>
-  readonly token: Prisma.FieldRef<"Avatar", 'String'>
+  readonly tokenEcid: Prisma.FieldRef<"Avatar", 'String'>
   readonly createdAt: Prisma.FieldRef<"Avatar", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Avatar", 'DateTime'>
 }

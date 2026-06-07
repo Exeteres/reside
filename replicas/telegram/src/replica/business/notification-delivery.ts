@@ -1,8 +1,9 @@
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { InlineKeyboardMarkup, InputMediaPhoto } from "grammy/types"
 import type { PrismaClient } from "../../database"
 import type { TelegramBotLike } from "./notification-types"
 import { Code, ConnectError } from "@connectrpc/connect"
-import { block, bold, logger } from "@reside/common"
+import { block, bold, logger, rhid } from "@reside/common"
 import { InputFile } from "grammy"
 import { TelegramNotificationChannels } from "../../definitions"
 import { strings } from "../../locale"
@@ -18,7 +19,7 @@ export async function sendNotificationPayload(
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,
   replyToMessageId: number | undefined,
-): Promise<number> {
+): Promise<{ message_id: number }> {
   if (request.images.length === 0) {
     const sentMessage = await bot.api.sendMessage(chatId, messageText, {
       parse_mode: "HTML",
@@ -33,7 +34,7 @@ export async function sendNotificationPayload(
       await sendAttachmentGroup(bot, chatId, request.attachments, replyToMessageId)
     }
 
-    return sentMessage.message_id
+    return sentMessage
   }
 
   const imageMessages = await sendImageGroup(
@@ -54,7 +55,7 @@ export async function sendNotificationPayload(
   }
 
   if (!replyMarkup) {
-    return firstImageMessage.message_id
+    return firstImageMessage
   }
 
   const actionMessage = await bot.api.sendMessage(
@@ -69,7 +70,7 @@ export async function sendNotificationPayload(
     },
   )
 
-  return actionMessage.message_id
+  return actionMessage
 }
 
 async function sendImageGroup(
@@ -149,9 +150,9 @@ export async function sendNotificationWithReplyFallback(
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,
   replyToMessageId: number | undefined,
-): Promise<{ sentMessageId: number; usedReplyFallback: boolean }> {
+): Promise<{ sentMessage: unknown; sentMessageId: number; usedReplyFallback: boolean }> {
   try {
-    const sentMessageId = await sendNotificationPayload(
+    const sentMessage = await sendNotificationPayload(
       bot,
       targetChatId,
       request,
@@ -161,7 +162,8 @@ export async function sendNotificationWithReplyFallback(
     )
 
     return {
-      sentMessageId,
+      sentMessage,
+      sentMessageId: sentMessage.message_id,
       usedReplyFallback: false,
     }
   } catch (error) {
@@ -178,7 +180,7 @@ export async function sendNotificationWithReplyFallback(
       "avatar bot reply target message was not found, retrying without reply target",
     )
 
-    const sentMessageId = await sendNotificationPayload(
+    const sentMessage = await sendNotificationPayload(
       bot,
       targetChatId,
       request,
@@ -188,13 +190,15 @@ export async function sendNotificationWithReplyFallback(
     )
 
     return {
-      sentMessageId,
+      sentMessage,
+      sentMessageId: sentMessage.message_id,
       usedReplyFallback: true,
     }
   }
 }
 
 export async function sendAvatarPrivacyModeWarning(
+  crypto: ResideCrypto,
   prisma: PrismaClient,
   createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
   botToken: string,
@@ -249,14 +253,31 @@ export async function sendAvatarPrivacyModeWarning(
       is_disabled: true,
     },
   })
+  const chatRhid = rhid(targetChatId)
+  const chatDataEcid = await crypto.encrypt({ id: targetChatId })
+  const chat = await prisma.chat.upsert({
+    where: {
+      telegramRhid: chatRhid,
+    },
+    create: {
+      telegramRhid: chatRhid,
+      dataEcid: chatDataEcid,
+    },
+    update: {
+      dataEcid: chatDataEcid,
+    },
+    select: {
+      id: true,
+    },
+  })
 
   await prisma.notification.create({
     data: {
       operationId: null,
-      targetChatId,
-      replyToMessageId: null,
+      chatId: chat.id,
       channelId: warningChannel.id,
-      messageId: warningMessage.message_id,
+      messageRhid: rhid(warningMessage.message_id),
+      messageEcid: await crypto.encrypt(warningMessage),
       callingSubjectId,
       sendAsSubjectId,
       title: strings.server.notification.avatarPrivacyModeWarningTitle,

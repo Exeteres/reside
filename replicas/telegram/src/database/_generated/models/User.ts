@@ -38,22 +38,33 @@ export type UserSumAggregateOutputType = {
 
 export type UserMinAggregateOutputType = {
   id: number | null
-  telegramId: string | null
+  telegramRhid: string | null
+  telegramUserIdEcid: string | null
+  usernameEcid: string | null
+  firstNameEcid: string | null
+  lastNameEcid: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type UserMaxAggregateOutputType = {
   id: number | null
-  telegramId: string | null
+  telegramRhid: string | null
+  telegramUserIdEcid: string | null
+  usernameEcid: string | null
+  firstNameEcid: string | null
+  lastNameEcid: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type UserCountAggregateOutputType = {
   id: number
-  telegramId: number
-  data:PrismaJson.UserData
+  telegramRhid: number
+  telegramUserIdEcid: number
+  usernameEcid: number
+  firstNameEcid: number
+  lastNameEcid: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -70,22 +81,33 @@ export type UserSumAggregateInputType = {
 
 export type UserMinAggregateInputType = {
   id?: true
-  telegramId?: true
+  telegramRhid?: true
+  telegramUserIdEcid?: true
+  usernameEcid?: true
+  firstNameEcid?: true
+  lastNameEcid?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type UserMaxAggregateInputType = {
   id?: true
-  telegramId?: true
+  telegramRhid?: true
+  telegramUserIdEcid?: true
+  usernameEcid?: true
+  firstNameEcid?: true
+  lastNameEcid?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type UserCountAggregateInputType = {
   id?: true
-  telegramId?: true
-  data?: true
+  telegramRhid?: true
+  telegramUserIdEcid?: true
+  usernameEcid?: true
+  firstNameEcid?: true
+  lastNameEcid?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -179,8 +201,11 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type UserGroupByOutputType = {
   id: number
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid: string | null
+  firstNameEcid: string | null
+  lastNameEcid: string | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -210,10 +235,17 @@ export type UserWhereInput = {
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   id?: Prisma.IntFilter<"User"> | number
-  telegramId?: Prisma.StringFilter<"User"> | string
-  data?: Prisma.JsonFilter<"User">
+  telegramRhid?: Prisma.StringFilter<"User"> | string
+  telegramUserIdEcid?: Prisma.StringFilter<"User"> | string
+  usernameEcid?: Prisma.StringNullableFilter<"User"> | string | null
+  firstNameEcid?: Prisma.StringNullableFilter<"User"> | string | null
+  lastNameEcid?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  telegramUserId?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
+  username?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
+  firstName?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
+  lastName?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
   createdAvatars?: Prisma.AvatarListRelationFilter
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestListRelationFilter
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarListRelationFilter
@@ -222,10 +254,17 @@ export type UserWhereInput = {
 
 export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  telegramId?: Prisma.SortOrder
-  data?: Prisma.SortOrder
+  telegramRhid?: Prisma.SortOrder
+  telegramUserIdEcid?: Prisma.SortOrder
+  usernameEcid?: Prisma.SortOrderInput | Prisma.SortOrder
+  firstNameEcid?: Prisma.SortOrderInput | Prisma.SortOrder
+  lastNameEcid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  telegramUserId?: Prisma.EncryptedContentOrderByWithRelationInput
+  username?: Prisma.EncryptedContentOrderByWithRelationInput
+  firstName?: Prisma.EncryptedContentOrderByWithRelationInput
+  lastName?: Prisma.EncryptedContentOrderByWithRelationInput
   createdAvatars?: Prisma.AvatarOrderByRelationAggregateInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestOrderByRelationAggregateInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarOrderByRelationAggregateInput
@@ -234,23 +273,33 @@ export type UserOrderByWithRelationInput = {
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
   id?: number
-  telegramId?: string
+  telegramRhid?: string
+  telegramUserIdEcid?: string
+  usernameEcid?: string
+  firstNameEcid?: string
+  lastNameEcid?: string
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
-  data?: Prisma.JsonFilter<"User">
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  telegramUserId?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
+  username?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
+  firstName?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
+  lastName?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
   createdAvatars?: Prisma.AvatarListRelationFilter
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestListRelationFilter
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarListRelationFilter
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionListRelationFilter
-}, "id" | "telegramId">
+}, "id" | "telegramRhid" | "telegramUserIdEcid" | "usernameEcid" | "firstNameEcid" | "lastNameEcid">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  telegramId?: Prisma.SortOrder
-  data?: Prisma.SortOrder
+  telegramRhid?: Prisma.SortOrder
+  telegramUserIdEcid?: Prisma.SortOrder
+  usernameEcid?: Prisma.SortOrderInput | Prisma.SortOrder
+  firstNameEcid?: Prisma.SortOrderInput | Prisma.SortOrder
+  lastNameEcid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -265,17 +314,23 @@ export type UserScalarWhereWithAggregatesInput = {
   OR?: Prisma.UserScalarWhereWithAggregatesInput[]
   NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"User"> | number
-  telegramId?: Prisma.StringWithAggregatesFilter<"User"> | string
-  data?: Prisma.JsonWithAggregatesFilter<"User">
+  telegramRhid?: Prisma.StringWithAggregatesFilter<"User"> | string
+  telegramUserIdEcid?: Prisma.StringWithAggregatesFilter<"User"> | string
+  usernameEcid?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  firstNameEcid?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  lastNameEcid?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
 
 export type UserCreateInput = {
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
@@ -284,8 +339,11 @@ export type UserCreateInput = {
 
 export type UserUncheckedCreateInput = {
   id?: number
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -295,10 +353,13 @@ export type UserUncheckedCreateInput = {
 }
 
 export type UserUpdateInput = {
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
@@ -307,8 +368,11 @@ export type UserUpdateInput = {
 
 export type UserUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -319,23 +383,28 @@ export type UserUncheckedUpdateInput = {
 
 export type UserCreateManyInput = {
   id?: number
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type UserUpdateManyMutationInput = {
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type UserUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -352,8 +421,11 @@ export type UserScalarRelationFilter = {
 
 export type UserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  telegramId?: Prisma.SortOrder
-  data?: Prisma.SortOrder
+  telegramRhid?: Prisma.SortOrder
+  telegramUserIdEcid?: Prisma.SortOrder
+  usernameEcid?: Prisma.SortOrder
+  firstNameEcid?: Prisma.SortOrder
+  lastNameEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -364,14 +436,22 @@ export type UserAvgOrderByAggregateInput = {
 
 export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  telegramId?: Prisma.SortOrder
+  telegramRhid?: Prisma.SortOrder
+  telegramUserIdEcid?: Prisma.SortOrder
+  usernameEcid?: Prisma.SortOrder
+  firstNameEcid?: Prisma.SortOrder
+  lastNameEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  telegramId?: Prisma.SortOrder
+  telegramRhid?: Prisma.SortOrder
+  telegramUserIdEcid?: Prisma.SortOrder
+  usernameEcid?: Prisma.SortOrder
+  firstNameEcid?: Prisma.SortOrder
+  lastNameEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -428,6 +508,134 @@ export type UserUpdateOneWithoutUnauthorizedAvatarsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutUnauthorizedAvatarsInput, Prisma.UserUpdateWithoutUnauthorizedAvatarsInput>, Prisma.UserUncheckedUpdateWithoutUnauthorizedAvatarsInput>
 }
 
+export type UserCreateNestedOneWithoutTelegramUserIdInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutTelegramUserIdInput, Prisma.UserUncheckedCreateWithoutTelegramUserIdInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTelegramUserIdInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutUsernameInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUsernameInput, Prisma.UserUncheckedCreateWithoutUsernameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUsernameInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutFirstNameInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFirstNameInput, Prisma.UserUncheckedCreateWithoutFirstNameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFirstNameInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutLastNameInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutLastNameInput, Prisma.UserUncheckedCreateWithoutLastNameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutLastNameInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUncheckedCreateNestedOneWithoutTelegramUserIdInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutTelegramUserIdInput, Prisma.UserUncheckedCreateWithoutTelegramUserIdInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTelegramUserIdInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUncheckedCreateNestedOneWithoutUsernameInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUsernameInput, Prisma.UserUncheckedCreateWithoutUsernameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUsernameInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUncheckedCreateNestedOneWithoutFirstNameInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFirstNameInput, Prisma.UserUncheckedCreateWithoutFirstNameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFirstNameInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUncheckedCreateNestedOneWithoutLastNameInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutLastNameInput, Prisma.UserUncheckedCreateWithoutLastNameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutLastNameInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutTelegramUserIdNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutTelegramUserIdInput, Prisma.UserUncheckedCreateWithoutTelegramUserIdInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTelegramUserIdInput
+  upsert?: Prisma.UserUpsertWithoutTelegramUserIdInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTelegramUserIdInput, Prisma.UserUpdateWithoutTelegramUserIdInput>, Prisma.UserUncheckedUpdateWithoutTelegramUserIdInput>
+}
+
+export type UserUpdateOneWithoutUsernameNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUsernameInput, Prisma.UserUncheckedCreateWithoutUsernameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUsernameInput
+  upsert?: Prisma.UserUpsertWithoutUsernameInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutUsernameInput, Prisma.UserUpdateWithoutUsernameInput>, Prisma.UserUncheckedUpdateWithoutUsernameInput>
+}
+
+export type UserUpdateOneWithoutFirstNameNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFirstNameInput, Prisma.UserUncheckedCreateWithoutFirstNameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFirstNameInput
+  upsert?: Prisma.UserUpsertWithoutFirstNameInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFirstNameInput, Prisma.UserUpdateWithoutFirstNameInput>, Prisma.UserUncheckedUpdateWithoutFirstNameInput>
+}
+
+export type UserUpdateOneWithoutLastNameNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutLastNameInput, Prisma.UserUncheckedCreateWithoutLastNameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutLastNameInput
+  upsert?: Prisma.UserUpsertWithoutLastNameInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutLastNameInput, Prisma.UserUpdateWithoutLastNameInput>, Prisma.UserUncheckedUpdateWithoutLastNameInput>
+}
+
+export type UserUncheckedUpdateOneWithoutTelegramUserIdNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutTelegramUserIdInput, Prisma.UserUncheckedCreateWithoutTelegramUserIdInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTelegramUserIdInput
+  upsert?: Prisma.UserUpsertWithoutTelegramUserIdInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTelegramUserIdInput, Prisma.UserUpdateWithoutTelegramUserIdInput>, Prisma.UserUncheckedUpdateWithoutTelegramUserIdInput>
+}
+
+export type UserUncheckedUpdateOneWithoutUsernameNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUsernameInput, Prisma.UserUncheckedCreateWithoutUsernameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUsernameInput
+  upsert?: Prisma.UserUpsertWithoutUsernameInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutUsernameInput, Prisma.UserUpdateWithoutUsernameInput>, Prisma.UserUncheckedUpdateWithoutUsernameInput>
+}
+
+export type UserUncheckedUpdateOneWithoutFirstNameNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFirstNameInput, Prisma.UserUncheckedCreateWithoutFirstNameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFirstNameInput
+  upsert?: Prisma.UserUpsertWithoutFirstNameInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFirstNameInput, Prisma.UserUpdateWithoutFirstNameInput>, Prisma.UserUncheckedUpdateWithoutFirstNameInput>
+}
+
+export type UserUncheckedUpdateOneWithoutLastNameNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutLastNameInput, Prisma.UserUncheckedCreateWithoutLastNameInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutLastNameInput
+  upsert?: Prisma.UserUpsertWithoutLastNameInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutLastNameInput, Prisma.UserUpdateWithoutLastNameInput>, Prisma.UserUncheckedUpdateWithoutLastNameInput>
+}
+
 export type UserCreateNestedOneWithoutNaturalLanguageInteractionsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutNaturalLanguageInteractionsInput, Prisma.UserUncheckedCreateWithoutNaturalLanguageInteractionsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutNaturalLanguageInteractionsInput
@@ -443,10 +651,13 @@ export type UserUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput =
 }
 
 export type UserCreateWithoutCreatedAvatarsInput = {
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
@@ -454,8 +665,11 @@ export type UserCreateWithoutCreatedAvatarsInput = {
 
 export type UserUncheckedCreateWithoutCreatedAvatarsInput = {
   id?: number
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -480,10 +694,13 @@ export type UserUpdateToOneWithWhereWithoutCreatedAvatarsInput = {
 }
 
 export type UserUpdateWithoutCreatedAvatarsInput = {
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
@@ -491,8 +708,11 @@ export type UserUpdateWithoutCreatedAvatarsInput = {
 
 export type UserUncheckedUpdateWithoutCreatedAvatarsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -501,10 +721,13 @@ export type UserUncheckedUpdateWithoutCreatedAvatarsInput = {
 }
 
 export type UserCreateWithoutAvatarProvisionRequestsInput = {
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
@@ -512,8 +735,11 @@ export type UserCreateWithoutAvatarProvisionRequestsInput = {
 
 export type UserUncheckedCreateWithoutAvatarProvisionRequestsInput = {
   id?: number
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -538,10 +764,13 @@ export type UserUpdateToOneWithWhereWithoutAvatarProvisionRequestsInput = {
 }
 
 export type UserUpdateWithoutAvatarProvisionRequestsInput = {
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
@@ -549,8 +778,11 @@ export type UserUpdateWithoutAvatarProvisionRequestsInput = {
 
 export type UserUncheckedUpdateWithoutAvatarProvisionRequestsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -559,10 +791,13 @@ export type UserUncheckedUpdateWithoutAvatarProvisionRequestsInput = {
 }
 
 export type UserCreateWithoutUnauthorizedAvatarsInput = {
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
@@ -570,8 +805,11 @@ export type UserCreateWithoutUnauthorizedAvatarsInput = {
 
 export type UserUncheckedCreateWithoutUnauthorizedAvatarsInput = {
   id?: number
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -596,10 +834,13 @@ export type UserUpdateToOneWithWhereWithoutUnauthorizedAvatarsInput = {
 }
 
 export type UserUpdateWithoutUnauthorizedAvatarsInput = {
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
@@ -607,8 +848,11 @@ export type UserUpdateWithoutUnauthorizedAvatarsInput = {
 
 export type UserUncheckedUpdateWithoutUnauthorizedAvatarsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -616,11 +860,294 @@ export type UserUncheckedUpdateWithoutUnauthorizedAvatarsInput = {
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
 }
 
-export type UserCreateWithoutNaturalLanguageInteractionsInput = {
-  telegramId: string
-  data:PrismaJson.UserData
+export type UserCreateWithoutTelegramUserIdInput = {
+  telegramRhid: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
+  createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutTelegramUserIdInput = {
+  id?: number
+  telegramRhid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutTelegramUserIdInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutTelegramUserIdInput, Prisma.UserUncheckedCreateWithoutTelegramUserIdInput>
+}
+
+export type UserCreateWithoutUsernameInput = {
+  telegramRhid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
+  createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutUsernameInput = {
+  id?: number
+  telegramRhid: string
+  telegramUserIdEcid: string
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutUsernameInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutUsernameInput, Prisma.UserUncheckedCreateWithoutUsernameInput>
+}
+
+export type UserCreateWithoutFirstNameInput = {
+  telegramRhid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
+  createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutFirstNameInput = {
+  id?: number
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  lastNameEcid?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutFirstNameInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutFirstNameInput, Prisma.UserUncheckedCreateWithoutFirstNameInput>
+}
+
+export type UserCreateWithoutLastNameInput = {
+  telegramRhid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutLastNameInput = {
+  id?: number
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutLastNameInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutLastNameInput, Prisma.UserUncheckedCreateWithoutLastNameInput>
+}
+
+export type UserUpsertWithoutTelegramUserIdInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutTelegramUserIdInput, Prisma.UserUncheckedUpdateWithoutTelegramUserIdInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutTelegramUserIdInput, Prisma.UserUncheckedCreateWithoutTelegramUserIdInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutTelegramUserIdInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutTelegramUserIdInput, Prisma.UserUncheckedUpdateWithoutTelegramUserIdInput>
+}
+
+export type UserUpdateWithoutTelegramUserIdInput = {
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
+  createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutTelegramUserIdInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserUpsertWithoutUsernameInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutUsernameInput, Prisma.UserUncheckedUpdateWithoutUsernameInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutUsernameInput, Prisma.UserUncheckedCreateWithoutUsernameInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutUsernameInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutUsernameInput, Prisma.UserUncheckedUpdateWithoutUsernameInput>
+}
+
+export type UserUpdateWithoutUsernameInput = {
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
+  createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutUsernameInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserUpsertWithoutFirstNameInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutFirstNameInput, Prisma.UserUncheckedUpdateWithoutFirstNameInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutFirstNameInput, Prisma.UserUncheckedCreateWithoutFirstNameInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutFirstNameInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutFirstNameInput, Prisma.UserUncheckedUpdateWithoutFirstNameInput>
+}
+
+export type UserUpdateWithoutFirstNameInput = {
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
+  createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutFirstNameInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserUpsertWithoutLastNameInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutLastNameInput, Prisma.UserUncheckedUpdateWithoutLastNameInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutLastNameInput, Prisma.UserUncheckedCreateWithoutLastNameInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutLastNameInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutLastNameInput, Prisma.UserUncheckedUpdateWithoutLastNameInput>
+}
+
+export type UserUpdateWithoutLastNameInput = {
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutLastNameInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutNaturalLanguageInteractionsInput = {
+  telegramRhid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
@@ -628,8 +1155,11 @@ export type UserCreateWithoutNaturalLanguageInteractionsInput = {
 
 export type UserUncheckedCreateWithoutNaturalLanguageInteractionsInput = {
   id?: number
-  telegramId: string
-  data:PrismaJson.UserData
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -654,10 +1184,13 @@ export type UserUpdateToOneWithWhereWithoutNaturalLanguageInteractionsInput = {
 }
 
 export type UserUpdateWithoutNaturalLanguageInteractionsInput = {
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
@@ -665,8 +1198,11 @@ export type UserUpdateWithoutNaturalLanguageInteractionsInput = {
 
 export type UserUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  telegramId?: Prisma.StringFieldUpdateOperationsInput | string
-  data?:PrismaJson.UserData
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -734,10 +1270,17 @@ export type UserCountOutputTypeCountNaturalLanguageInteractionsArgs<ExtArgs exte
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  telegramId?: boolean
-  data?: boolean
+  telegramRhid?: boolean
+  telegramUserIdEcid?: boolean
+  usernameEcid?: boolean
+  firstNameEcid?: boolean
+  lastNameEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  telegramUserId?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  username?: boolean | Prisma.User$usernameArgs<ExtArgs>
+  firstName?: boolean | Prisma.User$firstNameArgs<ExtArgs>
+  lastName?: boolean | Prisma.User$lastNameArgs<ExtArgs>
   createdAvatars?: boolean | Prisma.User$createdAvatarsArgs<ExtArgs>
   avatarProvisionRequests?: boolean | Prisma.User$avatarProvisionRequestsArgs<ExtArgs>
   unauthorizedAvatars?: boolean | Prisma.User$unauthorizedAvatarsArgs<ExtArgs>
@@ -747,42 +1290,89 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  telegramId?: boolean
-  data?: boolean
+  telegramRhid?: boolean
+  telegramUserIdEcid?: boolean
+  usernameEcid?: boolean
+  firstNameEcid?: boolean
+  lastNameEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  telegramUserId?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  username?: boolean | Prisma.User$usernameArgs<ExtArgs>
+  firstName?: boolean | Prisma.User$firstNameArgs<ExtArgs>
+  lastName?: boolean | Prisma.User$lastNameArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  telegramId?: boolean
-  data?: boolean
+  telegramRhid?: boolean
+  telegramUserIdEcid?: boolean
+  usernameEcid?: boolean
+  firstNameEcid?: boolean
+  lastNameEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  telegramUserId?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  username?: boolean | Prisma.User$usernameArgs<ExtArgs>
+  firstName?: boolean | Prisma.User$firstNameArgs<ExtArgs>
+  lastName?: boolean | Prisma.User$lastNameArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
   id?: boolean
-  telegramId?: boolean
-  data?: boolean
+  telegramRhid?: boolean
+  telegramUserIdEcid?: boolean
+  usernameEcid?: boolean
+  firstNameEcid?: boolean
+  lastNameEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "telegramId" | "data" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "telegramRhid" | "telegramUserIdEcid" | "usernameEcid" | "firstNameEcid" | "lastNameEcid" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  telegramUserId?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  username?: boolean | Prisma.User$usernameArgs<ExtArgs>
+  firstName?: boolean | Prisma.User$firstNameArgs<ExtArgs>
+  lastName?: boolean | Prisma.User$lastNameArgs<ExtArgs>
   createdAvatars?: boolean | Prisma.User$createdAvatarsArgs<ExtArgs>
   avatarProvisionRequests?: boolean | Prisma.User$avatarProvisionRequestsArgs<ExtArgs>
   unauthorizedAvatars?: boolean | Prisma.User$unauthorizedAvatarsArgs<ExtArgs>
   naturalLanguageInteractions?: boolean | Prisma.User$naturalLanguageInteractionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  telegramUserId?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  username?: boolean | Prisma.User$usernameArgs<ExtArgs>
+  firstName?: boolean | Prisma.User$firstNameArgs<ExtArgs>
+  lastName?: boolean | Prisma.User$lastNameArgs<ExtArgs>
+}
+export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  telegramUserId?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  username?: boolean | Prisma.User$usernameArgs<ExtArgs>
+  firstName?: boolean | Prisma.User$firstNameArgs<ExtArgs>
+  lastName?: boolean | Prisma.User$lastNameArgs<ExtArgs>
+}
 
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
+    /**
+     * The encrypted Telegram user id.
+     */
+    telegramUserId: Prisma.$EncryptedContentPayload<ExtArgs>
+    /**
+     * The encrypted Telegram username.
+     */
+    username: Prisma.$EncryptedContentPayload<ExtArgs> | null
+    /**
+     * The encrypted Telegram first name.
+     */
+    firstName: Prisma.$EncryptedContentPayload<ExtArgs> | null
+    /**
+     * The encrypted Telegram last name.
+     */
+    lastName: Prisma.$EncryptedContentPayload<ExtArgs> | null
     /**
      * The avatars created by this user.
      */
@@ -806,15 +1396,25 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
      */
     id: number
     /**
-     * The Telegram user id.
+     * The RHID of the Telegram user id.
      */
-    telegramId: string
+    telegramRhid: string
     /**
-     * The raw Telegram payload for the user.
-     * 
-     * [UserData]
+     * The ECID of the Telegram user id.
      */
-    data:PrismaJson.UserData
+    telegramUserIdEcid: string
+    /**
+     * The ECID of the Telegram username.
+     */
+    usernameEcid: string | null
+    /**
+     * The ECID of the Telegram first name.
+     */
+    firstNameEcid: string | null
+    /**
+     * The ECID of the Telegram last name.
+     */
+    lastNameEcid: string | null
     /**
      * The timestamp when this user was created.
      */
@@ -1217,6 +1817,10 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  telegramUserId<T extends Prisma.EncryptedContentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContentDefaultArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  username<T extends Prisma.User$usernameArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$usernameArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  firstName<T extends Prisma.User$firstNameArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$firstNameArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  lastName<T extends Prisma.User$lastNameArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$lastNameArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   createdAvatars<T extends Prisma.User$createdAvatarsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdAvatarsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvatarPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   avatarProvisionRequests<T extends Prisma.User$avatarProvisionRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$avatarProvisionRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvatarProvisionRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   unauthorizedAvatars<T extends Prisma.User$unauthorizedAvatarsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$unauthorizedAvatarsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UnauthorizedAvatarPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1251,8 +1855,11 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
  */
 export interface UserFieldRefs {
   readonly id: Prisma.FieldRef<"User", 'Int'>
-  readonly telegramId: Prisma.FieldRef<"User", 'String'>
-  readonly data: Prisma.FieldRef<"User", 'Json'>
+  readonly telegramRhid: Prisma.FieldRef<"User", 'String'>
+  readonly telegramUserIdEcid: Prisma.FieldRef<"User", 'String'>
+  readonly usernameEcid: Prisma.FieldRef<"User", 'String'>
+  readonly firstNameEcid: Prisma.FieldRef<"User", 'String'>
+  readonly lastNameEcid: Prisma.FieldRef<"User", 'String'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }
@@ -1504,6 +2111,10 @@ export type UserCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions
    */
   data: Prisma.UserCreateManyInput | Prisma.UserCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1574,6 +2185,10 @@ export type UserUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many Users to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1640,6 +2255,63 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Users to delete.
    */
   limit?: number
+}
+
+/**
+ * User.username
+ */
+export type User$usernameArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EncryptedContent
+   */
+  select?: Prisma.EncryptedContentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EncryptedContent
+   */
+  omit?: Prisma.EncryptedContentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EncryptedContentInclude<ExtArgs> | null
+  where?: Prisma.EncryptedContentWhereInput
+}
+
+/**
+ * User.firstName
+ */
+export type User$firstNameArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EncryptedContent
+   */
+  select?: Prisma.EncryptedContentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EncryptedContent
+   */
+  omit?: Prisma.EncryptedContentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EncryptedContentInclude<ExtArgs> | null
+  where?: Prisma.EncryptedContentWhereInput
+}
+
+/**
+ * User.lastName
+ */
+export type User$lastNameArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EncryptedContent
+   */
+  select?: Prisma.EncryptedContentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EncryptedContent
+   */
+  omit?: Prisma.EncryptedContentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EncryptedContentInclude<ExtArgs> | null
+  where?: Prisma.EncryptedContentWhereInput
 }
 
 /**

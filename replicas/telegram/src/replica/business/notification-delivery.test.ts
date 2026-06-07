@@ -1,7 +1,7 @@
 import type { PrismaClient } from "../../database"
 import type { TelegramBotLike } from "./notification-types"
 import { describe, expect, test } from "bun:test"
-import { mockDeepFn, mockFn } from "@reside/common/testing"
+import { mockDeepFn, mockFn, testCrypto } from "@reside/common/testing"
 import {
   sendAvatarPrivacyModeWarning,
   sendNotificationPayload,
@@ -25,7 +25,7 @@ describe("sendNotificationPayload", () => {
       undefined,
     )
 
-    expect(sentMessageId).toBe(10)
+    expect(sentMessageId.message_id).toBe(10)
     expect(bot.api.sendMessage.spy()).toHaveBeenCalledTimes(1)
   })
 
@@ -51,7 +51,7 @@ describe("sendNotificationPayload", () => {
       undefined,
     )
 
-    expect(sentMessageId).toBe(10)
+    expect(sentMessageId.message_id).toBe(10)
     expect(bot.api.sendDocument.spy()).toHaveBeenCalledTimes(1)
   })
 
@@ -76,7 +76,7 @@ describe("sendNotificationPayload", () => {
       undefined,
     )
 
-    expect(sentMessageId).toBe(101)
+    expect(sentMessageId.message_id).toBe(101)
     expect(bot.api.sendPhoto.spy()).toHaveBeenCalledTimes(1)
     expect(bot.api.sendMessage.spy()).toHaveBeenCalledTimes(0)
   })
@@ -109,7 +109,7 @@ describe("sendNotificationPayload", () => {
       44,
     )
 
-    expect(sentMessageId).toBe(301)
+    expect(sentMessageId.message_id).toBe(301)
     expect(bot.api.sendMediaGroup.spy()).toHaveBeenCalledTimes(1)
     expect(bot.api.sendMessage.spy()).toHaveBeenCalledTimes(1)
   })
@@ -164,6 +164,9 @@ describe("sendNotificationWithReplyFallback", () => {
     )
 
     expect(result).toEqual({
+      sentMessage: {
+        message_id: 321,
+      },
       sentMessageId: 321,
       usedReplyFallback: true,
     })
@@ -188,6 +191,9 @@ describe("sendNotificationWithReplyFallback", () => {
     )
 
     expect(result).toEqual({
+      sentMessage: {
+        message_id: 111,
+      },
       sentMessageId: 111,
       usedReplyFallback: false,
     })
@@ -222,6 +228,7 @@ describe("sendAvatarPrivacyModeWarning", () => {
     prisma.notificationChannel.findUnique.mockResolvedValue(null as never)
 
     await sendAvatarPrivacyModeWarning(
+      testCrypto,
       prisma,
       createTelegramBotClient as unknown as (
         token: string,
@@ -244,10 +251,12 @@ describe("sendAvatarPrivacyModeWarning", () => {
 
     prisma.notificationChannel.findUnique.mockResolvedValue({ id: 42 } as never)
     prisma.avatar.findUnique.mockResolvedValue({ managedBotUsername: "demo_bot" } as never)
+    prisma.chat.upsert.mockResolvedValue({ id: 9 } as never)
     warningBot.api.sendMessage.mockResolvedValue({ message_id: 808 } as never)
     createTelegramBotClient.spy().mockReturnValue(warningBot as never)
 
     await sendAvatarPrivacyModeWarning(
+      testCrypto,
       prisma,
       createTelegramBotClient as unknown as (
         token: string,
@@ -271,10 +280,12 @@ describe("sendAvatarPrivacyModeWarning", () => {
 
     prisma.notificationChannel.findUnique.mockResolvedValue({ id: 42 } as never)
     prisma.avatar.findUnique.mockResolvedValue({ managedBotUsername: "   " } as never)
+    prisma.chat.upsert.mockResolvedValue({ id: 9 } as never)
     warningBot.api.sendMessage.mockResolvedValue({ message_id: 808 } as never)
     createTelegramBotClient.spy().mockReturnValue(warningBot as never)
 
     await sendAvatarPrivacyModeWarning(
+      testCrypto,
       prisma,
       createTelegramBotClient as unknown as (
         token: string,

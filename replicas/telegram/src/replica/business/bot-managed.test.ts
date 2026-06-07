@@ -1,7 +1,7 @@
 import type { Context } from "grammy"
 import type { PrismaClient } from "../../database"
 import { describe, expect, mock, test } from "bun:test"
-import { mockDeepFn } from "@reside/common/testing"
+import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import {
   extractAvatarBotJoinedChatEvents,
   extractManagedBotCreatedEvent,
@@ -146,6 +146,7 @@ describe("handleManagedBotLifecycleUpdate", () => {
 
     await handleManagedBotLifecycleUpdate(
       {
+        crypto: testCrypto,
         prisma,
         temporalClient: mockDeepFn(),
       },
@@ -202,6 +203,7 @@ describe("handleManagedBotLifecycleUpdate", () => {
 
     await handleManagedBotLifecycleUpdate(
       {
+        crypto: testCrypto,
         prisma,
         temporalClient: mockDeepFn(),
       },

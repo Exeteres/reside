@@ -1,11 +1,12 @@
 import type { CommonServices, GenericOperationService } from "@reside/common"
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
 import type { Bot, Context } from "grammy"
 import type { Update } from "grammy/types"
 import type { Operation, PrismaClient } from "../../database"
 import { createHash } from "node:crypto"
 import { logger } from "@reside/common"
-import { TELEGRAM_WEBHOOK_PATH } from "../../definitions"
+import { encryptedStringSchema, TELEGRAM_WEBHOOK_PATH } from "../../definitions"
 import { createTelegramBot } from "./bot"
 
 export function createWebhookUrl(endpoint: string): string {
@@ -22,6 +23,7 @@ export function createBotRuntime(args: {
     prisma: PrismaClient
     operationService: GenericOperationService<Operation>
     temporalClient: Client
+    crypto: ResideCrypto
   }
   webhookUrl: string
 }): {
@@ -51,6 +53,7 @@ export function createBotRuntime(args: {
       permissionRequestService: args.services.permissionRequestService,
       temporalClient: args.services.temporalClient,
       superAdminUserId: currentSuperAdminUserId,
+      crypto: args.services.crypto,
     })
   }
 
@@ -78,6 +81,7 @@ export function createBotRuntime(args: {
 
   const refreshAvatarWebhookTokens = async (): Promise<void> => {
     avatarWebhookTokens = await loadAvatarWebhookTokens({
+      crypto: args.services.crypto,
       prisma: args.services.prisma,
     })
   }
@@ -200,17 +204,22 @@ export function createBotRuntime(args: {
 }
 
 async function loadAvatarWebhookTokens(args: {
+  crypto: ResideCrypto
   prisma: PrismaClient
 }): Promise<Map<string, string>> {
   const avatars = await args.prisma.avatar.findMany({
     select: {
-      token: true,
+      tokenEcid: true,
     },
   })
 
-  const nextTokens = new Set(
-    avatars.map(avatar => avatar.token?.trim()).filter((token): token is string => !!token),
-  )
+  const nextTokens = new Set<string>()
+  for (const avatar of avatars) {
+    const token = (await args.crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)).trim()
+    if (token.length > 0) {
+      nextTokens.add(token)
+    }
+  }
 
   logger.debug(
     {

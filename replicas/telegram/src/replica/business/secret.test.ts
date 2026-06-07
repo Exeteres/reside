@@ -1,51 +1,26 @@
-import type { CoreV1Api } from "@kubernetes/client-node"
+import type { ResideCrypto } from "@reside/common/encryption"
 import { describe, expect, test } from "bun:test"
 import { mockDeepFn } from "@reside/common/testing"
-import { loadTelegramSecretState, TELEGRAM_SECRET_NAME } from "./secret"
+import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "./secret"
 
 describe("loadTelegramSecretState", () => {
-  test("loads and decodes bot token", async () => {
-    const coreApi = mockDeepFn<CoreV1Api>()
-    coreApi.readNamespacedSecret.mockResolvedValue({
-      metadata: {
-        resourceVersion: "1",
-      },
-      data: {
-        bot_token: Buffer.from("my-token", "utf-8").toString("base64"),
-      },
-    } as never)
+  test("loads bot token", async () => {
+    const crypto = mockDeepFn<ResideCrypto>()
+    crypto.getSecret.mockResolvedValue("my-token")
 
-    const state = await loadTelegramSecretState(coreApi, "ns")
+    const state = await loadTelegramSecretState(crypto)
 
     expect(state).toEqual({
-      resourceVersion: "1",
       botToken: "my-token",
     })
 
-    expect(coreApi.readNamespacedSecret.spy()).toHaveBeenCalledWith({
-      name: TELEGRAM_SECRET_NAME,
-      namespace: "ns",
-    })
+    expect(crypto.getSecret.spy()).toHaveBeenCalledWith(TELEGRAM_BOT_TOKEN_SECRET_KEY)
   })
 
-  test("returns empty state for missing secret", async () => {
-    const coreApi = mockDeepFn<CoreV1Api>()
-    coreApi.readNamespacedSecret.mockRejectedValue({
-      code: 404,
-    })
+  test("rethrows secret loading errors", () => {
+    const crypto = mockDeepFn<ResideCrypto>()
+    crypto.getSecret.mockRejectedValue(new Error("boom"))
 
-    const state = await loadTelegramSecretState(coreApi, "ns")
-
-    expect(state).toEqual({
-      resourceVersion: undefined,
-      botToken: undefined,
-    })
-  })
-
-  test("rethrows unknown API errors", () => {
-    const coreApi = mockDeepFn<CoreV1Api>()
-    coreApi.readNamespacedSecret.mockRejectedValue(new Error("boom"))
-
-    expect(loadTelegramSecretState(coreApi, "ns")).rejects.toThrow("boom")
+    expect(loadTelegramSecretState(crypto)).rejects.toThrow("boom")
   })
 })

@@ -1,4 +1,5 @@
 import type { SubjectServiceImplementation } from "@reside/api/common/subject.v1"
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
 import { create } from "@bufbuild/protobuf"
 import { Code, ConnectError } from "@connectrpc/connect"
@@ -7,8 +8,10 @@ import { authenticateReplica, logger } from "@reside/common"
 import { resolveTelegramSubjectDisplayInfo } from "../business/subject"
 
 export function createSubjectService({
+  crypto,
   prisma,
 }: {
+  crypto: ResideCrypto
   prisma: PrismaClient
 }): SubjectServiceImplementation {
   return {
@@ -24,7 +27,7 @@ export function createSubjectService({
       logger.debug("getSubjectDisplayInfo requested for subjectId %s", request.subjectId)
 
       try {
-        const payload = await resolveTelegramSubjectDisplayInfo(prisma, request.subjectId)
+        const payload = await resolveTelegramSubjectDisplayInfo(crypto, prisma, request.subjectId)
 
         logger.debug("resolved subject display info for subjectId %s", request.subjectId)
 

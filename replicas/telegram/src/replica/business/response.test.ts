@@ -1,7 +1,8 @@
 import type { GenericOperationService } from "@reside/common"
 import type { Operation, PrismaClient } from "../../database"
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
-import { mockDeepFn } from "@reside/common/testing"
+import { rhid } from "@reside/common"
+import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import { TELEGRAM_INTERACTION_CONTEXT_ENV_NAME } from "../../shared"
 import { completeOperationFromCallbackAction, completeOperationFromTextReply } from "./response"
 
@@ -23,6 +24,7 @@ describe("completeOperationFromTextReply", () => {
     prisma.notification.findMany.mockResolvedValue([] as never)
 
     const result = await completeOperationFromTextReply({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -53,7 +55,9 @@ describe("completeOperationFromTextReply", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -62,6 +66,7 @@ describe("completeOperationFromTextReply", () => {
     ] as never)
 
     const result = await completeOperationFromTextReply({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -94,7 +99,9 @@ describe("completeOperationFromTextReply", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -106,6 +113,7 @@ describe("completeOperationFromTextReply", () => {
     prisma.operation.update.mockResolvedValue({ id: 77 } as never)
 
     const result = await completeOperationFromTextReply({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -137,7 +145,9 @@ describe("completeOperationFromTextReply", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -151,6 +161,7 @@ describe("completeOperationFromTextReply", () => {
     } as never)
 
     const result = await completeOperationFromTextReply({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -181,7 +192,9 @@ describe("completeOperationFromTextReply", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -195,6 +208,7 @@ describe("completeOperationFromTextReply", () => {
     } as never)
 
     const result = await completeOperationFromTextReply({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -236,7 +250,9 @@ describe("completeOperationFromCallbackAction", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -245,6 +261,7 @@ describe("completeOperationFromCallbackAction", () => {
     ] as never)
 
     const result = await completeOperationFromCallbackAction({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -271,6 +288,7 @@ describe("completeOperationFromCallbackAction", () => {
     prisma.notification.findFirst.mockResolvedValue(null as never)
 
     const result = await completeOperationFromCallbackAction({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -309,7 +327,9 @@ describe("completeOperationFromCallbackAction", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "2",
+        chat: {
+          telegramRhid: rhid("2"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -318,6 +338,7 @@ describe("completeOperationFromCallbackAction", () => {
     ] as never)
 
     const result = await completeOperationFromCallbackAction({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -347,7 +368,9 @@ describe("completeOperationFromCallbackAction", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: { operationId: 77 },
@@ -356,6 +379,7 @@ describe("completeOperationFromCallbackAction", () => {
     ] as never)
 
     const result = await completeOperationFromCallbackAction({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -394,7 +418,9 @@ describe("completeOperationFromCallbackAction", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -403,6 +429,7 @@ describe("completeOperationFromCallbackAction", () => {
     ] as never)
 
     const result = await completeOperationFromCallbackAction({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -442,7 +469,9 @@ describe("completeOperationFromCallbackAction", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -456,6 +485,7 @@ describe("completeOperationFromCallbackAction", () => {
     } as never)
 
     const result = await completeOperationFromCallbackAction({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -495,7 +525,9 @@ describe("completeOperationFromCallbackAction", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -509,6 +541,7 @@ describe("completeOperationFromCallbackAction", () => {
     } as never)
 
     const result = await completeOperationFromCallbackAction({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,
@@ -547,7 +580,9 @@ describe("completeOperationFromCallbackAction", () => {
         channel: {
           name: "alerts",
         },
-        targetChatId: "1",
+        chat: {
+          telegramRhid: rhid("1"),
+        },
         operation: {
           id: 77,
           notificationResponse: null,
@@ -558,6 +593,7 @@ describe("completeOperationFromCallbackAction", () => {
     operationService.setCompleted.mockResolvedValue(undefined as never)
 
     const result = await completeOperationFromCallbackAction({
+      crypto: testCrypto,
       prisma,
       operationService,
       chatId: 1,

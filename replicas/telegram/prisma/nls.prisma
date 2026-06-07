@@ -3,20 +3,20 @@ model NaturalLanguageInteraction {
   /// The unique numeric identifier of the interaction.
   id Int @id @default(autoincrement())
 
-  /// The Telegram chat identifier where interaction started.
-  chatId String
+  /// The internal chat identifier where interaction started.
+  chatId Int
 
   /// The user identifier that owns this interaction thread.
   userId Int
 
-  /// The resolved thread identifier used for continuation lookup.
-  threadId Int
+  /// The RHID of the resolved Telegram thread identifier used for continuation lookup.
+  threadRhid String
 
   /// The target replica name for this interaction thread.
   replicaName String
 
   /// The chat entity this interaction belongs to.
-  chat Chat @relation("NaturalLanguageInteractionChat", fields: [chatId], references: [telegramId], onDelete: Cascade)
+  chat Chat @relation("NaturalLanguageInteractionChat", fields: [chatId], references: [id], onDelete: Cascade)
 
   /// The user that started this interaction thread.
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -27,6 +27,6 @@ model NaturalLanguageInteraction {
   /// The timestamp when this interaction was last updated.
   updatedAt DateTime @updatedAt
 
-  @@unique([chatId, threadId])
+  @@unique([chatId, threadRhid])
   @@index([chatId, userId])
 }
