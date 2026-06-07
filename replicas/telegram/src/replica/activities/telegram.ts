@@ -31,10 +31,15 @@ import {
   getReplicaNamespace,
   kubeConfig,
 } from "@reside/common"
+import { logger } from "@reside/common"
+import { alphaReplica } from "@reside/registry"
+import { ReplicaService } from "@reside/api/alpha/replica.v1"
 import { WellKnownPermissions } from "@reside/registry"
 import { encryptedStringSchema, TELEGRAM_GATEWAY_NAME } from "../../definitions"
 import { strings } from "../../locale"
 import { createTelegramBotClient } from "../business/bot-client"
+import { updateAvatarVersionTag } from "../business/avatar"
+import { loadTelegramConfigState } from "../business/config"
 import { createWebhookUrl } from "../business/bot-runtime"
 import { createEcidTextSubstitutor } from "../business/ecid-substitution"
 import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "../business/secret"
@@ -65,8 +70,8 @@ export function createTelegramActivities({
   const commandHandlerClients = new Map<string, CommandHandlerServiceClient>()
   const nlsClients = new Map<string, NaturalLanguageServiceClient>()
 
-  const _namespace = getReplicaNamespace()
-  const _coreApi = kubeConfig.makeApiClient(CoreV1Api)
+  const namespace = getReplicaNamespace()
+  const coreApi = kubeConfig.makeApiClient(CoreV1Api)
   let webhookUrlPromise: Promise<string> | undefined
 
   const loadWebhookUrl = async (): Promise<string> => {
@@ -506,6 +511,30 @@ export function createTelegramActivities({
           },
         })
       })
+
+      // try to fetch the replica version and update avatar's version tag
+      try {
+        const alphaClient = createClient(ReplicaService, createChannel(alphaReplica.endpoint))
+        const replicaResp = await alphaClient.getReplica({ name: request.replicaName })
+        const version = replicaResp?.replica?.version
+
+        if (version) {
+          const configState = await loadTelegramConfigState(coreApi, namespace)
+          if (configState.systemChatId) {
+            await updateAvatarVersionTag(prisma, createTelegramBotClient, {
+              managerBotToken: secretState.botToken,
+              systemChatId: configState.systemChatId,
+              replicaName: request.replicaName,
+              newVersion: version,
+            })
+          }
+        }
+      } catch (error) {
+        logger.warn(
+          { error, replica: request.replicaName },
+          "failed to fetch replica version or update avatar tag",
+        )
+      }
 
       await operationService.setCompleted(input.operationId)
     },

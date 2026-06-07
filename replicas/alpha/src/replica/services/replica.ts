@@ -1,7 +1,7 @@
 import type { ReplicaServiceImplementation } from "@reside/api/alpha/replica.v1"
 import type { PrismaClient } from "../../database"
 import { authenticateReplica } from "@reside/common"
-import { listReplicaInfos } from "../business/replica"
+import { listReplicaInfos, getReplicaInfo } from "../business/replica"
 
 export function createReplicaService({
   prisma,
@@ -13,6 +13,16 @@ export function createReplicaService({
       await authenticateReplica(context)
 
       return await listReplicaInfos(prisma)
+    },
+    async getReplica(request, context) {
+      await authenticateReplica(context)
+
+      const name = request.name?.trim() ?? ""
+      if (name.length === 0) {
+        return { replica: undefined }
+      }
+
+      return await getReplicaInfo(prisma, name)
     },
   }
 }

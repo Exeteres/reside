@@ -8,6 +8,7 @@ To add a new replica:
 
 1. Define it in `packages/registry/src/topology.ts`.
 2. Add a package in `replicas/<replica-name>/`.
+3. New replica packages must start with `version` set to `0.1.0` in `package.json` and include a `CHANGELOG.md` file containing an initial changelog entry describing the initial release.
 
 ## Replica package structure
 

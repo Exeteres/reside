@@ -40,8 +40,23 @@ message ListReplicasResponse {
   repeated ReplicaInfo replicas = 1;
 }
 
+// Request for getting single replica by name.
+message GetReplicaRequest {
+  // The technical name of the replica.
+  string name = 1;
+}
+
+// Response containing single replica info (may be empty when not found).
+message GetReplicaResponse {
+  // The replica info when found.
+  ReplicaInfo replica = 1;
+}
+
 // The service exposing public replica registry information.
 service ReplicaService {
   // ListReplicas returns the public information about all registered replicas.
   rpc ListReplicas(ListReplicasRequest) returns (ListReplicasResponse);
+ 
+  // GetReplica returns public information about a single replica by name.
+  rpc GetReplica(GetReplicaRequest) returns (GetReplicaResponse);
 }

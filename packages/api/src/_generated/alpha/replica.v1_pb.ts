@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file alpha/replica.v1.proto.
  */
 export const file_alpha_replica_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChZhbHBoYS9yZXBsaWNhLnYxLnByb3RvEhdyZXNpZGUuYWxwaGEucmVwbGljYS52MSKZAgoLUmVwbGljYUluZm8SCgoCaWQYASABKAUSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRIxCgtkZXNjcmlwdGlvbhgEIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIZChFpbnRlcm5hbF9lbmRwb2ludBgFIAEoCRI1Cg9wdWJsaWNfZW5kcG9pbnQYBiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSLQoHdmVyc2lvbhgHIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRItCgdjaGFuZ2VzGAggASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIhUKE0xpc3RSZXBsaWNhc1JlcXVlc3QiTgoUTGlzdFJlcGxpY2FzUmVzcG9uc2USNgoIcmVwbGljYXMYASADKAsyJC5yZXNpZGUuYWxwaGEucmVwbGljYS52MS5SZXBsaWNhSW5mbzJ9Cg5SZXBsaWNhU2VydmljZRJrCgxMaXN0UmVwbGljYXMSLC5yZXNpZGUuYWxwaGEucmVwbGljYS52MS5MaXN0UmVwbGljYXNSZXF1ZXN0Gi0ucmVzaWRlLmFscGhhLnJlcGxpY2EudjEuTGlzdFJlcGxpY2FzUmVzcG9uc2ViBnByb3RvMw", [file_google_protobuf_wrappers]);
+  fileDesc("ChZhbHBoYS9yZXBsaWNhLnYxLnByb3RvEhdyZXNpZGUuYWxwaGEucmVwbGljYS52MSKZAgoLUmVwbGljYUluZm8SCgoCaWQYASABKAUSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRIxCgtkZXNjcmlwdGlvbhgEIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIZChFpbnRlcm5hbF9lbmRwb2ludBgFIAEoCRI1Cg9wdWJsaWNfZW5kcG9pbnQYBiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSLQoHdmVyc2lvbhgHIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRItCgdjaGFuZ2VzGAggASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIhUKE0xpc3RSZXBsaWNhc1JlcXVlc3QiTgoUTGlzdFJlcGxpY2FzUmVzcG9uc2USNgoIcmVwbGljYXMYASADKAsyJC5yZXNpZGUuYWxwaGEucmVwbGljYS52MS5SZXBsaWNhSW5mbyIhChFHZXRSZXBsaWNhUmVxdWVzdBIMCgRuYW1lGAEgASgJIksKEkdldFJlcGxpY2FSZXNwb25zZRI1CgdyZXBsaWNhGAEgASgLMiQucmVzaWRlLmFscGhhLnJlcGxpY2EudjEuUmVwbGljYUluZm8y5AEKDlJlcGxpY2FTZXJ2aWNlEmsKDExpc3RSZXBsaWNhcxIsLnJlc2lkZS5hbHBoYS5yZXBsaWNhLnYxLkxpc3RSZXBsaWNhc1JlcXVlc3QaLS5yZXNpZGUuYWxwaGEucmVwbGljYS52MS5MaXN0UmVwbGljYXNSZXNwb25zZRJlCgpHZXRSZXBsaWNhEioucmVzaWRlLmFscGhhLnJlcGxpY2EudjEuR2V0UmVwbGljYVJlcXVlc3QaKy5yZXNpZGUuYWxwaGEucmVwbGljYS52MS5HZXRSZXBsaWNhUmVzcG9uc2ViBnByb3RvMw", [file_google_protobuf_wrappers]);
 
 /**
  * The public information about a registered replica.
@@ -206,6 +206,76 @@ export const ListReplicasResponseSchema: GenMessage<ListReplicasResponse, {jsonT
   messageDesc(file_alpha_replica_v1, 2);
 
 /**
+ * Request for getting single replica by name.
+ *
+ * @generated from message reside.alpha.replica.v1.GetReplicaRequest
+ */
+export type GetReplicaRequest = Message<"reside.alpha.replica.v1.GetReplicaRequest"> & {
+  /**
+   * The technical name of the replica.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+};
+
+/**
+ * Request for getting single replica by name.
+ *
+ * @generated from message reside.alpha.replica.v1.GetReplicaRequest
+ */
+export type GetReplicaRequestJson = {
+  /**
+   * The technical name of the replica.
+   *
+   * @generated from field: string name = 1;
+   */
+  name?: string;
+};
+
+/**
+ * Describes the message reside.alpha.replica.v1.GetReplicaRequest.
+ * Use `create(GetReplicaRequestSchema)` to create a new message.
+ */
+export const GetReplicaRequestSchema: GenMessage<GetReplicaRequest, {jsonType: GetReplicaRequestJson}> = /*@__PURE__*/
+  messageDesc(file_alpha_replica_v1, 3);
+
+/**
+ * Response containing single replica info (may be empty when not found).
+ *
+ * @generated from message reside.alpha.replica.v1.GetReplicaResponse
+ */
+export type GetReplicaResponse = Message<"reside.alpha.replica.v1.GetReplicaResponse"> & {
+  /**
+   * The replica info when found.
+   *
+   * @generated from field: reside.alpha.replica.v1.ReplicaInfo replica = 1;
+   */
+  replica?: ReplicaInfo;
+};
+
+/**
+ * Response containing single replica info (may be empty when not found).
+ *
+ * @generated from message reside.alpha.replica.v1.GetReplicaResponse
+ */
+export type GetReplicaResponseJson = {
+  /**
+   * The replica info when found.
+   *
+   * @generated from field: reside.alpha.replica.v1.ReplicaInfo replica = 1;
+   */
+  replica?: ReplicaInfoJson;
+};
+
+/**
+ * Describes the message reside.alpha.replica.v1.GetReplicaResponse.
+ * Use `create(GetReplicaResponseSchema)` to create a new message.
+ */
+export const GetReplicaResponseSchema: GenMessage<GetReplicaResponse, {jsonType: GetReplicaResponseJson}> = /*@__PURE__*/
+  messageDesc(file_alpha_replica_v1, 4);
+
+/**
  * The service exposing public replica registry information.
  *
  * @generated from service reside.alpha.replica.v1.ReplicaService
@@ -220,6 +290,16 @@ export const ReplicaService: GenService<{
     methodKind: "unary";
     input: typeof ListReplicasRequestSchema;
     output: typeof ListReplicasResponseSchema;
+  },
+  /**
+   * GetReplica returns public information about a single replica by name.
+   *
+   * @generated from rpc reside.alpha.replica.v1.ReplicaService.GetReplica
+   */
+  getReplica: {
+    methodKind: "unary";
+    input: typeof GetReplicaRequestSchema;
+    output: typeof GetReplicaResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_alpha_replica_v1, 0);
