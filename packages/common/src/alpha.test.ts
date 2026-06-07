@@ -1,5 +1,30 @@
 import { describe, expect, test } from "bun:test"
 import { extractLatestChangelogEntry } from "./alpha"
+import { parseResideManifest } from "./manifest"
+
+describe("parseResideManifest", () => {
+  test("loads trimmed replica version", () => {
+    expect(
+      parseResideManifest(
+        JSON.stringify({
+          version: " 1.2.3 ",
+          image: " ghcr.io/exeteres/reside/replicas/test ",
+        }),
+      ),
+    ).toEqual({
+      version: "1.2.3",
+      image: "ghcr.io/exeteres/reside/replicas/test",
+    })
+  })
+
+  test("returns undefined when version is missing", () => {
+    expect(parseResideManifest(JSON.stringify({}))).toBeUndefined()
+  })
+
+  test("returns undefined when image is missing", () => {
+    expect(parseResideManifest(JSON.stringify({ version: "1.2.3" }))).toBeUndefined()
+  })
+})
 
 describe("extractLatestChangelogEntry", () => {
   test("extracts body of the latest changelog section", () => {

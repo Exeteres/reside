@@ -1,11 +1,12 @@
 import type { Replica } from "@reside/registry"
-import { RegistrationService } from "@reside/api/alpha/registration.v1"
-import { alphaReplica, getAllDependencies } from "@reside/registry"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
+import { RegistrationService } from "@reside/api/alpha/registration.v1"
+import { alphaReplica, getAllDependencies } from "@reside/registry"
 import { createChannel, createClient } from "./api"
 import { getReplicaEndpoint } from "./kubernetes"
 import { logger } from "./logger"
+import { loadResideManifest } from "./manifest"
 
 export type RegisterReplicaOptions<TReplica extends Replica = Replica> = {
   replica: TReplica
@@ -78,35 +79,16 @@ export async function registerReplica<TReplica extends Replica>({
 }
 
 async function loadReplicaReleaseMetadata(cwd: string): Promise<ReplicaReleaseMetadata> {
-  const packageJsonPath = path.join(cwd, "package.json")
   const changelogPath = path.join(cwd, "CHANGELOG.md")
 
-  const [version, changes] = await Promise.all([
-    loadVersionFromPackageJson(packageJsonPath),
+  const [manifest, changes] = await Promise.all([
+    loadResideManifest(cwd),
     loadLatestChangelogEntry(changelogPath),
   ])
 
   return {
-    version,
+    version: manifest?.version,
     changes,
-  }
-}
-
-async function loadVersionFromPackageJson(packageJsonPath: string): Promise<string | undefined> {
-  try {
-    const content = await readFile(packageJsonPath, "utf8")
-    const parsed = JSON.parse(content) as {
-      version?: unknown
-    }
-
-    if (typeof parsed.version !== "string") {
-      return undefined
-    }
-
-    const normalizedVersion = parsed.version.trim()
-    return normalizedVersion.length > 0 ? normalizedVersion : undefined
-  } catch {
-    return undefined
   }
 }
 

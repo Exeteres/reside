@@ -8,7 +8,7 @@ To add a new replica:
 
 1. Define it in `packages/registry/src/topology.ts`.
 2. Add a package in `replicas/<replica-name>/`.
-3. New replica packages must start with `version` set to `0.1.0` in `package.json` and include a `CHANGELOG.md` file containing an initial changelog entry describing the initial release.
+3. New replica packages must include `reside.manifest.json` with `version` set to `0.1.0` and `image` set to the replica image repository, and include a `CHANGELOG.md` file containing an initial changelog entry describing the initial release.
 
 ## Replica package structure
 
@@ -30,7 +30,9 @@ Each replica package must follow this structure:
 - `src/database/_generated/` — generated Prisma client output (never hand-edit).
 - `prisma/` — split Prisma schema files (required if replica has DB).
 - `prisma.config.ts` — Prisma config (required if replica has DB).
-- `package.json` — must define `name`, `version`, `reside`, `exports`, `dependencies`; must not define `main` or `types`.
+- `package.json` — must define `name`, `exports`, `dependencies`; must not define `version`, `reside`, `main`, or `types`.
+- `reside.manifest.json` — must define the current replica `version` and image repository `image`; this is the source of truth for image builds, image tags, deploys, and Alpha registration.
+- `CHANGELOG.md` — must define version history for meaningful replica changes.
 - `tsconfig.json` — extends `../../tsconfig.base.json`; includes `src` and `prisma.config.ts` when present.
 
 Replica package root must not contain extra top-level files/directories outside this contract.

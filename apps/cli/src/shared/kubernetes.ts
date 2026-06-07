@@ -5,7 +5,6 @@ import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { z } from "zod"
 import { buildPackageImage } from "./build-image"
-import { loadPackageConfig } from "./package-config"
 import { type CommandLog, runCommand, waitFor } from "./process"
 
 type ReplicaData = {
@@ -207,12 +206,6 @@ async function buildReplicaImage(
     throw new Error(
       `Failed to prepare image for replica "${replica.name}". Local package was not found in "${packagePath}".`,
     )
-  }
-
-  const config = await loadPackageConfig(args.logger, packagePath)
-
-  if (!config.reside.image) {
-    throw new Error(`Replica package "${replica.name}" does not define package.json reside.image`)
   }
 
   const builtImage = await buildPackageImage(packagePath, {

@@ -1,36 +1,41 @@
 export { type RegisterReplicaOptions, registerReplica } from "./alpha"
 export { createChannel, createChannels, createClient } from "./api"
 export { authenticate, authenticateReplica } from "./auth"
-export { bootstrapGatewayRoute, bootstrapService, boostrapGatewayRoute } from "./bootstrap"
+export { boostrapGatewayRoute, bootstrapGatewayRoute, bootstrapService } from "./bootstrap"
 export {
-  DEFAULT_TEMPORAL_TASK_QUEUE,
   createPostgresPool,
   createPostgresPoolFromCredentials,
   createStorageBucketService,
   createTemporalClient,
+  DEFAULT_TEMPORAL_TASK_QUEUE,
   type PostgresPool,
-  type StorageBucketService,
   runPrismaMigrations,
+  type StorageBucketService,
   startTemporalWorker,
 } from "./database"
 export * from "./encryption"
 export {
   applyObject,
   createAuthInterceptor,
+  getReplicaCallbackEndpoint,
   getReplicaComponentName,
+  getReplicaEndpoint,
   getReplicaImage,
   getReplicaName,
   getReplicaNamespace,
   getReplicaServiceAccountName,
-  getReplicaEndpoint,
-  getReplicaCallbackEndpoint,
   kubeConfig,
   subscribeToConfigMap,
   subscribeToSecret,
 } from "./kubernetes"
 export { logger } from "./logger"
-export { rhid } from "./rhid"
-export { setupTelemetry, type TelemetryInfraService } from "./telemetry"
+export {
+  loadResideManifest,
+  parseResideManifest,
+  RESIDE_MANIFEST_FILE,
+  type ResideManifest,
+} from "./manifest"
+export * from "./nls"
 export {
   createGenericOperationService,
   type GenericOperationService,
@@ -41,19 +46,20 @@ export {
 export { createPingService } from "./ping"
 export {
   type DefineCommonResourcesOptions,
+  type DefinedGateway,
   defineCommonResources,
   defineGateway,
   type EnsureReplicaAvatarOptions,
   ensureReplicaAvatar,
-  type DefinedGateway,
   type GatewayDefinition,
   type NotificationChannelDefinition,
   type PermissionDefinition,
   type RealmDefinition,
 } from "./resources"
+export { rhid } from "./rhid"
+export * from "./server"
+export * from "./services"
+export * from "./telegram"
+export { setupTelemetry, type TelemetryInfraService } from "./telemetry"
 export * from "./temporal"
 export * from "./utils"
-export * from "./telegram"
-export * from "./services"
-export * from "./server"
-export * from "./nls"

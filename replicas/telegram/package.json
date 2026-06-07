@@ -1,9 +1,5 @@
 {
   "name": "@replicas/telegram",
-  "version": "0.1.6",
-  "reside": {
-    "image": "ghcr.io/exeteres/reside/replicas/telegram"
-  },
   "exports": {
     "./package.json": "./package.json"
   },

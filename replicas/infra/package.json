@@ -1,9 +1,5 @@
 {
   "name": "@replicas/infra",
-  "version": "0.1.2",
-  "reside": {
-    "image": "ghcr.io/exeteres/reside/replicas/infra"
-  },
   "exports": {
     "./package.json": "./package.json"
   },

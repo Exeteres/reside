@@ -1,12 +1,11 @@
-import type { ResidePackageMetadata } from "./package-config"
 import type { WorkspacePackagePath } from "./project"
 
 export type CreateDockerfileArgs = {
   baseDockerfile: string
-  reside: ResidePackageMetadata
   workspacePackages: WorkspacePackagePath[]
   replicaPath: string
   hasChangelog: boolean
+  hasResideManifest: boolean
   hasWorkflows: boolean
   hasPrismaDirectory: boolean
   hasPrismaConfig: boolean
@@ -81,6 +80,12 @@ export function createDockerfile(args: CreateDockerfileArgs): string {
     lines.push(`COPY --from=build /app/${args.replicaPath}/CHANGELOG.md /app/CHANGELOG.md`)
   }
 
+  if (args.hasResideManifest) {
+    lines.push(
+      `COPY --from=build /app/${args.replicaPath}/reside.manifest.json /app/reside.manifest.json`,
+    )
+  }
+
   if (args.hasPrismaConfig) {
     lines.push(
       `COPY --from=build /app/${args.replicaPath}/dist/prisma.config.js /app/prisma.config.js`,
@@ -101,10 +106,6 @@ export function createDockerfile(args: CreateDockerfileArgs): string {
 
   if (args.hasWorkflows) {
     lines.push(`COPY --from=build /app/${args.replicaPath}/dist/workflows.js /app/workflows.js`)
-  }
-
-  if (args.reside.image === undefined) {
-    throw new Error("package.json reside.image is required to build an image")
   }
 
   lines.push("")

@@ -4,9 +4,8 @@ import { buildCurrentPackageImage, logger } from "../shared"
 export const buildCommand = defineCommand({
   args: {
     tag: {
-      description: "The tag to assign to the built image",
+      description: "The tag to assign to the built image. Defaults to replica manifest version.",
       type: "string",
-      default: "latest",
     },
     push: {
       description: "Whether to push the built image to the registry",

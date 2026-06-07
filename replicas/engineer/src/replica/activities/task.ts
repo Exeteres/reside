@@ -10,7 +10,13 @@ import { join } from "node:path"
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3"
 import { type CopilotSession, defineTool, type SessionConfig } from "@github/copilot-sdk"
 import { waitForOperationSuccess } from "@reside/api"
-import { link, logger, type StorageBucketService } from "@reside/common"
+import {
+  link,
+  logger,
+  parseResideManifest,
+  RESIDE_MANIFEST_FILE,
+  type StorageBucketService,
+} from "@reside/common"
 import { WellKnownPermissions } from "@reside/registry"
 import { toError } from "@reside/utils"
 import { z } from "zod"
@@ -906,6 +912,13 @@ function createDeployReplicaTool({
           )
         }
 
+        const manifest = await loadReplicaManifestFromRepository({
+          octokit,
+          owner,
+          repo,
+          replicaName,
+        })
+
         await requestReplicaLoadPermission({
           permissionRequestService,
           accessOperationService,
@@ -917,7 +930,7 @@ function createDeployReplicaTool({
 
         const loadReplicaResponse = await loadService.loadReplica({
           name: replicaName,
-          image: `ghcr.io/exeteres/reside/replicas/${replicaName}:latest`,
+          image: `${manifest.image}:${manifest.version}`,
         })
 
         if (!loadReplicaResponse.operation) {
@@ -1161,6 +1174,37 @@ async function waitForWorkflowRun(input: {
   }
 
   throw new Error("Timed out waiting for build-replica workflow completion")
+}
+
+async function loadReplicaManifestFromRepository(input: {
+  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
+  owner: string
+  repo: string
+  replicaName: string
+}) {
+  const manifestPath = `replicas/${input.replicaName}/${RESIDE_MANIFEST_FILE}`
+  const response = await input.octokit.rest.repos.getContent({
+    owner: input.owner,
+    repo: input.repo,
+    path: manifestPath,
+    ref: "main",
+  })
+
+  if (Array.isArray(response.data) || response.data.type !== "file") {
+    throw new Error(`Replica manifest "${manifestPath}" on main is not a file`)
+  }
+
+  if (typeof response.data.content !== "string") {
+    throw new Error(`Replica manifest "${manifestPath}" on main has no file content`)
+  }
+
+  const content = Buffer.from(response.data.content, "base64").toString("utf8")
+  const manifest = parseResideManifest(content)
+  if (!manifest) {
+    throw new Error(`Replica manifest "${manifestPath}" on main must define image and version`)
+  }
+
+  return manifest
 }
 
 async function waitForPullRequestCiCheck(input: {

@@ -7,6 +7,11 @@ import path from "node:path"
 
 type IncrementType = "minor" | "patch"
 
+type ResideManifest = {
+  version?: unknown
+  image?: unknown
+}
+
 const usage = "Usage: bun scripts/update-version.ts <replica-name> <minor|patch> <changelog-entry>"
 
 function fail(message: string): never {
@@ -22,7 +27,7 @@ function countSentences(value: string): number {
 function bumpVersion(current: string, incType: IncrementType): string {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(current)
   if (!match) {
-    fail(`Error: invalid version in package.json: "${current}"`)
+    fail(`Error: invalid version in reside.manifest.json: "${current}"`)
   }
 
   const major = Number(match[1])
@@ -79,25 +84,25 @@ async function main(): Promise<void> {
   const incType: IncrementType = incTypeRaw
   const rootDir = process.cwd()
   const replicaDir = path.join(rootDir, "replicas", replicaName)
-  const packageJsonPath = path.join(replicaDir, "package.json")
+  const manifestPath = path.join(replicaDir, "reside.manifest.json")
   const changelogPath = path.join(replicaDir, "CHANGELOG.md")
 
   if (!(await exists(replicaDir))) {
     fail(`Error: replica does not exist: ${replicaName}`)
   }
 
-  if (!(await exists(packageJsonPath))) {
-    fail(`Error: package.json not found for replica: ${replicaName}`)
+  if (!(await exists(manifestPath))) {
+    fail(`Error: reside.manifest.json not found for replica: ${replicaName}`)
   }
 
-  const packageRaw = await readFile(packageJsonPath, "utf8")
-  const pkg = JSON.parse(packageRaw) as Record<string, unknown>
-  const currentVersion = typeof pkg.version === "string" ? pkg.version : ""
+  const manifestRaw = await readFile(manifestPath, "utf8")
+  const manifest = JSON.parse(manifestRaw) as ResideManifest
+  const currentVersion = typeof manifest.version === "string" ? manifest.version : ""
 
   const nextVersion = bumpVersion(currentVersion, incType)
-  pkg.version = nextVersion
+  manifest.version = nextVersion
 
-  await writeFile(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, "utf8")
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8")
 
   const today = new Date().toISOString().slice(0, 10)
   const newSection = `## ${nextVersion} - ${today}\n\n${changelogEntry}\n`
@@ -121,7 +126,7 @@ async function main(): Promise<void> {
 
   await writeFile(changelogPath, nextChangelog, "utf8")
 
-  console.log(`Updated ${path.relative(rootDir, packageJsonPath)} to version ${nextVersion}`)
+  console.log(`Updated ${path.relative(rootDir, manifestPath)} to version ${nextVersion}`)
   console.log(`Updated ${path.relative(rootDir, changelogPath)}`)
   console.log(
     "Note: do not bump version for dependency-only changes (packages or other replicas) or no meaningful changes.",

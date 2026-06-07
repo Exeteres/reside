@@ -1,6 +1,7 @@
 import type { ResideLogger } from "./logger"
 import { stat } from "node:fs/promises"
 import { relative, resolve } from "node:path"
+import { loadResideManifest, RESIDE_MANIFEST_FILE } from "@reside/common"
 import { createDockerfile } from "./docker"
 import { loadPackageConfig } from "./package-config"
 import { type CommandLog, runCommand } from "./process"
@@ -9,7 +10,7 @@ import { getRootPath, getWorkspacePackagePaths } from "./project"
 export type BuildImageArgs = {
   commandLog?: CommandLog
   logger: ResideLogger
-  tag: string
+  tag?: string
   push: boolean
   interactiveDockerOutput?: boolean
 }
@@ -36,15 +37,20 @@ export async function buildPackageImage(
   const hasPrismaDirectory = await pathExists(resolve(packagePath, "prisma"))
   const hasPrismaConfig = await pathExists(resolve(packagePath, "prisma.config.ts"))
   const hasChangelog = await pathExists(resolve(packagePath, "CHANGELOG.md"))
+  const manifest = await loadResideManifest(packagePath)
   const hasWorkflows = await pathExists(resolve(packagePath, "src/workflows/index.ts"))
   const hasAssetsDirectory = await pathExists(resolve(packagePath, "assets"))
 
+  if (!manifest) {
+    throw new Error(`${RESIDE_MANIFEST_FILE} with image and version is required to build an image`)
+  }
+
   const dockerfile = createDockerfile({
     baseDockerfile,
-    reside: config.reside,
     workspacePackages,
     replicaPath,
     hasChangelog,
+    hasResideManifest: true,
     hasWorkflows,
     hasPrismaDirectory,
     hasPrismaConfig,
@@ -52,11 +58,8 @@ export async function buildPackageImage(
   })
   args.logger.debug("generated Dockerfile:\n%s", dockerfile)
 
-  if (!config.reside.image) {
-    throw new Error("package.json reside.image is required to build an image")
-  }
-
-  const image = `${config.reside.image}:${args.tag}`
+  const tag = await resolveBuildImageTag(packagePath, args.tag)
+  const image = `${manifest.image}:${tag}`
 
   if (args.push) {
     args.logger.info('building and pushing image "%s"', image)
@@ -85,6 +88,13 @@ export async function buildPackageImage(
   }
 
   return resolvedImage
+}
+
+export async function resolveBuildImageTag(
+  packagePath: string,
+  requestedTag?: string,
+): Promise<string> {
+  return requestedTag ?? (await loadResideManifest(packagePath))?.version ?? "latest"
 }
 
 async function pathExists(path: string): Promise<boolean> {
