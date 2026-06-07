@@ -80,12 +80,20 @@ function createRbacApiMocks() {
   const createNamespacedRoleBinding = mock(async (_request: unknown) => {
     return {} as never
   }).mockName("createNamespacedRoleBinding")
+  const readClusterRoleBinding = mock(async () => {
+    return {} as never
+  }).mockName("readClusterRoleBinding")
+  const createClusterRoleBinding = mock(async (_request: unknown) => {
+    return {} as never
+  }).mockName("createClusterRoleBinding")
 
   const rbacApi = {
     readNamespacedRole,
     createNamespacedRole,
     readNamespacedRoleBinding,
     createNamespacedRoleBinding,
+    readClusterRoleBinding,
+    createClusterRoleBinding,
   } as unknown as RbacAuthorizationV1Api
 
   return {
@@ -94,6 +102,8 @@ function createRbacApiMocks() {
     createNamespacedRole,
     readNamespacedRoleBinding,
     createNamespacedRoleBinding,
+    readClusterRoleBinding,
+    createClusterRoleBinding,
   }
 }
 
@@ -142,6 +152,7 @@ describe("reconcileReplica", () => {
     const rbacMocks = createRbacApiMocks()
     rbacMocks.readNamespacedRole.mockRejectedValue(notFoundError())
     rbacMocks.readNamespacedRoleBinding.mockRejectedValue(notFoundError())
+    rbacMocks.readClusterRoleBinding.mockRejectedValue(notFoundError())
 
     const batchMocks = createBatchApiMocks()
     batchMocks.readNamespacedJob.mockRejectedValue(notFoundError())
@@ -159,6 +170,7 @@ describe("reconcileReplica", () => {
     expect(coreMocks.createNamespacedServiceAccount).toHaveBeenCalledTimes(1)
     expect(rbacMocks.createNamespacedRole).toHaveBeenCalledTimes(1)
     expect(rbacMocks.createNamespacedRoleBinding).toHaveBeenCalledTimes(1)
+    expect(rbacMocks.createClusterRoleBinding).toHaveBeenCalledTimes(1)
     expect(batchMocks.createNamespacedJob).toHaveBeenCalledTimes(1)
     expect(result).toEqual({
       phase: "Reconciling",
@@ -210,6 +222,25 @@ describe("reconcileReplica", () => {
           apiGroup: "rbac.authorization.k8s.io",
           kind: "Role",
           name: `${replica.name}-admin`,
+        },
+        subjects: [
+          {
+            kind: "ServiceAccount",
+            name: replica.name,
+            namespace: replicaNamespace,
+          },
+        ],
+      },
+    })
+    expect(rbacMocks.createClusterRoleBinding).toHaveBeenCalledWith({
+      body: {
+        metadata: {
+          name: `reside:replica:${replica.name}:auth-delegator`,
+        },
+        roleRef: {
+          apiGroup: "rbac.authorization.k8s.io",
+          kind: "ClusterRole",
+          name: "system:auth-delegator",
         },
         subjects: [
           {
@@ -390,6 +421,7 @@ describe("reconcileReplica", () => {
     expect(coreMocks.createNamespacedServiceAccount).toHaveBeenCalledTimes(0)
     expect(rbacMocks.createNamespacedRole).toHaveBeenCalledTimes(0)
     expect(rbacMocks.createNamespacedRoleBinding).toHaveBeenCalledTimes(0)
+    expect(rbacMocks.createClusterRoleBinding).toHaveBeenCalledTimes(0)
     expect(batchMocks.deleteNamespacedJob).toHaveBeenCalledTimes(0)
     expect(batchMocks.createNamespacedJob).toHaveBeenCalledTimes(0)
     expect(result).toEqual({
@@ -517,6 +549,7 @@ describe("reconcileReplica", () => {
     const rbacMocks = createRbacApiMocks()
     rbacMocks.readNamespacedRole.mockRejectedValue(notFoundError())
     rbacMocks.readNamespacedRoleBinding.mockRejectedValue(notFoundError())
+    rbacMocks.readClusterRoleBinding.mockRejectedValue(notFoundError())
 
     const batchMocks = createBatchApiMocks()
     batchMocks.readNamespacedJob.mockRejectedValue(notFoundError())

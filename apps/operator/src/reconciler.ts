@@ -218,6 +218,50 @@ async function ensureAdminRoleBinding(
   )
 }
 
+async function ensureAuthDelegatorClusterRoleBinding(
+  rbacApi: RbacAuthorizationV1Api,
+  namespace: string,
+  bindingName: string,
+  serviceAccountName: string,
+): Promise<void> {
+  try {
+    await rbacApi.readClusterRoleBinding({ name: bindingName })
+    return
+  } catch (error) {
+    if (!isNotFoundError(error)) {
+      throw error
+    }
+  }
+
+  await rbacApi.createClusterRoleBinding({
+    body: {
+      metadata: {
+        name: bindingName,
+      },
+      roleRef: {
+        apiGroup: "rbac.authorization.k8s.io",
+        kind: "ClusterRole",
+        name: "system:auth-delegator",
+      },
+      subjects: [
+        {
+          kind: "ServiceAccount",
+          name: serviceAccountName,
+          namespace,
+        },
+      ],
+    },
+  })
+
+  logger.info(
+    { namespace, bindingName, serviceAccountName },
+    'created clusterrolebinding "%s" for serviceaccount "%s" in namespace "%s"',
+    bindingName,
+    serviceAccountName,
+    namespace,
+  )
+}
+
 async function ensureAdminRole(
   rbacApi: RbacAuthorizationV1Api,
   namespace: string,
@@ -462,6 +506,12 @@ export async function reconcileReplica(
     replicaNamespace,
     roleBindingName,
     roleName,
+    serviceAccountName,
+  )
+  await ensureAuthDelegatorClusterRoleBinding(
+    rbacApi,
+    replicaNamespace,
+    `reside:replica:${replica.name}:auth-delegator`,
     serviceAccountName,
   )
   const bootstrapJobStatus = await ensureBootstrapJob(
