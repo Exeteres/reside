@@ -6,6 +6,7 @@ import { ObservabilityService } from "@reside/api/infra/observability.v1"
 import { GetOpenTelemetryCredentialsResponseSchema } from "@reside/api/infra/observability.v1_pb"
 import { ProvisionService } from "@reside/api/infra/provision.v1"
 import { TimerService } from "@reside/api/infra/timer.v1"
+import { VaultService } from "@reside/api/infra/vault.v1"
 import {
   createChannels,
   createClient,
@@ -25,6 +26,7 @@ import { resolveOperationResult } from "./operation"
 import { loadPostgresAdminConfig } from "./postgres/config"
 import { buildReplicaDatabaseName } from "./postgres/provision"
 import { createReplicaDatabaseOptions } from "./requirements"
+import { loadVaultConfig } from "./vault"
 
 export async function createServices() {
   const services = await createCommonServices(infraReplica.endpoints)
@@ -46,10 +48,14 @@ export async function createServices() {
     kubeConfig.makeApiClient(CoreV1Api),
     getReplicaNamespace(),
   )
+  const vaultConfig = await loadVaultConfig(
+    kubeConfig.makeApiClient(CoreV1Api),
+    getReplicaNamespace(),
+  )
   const { pool: adminPool } = createPostgresPoolFromCredentials(adminConfig)
 
   const replicaDatabase = buildReplicaDatabaseName(getReplicaNamespace())
-  const { adapter } = createPostgresPoolFromCredentials({
+  const { pool, adapter } = createPostgresPoolFromCredentials({
     ...adminConfig,
     database: replicaDatabase,
   })
@@ -69,11 +75,14 @@ export async function createServices() {
     observabilityService: createClient(ObservabilityService, channels.self),
     gatewayService: createClient(GatewayService, channels.self),
     timerService: createClient(TimerService, channels.self),
+    vaultService: createClient(VaultService, channels.self),
     infraOperationService: createClient(OperationService, channels.self),
     tracerProvider,
     adminConfig,
     minioAdminConfig,
+    vaultConfig,
     adminPool,
+    pool,
     prisma,
     temporalClient,
     operationService,

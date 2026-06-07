@@ -5,6 +5,7 @@ import { GatewayService } from "@reside/api/infra/gateway.v1"
 import { ObservabilityService } from "@reside/api/infra/observability.v1"
 import { ProvisionService } from "@reside/api/infra/provision.v1"
 import { TimerService } from "@reside/api/infra/timer.v1"
+import { VaultService } from "@reside/api/infra/vault.v1"
 import {
   createPingService,
   createServer,
@@ -25,6 +26,7 @@ import { createGatewayService } from "./services/gateway"
 import { createObservabilityService } from "./services/observability"
 import { createProvisionService } from "./services/provision"
 import { createTimerService } from "./services/timer"
+import { createVaultService } from "./services/vault"
 
 const services = await createServices()
 
@@ -38,6 +40,7 @@ await server.register(fastifyConnectPlugin, {
     router.service(GatewayService, createGatewayService(services))
     router.service(ObservabilityService, observabilityService)
     router.service(TimerService, createTimerService(services))
+    router.service(VaultService, createVaultService(services))
     router.service(PingService, createPingService())
     router.service(OperationService, services.operationService.implementation)
   },
