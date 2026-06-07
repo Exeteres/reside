@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package reside.infra.vault.v1;
+
+import "google/protobuf/empty.proto";
+
+// The endpoint and Kubernetes token audience required to authenticate with Vault.
+message VaultCredentials {
+  // The base URL of the Vault server.
+  string endpoint = 1;
+
+  // The Kubernetes TokenRequest audience accepted by Vault authentication.
+  string audience = 2;
+}
+
+// The response for GetVaultCredentials request.
+message GetVaultCredentialsResponse {
+  VaultCredentials result = 1;
+}
+
+// The service responsible for Vault runtime credentials.
+service VaultService {
+  // Gets Vault endpoint and authentication audience for the caller replica.
+  rpc GetVaultCredentials(google.protobuf.Empty) returns (GetVaultCredentialsResponse);
+}

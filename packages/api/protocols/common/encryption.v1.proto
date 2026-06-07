@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package reside.common.encryption.v1;
+
+// Request for transferring encrypted content to the caller replica.
+message TransferRequest {
+  // Opaque encrypted content identifiers.
+  // Every ECID must belong to the replica serving this request.
+  repeated string ecids = 1;
+}
+
+// Response containing transferred Vault ciphertexts.
+message TransferResponse {
+  // Vault ciphertexts re-encrypted for the caller replica.
+  // The order matches the input ECID order.
+  repeated string ciphertexts = 1;
+}
+
+// The service implemented by replicas to transfer encrypted content between replicas.
+service EncryptionService {
+  // Transfers encrypted content to the authenticated caller replica.
+  rpc Transfer(TransferRequest) returns (TransferResponse);
+}

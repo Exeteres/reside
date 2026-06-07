@@ -12,6 +12,10 @@ message AskRequest {
   // Optional subject identifier that should be used as the caller subject.
   // If omitted, the authenticated requester subject is used.
   google.protobuf.StringValue subject_id = 2;
+
+  // The information about the subject that should be included in the request context.
+  // This is used by the replica to personalize responses based on the subject's attributes.
+  map<string, string> subject_info = 3; 
 }
 
 // Response from the natural language subsystem.

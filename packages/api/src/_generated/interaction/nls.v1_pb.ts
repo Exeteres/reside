@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/nls.v1.proto.
  */
 export const file_interaction_nls_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEiTAoKQXNrUmVxdWVzdBIMCgR0ZXh0GAEgASgJEjAKCnN1YmplY3RfaWQYAiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUiGwoLQXNrUmVzcG9uc2USDAoEdGV4dBgBIAEoCSIwChFBc2tTdHJlYW1SZXNwb25zZRIMCgR0ZXh0GAEgASgJEg0KBXJlc2V0GAIgASgIMtIBChZOYXR1cmFsTGFuZ3VhZ2VTZXJ2aWNlElQKA0FzaxIlLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdBomLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVzcG9uc2USYgoJQXNrU3RyZWFtEiUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXF1ZXN0GiwucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tTdHJlYW1SZXNwb25zZTABYgZwcm90bzM", [file_google_protobuf_wrappers]);
+  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEizgEKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEkwKDHN1YmplY3RfaW5mbxgDIAMoCzI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdC5TdWJqZWN0SW5mb0VudHJ5GjIKEFN1YmplY3RJbmZvRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASIbCgtBc2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJIjAKEUFza1N0cmVhbVJlc3BvbnNlEgwKBHRleHQYASABKAkSDQoFcmVzZXQYAiABKAgy0gEKFk5hdHVyYWxMYW5ndWFnZVNlcnZpY2USVAoDQXNrEiUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXF1ZXN0GiYucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXNwb25zZRJiCglBc2tTdHJlYW0SJS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1JlcXVlc3QaLC5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1N0cmVhbVJlc3BvbnNlMAFiBnByb3RvMw", [file_google_protobuf_wrappers]);
 
 /**
  * Request for asking the replica natural language subsystem.
@@ -34,6 +34,14 @@ export type AskRequest = Message<"reside.interaction.nls.v1.AskRequest"> & {
    * @generated from field: google.protobuf.StringValue subject_id = 2;
    */
   subjectId?: string;
+
+  /**
+   * The information about the subject that should be included in the request context.
+   * This is used by the replica to personalize responses based on the subject's attributes.
+   *
+   * @generated from field: map<string, string> subject_info = 3;
+   */
+  subjectInfo: { [key: string]: string };
 };
 
 /**
@@ -56,6 +64,14 @@ export type AskRequestJson = {
    * @generated from field: google.protobuf.StringValue subject_id = 2;
    */
   subjectId?: StringValueJson;
+
+  /**
+   * The information about the subject that should be included in the request context.
+   * This is used by the replica to personalize responses based on the subject's attributes.
+   *
+   * @generated from field: map<string, string> subject_info = 3;
+   */
+  subjectInfo?: { [key: string]: string };
 };
 
 /**
