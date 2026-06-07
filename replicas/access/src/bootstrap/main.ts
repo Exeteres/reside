@@ -55,6 +55,12 @@ const [
     strings.bootstrap.permissions.subjectRead.description,
     true,
   ),
+  ensurePermission(
+    WellKnownPermissions.ENCRYPTION_TRANSFER,
+    strings.bootstrap.permissions.encryptionTransfer.title,
+    strings.bootstrap.permissions.encryptionTransfer.description,
+    true,
+  ),
 
   // define permissions for telegram and infra replica to allow them to bootstrap
   // they will fill title/description later when they (re)starts

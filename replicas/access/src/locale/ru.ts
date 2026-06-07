@@ -39,6 +39,11 @@ export const ru = {
         title: "NLS-имперсонация по реалму",
         description: "Позволяет вызывать NLS от имени субъекта выбранного реалма. Scope: {realm}",
       },
+      encryptionTransfer: {
+        title: "Передача зашифрованного содержимого",
+        description:
+          "Позволяет передавать зашифрованное содержимое из выбранной реплики. Scope: {replica_name}",
+      },
     },
   },
   operations: {
