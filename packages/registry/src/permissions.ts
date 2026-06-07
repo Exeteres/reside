@@ -92,6 +92,12 @@ export enum WellKnownPermissions {
   INTERACTION_NLS_IMPERSONATE = "interaction:nls:impersonate",
 
   /**
+   * Allows to transfer encrypted content from a specific replica.
+   * The scope is the name of the replica from which secrets can be transferred.
+   */
+  ENCRYPTION_TRANSFER = "encryption:transfer",
+
+  /**
    * Allows to manage the specific gateway in the Infra Replica.
    * The scope is the name of the gateway.
    */

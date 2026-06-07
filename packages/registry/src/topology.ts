@@ -14,9 +14,6 @@ export const infraReplica = defineReplica({
       username: "$INFRA_MINIO_USERNAME",
       password: "$INFRA_MINIO_PASSWORD",
     },
-    copilot: {
-      user_token: "$COPILOT_USER_TOKEN",
-    },
   },
   optionalDependencies: {
     replicas: {
@@ -32,6 +29,10 @@ export const infraReplica = defineReplica({
       gateway_https_port: "$INFRA_GATEWAY_HTTPS_PORT",
       cluster_issuer_name: "$INFRA_CLUSTER_ISSUER_NAME",
       cluster_domain: "$INFRA_CLUSTER_DOMAIN",
+    },
+    vault: {
+      endpoint: "$INFRA_VAULT_ENDPOINT",
+      audience: "$INFRA_VAULT_AUDIENCE",
     },
   },
 
@@ -63,11 +64,6 @@ export const infraReplica = defineReplica({
 
 export const accessReplica = defineReplica({
   name: "access",
-  secrets: {
-    copilot: {
-      user_token: "$COPILOT_USER_TOKEN",
-    },
-  },
   dependencies: {
     replicas: {
       infra: infraReplica,
@@ -94,14 +90,6 @@ export const telegramReplica = defineReplica({
       alpha: (): Replica => alphaReplica,
     },
   },
-  secrets: {
-    telegram: {
-      bot_token: "$TELEGRAM_BOT_TOKEN",
-    },
-    copilot: {
-      user_token: "$COPILOT_USER_TOKEN",
-    },
-  },
   configMaps: {
     telegram: {
       system_chat_id: "$TELEGRAM_SYSTEM_CHAT_ID",
@@ -112,11 +100,6 @@ export const telegramReplica = defineReplica({
 
 export const alphaReplica = defineReplica({
   name: "alpha",
-  secrets: {
-    copilot: {
-      user_token: "$COPILOT_USER_TOKEN",
-    },
-  },
   dependencies: {
     replicas: {
       access: accessReplica,
@@ -188,20 +171,10 @@ export const securityReplica = defineReplica({
       interaction: (): Replica => telegramReplica,
     },
   },
-  secrets: {
-    copilot: {
-      user_token: "$COPILOT_USER_TOKEN",
-    },
-  },
 })
 
 export const rateReplica = defineReplica({
   name: "rate",
-  secrets: {
-    copilot: {
-      user_token: "$COPILOT_USER_TOKEN",
-    },
-  },
   dependencies: {
     replicas: {
       infra: infraReplica,
