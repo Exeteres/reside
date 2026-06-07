@@ -6,11 +6,11 @@ import type {
 import {
   block,
   bold,
+  EMPTY_LINE,
   inline,
   SPACE,
   safeSleep,
   sendNotification,
-  EMPTY_LINE,
 } from "@reside/common/workflow"
 import { proxyActivities } from "@temporalio/workflow"
 import { AlphaNotificationChannels } from "../definitions"
