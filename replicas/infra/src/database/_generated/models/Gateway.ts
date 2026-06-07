@@ -402,10 +402,6 @@ export type GatewayNullableScalarRelationFilter = {
   isNot?: Prisma.GatewayWhereInput | null
 }
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string
-}
-
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }

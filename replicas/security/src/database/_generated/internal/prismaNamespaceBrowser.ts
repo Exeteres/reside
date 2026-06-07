@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   ApprovalRequest: 'ApprovalRequest',
+  EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   Operation: 'Operation'
 } as const
@@ -85,6 +86,14 @@ export const ApprovalRequestScalarFieldEnum = {
 } as const
 
 export type ApprovalRequestScalarFieldEnum = (typeof ApprovalRequestScalarFieldEnum)[keyof typeof ApprovalRequestScalarFieldEnum]
+
+
+export const EncryptedContentScalarFieldEnum = {
+  ecid: 'ecid',
+  data: 'data'
+} as const
+
+export type EncryptedContentScalarFieldEnum = (typeof EncryptedContentScalarFieldEnum)[keyof typeof EncryptedContentScalarFieldEnum]
 
 
 export const MemoryNoteScalarFieldEnum = {

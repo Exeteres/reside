@@ -51,6 +51,7 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   Operation: 'Operation',
   Replica: 'Replica',
@@ -72,6 +73,14 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+
+
+export const EncryptedContentScalarFieldEnum = {
+  ecid: 'ecid',
+  data: 'data'
+} as const
+
+export type EncryptedContentScalarFieldEnum = (typeof EncryptedContentScalarFieldEnum)[keyof typeof EncryptedContentScalarFieldEnum]
 
 
 export const MemoryNoteScalarFieldEnum = {

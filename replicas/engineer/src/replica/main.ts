@@ -9,6 +9,7 @@ import {
   createPingService,
   createServer,
   logger,
+  setupEncryption,
   setupLanguageSubsystem,
   startServer,
   startTemporalWorker,
@@ -22,6 +23,8 @@ import { createCreateTaskTool } from "./nls"
 const services = await createServices()
 
 const server = await createServer(services)
+
+await setupEncryption({ services, server })
 
 await server.register(fastifyConnectPlugin, {
   routes(router) {

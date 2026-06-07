@@ -11,6 +11,7 @@ import {
   createServer,
   getReplicaNamespace,
   logger,
+  setupEncryption,
   setupLanguageSubsystem,
   startServer,
   startTemporalWorker,
@@ -31,6 +32,8 @@ import { createVaultService } from "./services/vault"
 const services = await createServices()
 
 const server = await createServer(services)
+
+await setupEncryption({ services, server })
 
 const observabilityService = createObservabilityService()
 

@@ -11,6 +11,7 @@
 export type * from './models/Approver.ts'
 export type * from './models/PermissionBinding.ts'
 export type * from './models/PermissionRestriction.ts'
+export type * from './models/EncryptedContent.ts'
 export type * from './models/MemoryNote.ts'
 export type * from './models/Operation.ts'
 export type * from './models/PermissionSet.ts'

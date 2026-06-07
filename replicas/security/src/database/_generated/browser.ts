@@ -23,6 +23,11 @@ export * from './enums.ts';
  */
 export type ApprovalRequest = Prisma.ApprovalRequestModel
 /**
+ * Model EncryptedContent
+ * 
+ */
+export type EncryptedContent = Prisma.EncryptedContentModel
+/**
  * Model MemoryNote
  * 
  */

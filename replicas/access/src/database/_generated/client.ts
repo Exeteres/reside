@@ -57,6 +57,11 @@ export type PermissionBinding = Prisma.PermissionBindingModel
  */
 export type PermissionRestriction = Prisma.PermissionRestrictionModel
 /**
+ * Model EncryptedContent
+ * 
+ */
+export type EncryptedContent = Prisma.EncryptedContentModel
+/**
  * Model MemoryNote
  * 
  */

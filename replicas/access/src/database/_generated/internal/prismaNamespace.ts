@@ -387,6 +387,7 @@ export const ModelName = {
   Approver: 'Approver',
   PermissionBinding: 'PermissionBinding',
   PermissionRestriction: 'PermissionRestriction',
+  EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   Operation: 'Operation',
   PermissionSet: 'PermissionSet',
@@ -410,7 +411,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "approver" | "permissionBinding" | "permissionRestriction" | "memoryNote" | "operation" | "permissionSet" | "permissionSetItem" | "permission" | "realm" | "permissionRequestSet" | "permissionRequestSetItem"
+    modelProps: "approver" | "permissionBinding" | "permissionRestriction" | "encryptedContent" | "memoryNote" | "operation" | "permissionSet" | "permissionSetItem" | "permission" | "realm" | "permissionRequestSet" | "permissionRequestSetItem"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -633,6 +634,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PermissionRestrictionCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PermissionRestrictionCountAggregateOutputType> | number
+        }
+      }
+    }
+    EncryptedContent: {
+      payload: Prisma.$EncryptedContentPayload<ExtArgs>
+      fields: Prisma.EncryptedContentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EncryptedContentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EncryptedContentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        findFirst: {
+          args: Prisma.EncryptedContentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EncryptedContentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        findMany: {
+          args: Prisma.EncryptedContentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        create: {
+          args: Prisma.EncryptedContentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        createMany: {
+          args: Prisma.EncryptedContentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EncryptedContentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        delete: {
+          args: Prisma.EncryptedContentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        update: {
+          args: Prisma.EncryptedContentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        deleteMany: {
+          args: Prisma.EncryptedContentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EncryptedContentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EncryptedContentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>[]
+        }
+        upsert: {
+          args: Prisma.EncryptedContentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EncryptedContentPayload>
+        }
+        aggregate: {
+          args: Prisma.EncryptedContentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEncryptedContent>
+        }
+        groupBy: {
+          args: Prisma.EncryptedContentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EncryptedContentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EncryptedContentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EncryptedContentCountAggregateOutputType> | number
         }
       }
     }
@@ -1304,6 +1379,14 @@ export const PermissionRestrictionScalarFieldEnum = {
 export type PermissionRestrictionScalarFieldEnum = (typeof PermissionRestrictionScalarFieldEnum)[keyof typeof PermissionRestrictionScalarFieldEnum]
 
 
+export const EncryptedContentScalarFieldEnum = {
+  ecid: 'ecid',
+  data: 'data'
+} as const
+
+export type EncryptedContentScalarFieldEnum = (typeof EncryptedContentScalarFieldEnum)[keyof typeof EncryptedContentScalarFieldEnum]
+
+
 export const MemoryNoteScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -1675,6 +1758,7 @@ export type GlobalOmitConfig = {
   approver?: Prisma.ApproverOmit
   permissionBinding?: Prisma.PermissionBindingOmit
   permissionRestriction?: Prisma.PermissionRestrictionOmit
+  encryptedContent?: Prisma.EncryptedContentOmit
   memoryNote?: Prisma.MemoryNoteOmit
   operation?: Prisma.OperationOmit
   permissionSet?: Prisma.PermissionSetOmit

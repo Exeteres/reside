@@ -9,6 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/ApprovalRequest.ts'
+export type * from './models/EncryptedContent.ts'
 export type * from './models/MemoryNote.ts'
 export type * from './models/Operation.ts'
 export type * from './commonInputTypes.ts'

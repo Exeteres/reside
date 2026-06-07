@@ -9,6 +9,7 @@ import type { ApprovalActionName, TelegramActivities } from "../../definitions"
 import { createHash } from "node:crypto"
 import { fromJson } from "@bufbuild/protobuf"
 import { CoreV1Api } from "@kubernetes/client-node"
+import { ReplicaService } from "@reside/api/alpha/replica.v1"
 import {
   CommandHandlerService,
   type CommandHandlerServiceClient,
@@ -30,17 +31,15 @@ import {
   type GenericOperationService,
   getReplicaNamespace,
   kubeConfig,
+  logger,
 } from "@reside/common"
-import { logger } from "@reside/common"
-import { alphaReplica } from "@reside/registry"
-import { ReplicaService } from "@reside/api/alpha/replica.v1"
-import { WellKnownPermissions } from "@reside/registry"
+import { alphaReplica, WellKnownPermissions } from "@reside/registry"
 import { encryptedStringSchema, TELEGRAM_GATEWAY_NAME } from "../../definitions"
 import { strings } from "../../locale"
-import { createTelegramBotClient } from "../business/bot-client"
 import { updateAvatarVersionTag } from "../business/avatar"
-import { loadTelegramConfigState } from "../business/config"
+import { createTelegramBotClient } from "../business/bot-client"
 import { createWebhookUrl } from "../business/bot-runtime"
+import { loadTelegramConfigState } from "../business/config"
 import { createEcidTextSubstitutor } from "../business/ecid-substitution"
 import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "../business/secret"
 

@@ -47,6 +47,11 @@ export { Prisma }
  */
 export type ApprovalRequest = Prisma.ApprovalRequestModel
 /**
+ * Model EncryptedContent
+ * 
+ */
+export type EncryptedContent = Prisma.EncryptedContentModel
+/**
  * Model MemoryNote
  * 
  */

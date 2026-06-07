@@ -1,7 +1,7 @@
 import type { ReplicaServiceImplementation } from "@reside/api/alpha/replica.v1"
 import type { PrismaClient } from "../../database"
 import { authenticateReplica } from "@reside/common"
-import { listReplicaInfos, getReplicaInfo } from "../business/replica"
+import { getReplicaInfo, listReplicaInfos } from "../business/replica"
 
 export function createReplicaService({
   prisma,
