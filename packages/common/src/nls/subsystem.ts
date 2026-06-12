@@ -72,7 +72,6 @@ export async function setupLanguageSubsystem({
         description,
         instructions,
       }),
-      allowedSystemTools: ["web_fetch", "bash", "report_intent"],
       tags,
       storageCredentials,
       tools: [

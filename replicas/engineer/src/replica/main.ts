@@ -69,7 +69,6 @@ const taskLanguageEngine = await createLanguageEngine({
   model: "smart",
   sessionPrefix: "sessions",
   systemPrompt: "You implement engineer replica tasks inside prepared repository workspaces.",
-  allowedSystemTools: ["bash", "report_intent"],
 })
 registerGracefulShutdown(async () => {
   await taskLanguageEngine.stop()

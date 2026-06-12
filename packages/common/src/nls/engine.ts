@@ -21,6 +21,7 @@ import {
   type MemoryToolsPrisma,
   type MemoryToolTagDefinitions,
 } from "./memory"
+import { DEFAULT_NLS_SYSTEM_TOOLS, type NlsSystemTool } from "./system-tools"
 
 const NLS_SESSION_ARCHIVE_EXTENSION = "tgz"
 const NLS_NAMESPACE_PREFIX = "nls"
@@ -64,7 +65,7 @@ export type LanguageEngineAskOptions = {
   workingDirectory?: string
   configDir?: string
   tools?: NonNullable<SessionConfig["tools"]>
-  allowedSystemTools?: string[]
+  allowedSystemTools?: NlsSystemTool[]
   idleTimeoutMs?: number
   shouldCancel?: () => Promise<boolean>
   cancelPollIntervalMs?: number
@@ -82,7 +83,7 @@ export type CreateLanguageEngineOptions = {
   model: LanguageEngineModelTier
   sessionPrefix: string
   systemPrompt: string
-  allowedSystemTools: string[]
+  allowedSystemTools?: NlsSystemTool[]
   tools?: NonNullable<SessionConfig["tools"]>
   tags?: MemoryToolTagDefinitions
   storageCredentials?: LanguageEngineStorageCredentials
@@ -117,9 +118,7 @@ export async function createLanguageEngine(
     throw new Error("createLanguageEngine systemPrompt must not be empty")
   }
 
-  const allowedSystemTools = new Set(
-    args.allowedSystemTools.map(tool => tool.trim()).filter(Boolean),
-  )
+  const allowedSystemTools = new Set<string>(args.allowedSystemTools ?? DEFAULT_NLS_SYSTEM_TOOLS)
   const workspacePath = join("/tmp", `${NLS_WORKSPACE_PREFIX}-${getReplicaName()}`)
   await mkdir(workspacePath, { recursive: true })
 
@@ -208,7 +207,7 @@ export async function createLanguageEngine(
     workingDirectory?: string
     configDir?: string
     tools?: NonNullable<SessionConfig["tools"]>
-    allowedSystemTools?: string[]
+    allowedSystemTools?: NlsSystemTool[]
     idleTimeoutMs?: number
     shouldCancel?: () => Promise<boolean>
     cancelPollIntervalMs?: number

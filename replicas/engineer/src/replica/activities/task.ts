@@ -13,6 +13,7 @@ import {
   type LanguageEngine,
   link,
   logger,
+  NlsSystemTool,
   parseResideManifest,
   RESIDE_MANIFEST_FILE,
 } from "@reside/common"
@@ -44,21 +45,20 @@ import {
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = ".engineer-session"
 const ENGINEER_NLS_IDLE_TIMEOUT_MS = 120_000
-const ENGINEER_IMPLEMENTATION_ALLOWED_SYSTEM_TOOLS = [
-  "bash",
-  "report_intent",
-  "apply_patch",
-  "git_apply_patch",
-  "create",
-  "edit",
-  "edit_file",
-  "read_file",
-  "get_file_contents",
-  "glob",
-  "search_code",
-  "search_code_subagent",
-  "str_replace_editor",
-  "fetch",
+const ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS = [
+  NlsSystemTool.Bash,
+  NlsSystemTool.ReadBash,
+  NlsSystemTool.WriteBash,
+  NlsSystemTool.StopBash,
+  NlsSystemTool.ListBash,
+  NlsSystemTool.View,
+  NlsSystemTool.Create,
+  NlsSystemTool.Edit,
+  NlsSystemTool.WebFetch,
+  NlsSystemTool.ReportIntent,
+  NlsSystemTool.Grep,
+  NlsSystemTool.Glob,
+  NlsSystemTool.Task,
 ]
 
 const issueDraftSchema = z.object({
@@ -1503,19 +1503,7 @@ async function runPlanningLanguageStream({
         configDir: environment.sessionDirPath,
         idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
-        allowedSystemTools: [
-          "report_intent",
-          "submit_issue_draft",
-          "read_file",
-          "list_dir",
-          "rg",
-          "view",
-          "glob",
-          "grep_search",
-          "file_search",
-          "semantic_search",
-          "fetch_webpage",
-        ],
+        allowedSystemTools: ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS,
       },
     )
   } finally {
@@ -1594,7 +1582,7 @@ async function runImplementationLanguageStream({
             issueNumber,
           }),
         ],
-        allowedSystemTools: ENGINEER_IMPLEMENTATION_ALLOWED_SYSTEM_TOOLS,
+        allowedSystemTools: ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS,
         shouldCancel: async () => await isTaskCancellationRequested(prisma, dbTaskId),
         cancelPollIntervalMs: 1000,
       },
