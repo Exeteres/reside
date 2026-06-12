@@ -1,5 +1,6 @@
 import type { ConnectRouter } from "@connectrpc/connect"
 import type { FastifyInstance } from "fastify"
+import type { MemoryToolTagDefinitions } from "./memory"
 import { create } from "@bufbuild/protobuf"
 import { Code, ConnectError, type HandlerContext } from "@connectrpc/connect"
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
@@ -22,7 +23,6 @@ import { getReplicaName } from "../kubernetes"
 import { logger } from "../logger"
 import { rhid } from "../rhid"
 import { registerGracefulShutdown } from "../utils"
-import type { MemoryToolTagDefinitions } from "./memory"
 import {
   createLanguageEngine,
   type LanguageEngine,
@@ -190,6 +190,11 @@ function createNaturalLanguageService(
         throw normalizeError(streamError)
       }
     },
+    async clearSubjectContext(request, context: HandlerContext) {
+      const subjectId = await authorizeClearSubjectContextRequest(services, request, context)
+      await subsystem.clearContext(subjectId)
+      return {}
+    },
   }
 }
 
@@ -254,6 +259,38 @@ async function authorizeAskRequest(
     prompt,
     subjectInfo,
   }
+}
+
+async function authorizeClearSubjectContextRequest(
+  services: LanguageEngineServices,
+  request: {
+    subjectId: string
+  },
+  context: HandlerContext,
+): Promise<string> {
+  const requester = await authenticate(context)
+  const subjectId = request.subjectId.trim()
+  if (subjectId.length === 0) {
+    throw new ConnectError("subject_id is required", Code.InvalidArgument)
+  }
+
+  assertSubjectId(subjectId, "subject_id")
+
+  const { realm } = splitSubjectId(subjectId)
+  const clearCheck = await services.authzService.checkPermission({
+    permissionName: WellKnownPermissions.INTERACTION_NLS_CLEAR_SUBJECT_CONTEXT,
+    subjectId: requester.subjectId,
+    scope: realm,
+  })
+
+  if (!clearCheck.authorized) {
+    throw new ConnectError(
+      `Subject "${requester.subjectId}" is not allowed to clear NLS context for realm "${realm}"`,
+      Code.PermissionDenied,
+    )
+  }
+
+  return subjectId
 }
 
 function normalizeError(error: unknown): Error {
@@ -482,10 +519,7 @@ function createQueryDatabaseTool(args: { services: LanguageEngineServices }) {
       } catch (error) {
         const errorObject = normalizeError(error)
 
-        logger.warn(
-          { error: errorObject },
-          "nls query_database failed",
-        )
+        logger.warn({ error: errorObject }, "nls query_database failed")
 
         return {
           response: `Failed to query database: ${errorObject.message}`,

@@ -3,6 +3,7 @@ import { CommandParameterType } from "@reside/api/interaction/definition.v1"
 import { strings } from "../../locale"
 import {
   parseBindingCommandText,
+  parseClearContextCommandText,
   resolveBindingMessageThreadId,
   resolveBindingTopicInfo,
 } from "./bot"
@@ -38,6 +39,40 @@ describe("parseBindingCommandText", () => {
     expect(
       parseBindingCommandText("/bind_notification_channel alerts 5", "bind_notification_channel"),
     ).toBeNull()
+  })
+})
+
+describe("parseClearContextCommandText", () => {
+  test("parses replica name", () => {
+    expect(parseClearContextCommandText("/clear_context alpha")).toEqual({
+      target: {
+        kind: "replica",
+        value: "alpha",
+      },
+    })
+  })
+
+  test("parses avatar mention", () => {
+    expect(parseClearContextCommandText("/clear_context @alpha_bot")).toEqual({
+      target: {
+        kind: "mention",
+        value: "alpha_bot",
+      },
+    })
+  })
+
+  test("strips manager bot mention", () => {
+    expect(parseClearContextCommandText("/clear_context@reside_bot alpha")).toEqual({
+      target: {
+        kind: "replica",
+        value: "alpha",
+      },
+    })
+  })
+
+  test("rejects missing and extra arguments", () => {
+    expect(parseClearContextCommandText("/clear_context")).toBeNull()
+    expect(parseClearContextCommandText("/clear_context alpha beta")).toBeNull()
   })
 })
 

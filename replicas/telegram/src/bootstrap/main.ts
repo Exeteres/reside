@@ -95,6 +95,12 @@ await defineCommonResources({
       description: strings.bootstrap.permissions.nlsImpersonate.description,
       scoped: true,
     },
+    {
+      name: WellKnownPermissions.INTERACTION_NLS_CLEAR_SUBJECT_CONTEXT,
+      title: strings.bootstrap.permissions.nlsClearSubjectContext.title,
+      description: strings.bootstrap.permissions.nlsClearSubjectContext.description,
+      scoped: true,
+    },
   ],
 })
 
@@ -175,6 +181,10 @@ await services.accessDefinitionService.putApprover({
     items: [
       {
         permissionName: WellKnownPermissions.INTERACTION_NLS_IMPERSONATE,
+        scope: "telegram",
+      },
+      {
+        permissionName: WellKnownPermissions.INTERACTION_NLS_CLEAR_SUBJECT_CONTEXT,
         scope: "telegram",
       },
     ],

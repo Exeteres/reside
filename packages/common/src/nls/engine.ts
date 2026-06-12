@@ -1,10 +1,15 @@
+import type { Pool } from "pg"
 import type { CommonServices } from "../services"
 import { webcrypto } from "node:crypto"
 import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3"
 import { CopilotClient, type CopilotSession, type SessionConfig } from "@github/copilot-sdk"
-import type { Pool } from "pg"
 import { z } from "zod"
 import { createStorageBucketService, type StorageBucketService } from "../database"
 import { crypto } from "../encryption"
@@ -13,8 +18,8 @@ import { logger } from "../logger"
 import {
   createLanguageMemorySystemPrompt,
   createMemoryTools,
-  type MemoryToolTagDefinitions,
   type MemoryToolsPrisma,
+  type MemoryToolTagDefinitions,
 } from "./memory"
 
 const NLS_SESSION_ARCHIVE_EXTENSION = "tgz"
@@ -49,6 +54,7 @@ export type LanguageEngine = {
     onFrame: (frame: { text: string; reset: boolean }) => Promise<void>,
     options?: LanguageEngineAskOptions,
   ) => Promise<string>
+  clearContext: (sessionId: string) => Promise<void>
   stop: () => Promise<void>
 }
 
@@ -170,6 +176,20 @@ export async function createLanguageEngine(
         allowedSystemTools: options?.allowedSystemTools,
         shouldCancel: options?.shouldCancel,
         cancelPollIntervalMs: options?.cancelPollIntervalMs,
+      })
+    },
+    clearContext: async sessionId => {
+      const normalizedSessionId = normalizeSessionId(sessionId)
+
+      await runWithSessionLock(sessionLocks, normalizedSessionId, async () => {
+        const sessionDirPath = join(workspacePath, NLS_SESSION_DIR)
+        await mkdir(sessionDirPath, { recursive: true })
+        await clearSessionArchive(
+          storageBucketService,
+          sessionDirPath,
+          sessionPrefix,
+          normalizedSessionId,
+        )
       })
     },
     stop: async () => {
@@ -839,6 +859,50 @@ async function uploadSessionArchive(
   )
 
   await rm(archivePath, { force: true })
+}
+
+async function clearSessionArchive(
+  storageBucketService: StorageBucketService,
+  sessionDirPath: string,
+  sessionPrefix: string,
+  sessionStorageId: string,
+): Promise<void> {
+  const archiveKey = getSessionArchiveKey(sessionPrefix, sessionStorageId)
+  const archivePath = join(
+    "/tmp",
+    `${NLS_WORKSPACE_PREFIX}-${getReplicaName()}`,
+    `session-clear-${sanitizeFilePart(sessionStorageId)}.${NLS_SESSION_ARCHIVE_EXTENSION}`,
+  )
+
+  try {
+    const object = await storageBucketService.client.send(
+      new GetObjectCommand({
+        Bucket: storageBucketService.bucket,
+        Key: archiveKey,
+      }),
+    )
+
+    if (object.Body) {
+      const bytes = await object.Body.transformToByteArray()
+      await writeFile(archivePath, Buffer.from(bytes))
+
+      const sessionId = await readSessionIdFromArchive(archivePath)
+      if (sessionId) {
+        await rm(getSessionStatePath(sessionDirPath, sessionId), { recursive: true, force: true })
+      }
+    }
+  } catch {
+    // absence of an archive is already a cleared persisted context
+  } finally {
+    await rm(archivePath, { force: true })
+  }
+
+  await storageBucketService.client.send(
+    new DeleteObjectCommand({
+      Bucket: storageBucketService.bucket,
+      Key: archiveKey,
+    }),
+  )
 }
 
 function getSessionArchiveKey(sessionPrefix: string, sessionId: string): string {

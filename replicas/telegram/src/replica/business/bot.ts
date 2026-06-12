@@ -180,6 +180,63 @@ export async function createTelegramBot(args: {
     })
   })
 
+  bot.command("clear_context", async context => {
+    const userId = context.from?.id
+    const messageId = context.message?.message_id
+    const commandText = context.message?.text
+    if (!userId || !messageId || !commandText) {
+      return
+    }
+
+    const parsed = parseClearContextCommandText(commandText)
+    if (!parsed) {
+      await sendSystemMessage(context, {
+        text: strings.worker.bot.nlsClearContextUsage,
+        replyToMessageId: messageId,
+      })
+      return
+    }
+
+    try {
+      const replicaName = await resolveClearContextTargetReplicaName(args.prisma, parsed.target)
+      if (!replicaName) {
+        await sendSystemMessage(context, {
+          text: strings.worker.bot.nlsClearContextReplicaNotFound(parsed.target.value),
+          replyToMessageId: messageId,
+        })
+        return
+      }
+
+      const subjectId = `telegram:${userId}`
+      const endpoint = await args.discoveryService.getSubjectEndpoint({
+        subjectId: `replica:${replicaName}`,
+      })
+
+      await getNaturalLanguageClient(endpoint.endpoint).clearSubjectContext({
+        subjectId,
+      })
+
+      await sendSystemMessage(context, {
+        text: strings.worker.bot.nlsClearContextSucceeded(replicaName),
+        replyToMessageId: messageId,
+      })
+    } catch (error) {
+      logger.warn(
+        {
+          error: error instanceof Error ? error : new Error(String(error)),
+        },
+        'failed to clear nls context user_id="%s" target="%s"',
+        userId,
+        parsed.target.value,
+      )
+
+      await sendSystemMessage(context, {
+        text: strings.worker.bot.nlsClearContextFailed,
+        replyToMessageId: messageId,
+      })
+    }
+  })
+
   bot.command("bind_notification_channel", async context => {
     const chatId = context.chat?.id
     const userId = context.from?.id
@@ -879,6 +936,75 @@ export function parseBindingCommandText(
   return {
     channel,
   }
+}
+
+export function parseClearContextCommandText(text: string): {
+  target: {
+    kind: "replica" | "mention"
+    value: string
+  }
+} | null {
+  const [rawCommand, ...rawArgs] = text.trim().split(/\s+/)
+  const normalizedCommand = rawCommand?.split("@")[0]
+  if (normalizedCommand !== "/clear_context") {
+    return null
+  }
+
+  const rawTarget = rawArgs[0]?.trim()
+  if (!rawTarget || rawArgs.length > 1) {
+    return null
+  }
+
+  if (rawTarget.startsWith("@")) {
+    const username = rawTarget.slice(1).trim()
+    if (!/^[A-Za-z0-9_]+$/.test(username)) {
+      return null
+    }
+
+    return {
+      target: {
+        kind: "mention",
+        value: username,
+      },
+    }
+  }
+
+  if (!/^[a-z0-9-]+$/.test(rawTarget)) {
+    return null
+  }
+
+  return {
+    target: {
+      kind: "replica",
+      value: rawTarget,
+    },
+  }
+}
+
+async function resolveClearContextTargetReplicaName(
+  prisma: PrismaClient,
+  target: {
+    kind: "replica" | "mention"
+    value: string
+  },
+): Promise<string | null> {
+  if (target.kind === "replica") {
+    return target.value
+  }
+
+  const avatar = await prisma.avatar.findFirst({
+    where: {
+      managedBotUsername: {
+        equals: target.value,
+        mode: "insensitive",
+      },
+    },
+    select: {
+      replicaName: true,
+    },
+  })
+
+  return avatar?.replicaName ?? null
 }
 
 export function resolveBindingMessageThreadId(message: {

@@ -53,9 +53,14 @@ export const ru = {
         title: "NLS-имперсонация реалма",
         description: "Позволяет вызывать NLS от имени субъекта выбранного реалма. Scope: {realm}",
       },
+      nlsClearSubjectContext: {
+        title: "Очистка NLS-контекста субъекта",
+        description:
+          "Позволяет очищать NLS-контекст любого субъекта выбранного реалма. Scope: {realm}",
+      },
     },
     nlsImpersonationReason:
-      "Телеграмной Реплике нужно вызывать NLS от имени пользователей Telegram-реалма.",
+      "Телеграмной Реплике нужно вызывать NLS от имени пользователей Telegram-реалма и очищать их контекст.",
     channels: {
       approvals: {
         title: "Подтверждения",
@@ -136,6 +141,12 @@ export const ru = {
       nlsReplicaBroken: "Реплика вернула ошибку при обработке NLS-запроса",
       nlsSessionOwnedByAnotherUser: (replicaName: string) =>
         `Эта NLS-сессия принадлежит другому пользователю. Начните новую, упомянув реплику ${replicaName}.`,
+      nlsClearContextUsage: "Использование: /clear_context <реплика>",
+      nlsClearContextReplicaNotFound: (replicaName: string) =>
+        `Реплика «${replicaName}» не найдена.`,
+      nlsClearContextSucceeded: (replicaName: string) =>
+        `NLS-контекст для реплики «${replicaName}» очищен.`,
+      nlsClearContextFailed: "Не удалось очистить NLS-контекст.",
       unexpectedError: "Что-то пошло не так",
       parameterRequired: (parameterName: string) =>
         `Обязательный параметр "${parameterName}" не указан`,

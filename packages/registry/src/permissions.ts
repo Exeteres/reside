@@ -92,6 +92,12 @@ export enum WellKnownPermissions {
   INTERACTION_NLS_IMPERSONATE = "interaction:nls:impersonate",
 
   /**
+   * Allows clearing NLS context for any subject from a specific realm.
+   * The scope is the realm name.
+   */
+  INTERACTION_NLS_CLEAR_SUBJECT_CONTEXT = "interaction:nls:clear-subject-context",
+
+  /**
    * Allows to transfer encrypted content from a specific replica.
    * The scope is the name of the replica from which secrets can be transferred.
    */

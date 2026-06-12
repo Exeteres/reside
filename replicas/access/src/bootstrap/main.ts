@@ -25,10 +25,13 @@ const [
   permissionManagePermission,
   approverManagePermission,
   subjectReadPermission,
+  ,
   infraGatewayManagePermission,
   avatarOwnPermission,
   sendAsSubjectPermission,
   interactionNlsImpersonatePermission,
+  ,
+  interactionNlsClearSubjectContextPermission,
 ] = await Promise.all([
   ensureRealm("replica"),
   ensurePermission(
@@ -70,6 +73,7 @@ const [
   ensurePermission(WellKnownPermissions.TELEGRAM_NOTIFICATION_SEND_AS_SUBJECT, "", "", true),
   ensurePermission(WellKnownPermissions.INTERACTION_NLS_IMPERSONATE, "", "", true),
   ensurePermission(WellKnownPermissions.INTERACTION_NLS_ASK, "", "", true),
+  ensurePermission(WellKnownPermissions.INTERACTION_NLS_CLEAR_SUBJECT_CONTEXT, "", "", true),
   ensurePermission(WellKnownPermissions.TELEGRAM_APPROVE, "", "", true),
   ensurePermission(WellKnownPermissions.TELEGRAM_COMMAND_MANAGE, "", "", true),
   ensurePermission(WellKnownPermissions.TELEGRAM_COMMAND_INVOKE, "", "", true),
@@ -139,6 +143,12 @@ await Promise.all([
 
   ensureBinding(
     permissionManagePermission.id,
+    "replica:telegram",
+    WellKnownPermissions.INTERACTION_NLS_CLEAR_SUBJECT_CONTEXT,
+  ),
+
+  ensureBinding(
+    permissionManagePermission.id,
     "replica:infra",
     WellKnownPermissions.INFRA_GATEWAY_MANAGE,
   ),
@@ -155,6 +165,9 @@ await Promise.all([
 
   // to allow users query NLS of other replicas via telegram replica
   ensureBinding(interactionNlsImpersonatePermission.id, "replica:telegram", "telegram"),
+
+  // to allow users clear their NLS context of other replicas via telegram replica
+  ensureBinding(interactionNlsClearSubjectContextPermission.id, "replica:telegram", "telegram"),
 ])
 
 await ensureReplicaAvatar({

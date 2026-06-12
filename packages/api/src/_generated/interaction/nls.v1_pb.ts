@@ -4,15 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { StringValueJson } from "@bufbuild/protobuf/wkt";
-import { file_google_protobuf_wrappers } from "@bufbuild/protobuf/wkt";
+import type { EmptySchema, StringValueJson } from "@bufbuild/protobuf/wkt";
+import { file_google_protobuf_empty, file_google_protobuf_wrappers } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file interaction/nls.v1.proto.
  */
 export const file_interaction_nls_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEizgEKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEkwKDHN1YmplY3RfaW5mbxgDIAMoCzI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdC5TdWJqZWN0SW5mb0VudHJ5GjIKEFN1YmplY3RJbmZvRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASIbCgtBc2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJIjAKEUFza1N0cmVhbVJlc3BvbnNlEgwKBHRleHQYASABKAkSDQoFcmVzZXQYAiABKAgy0gEKFk5hdHVyYWxMYW5ndWFnZVNlcnZpY2USVAoDQXNrEiUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXF1ZXN0GiYucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXNwb25zZRJiCglBc2tTdHJlYW0SJS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1JlcXVlc3QaLC5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1N0cmVhbVJlc3BvbnNlMAFiBnByb3RvMw", [file_google_protobuf_wrappers]);
+  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEizgEKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEkwKDHN1YmplY3RfaW5mbxgDIAMoCzI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdC5TdWJqZWN0SW5mb0VudHJ5GjIKEFN1YmplY3RJbmZvRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASIbCgtBc2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJIjAKEUFza1N0cmVhbVJlc3BvbnNlEgwKBHRleHQYASABKAkSDQoFcmVzZXQYAiABKAgiMAoaQ2xlYXJTdWJqZWN0Q29udGV4dFJlcXVlc3QSEgoKc3ViamVjdF9pZBgBIAEoCTK4AgoWTmF0dXJhbExhbmd1YWdlU2VydmljZRJUCgNBc2sSJS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1JlcXVlc3QaJi5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1Jlc3BvbnNlEmIKCUFza1N0cmVhbRIlLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdBosLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrU3RyZWFtUmVzcG9uc2UwARJkChNDbGVhclN1YmplY3RDb250ZXh0EjUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5DbGVhclN1YmplY3RDb250ZXh0UmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
 
 /**
  * Request for asking the replica natural language subsystem.
@@ -170,6 +170,41 @@ export const AskStreamResponseSchema: GenMessage<AskStreamResponse, {jsonType: A
   messageDesc(file_interaction_nls_v1, 2);
 
 /**
+ * Request for clearing persisted natural language context for a subject.
+ *
+ * @generated from message reside.interaction.nls.v1.ClearSubjectContextRequest
+ */
+export type ClearSubjectContextRequest = Message<"reside.interaction.nls.v1.ClearSubjectContextRequest"> & {
+  /**
+   * The subject identifier whose conversation context must be cleared.
+   *
+   * @generated from field: string subject_id = 1;
+   */
+  subjectId: string;
+};
+
+/**
+ * Request for clearing persisted natural language context for a subject.
+ *
+ * @generated from message reside.interaction.nls.v1.ClearSubjectContextRequest
+ */
+export type ClearSubjectContextRequestJson = {
+  /**
+   * The subject identifier whose conversation context must be cleared.
+   *
+   * @generated from field: string subject_id = 1;
+   */
+  subjectId?: string;
+};
+
+/**
+ * Describes the message reside.interaction.nls.v1.ClearSubjectContextRequest.
+ * Use `create(ClearSubjectContextRequestSchema)` to create a new message.
+ */
+export const ClearSubjectContextRequestSchema: GenMessage<ClearSubjectContextRequest, {jsonType: ClearSubjectContextRequestJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_nls_v1, 3);
+
+/**
  * The service implemented by replicas to provide natural language interactions.
  *
  * @generated from service reside.interaction.nls.v1.NaturalLanguageService
@@ -194,6 +229,16 @@ export const NaturalLanguageService: GenService<{
     methodKind: "server_streaming";
     input: typeof AskRequestSchema;
     output: typeof AskStreamResponseSchema;
+  },
+  /**
+   * Clears persisted conversation context for the requested subject.
+   *
+   * @generated from rpc reside.interaction.nls.v1.NaturalLanguageService.ClearSubjectContext
+   */
+  clearSubjectContext: {
+    methodKind: "unary";
+    input: typeof ClearSubjectContextRequestSchema;
+    output: typeof EmptySchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_interaction_nls_v1, 0);

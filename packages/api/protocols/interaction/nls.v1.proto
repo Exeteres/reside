@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package reside.interaction.nls.v1;
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 
 // Request for asking the replica natural language subsystem.
@@ -35,6 +36,12 @@ message AskStreamResponse {
   bool reset = 2;
 }
 
+// Request for clearing persisted natural language context for a subject.
+message ClearSubjectContextRequest {
+  // The subject identifier whose conversation context must be cleared.
+  string subject_id = 1;
+}
+
 // The service implemented by replicas to provide natural language interactions.
 service NaturalLanguageService {
   // Asks the target replica and returns a plain text answer.
@@ -42,4 +49,7 @@ service NaturalLanguageService {
 
   // Asks the target replica and streams full-message frames while response is being generated.
   rpc AskStream(AskRequest) returns (stream AskStreamResponse);
+
+  // Clears persisted conversation context for the requested subject.
+  rpc ClearSubjectContext(ClearSubjectContextRequest) returns (google.protobuf.Empty);
 }
