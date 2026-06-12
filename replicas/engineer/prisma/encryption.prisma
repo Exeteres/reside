@@ -1,7 +1,8 @@
+/// Represents encrypted content stored through the common ECID encryption model.
 model EncryptedContent {
-    /// The ECID of the encrypted content.
-    ecid String @id
+  /// The ECID of the encrypted content.
+  ecid String @id
 
-    /// The encrypted content data.
-    data String
+  /// The encrypted content data.
+  data String
 }

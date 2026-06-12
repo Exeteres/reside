@@ -1,66 +1,109 @@
+/// The lifecycle status of an engineer task.
 enum TaskStatus {
-  // The initial (or clarifying) promt is received and the task is plan is being created/updated.
+  /// The initial or clarifying prompt is received and the task plan is being created or updated.
   PLANNING
 
-  // The task plan is ready and waiting user approval to start execution.
+  /// The task plan is ready and waiting for user approval to start execution.
   PLAN_READY
 
-  // The task is being worked on by the agent.
+  /// The task is being worked on by the agent.
   IN_PROGRESS
 
-  // The task was successfully completed by the agent.
-  // From this state, it can again transition to IN_PROGRESS if the user requests changes.
+  /// The task was successfully completed by the agent.
+  /// From this state, it can again transition to IN_PROGRESS if the user requests changes.
   COMPLETED
 
-  // The task was failed due to an error during execution.
-  // From this state, it can again transition to IN_PROGRESS if the user requests changes.
+  /// The task failed due to an error during execution.
+  /// From this state, it can again transition to IN_PROGRESS if the user requests changes.
   FAILED
 
-  // Cancellation was requested while implementation is still running.
-  // Worker must stop the active iteration and move the task to CANCELLED.
+  /// Cancellation was requested while implementation is still running.
+  /// Worker must stop the active iteration and move the task to CANCELLED.
   REQUESTED_CANCELLATION
 
-  // The task was cancelled by the user.
-  // From this state, it can again transition to IN_PROGRESS if the user requests changes.
+  /// The task was cancelled by the user.
+  /// From this state, it can again transition to IN_PROGRESS if the user requests changes.
   CANCELLED
 }
 
+/// The active phase of an engineer task workflow.
 enum TaskPhase {
+  /// The task is being planned or refined before implementation starts.
   PLANNING
+
+  /// The task is being implemented by the engineer agent.
   IMPLEMENTATION
 }
 
+/// Represents a long-lived engineer task bound to a notification topic.
 model Task {
-  id                     Int        @id @default(autoincrement())
-  phase                  TaskPhase
-  status                 TaskStatus
-  issueId                Int?       @unique
-  topicId                String     @unique
-  previewTitle           String
+  /// The unique numeric identifier of the task.
+  id Int @id @default(autoincrement())
+
+  /// The workflow phase currently expected for the next interaction cycle.
+  phase TaskPhase
+
+  /// The lifecycle status of the current task phase.
+  status TaskStatus
+
+  /// The GitHub issue number associated with this task, if one has been created.
+  issueId Int? @unique
+
+  /// The interaction topic identifier that receives all task progress and feedback messages.
+  topicId String @unique
+
+  /// The short title generated during preparation before the planning agent can refine it.
+  previewTitle String
+
+  /// The notification currently used for progress updates during the active interaction cycle.
   progressNotificationId String?
 
+  /// The replica subject identifier that created the task.
   createdBy String
+
+  /// The replica subject identifier that last changed the task state, if known.
   updatedBy String?
 
+  /// The timestamp when this task was created.
   createdAt DateTime @default(now())
+
+  /// The timestamp when this task was last updated.
   updatedAt DateTime @updatedAt
 
+  /// The planning and implementation iterations executed for this task.
   iterations TaskIteration[]
 }
 
+/// Represents one planning or implementation attempt for an engineer task.
 model TaskIteration {
-  id        Int @id @default(autoincrement())
-  taskId    Int
+  /// The unique numeric identifier of the task iteration.
+  id Int @id @default(autoincrement())
+
+  /// The parent task identifier.
+  taskId Int
+
+  /// The monotonically increasing iteration number scoped to the parent task.
   iteration Int
 
-  phase         TaskPhase
-  prompt        String
-  resultSummary String?
-  errorMessage  String?
+  /// The task workflow phase executed by this iteration.
+  phase TaskPhase
 
+  /// The prompt or feedback batch used to start this iteration.
+  prompt String
+
+  /// The final agent summary produced by this iteration, if it completed successfully.
+  resultSummary String?
+
+  /// The user-facing error message produced by this iteration, if it failed.
+  errorMessage String?
+
+  /// The replica subject identifier that started this iteration.
   createdBy String
+
+  /// The timestamp when this iteration was created.
   createdAt DateTime @default(now())
 
+  /// The parent task for this iteration.
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId, iteration])
