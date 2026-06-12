@@ -1,0 +1,20 @@
+model Account {
+  id Int @id @default(autoincrement())
+  subjectId String @unique
+  balance Int @default(0)
+  outgoingTransfers Transfer[] @relation("OutgoingTransfers")
+  incomingTransfers Transfer[] @relation("IncomingTransfers")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transfer {
+  id Int @id @default(autoincrement())
+  senderId Int
+  sender Account @relation("OutgoingTransfers", fields: [senderId], references: [id])
+  recipientId Int
+  recipient Account @relation("IncomingTransfers", fields: [recipientId], references: [id])
+  amount Int
+  recipientHandle String
+  createdAt DateTime @default(now())
+}
