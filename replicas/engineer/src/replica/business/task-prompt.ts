@@ -51,6 +51,8 @@ export function createImplementationPrompt(
     "You are in implementation phase.",
     "Git environment is already configured for commits on the provided branch.",
     "You may use any git commands needed during implementation.",
+    "Run Prisma, Bun, repository scripts, checks, generators, and other project-specific tools through `devenv shell -- <command>`.",
+    "Do not call project-local Bun, Prisma, Nx, Biome, TypeScript, or generated-client commands outside `devenv shell -- ...`.",
     "Before calling create_pull_request (create_pr_branch), ensure git HEAD is on the initial branch shown above.",
     "Commit messages must be lowercase conventional commits with a single-line subject.",
     "Do not create commit body or trailers.",

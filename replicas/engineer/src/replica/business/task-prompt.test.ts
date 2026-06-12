@@ -51,6 +51,12 @@ describe("createImplementationPrompt", () => {
     expect(prompt).toContain("Repository: exeteres/reside4")
     expect(prompt).toContain("Branch: replica/task-7/11")
     expect(prompt).toContain("Issue: #42")
+    expect(prompt).toContain(
+      "Run Prisma, Bun, repository scripts, checks, generators, and other project-specific tools through `devenv shell -- <command>`.",
+    )
+    expect(prompt).toContain(
+      "Do not call project-local Bun, Prisma, Nx, Biome, TypeScript, or generated-client commands outside `devenv shell -- ...`.",
+    )
     expect(prompt).toContain("Current user request: реализуй задачу")
   })
 })
