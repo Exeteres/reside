@@ -9,8 +9,10 @@ import {
   type UpdateNotificationRequest,
 } from "@reside/api/interaction/notification.v1"
 import type {
+  CloseTopicRequest,
   CreateTopicRequest,
   DeleteTopicRequest,
+  ReopenTopicRequest,
   TopicServiceClient,
   UpdateTopicRequest,
 } from "@reside/api/interaction/topic.v1"
@@ -80,6 +82,26 @@ export function createInteractionActivities(
       }
 
       await topicService.deleteTopic(request)
+
+      return {}
+    },
+
+    closeTopic: async (request: CloseTopicRequest) => {
+      if (!topicService) {
+        throw new Error("Topic service is not configured")
+      }
+
+      await topicService.closeTopic(request)
+
+      return {}
+    },
+
+    reopenTopic: async (request: ReopenTopicRequest) => {
+      if (!topicService) {
+        throw new Error("Topic service is not configured")
+      }
+
+      await topicService.reopenTopic(request)
 
       return {}
     },

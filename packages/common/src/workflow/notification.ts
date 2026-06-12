@@ -14,8 +14,10 @@ import {
   UpdateNotificationRequestSchema,
 } from "@reside/api/interaction/notification.v1"
 import {
+  CloseTopicRequestSchema,
   CreateTopicRequestSchema,
   DeleteTopicRequestSchema,
+  ReopenTopicRequestSchema,
   UpdateTopicRequestSchema,
 } from "@reside/api/interaction/topic.v1"
 import { waitForOperationResult } from "./operation"
@@ -671,6 +673,46 @@ export async function deleteNotificationTopic(topicId: string): Promise<void> {
 
   await deleteTopic(
     create(DeleteTopicRequestSchema, {
+      topicId,
+    }),
+  )
+}
+
+/**
+ * Closes an existing notification topic while preserving its records.
+ *
+ * @param topicId The opaque topic identifier.
+ */
+export async function closeNotificationTopic(topicId: string): Promise<void> {
+  const { closeTopic } = proxyActivities<InteractionActivities>({
+    startToCloseTimeout: "5 minutes",
+    retry: {
+      initialInterval: "10 seconds",
+    },
+  })
+
+  await closeTopic(
+    create(CloseTopicRequestSchema, {
+      topicId,
+    }),
+  )
+}
+
+/**
+ * Reopens an existing notification topic.
+ *
+ * @param topicId The opaque topic identifier.
+ */
+export async function reopenNotificationTopic(topicId: string): Promise<void> {
+  const { reopenTopic } = proxyActivities<InteractionActivities>({
+    startToCloseTimeout: "5 minutes",
+    retry: {
+      initialInterval: "10 seconds",
+    },
+  })
+
+  await reopenTopic(
+    create(ReopenTopicRequestSchema, {
       topicId,
     }),
   )

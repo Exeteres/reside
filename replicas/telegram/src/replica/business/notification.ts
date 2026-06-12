@@ -441,10 +441,10 @@ export async function updateNotificationForReplica(
 }
 
 export async function acceptNotificationResponseForReplica(
-  crypto: ResideCrypto,
+  _crypto: ResideCrypto,
   prisma: PrismaClient,
-  createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
-  loadDeliveryConfig: () => Promise<{ botToken: string; systemChatId: string }>,
+  _createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
+  _loadDeliveryConfig: () => Promise<{ botToken: string; systemChatId: string }>,
   input: { notificationId: string },
 ): Promise<{ operationId: number }> {
   const notificationId = parseNotificationId(input.notificationId)
@@ -479,14 +479,6 @@ export async function acceptNotificationResponseForReplica(
   }
 
   if (notification.operationId !== null && notification.operation?.status === "PENDING") {
-    await setNotificationAcceptedReaction(
-      crypto,
-      prisma,
-      createTelegramBotClient,
-      loadDeliveryConfig,
-      notification,
-    )
-
     return {
       operationId: notification.operationId,
     }
@@ -514,11 +506,8 @@ export async function acceptNotificationResponseForReplica(
     if (current?.operationId !== null && current?.operation?.status === "PENDING") {
       return {
         operationId: current.operationId,
-        shouldReact: true,
       }
     }
-
-    const shouldReact = current?.operation?.status === "COMPLETED"
 
     const operation = await tx.operation.create({
       data: {
@@ -541,58 +530,12 @@ export async function acceptNotificationResponseForReplica(
 
     return {
       operationId: operation.id,
-      shouldReact,
     }
   })
-
-  if (result.shouldReact) {
-    await setNotificationAcceptedReaction(
-      crypto,
-      prisma,
-      createTelegramBotClient,
-      loadDeliveryConfig,
-      notification,
-    )
-  }
 
   return {
     operationId: result.operationId,
   }
-}
-
-async function setNotificationAcceptedReaction(
-  crypto: ResideCrypto,
-  prisma: PrismaClient,
-  createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
-  loadDeliveryConfig: () => Promise<{ botToken: string; systemChatId: string }>,
-  notification: {
-    messageEcid: string
-    sendAsSubjectId: string | null
-  },
-): Promise<void> {
-  const deliveryConfig = await loadDeliveryConfig()
-  const botToken = await resolveNotificationReactionBotToken(
-    crypto,
-    prisma,
-    notification.sendAsSubjectId,
-    deliveryConfig.botToken,
-  )
-  const bot = createTelegramBotClient(botToken, {
-    role: "notification.accept-response",
-  })
-  if (!bot.api.setMessageReaction) {
-    throw new ConnectError("Telegram bot client does not support message reactions", Code.Internal)
-  }
-
-  const telegramMessage = await crypto.decrypt(telegramSentMessageSchema, notification.messageEcid)
-  const targetChatId = getTelegramMessageChatId(telegramMessage)
-
-  await bot.api.setMessageReaction(targetChatId, telegramMessage.message_id, [
-    {
-      type: "emoji",
-      emoji: "👀",
-    },
-  ])
 }
 
 export async function deleteNotificationForReplica(
@@ -671,32 +614,6 @@ export async function deleteNotificationForReplica(
       },
     })
   })
-}
-
-async function resolveNotificationReactionBotToken(
-  crypto: ResideCrypto,
-  prisma: PrismaClient,
-  subjectId: string | null,
-  fallbackBotToken: string,
-): Promise<string> {
-  if (subjectId === null) {
-    return fallbackBotToken
-  }
-
-  const avatar = await prisma.avatar.findUnique({
-    where: {
-      subjectId,
-    },
-    select: {
-      tokenEcid: true,
-    },
-  })
-
-  if (avatar === null) {
-    return fallbackBotToken
-  }
-
-  return await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)
 }
 
 async function resolveNotificationTarget(

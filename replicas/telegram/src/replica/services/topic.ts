@@ -17,8 +17,10 @@ import {
   TELEGRAM_SYSTEM_CHAT_ID_KEY,
 } from "../business/config"
 import {
+  closeNotificationTopicForReplica,
   createNotificationTopicForReplica,
   deleteNotificationTopicForReplica,
+  reopenNotificationTopicForReplica,
   updateNotificationTopicForReplica,
 } from "../business/notification-topic"
 import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "../business/secret"
@@ -153,6 +155,64 @@ export function createTopicService({
         const errorObject = error instanceof Error ? error : new Error(String(error))
         logger.error({ error: errorObject }, "failed to delete telegram topic")
         throw new ConnectError("Failed to delete telegram topic", Code.Internal)
+      }
+    },
+
+    async closeTopic(request, context) {
+      const { name: replicaName } = await authenticateReplica(context)
+      logger.info("closeTopic requested by replica %s for topicId %s", replicaName, request.topicId)
+
+      try {
+        await closeNotificationTopicForReplica(
+          crypto,
+          prisma,
+          createTelegramBotClient,
+          loadDeliveryConfig,
+          {
+            topicId: request.topicId,
+          },
+        )
+
+        return {}
+      } catch (error) {
+        if (error instanceof ConnectError) {
+          throw error
+        }
+
+        const errorObject = error instanceof Error ? error : new Error(String(error))
+        logger.error({ error: errorObject }, "failed to close telegram topic")
+        throw new ConnectError("Failed to close telegram topic", Code.Internal)
+      }
+    },
+
+    async reopenTopic(request, context) {
+      const { name: replicaName } = await authenticateReplica(context)
+      logger.info(
+        "reopenTopic requested by replica %s for topicId %s",
+        replicaName,
+        request.topicId,
+      )
+
+      try {
+        await reopenNotificationTopicForReplica(
+          crypto,
+          prisma,
+          createTelegramBotClient,
+          loadDeliveryConfig,
+          {
+            topicId: request.topicId,
+          },
+        )
+
+        return {}
+      } catch (error) {
+        if (error instanceof ConnectError) {
+          throw error
+        }
+
+        const errorObject = error instanceof Error ? error : new Error(String(error))
+        logger.error({ error: errorObject }, "failed to reopen telegram topic")
+        throw new ConnectError("Failed to reopen telegram topic", Code.Internal)
       }
     },
   }

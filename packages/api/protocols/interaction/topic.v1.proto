@@ -42,6 +42,20 @@ message DeleteTopicRequest {
   string topic_id = 1;
 }
 
+// The request message for closing a notification topic without deleting its records.
+message CloseTopicRequest {
+  // The identifier of the topic to close.
+  // This ID is opaque and must not be parsed.
+  string topic_id = 1;
+}
+
+// The request message for reopening a previously closed notification topic.
+message ReopenTopicRequest {
+  // The identifier of the topic to reopen.
+  // This ID is opaque and must not be parsed.
+  string topic_id = 1;
+}
+
 // The topic service manages notification topics used by interaction implementations.
 service TopicService {
   // Creates a notification topic inside a channel.
@@ -52,4 +66,10 @@ service TopicService {
 
   // Deletes a notification topic.
   rpc DeleteTopic(DeleteTopicRequest) returns (google.protobuf.Empty);
+
+  // Closes a notification topic while preserving its interaction records.
+  rpc CloseTopic(CloseTopicRequest) returns (google.protobuf.Empty);
+
+  // Reopens a previously closed notification topic.
+  rpc ReopenTopic(ReopenTopicRequest) returns (google.protobuf.Empty);
 }

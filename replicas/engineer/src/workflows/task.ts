@@ -2,14 +2,16 @@ import type { MessageElement } from "@reside/common"
 import {
   acceptNotificationResponse,
   block,
+  closeNotificationTopic,
   createNotificationTopic,
   defineCommandHandler,
+  reopenNotificationTopic,
   sendNotification,
   updateNotification,
   updateNotificationTopic,
 } from "@reside/common/workflow"
 import {
-  condition,
+  log,
   ParentClosePolicy,
   proxyActivities,
   setHandler,
@@ -23,9 +25,9 @@ import {
   type PrepareTaskWorkflowInput,
   type PrepareTaskWorkflowOutput,
   type RunImplementationInteractionOutput,
+  type StartPlanningInteractionOutput,
   type TaskFeedbackSignalInput,
   type TaskWorkflowInput,
-  taskCancelSignal,
   taskFeedbackSignal,
   taskStartImplementationSignal,
 } from "../definitions"
@@ -38,7 +40,7 @@ const {
   approveTask,
   requestCancellation,
   runImplementationInteraction,
-  reviveTaskFromFeedback,
+  retryTask,
 } = proxyActivities<EngineerTaskActivities>({
   scheduleToCloseTimeout: "30 minutes",
   retry: {
@@ -134,7 +136,6 @@ export async function prepareTaskWorkflow({
 export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
   const feedbackQueue: TaskFeedbackSignalInput[] = []
   let startImplementationRequested = input.mode === "implement"
-  let cancellationRequested = false
 
   setHandler(taskFeedbackSignal, feedback => {
     feedbackQueue.push(feedback)
@@ -142,11 +143,7 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
   setHandler(taskStartImplementationSignal, () => {
     startImplementationRequested = true
   })
-  setHandler(taskCancelSignal, () => {
-    cancellationRequested = true
-  })
 
-  let taskId: string | undefined
   let lastPlanning = await runPlanningCycle({
     progressNotificationId: input.notificationId,
     prompt: input.prompt,
@@ -156,21 +153,41 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
     first: true,
     feedbackQueue,
   })
-  taskId = lastPlanning.taskId
+  let taskId = lastPlanning.taskId
+  let planningPromptForRetry = input.prompt
 
-  if (lastPlanning.issueTitle !== input.previewTitle) {
-    await updateNotificationTopic({ topicId: input.topicId, title: lastPlanning.issueTitle })
+  while (lastPlanning.status === "FAILED") {
+    await waitForFailedIterationRetry({
+      topicId: input.topicId,
+      errorMessage: lastPlanning.errorMessage,
+    })
+    await reopenTaskForRetry(input.topicId, taskId)
+
+    const notification = await sendPlanningProgressNotification(input.topicId)
+    lastPlanning = await runPlanningFeedbackCycle({
+      notificationId: notification.notificationId,
+      taskId,
+      feedback: planningPromptForRetry,
+      feedbackQueue,
+    })
+    taskId = lastPlanning.taskId
+  }
+
+  let readyPlanning = requireReadyPlanning(lastPlanning)
+
+  if (readyPlanning.issueTitle !== input.previewTitle) {
+    await updateNotificationTopic({ topicId: input.topicId, title: readyPlanning.issueTitle })
   }
 
   while (true) {
     const reply = await updateNotification({
-      notificationId: lastPlanning.notificationId,
+      notificationId: readyPlanning.notificationId,
       title: strings.notifications.taskPlanning.readyTitle,
-      content: renderMarkdownAsTelegramHtml(lastPlanning.resultSummary),
+      content: renderMarkdownAsTelegramHtml(readyPlanning.resultSummary),
       actions: {
         issue: {
           title: strings.notifications.taskPlanning.actions.issue,
-          url: lastPlanning.issueUrl,
+          url: readyPlanning.issueUrl,
         },
         approve: {
           title: strings.notifications.taskPlanning.actions.approve,
@@ -184,6 +201,7 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
 
     if (reply.type === "action" && reply.actionName === "cancel") {
       await requestCancellation({ taskId })
+      await closeTaskTopic(input.topicId)
       return
     }
 
@@ -200,26 +218,38 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
       if (feedback === undefined) {
         continue
       }
+      planningPromptForRetry = feedback
 
-      const notification = await sendNotification({
-        topicId: input.topicId,
-        acquireTopic: true,
-        title: strings.notifications.taskPlanning.inProgressTitle,
-        actions: {
-          cancel: {
-            title: strings.notifications.taskExecution.actions.cancel,
-          },
-        },
-      })
+      const notification = await sendPlanningProgressNotification(input.topicId)
 
-      lastPlanning = await runPlanningFeedbackCycle({
+      let planningResult = await runPlanningFeedbackCycle({
         notificationId: notification.notificationId,
         taskId,
         feedback,
         feedbackQueue,
       })
-      if (lastPlanning.issueTitle !== input.previewTitle) {
-        await updateNotificationTopic({ topicId: input.topicId, title: lastPlanning.issueTitle })
+      taskId = planningResult.taskId
+
+      while (planningResult.status === "FAILED") {
+        await waitForFailedIterationRetry({
+          topicId: input.topicId,
+          errorMessage: planningResult.errorMessage,
+        })
+        await reopenTaskForRetry(input.topicId, taskId)
+
+        const retryNotification = await sendPlanningProgressNotification(input.topicId)
+        planningResult = await runPlanningFeedbackCycle({
+          notificationId: retryNotification.notificationId,
+          taskId,
+          feedback: planningPromptForRetry,
+          feedbackQueue,
+        })
+        taskId = planningResult.taskId
+      }
+
+      readyPlanning = requireReadyPlanning(planningResult)
+      if (readyPlanning.issueTitle !== input.previewTitle) {
+        await updateNotificationTopic({ topicId: input.topicId, title: readyPlanning.issueTitle })
       }
       continue
     }
@@ -236,6 +266,7 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
       const notification = await sendNotification({
         topicId: input.topicId,
         acquireTopic: true,
+        waitForResponse: false,
         title: strings.notifications.taskExecution.inProgressTitle,
         actions: {
           cancel: {
@@ -259,42 +290,123 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
           actions: {},
           requiresTextResponse: false,
         })
+        await closeTaskTopic(input.topicId)
         return
       }
 
-      const terminalReply = await updateNotification({
+      if (result.status === "COMPLETED") {
+        await updateNotification({
+          notificationId: notification.notificationId,
+          title: strings.notifications.taskExecution.doneTitle,
+          content: renderMarkdownAsTelegramHtml(
+            result.resultSummary ?? strings.notifications.taskExecution.defaultSummary,
+          ),
+          actions: {},
+          requiresTextResponse: false,
+        })
+        await closeTaskTopic(input.topicId)
+        return
+      }
+
+      await updateNotification({
         notificationId: notification.notificationId,
-        title:
-          result.status === "COMPLETED"
-            ? strings.notifications.taskExecution.doneTitle
-            : strings.notifications.taskExecution.failedTitle,
+        title: strings.notifications.taskExecution.failedTitle,
         content: renderMarkdownAsTelegramHtml(
-          result.resultSummary ??
-            result.errorMessage ??
-            strings.notifications.taskExecution.defaultSummary,
+          result.errorMessage ?? strings.notifications.taskExecution.defaultFailure,
         ),
         actions: {},
-        requiresTextResponse: true,
+        requiresTextResponse: false,
       })
 
-      if (terminalReply.type === "text") {
-        feedbackQueue.push({ text: terminalReply.text, contextToken: terminalReply.contextToken })
-      }
-
-      const feedback = consumeQueuedFeedback(feedbackQueue)
-      if (feedback === undefined) {
-        await condition(() => feedbackQueue.length > 0 || cancellationRequested)
-      }
-
-      if (cancellationRequested) {
-        await requestCancellation({ taskId })
-        return
-      }
-
-      await reviveTaskFromFeedback({ taskId })
-      implementationPrompt =
-        consumeQueuedFeedback(feedbackQueue) ?? strings.notifications.taskExecution.initialPrompt
+      await waitForFailedIterationRetry({
+        topicId: input.topicId,
+        errorMessage: result.errorMessage,
+      })
+      await reopenTaskForRetry(input.topicId, taskId)
     }
+  }
+}
+
+async function closeTaskTopic(topicId: string): Promise<void> {
+  try {
+    await closeNotificationTopic(topicId)
+  } catch (error) {
+    log.error("failed to close task topic", {
+      topicId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
+async function reopenTaskForRetry(topicId: string, taskId: string): Promise<void> {
+  await reopenNotificationTopic(topicId)
+  await retryTask({ taskId })
+}
+
+async function waitForFailedIterationRetry(input: {
+  topicId: string
+  errorMessage?: string
+}): Promise<void> {
+  const notification = await sendNotification({
+    topicId: input.topicId,
+    waitForResponse: false,
+    title: strings.notifications.taskExecution.failedTitle,
+    message: renderMarkdownAsTelegramHtml(
+      input.errorMessage ?? strings.notifications.taskExecution.defaultFailure,
+    ),
+    actions: {
+      retry: {
+        title: strings.notifications.taskExecution.actions.retry,
+      },
+    },
+  })
+
+  await closeTaskTopic(input.topicId)
+
+  const reply = await acceptNotificationResponse<{
+    retry: { title: string }
+  }>({
+    notificationId: notification.notificationId,
+  })
+
+  if (reply.type !== "action" || reply.actionName !== "retry") {
+    throw new Error("Unexpected failed iteration retry response")
+  }
+}
+
+async function sendPlanningProgressNotification(topicId: string) {
+  return await sendNotification({
+    topicId,
+    acquireTopic: true,
+    waitForResponse: false,
+    title: strings.notifications.taskPlanning.inProgressTitle,
+    actions: {
+      cancel: {
+        title: strings.notifications.taskExecution.actions.cancel,
+      },
+    },
+  })
+}
+
+function requireReadyPlanning(result: StartPlanningInteractionOutput & { notificationId: string }) {
+  if (result.status !== "PLAN_READY") {
+    throw new Error("Planning interaction is not ready")
+  }
+
+  const issueTitle = result.issueTitle
+  const issueUrl = result.issueUrl
+  const repositoryUrl = result.repositoryUrl
+  const resultSummary = result.resultSummary
+  if (!issueTitle || !issueUrl || !repositoryUrl || !resultSummary) {
+    throw new Error("Planning interaction result is missing issue details")
+  }
+
+  return {
+    ...result,
+    issueTitle,
+    issueUrl,
+    repositoryUrl,
+    resultSummary,
   }
 }
 

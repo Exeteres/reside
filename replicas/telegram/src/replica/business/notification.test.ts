@@ -939,7 +939,7 @@ describe("acceptNotificationResponseForReplica", () => {
     expect(bot.api.setMessageReaction.spy()).toHaveBeenCalledTimes(0)
   })
 
-  test("sets reaction when reusing pending response operation", async () => {
+  test("reuses pending response operation without setting reaction", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     const bot = mockDeepFn<TelegramBotLike>()
 
@@ -954,8 +954,6 @@ describe("acceptNotificationResponseForReplica", () => {
         status: "PENDING",
       },
     } as never)
-    bot.api.setMessageReaction.mockResolvedValue(true as never)
-
     const result = await acceptNotificationResponseForReplica(
       testCrypto,
       prisma,
@@ -970,16 +968,11 @@ describe("acceptNotificationResponseForReplica", () => {
     )
 
     expect(result).toEqual({ operationId: 88 })
-    expect(bot.api.setMessageReaction.spy()).toHaveBeenCalledWith("-1001", 900, [
-      {
-        type: "emoji",
-        emoji: "👀",
-      },
-    ])
+    expect(bot.api.setMessageReaction.spy()).toHaveBeenCalledTimes(0)
     expect(prisma.operation.create.spy()).toHaveBeenCalledTimes(0)
   })
 
-  test("sets reaction when creating response operation after completed operation", async () => {
+  test("creates response operation after completed operation without setting reaction", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     const bot = mockDeepFn<TelegramBotLike>()
 
@@ -1002,8 +995,6 @@ describe("acceptNotificationResponseForReplica", () => {
     } as never)
     prisma.operation.create.mockResolvedValue({ id: 88 } as never)
     prisma.notification.update.mockResolvedValue({ id: 7 } as never)
-    bot.api.setMessageReaction.mockResolvedValue(true as never)
-
     prisma.$transaction.mockImplementation(
       async (callback: (tx: TransactionPrisma) => Promise<unknown>) => {
         return await callback(prisma as unknown as TransactionPrisma)
@@ -1024,12 +1015,7 @@ describe("acceptNotificationResponseForReplica", () => {
     )
 
     expect(result).toEqual({ operationId: 88 })
-    expect(bot.api.setMessageReaction.spy()).toHaveBeenCalledWith("-1001", 900, [
-      {
-        type: "emoji",
-        emoji: "👀",
-      },
-    ])
+    expect(bot.api.setMessageReaction.spy()).toHaveBeenCalledTimes(0)
   })
 })
 

@@ -230,6 +230,94 @@ export async function deleteNotificationTopicForReplica(
   })
 }
 
+export async function closeNotificationTopicForReplica(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
+  loadDeliveryConfig: () => Promise<NotificationTopicDeliveryConfig>,
+  input: {
+    topicId: string
+  },
+): Promise<void> {
+  const topicId = parseNotificationTopicId(input.topicId)
+  const topic = await prisma.notificationTopic.findUnique({
+    where: {
+      id: topicId,
+    },
+    select: {
+      id: true,
+      threadEcid: true,
+      creatorSubjectId: true,
+    },
+  })
+
+  if (!topic) {
+    throw new ConnectError(`Topic "${input.topicId}" was not found`, Code.NotFound)
+  }
+
+  const deliveryConfig = await loadDeliveryConfig()
+  const botToken = await resolveTopicBotToken(
+    crypto,
+    prisma,
+    topic.creatorSubjectId,
+    deliveryConfig.botToken,
+  )
+  const bot = createTelegramBotClient(botToken, {
+    role: "topic.close",
+  })
+  if (!bot.api.closeForumTopic) {
+    throw new ConnectError("Telegram bot client does not support topic closing", Code.Internal)
+  }
+
+  const thread = await crypto.decrypt(telegramTopicThreadSchema, topic.threadEcid)
+
+  await bot.api.closeForumTopic(thread.chat_id, thread.message_thread_id)
+}
+
+export async function reopenNotificationTopicForReplica(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
+  loadDeliveryConfig: () => Promise<NotificationTopicDeliveryConfig>,
+  input: {
+    topicId: string
+  },
+): Promise<void> {
+  const topicId = parseNotificationTopicId(input.topicId)
+  const topic = await prisma.notificationTopic.findUnique({
+    where: {
+      id: topicId,
+    },
+    select: {
+      id: true,
+      threadEcid: true,
+      creatorSubjectId: true,
+    },
+  })
+
+  if (!topic) {
+    throw new ConnectError(`Topic "${input.topicId}" was not found`, Code.NotFound)
+  }
+
+  const deliveryConfig = await loadDeliveryConfig()
+  const botToken = await resolveTopicBotToken(
+    crypto,
+    prisma,
+    topic.creatorSubjectId,
+    deliveryConfig.botToken,
+  )
+  const bot = createTelegramBotClient(botToken, {
+    role: "topic.reopen",
+  })
+  if (!bot.api.reopenForumTopic) {
+    throw new ConnectError("Telegram bot client does not support topic reopening", Code.Internal)
+  }
+
+  const thread = await crypto.decrypt(telegramTopicThreadSchema, topic.threadEcid)
+
+  await bot.api.reopenForumTopic(thread.chat_id, thread.message_thread_id)
+}
+
 export function parseNotificationTopicId(value: string): number {
   const parsed = Number(value)
   if (!Number.isInteger(parsed) || parsed <= 0) {

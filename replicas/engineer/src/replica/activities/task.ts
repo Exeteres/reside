@@ -43,6 +43,7 @@ import {
 
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = ".engineer-session"
+const ENGINEER_NLS_IDLE_TIMEOUT_MS = 120_000
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
@@ -89,10 +90,12 @@ const runImplementationInputSchema = z.object({
 
 const interactionResultSchema = z.object({
   taskId: z.string().min(1),
-  issueTitle: z.string().min(1),
-  issueUrl: z.string().url(),
-  repositoryUrl: z.string().url(),
-  resultSummary: z.string().min(1),
+  status: z.enum(["PLAN_READY", "FAILED"]),
+  issueTitle: z.string().min(1).optional(),
+  issueUrl: z.string().url().optional(),
+  repositoryUrl: z.string().url().optional(),
+  resultSummary: z.string().min(1).optional(),
+  errorMessage: z.string().optional(),
 })
 
 const implementationResultSchema = z.object({
@@ -254,6 +257,7 @@ export function createTaskActivities({
 
         return interactionResultSchema.parse({
           taskId: String(task.id),
+          status: "PLAN_READY",
           issueTitle: issue.title,
           issueUrl: issue.url,
           repositoryUrl,
@@ -283,7 +287,11 @@ export function createTaskActivities({
 
         await syncTaskIssueState(prisma, runtime, task.id, "CLOSED", "NOT_PLANNED")
 
-        throw error
+        return interactionResultSchema.parse({
+          taskId: String(task.id),
+          status: "FAILED",
+          errorMessage: message,
+        })
       } finally {
         if (environment) {
           await environment.dispose()
@@ -370,6 +378,7 @@ export function createTaskActivities({
 
         return interactionResultSchema.parse({
           taskId: parsedInput.taskId,
+          status: "PLAN_READY",
           issueTitle: issue.title,
           issueUrl: issue.url,
           repositoryUrl,
@@ -398,7 +407,11 @@ export function createTaskActivities({
 
         await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
 
-        throw error
+        return interactionResultSchema.parse({
+          taskId: parsedInput.taskId,
+          status: "FAILED",
+          errorMessage: message,
+        })
       } finally {
         await environment.dispose()
       }
@@ -725,16 +738,27 @@ export function createTaskActivities({
       }
     },
 
-    async reviveTaskFromFeedback({ taskId }) {
+    async retryTask({ taskId }) {
       const dbTaskId = parseDbTaskId(taskId)
+      const task = await prisma.task.findUnique({
+        where: {
+          id: dbTaskId,
+        },
+        select: {
+          phase: true,
+        },
+      })
+
+      if (!task) {
+        throw new Error(`Unknown task "${taskId}"`)
+      }
 
       await prisma.task.update({
         where: {
           id: dbTaskId,
         },
         data: {
-          phase: "IMPLEMENTATION",
-          status: "IN_PROGRESS",
+          status: task.phase === "PLANNING" ? "PLANNING" : "IN_PROGRESS",
         },
       })
 
@@ -1455,6 +1479,7 @@ async function runPlanningLanguageStream({
       {
         workingDirectory: environment.repositoryPath,
         configDir: environment.sessionDirPath,
+        idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
         allowedSystemTools: [
           "report_intent",
@@ -1525,6 +1550,7 @@ async function runImplementationLanguageStream({
       {
         workingDirectory: environment.repositoryPath,
         configDir: environment.sessionDirPath,
+        idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [
           createPullRequestTool({
             runtime,

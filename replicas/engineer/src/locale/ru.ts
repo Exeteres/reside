@@ -72,6 +72,7 @@ export const ru = {
       cancelledSummary: "Итерация остановлена по запросу отмены.",
       actions: {
         cancel: "Отменить задачу",
+        retry: "Попробовать снова",
       },
     },
   },

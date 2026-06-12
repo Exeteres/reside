@@ -64,6 +64,7 @@ export type LanguageEngineAskOptions = {
   configDir?: string
   tools?: NonNullable<SessionConfig["tools"]>
   allowedSystemTools?: string[]
+  idleTimeoutMs?: number
   shouldCancel?: () => Promise<boolean>
   cancelPollIntervalMs?: number
 }
@@ -207,6 +208,7 @@ export async function createLanguageEngine(
     configDir?: string
     tools?: NonNullable<SessionConfig["tools"]>
     allowedSystemTools?: string[]
+    idleTimeoutMs?: number
     shouldCancel?: () => Promise<boolean>
     cancelPollIntervalMs?: number
     onFrame?: (frame: { text: string; reset: boolean }) => Promise<void>
@@ -370,7 +372,10 @@ export async function createLanguageEngine(
           truncateOneLine(normalizedText, 1000),
         )
 
-        const finalMessage = await session.sendAndWait({ prompt: normalizedText })
+        const finalMessage = await session.sendAndWait(
+          { prompt: normalizedText },
+          args.idleTimeoutMs,
+        )
         const responseText = normalizeAgentResponse(finalMessage).trim()
 
         if (responseText.length === 0) {

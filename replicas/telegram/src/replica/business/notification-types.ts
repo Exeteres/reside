@@ -118,6 +118,8 @@ export type TelegramBotLike = {
       messageThreadId: number,
       options: { name: string },
     ): Promise<true>
+    closeForumTopic?(chatId: string, messageThreadId: number): Promise<true>
+    reopenForumTopic?(chatId: string, messageThreadId: number): Promise<true>
     deleteForumTopic?(chatId: string, messageThreadId: number): Promise<true>
   }
 }

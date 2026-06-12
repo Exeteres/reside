@@ -87,7 +87,7 @@ export type RunImplementationInteractionInput = {
   progressNotificationId: string
 }
 
-export type ReviveTaskFromFeedbackInput = {
+export type RetryTaskInput = {
   /**
    * The task identifier.
    */
@@ -101,6 +101,8 @@ export type GetTaskSnapshotInput = {
   taskId: string
 }
 
+export type PlanningInteractionStatus = "PLAN_READY" | "FAILED"
+
 export type StartPlanningInteractionOutput = {
   /**
    * The task identifier.
@@ -108,24 +110,34 @@ export type StartPlanningInteractionOutput = {
   taskId: string
 
   /**
+   * The planning status.
+   */
+  status: PlanningInteractionStatus
+
+  /**
    * The issue title.
    */
-  issueTitle: string
+  issueTitle?: string
 
   /**
    * The issue URL.
    */
-  issueUrl: string
+  issueUrl?: string
 
   /**
    * The repository URL.
    */
-  repositoryUrl: string
+  repositoryUrl?: string
 
   /**
    * The planning summary.
    */
-  resultSummary: string
+  resultSummary?: string
+
+  /**
+   * The optional planning failure message.
+   */
+  errorMessage?: string
 }
 
 export type SubmitPlanningFeedbackInteractionOutput = StartPlanningInteractionOutput
@@ -241,9 +253,9 @@ export type EngineerTaskActivities = {
   ) => Promise<RunImplementationInteractionOutput>
 
   /**
-   * Revives a task after receiving new feedback.
+   * Reopens a failed task for another iteration.
    */
-  reviveTaskFromFeedback: (input: ReviveTaskFromFeedbackInput) => Promise<void>
+  retryTask: (input: RetryTaskInput) => Promise<void>
 
   /**
    * Returns the latest task snapshot.

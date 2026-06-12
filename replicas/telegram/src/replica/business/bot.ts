@@ -494,6 +494,10 @@ export async function createTelegramBot(args: {
     })
 
     if (topicResult.handled) {
+      if (topicResult.completed) {
+        await setUserMessageAcceptedReaction(bot, chatId, message.message_id)
+      }
+
       return
     }
 
@@ -599,6 +603,7 @@ export async function createTelegramBot(args: {
       return
     }
 
+    await setUserMessageAcceptedReaction(bot, chatId, message.message_id)
     await clearInlineActions(context, chatId, repliedMessageId)
   })
 
@@ -1361,7 +1366,7 @@ async function completeTopicMessageResponse(args: {
   responseMessageId: number
   textResponse: string
   sendSystemMessage: (input: { text: string; replyToMessageId: number }) => Promise<void>
-}): Promise<{ handled: boolean }> {
+}): Promise<{ completed: boolean; handled: boolean }> {
   let result: {
     completed: boolean
     unauthorized: boolean
@@ -1400,7 +1405,7 @@ async function completeTopicMessageResponse(args: {
       replyToMessageId: args.responseMessageId,
     })
 
-    return { handled: true }
+    return { completed: false, handled: true }
   }
 
   if (result.unauthorized) {
@@ -1417,10 +1422,32 @@ async function completeTopicMessageResponse(args: {
       replyToMessageId: args.responseMessageId,
     })
 
-    return { handled: true }
+    return { completed: false, handled: true }
   }
 
-  return { handled: result.completed }
+  return { completed: result.completed, handled: result.completed }
+}
+
+async function setUserMessageAcceptedReaction(
+  bot: Bot<Context>,
+  chatId: number,
+  messageId: number,
+): Promise<void> {
+  try {
+    await bot.api.setMessageReaction(chatId, messageId, [
+      {
+        type: "emoji",
+        emoji: "👀",
+      },
+    ])
+  } catch (error) {
+    logger.warn(
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "failed to set accepted reaction on user message",
+    )
+  }
 }
 
 function resolveUrlOnlyReplyMarkup(context: Context, messageId: number) {

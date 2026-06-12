@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/topic.v1.proto.
  */
 export const file_interaction_topic_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChppbnRlcmFjdGlvbi90b3BpYy52MS5wcm90bxIbcmVzaWRlLmludGVyYWN0aW9uLnRvcGljLnYxInAKEkNyZWF0ZVRvcGljUmVxdWVzdBIPCgdjaGFubmVsGAEgASgJEg0KBXRpdGxlGAIgASgJEjoKFGNyZWF0ZV9hc19zdWJqZWN0X2lkGAMgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIicKE0NyZWF0ZVRvcGljUmVzcG9uc2USEAoIdG9waWNfaWQYASABKAkiNQoSVXBkYXRlVG9waWNSZXF1ZXN0EhAKCHRvcGljX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJIiYKEkRlbGV0ZVRvcGljUmVxdWVzdBIQCgh0b3BpY19pZBgBIAEoCTKwAgoMVG9waWNTZXJ2aWNlEnAKC0NyZWF0ZVRvcGljEi8ucmVzaWRlLmludGVyYWN0aW9uLnRvcGljLnYxLkNyZWF0ZVRvcGljUmVxdWVzdBowLnJlc2lkZS5pbnRlcmFjdGlvbi50b3BpYy52MS5DcmVhdGVUb3BpY1Jlc3BvbnNlElYKC1VwZGF0ZVRvcGljEi8ucmVzaWRlLmludGVyYWN0aW9uLnRvcGljLnYxLlVwZGF0ZVRvcGljUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eRJWCgtEZWxldGVUb3BpYxIvLnJlc2lkZS5pbnRlcmFjdGlvbi50b3BpYy52MS5EZWxldGVUb3BpY1JlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHliBnByb3RvMw", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
+  fileDesc("ChppbnRlcmFjdGlvbi90b3BpYy52MS5wcm90bxIbcmVzaWRlLmludGVyYWN0aW9uLnRvcGljLnYxInAKEkNyZWF0ZVRvcGljUmVxdWVzdBIPCgdjaGFubmVsGAEgASgJEg0KBXRpdGxlGAIgASgJEjoKFGNyZWF0ZV9hc19zdWJqZWN0X2lkGAMgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIicKE0NyZWF0ZVRvcGljUmVzcG9uc2USEAoIdG9waWNfaWQYASABKAkiNQoSVXBkYXRlVG9waWNSZXF1ZXN0EhAKCHRvcGljX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJIiYKEkRlbGV0ZVRvcGljUmVxdWVzdBIQCgh0b3BpY19pZBgBIAEoCSIlChFDbG9zZVRvcGljUmVxdWVzdBIQCgh0b3BpY19pZBgBIAEoCSImChJSZW9wZW5Ub3BpY1JlcXVlc3QSEAoIdG9waWNfaWQYASABKAky3gMKDFRvcGljU2VydmljZRJwCgtDcmVhdGVUb3BpYxIvLnJlc2lkZS5pbnRlcmFjdGlvbi50b3BpYy52MS5DcmVhdGVUb3BpY1JlcXVlc3QaMC5yZXNpZGUuaW50ZXJhY3Rpb24udG9waWMudjEuQ3JlYXRlVG9waWNSZXNwb25zZRJWCgtVcGRhdGVUb3BpYxIvLnJlc2lkZS5pbnRlcmFjdGlvbi50b3BpYy52MS5VcGRhdGVUb3BpY1JlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHkSVgoLRGVsZXRlVG9waWMSLy5yZXNpZGUuaW50ZXJhY3Rpb24udG9waWMudjEuRGVsZXRlVG9waWNSZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5ElQKCkNsb3NlVG9waWMSLi5yZXNpZGUuaW50ZXJhY3Rpb24udG9waWMudjEuQ2xvc2VUb3BpY1JlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHkSVgoLUmVvcGVuVG9waWMSLy5yZXNpZGUuaW50ZXJhY3Rpb24udG9waWMudjEuUmVvcGVuVG9waWNSZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5YgZwcm90bzM", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
 
 /**
  * The request message for creating a notification topic inside a channel.
@@ -205,6 +205,80 @@ export const DeleteTopicRequestSchema: GenMessage<DeleteTopicRequest, {jsonType:
   messageDesc(file_interaction_topic_v1, 3);
 
 /**
+ * The request message for closing a notification topic without deleting its records.
+ *
+ * @generated from message reside.interaction.topic.v1.CloseTopicRequest
+ */
+export type CloseTopicRequest = Message<"reside.interaction.topic.v1.CloseTopicRequest"> & {
+  /**
+   * The identifier of the topic to close.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string topic_id = 1;
+   */
+  topicId: string;
+};
+
+/**
+ * The request message for closing a notification topic without deleting its records.
+ *
+ * @generated from message reside.interaction.topic.v1.CloseTopicRequest
+ */
+export type CloseTopicRequestJson = {
+  /**
+   * The identifier of the topic to close.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string topic_id = 1;
+   */
+  topicId?: string;
+};
+
+/**
+ * Describes the message reside.interaction.topic.v1.CloseTopicRequest.
+ * Use `create(CloseTopicRequestSchema)` to create a new message.
+ */
+export const CloseTopicRequestSchema: GenMessage<CloseTopicRequest, {jsonType: CloseTopicRequestJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_topic_v1, 4);
+
+/**
+ * The request message for reopening a previously closed notification topic.
+ *
+ * @generated from message reside.interaction.topic.v1.ReopenTopicRequest
+ */
+export type ReopenTopicRequest = Message<"reside.interaction.topic.v1.ReopenTopicRequest"> & {
+  /**
+   * The identifier of the topic to reopen.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string topic_id = 1;
+   */
+  topicId: string;
+};
+
+/**
+ * The request message for reopening a previously closed notification topic.
+ *
+ * @generated from message reside.interaction.topic.v1.ReopenTopicRequest
+ */
+export type ReopenTopicRequestJson = {
+  /**
+   * The identifier of the topic to reopen.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string topic_id = 1;
+   */
+  topicId?: string;
+};
+
+/**
+ * Describes the message reside.interaction.topic.v1.ReopenTopicRequest.
+ * Use `create(ReopenTopicRequestSchema)` to create a new message.
+ */
+export const ReopenTopicRequestSchema: GenMessage<ReopenTopicRequest, {jsonType: ReopenTopicRequestJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_topic_v1, 5);
+
+/**
  * The topic service manages notification topics used by interaction implementations.
  *
  * @generated from service reside.interaction.topic.v1.TopicService
@@ -238,6 +312,26 @@ export const TopicService: GenService<{
   deleteTopic: {
     methodKind: "unary";
     input: typeof DeleteTopicRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * Closes a notification topic while preserving its interaction records.
+   *
+   * @generated from rpc reside.interaction.topic.v1.TopicService.CloseTopic
+   */
+  closeTopic: {
+    methodKind: "unary";
+    input: typeof CloseTopicRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * Reopens a previously closed notification topic.
+   *
+   * @generated from rpc reside.interaction.topic.v1.TopicService.ReopenTopic
+   */
+  reopenTopic: {
+    methodKind: "unary";
+    input: typeof ReopenTopicRequestSchema;
     output: typeof EmptySchema;
   },
 }> = /*@__PURE__*/
