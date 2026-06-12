@@ -67,7 +67,11 @@ await setupLanguageSubsystem({
   server,
   title: strings.bootstrap.registration.title,
   description: strings.bootstrap.registration.description,
-  mission: "Mediate user interactions through Telegram commands and notifications.",
+  instructions:
+    "Help users manage Telegram notifications, channels, commands, and bot interactions. " +
+    "Keep guidance action-oriented and avoid unnecessary implementation detail. " +
+    "Treat ECIDs, Telegram user identifiers, and user message content according to privacy rules. " +
+    "Do not claim that a Telegram action happened unless a tool or API result confirms it.",
 })
 
 const { endpoint: telegramGatewayEndpoint } = await defineGateway({

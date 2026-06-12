@@ -1,5 +1,4 @@
 import { webcrypto } from "node:crypto"
-import { CopilotClient } from "@github/copilot-sdk"
 import { createAppAuth } from "@octokit/auth-app"
 import { logger, subscribeToConfigMap, subscribeToSecret } from "@reside/common"
 import { toError } from "@reside/utils"
@@ -12,10 +11,6 @@ const githubAppSecretSchema = z.object({
   client_secret: z.string().min(1),
   private_key: z.string().min(1),
   installation_id: z.string().min(1),
-})
-
-const copilotSecretSchema = z.object({
-  user_token: z.string().min(1),
 })
 
 const githubRepositoryConfigSchema = z.object({
@@ -31,8 +26,6 @@ export type GithubRepositoryTarget = {
 
 export type EngineerAiRuntime = {
   getOctokit: () => Octokit
-  getCopilotOctokit: () => Octokit
-  getCopilotClient: () => CopilotClient
   getRepositoryTarget: () => Promise<GithubRepositoryTarget>
   stop: () => Promise<void>
 }
@@ -41,11 +34,8 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
   ensureWebCryptoGlobals()
 
   let currentOctokit: Octokit | undefined
-  let currentCopilotOctokit: Octokit | undefined
-  let currentCopilotClient: CopilotClient | undefined
   let currentRepositoryTarget: GithubRepositoryTarget | undefined
   let lastOctokitError: string | undefined
-  let lastCopilotError: string | undefined
   let resolveRepositoryTargetPromise: ((value: GithubRepositoryTarget) => void) | undefined
 
   const stopRepositorySubscription = startSubscription(
@@ -109,42 +99,6 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
     },
   )
 
-  const stopCopilotSubscription = startSubscription(subscribeToSecret("copilot"), async secret => {
-    try {
-      const parsed = copilotSecretSchema.parse(secret)
-
-      if (currentCopilotClient) {
-        await currentCopilotClient.stop()
-      }
-
-      const client = new CopilotClient({
-        githubToken: parsed.user_token,
-        useLoggedInUser: false,
-      })
-
-      await client.start()
-
-      const authStatus = await client.getAuthStatus()
-      currentCopilotOctokit = new Octokit({
-        auth: parsed.user_token,
-      })
-      currentCopilotClient = client
-      lastCopilotError = undefined
-
-      logger.info(
-        'engineer copilot client updated is_authenticated="%s" auth_type="%s" login="%s"',
-        String(authStatus.isAuthenticated),
-        authStatus.authType,
-        authStatus.login ?? "",
-      )
-    } catch (error) {
-      const errorValue = toError(error)
-      lastCopilotError = errorValue.message
-
-      logger.error({ error: errorValue }, "failed to configure engineer copilot client")
-    }
-  })
-
   const repositoryTargetPromise = new Promise<GithubRepositoryTarget>(resolve => {
     resolveRepositoryTargetPromise = resolve
   })
@@ -161,26 +115,6 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
       return currentOctokit
     },
 
-    getCopilotClient: () => {
-      if (!currentCopilotClient) {
-        const reason = lastCopilotError ? ` Last error: ${lastCopilotError}` : ""
-        throw new Error(`Copilot client is not ready: secret "copilot" is not configured.${reason}`)
-      }
-
-      return currentCopilotClient
-    },
-
-    getCopilotOctokit: () => {
-      if (!currentCopilotOctokit) {
-        const reason = lastCopilotError ? ` Last error: ${lastCopilotError}` : ""
-        throw new Error(
-          `Copilot Octokit is not ready: secret "copilot" is not configured.${reason}`,
-        )
-      }
-
-      return currentCopilotOctokit
-    },
-
     getRepositoryTarget: async () => {
       if (currentRepositoryTarget) {
         return currentRepositoryTarget
@@ -190,15 +124,7 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
     },
 
     stop: async () => {
-      await Promise.allSettled([
-        stopRepositorySubscription(),
-        stopGithubAppSubscription(),
-        stopCopilotSubscription(),
-      ])
-
-      if (currentCopilotClient) {
-        await currentCopilotClient.stop()
-      }
+      await Promise.allSettled([stopRepositorySubscription(), stopGithubAppSubscription()])
     },
   }
 }

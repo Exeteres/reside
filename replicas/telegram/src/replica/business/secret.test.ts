@@ -6,7 +6,7 @@ import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "./secret
 describe("loadTelegramSecretState", () => {
   test("loads bot token", async () => {
     const crypto = mockDeepFn<ResideCrypto>()
-    crypto.getSecret.mockResolvedValue("my-token")
+    crypto.getSecret.mockResolvedValue({ value: "my-token" })
 
     const state = await loadTelegramSecretState(crypto)
 
@@ -14,7 +14,10 @@ describe("loadTelegramSecretState", () => {
       botToken: "my-token",
     })
 
-    expect(crypto.getSecret.spy()).toHaveBeenCalledWith(TELEGRAM_BOT_TOKEN_SECRET_KEY)
+    expect(crypto.getSecret.spy()).toHaveBeenCalledWith(
+      expect.anything(),
+      TELEGRAM_BOT_TOKEN_SECRET_KEY,
+    )
   })
 
   test("rethrows secret loading errors", () => {

@@ -1,13 +1,23 @@
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { logger } from "@reside/common"
+import { CopilotClient } from "@github/copilot-sdk"
+import { logger, subscribeToSecret } from "@reside/common"
 import { toError } from "@reside/utils"
+import { z } from "zod"
 import { startEngineerAiRuntime } from "../replica"
+
+const llmSecretSchema = z.object({
+  endpoint: z.string().trim().min(1),
+  "api-key": z.string().trim().min(1),
+  "light-model": z.string().trim().min(1),
+  "smart-model": z.string().trim().min(1),
+})
 
 const runtime = await startEngineerAiRuntime()
 let exitCode = 0
 let workspacePath: string | undefined
+let copilotClient: CopilotClient | undefined
 
 try {
   logger.info("starting engineer e2e")
@@ -24,11 +34,15 @@ try {
     'Timed out waiting for secret "github-app" to initialize octokit',
   )
 
-  const copilotClient = await withTimeout(
-    waitForReadyValue(() => runtime.getCopilotClient()),
+  const llmSecret = await withTimeout(
+    waitForLlmSecret(),
     30_000,
-    'Timed out waiting for secret "copilot" to initialize copilot client',
+    'Timed out waiting for secret "llm"',
   )
+
+  copilotClient = new CopilotClient({
+    useLoggedInUser: false,
+  })
 
   const issuesResponse = await octokit.rest.issues.listForRepo({
     owner: repository.owner,
@@ -56,7 +70,12 @@ try {
   await runCommand(["git", "clone", "--depth", "1", repository.cloneUrl, repositoryPath])
 
   const session = await copilotClient.createSession({
-    model: "gpt-5-mini",
+    model: llmSecret["light-model"],
+    provider: {
+      type: "openai",
+      baseUrl: llmSecret.endpoint,
+      apiKey: llmSecret["api-key"],
+    },
     workingDirectory: repositoryPath,
     onPermissionRequest: async () => ({ kind: "approved" }),
   })
@@ -83,6 +102,10 @@ try {
   }
 
   try {
+    if (copilotClient) {
+      await copilotClient.stop()
+    }
+
     await withTimeout(runtime.stop(), 5_000, "Timed out waiting for runtime stop")
   } catch (error) {
     logger.warn({ error: toError(error) }, "engineer e2e runtime stop warning")
@@ -90,6 +113,23 @@ try {
 
   await Bun.sleep(50)
   process.exit(exitCode)
+}
+
+async function waitForLlmSecret(): Promise<z.infer<typeof llmSecretSchema>> {
+  const iterator = subscribeToSecret("llm")[Symbol.asyncIterator]()
+
+  try {
+    while (true) {
+      const next = await iterator.next()
+      if (next.done) {
+        throw new Error('Secret subscription "llm" ended before a value was received')
+      }
+
+      return llmSecretSchema.parse(next.value)
+    }
+  } finally {
+    await iterator.return?.()
+  }
 }
 
 async function waitForReadyValue<T>(factory: () => T): Promise<T> {

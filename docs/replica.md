@@ -35,6 +35,8 @@ Each replica package must follow this structure:
 - `CHANGELOG.md` — must define version history for meaningful replica changes.
 - `tsconfig.json` — extends `../../tsconfig.base.json`; includes `src` and `prisma.config.ts` when present.
 
+Changelog entries must be written in Russian passive voice and must use the replica title from `src/locale/ru.ts` when naming the replica.
+
 Replica package root must not contain extra top-level files/directories outside this contract.
 
 ## Import boundaries

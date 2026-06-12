@@ -54,7 +54,11 @@ await setupLanguageSubsystem({
   server,
   title: strings.bootstrap.registration.title,
   description: strings.bootstrap.registration.description,
-  mission: "Operate gateways, timers, and infrastructure provisioning.",
+  instructions:
+    "Help users understand infrastructure resources, gateways, timers, Vault, databases, and storage provisioning. " +
+    "Use available data before stating current endpoints or resource state. " +
+    "Be explicit about operational risk when discussing infrastructure changes. " +
+    "Never expose secret values.",
   storageCredentials: {
     endpoint: services.minioAdminConfig.endpoint,
     bucket: normalizeBucketName(getReplicaNamespace()),

@@ -30,7 +30,7 @@ import {
   type LanguageEngineStorageCredentials,
 } from "./engine"
 
-const NLS_DEFAULT_MODEL = "gpt-5-mini"
+const NLS_DEFAULT_MODEL = "light"
 const NLS_SESSION_PREFIX = "sessions"
 const DATABASE_QUERY_MAX_ROWS = 100
 const DATABASE_QUERY_MAX_VALUE_LENGTH = 2000
@@ -40,7 +40,7 @@ export type SetupLanguageSubsystemOptions = {
   server: FastifyInstance
   title: string
   description: string
-  mission: string
+  instructions: string
   tags?: MemoryToolTagDefinitions
   storageCredentials?: LanguageEngineStorageCredentials
   tools?: NonNullable<SessionConfig["tools"]>
@@ -51,7 +51,7 @@ export async function setupLanguageSubsystem({
   server,
   title,
   description,
-  mission,
+  instructions,
   tags,
   storageCredentials,
   tools,
@@ -70,7 +70,7 @@ export async function setupLanguageSubsystem({
         replicaName: getReplicaName(),
         title,
         description,
-        mission,
+        instructions,
       }),
       allowedSystemTools: ["web_fetch", "bash", "report_intent"],
       tags,
@@ -285,17 +285,17 @@ function buildReplicaSystemPrompt(args: {
   replicaName: string
   title: string
   description: string
-  mission: string
+  instructions: string
 }): string {
   const title = args.title.trim()
   const description = args.description.trim()
+  const instructions = args.instructions.trim()
 
   return [
     "You are a specialized assistant behind a ReSide replica.",
     `Replica name: ${args.replicaName}`,
     `Replica title: ${title.length > 0 ? title : args.replicaName}`,
     `Replica description: ${description.length > 0 ? description : "No description provided."}`,
-    `Replica mission: ${args.mission}`,
     "Instructions:",
     "- You are a female replica persona.",
     "- Reply in the same language as the user request.",
@@ -311,6 +311,7 @@ function buildReplicaSystemPrompt(args: {
     "- You can include ECIDs in responses when the user needs to receive or pass around protected content.",
     "- Do not try to decrypt, inspect, transform, summarize, translate, or rewrite ECID content.",
     "- If the user asks to transform content identified only by an ECID, say that you have no access to the actual content and can only return or route the ECID unchanged.",
+    ...(instructions.length > 0 ? ["Replica-specific instructions:", instructions] : []),
   ].join("\n")
 }
 

@@ -7,7 +7,7 @@ This document defines required rules for connecting `setupLanguageSubsystem` and
 - Every replica must call `setupLanguageSubsystem` in `src/replica/main.ts` as part of runtime wiring.
 - Keep the call close to server route setup so NLS connectivity is explicit in composition.
 - Pass localized `title` and `description` from replica locale.
-- Provide a replica-specific `mission` string.
+- Provide replica-specific `instructions` that describe how the replica should behave with users.
 
 ## Custom tool layout
 

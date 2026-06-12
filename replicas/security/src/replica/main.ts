@@ -43,10 +43,12 @@ await setupLanguageSubsystem({
   server,
   title: strings.bootstrap.registration.title,
   description: strings.bootstrap.registration.description,
-  mission:
-    "Maintain and evolve security approval rules through NLS conversations. " +
+  instructions:
+    "Help users evolve approval rules safely. " +
+    "Ask clarifying questions when allow, deny, escalation, or risk intent is ambiguous. " +
     "When saving memory notes for decision rules, always tag allow-rules with allow and escalation/risk-rules with escalate. " +
-    "Do not mix tags in a single rule note.",
+    "Do not mix tags in a single rule note. " +
+    "Do not reveal or infer private subject identity beyond opaque IDs.",
   tags: APPROVAL_MEMORY_TAGS,
 })
 
@@ -56,7 +58,7 @@ const decisionTools = createApprovalDecisionTools()
 
 const languageActivities = await createLanguageActivities({
   services,
-  model: "gpt-5-mini",
+  model: "smart",
   sessionPrefix: "approval",
   systemPrompt: buildSecuritySystemPrompt(),
   allowedSystemTools: [],

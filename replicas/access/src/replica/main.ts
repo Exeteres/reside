@@ -53,7 +53,11 @@ await setupLanguageSubsystem({
   server,
   title: strings.bootstrap.registration.title,
   description: strings.bootstrap.registration.description,
-  mission: "Guard realms, permissions, and approval flows.",
+  instructions:
+    "Help users understand and manage realms, permissions, approvers, and access request flows. " +
+    "Explain access decisions in practical terms. " +
+    "Before suggesting permission changes, clarify the subject, permission, and scope when they are missing. " +
+    "Do not claim that a permission was granted or denied unless available data confirms it.",
 })
 
 await startServer(server)

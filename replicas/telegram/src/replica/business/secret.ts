@@ -1,6 +1,11 @@
 import type { ResideCrypto } from "@reside/common/encryption"
+import { z } from "zod"
 
 export const TELEGRAM_BOT_TOKEN_SECRET_KEY = "telegram-bot-token"
+
+const telegramBotTokenSecretSchema = z.object({
+  value: z.string().min(1),
+})
 
 export type TelegramSecretState = {
   botToken: string | undefined
@@ -15,7 +20,9 @@ export type TelegramSecretState = {
  * @returns The normalized Telegram secret state.
  */
 export async function loadTelegramSecretState(crypto: ResideCrypto): Promise<TelegramSecretState> {
+  const secret = await crypto.getSecret(telegramBotTokenSecretSchema, TELEGRAM_BOT_TOKEN_SECRET_KEY)
+
   return {
-    botToken: (await crypto.getSecret(TELEGRAM_BOT_TOKEN_SECRET_KEY)).trim(),
+    botToken: secret.value.trim(),
   }
 }

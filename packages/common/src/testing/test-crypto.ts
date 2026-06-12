@@ -10,8 +10,8 @@ export const testCrypto: ResideCrypto = {
 
     return ecid
   },
-  async getSecret(key) {
-    return `test-secret:${key}`
+  async getSecret(schema, name) {
+    return schema.parse({ value: `test-secret:${name}` })
   },
   async decrypt(schema, ecid) {
     const ecids = Array.isArray(ecid) ? ecid : [ecid]

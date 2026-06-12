@@ -23,7 +23,10 @@ const VAULT_TOKEN_EXPIRATION_SKEW_MS = 60_000
 
 export type ResideCrypto = {
   encrypt: (data: unknown) => Promise<string>
-  getSecret: (key: string) => Promise<string>
+  getSecret: <TSchema extends z.ZodType>(
+    schema: TSchema,
+    name: string,
+  ) => Promise<z.infer<TSchema>>
   decrypt: <TSchema extends z.ZodType>(
     schema: TSchema,
     ecid: string | string[],
@@ -126,12 +129,12 @@ export const crypto: ResideCrypto = {
 
     return await configuredCrypto.encrypt(data)
   },
-  async getSecret(key) {
+  async getSecret(schema, name) {
     if (!configuredCrypto) {
       throw new Error("Encryption is not configured")
     }
 
-    return await configuredCrypto.getSecret(key)
+    return await configuredCrypto.getSecret(schema, name)
   },
   async decrypt(schema, ecid, reason) {
     if (!configuredCrypto) {
@@ -164,17 +167,17 @@ function createResideCrypto(services: EncryptionServices): ResideCrypto {
 
       return ecid
     },
-    async getSecret(key) {
-      const normalizedKey = key.trim()
-      if (normalizedKey.length === 0) {
-        throw new Error("Vault secret key must not be empty")
+    async getSecret(schema, name) {
+      const normalizedName = name.trim()
+      if (normalizedName.length === 0) {
+        throw new Error("Vault secret name must not be empty")
       }
 
       const credentials = await loadVaultCredentials(services)
       while (true) {
-        const secretValue = await tryReadVaultSecret(credentials, normalizedKey)
-        if (secretValue !== undefined) {
-          return secretValue
+        const secretData = await tryReadVaultSecret(credentials, normalizedName)
+        if (secretData !== undefined) {
+          return schema.parse(secretData)
         }
 
         await Bun.sleep(1000)
@@ -451,10 +454,10 @@ async function vaultTransitDecrypt(
 
 async function tryReadVaultSecret(
   credentials: VaultCredentials,
-  key: string,
-): Promise<string | undefined> {
+  name: string,
+): Promise<unknown | undefined> {
   const token = await getVaultToken(credentials)
-  const response = await fetch(`${credentials.endpoint}/v1/reside/secrets/data/${key}`, {
+  const response = await fetch(`${credentials.endpoint}/v1/reside/secrets/data/${name}`, {
     method: "GET",
     headers: {
       "x-vault-token": token,
@@ -465,10 +468,10 @@ async function tryReadVaultSecret(
     return undefined
   }
 
-  const parsed = await readVaultResponse(response, `reside/secrets/data/${key}`)
+  const parsed = await readVaultResponse(response, `reside/secrets/data/${name}`)
   const secret = vaultSecretResponseSchema.parse(parsed)
 
-  return secret.data.value
+  return secret.data
 }
 
 async function vaultRequest(
@@ -604,17 +607,8 @@ const vaultPlaintextResponseSchema = z.object({
 const vaultSecretResponseSchema = z.object({
   data: z
     .object({
-      data: z
-        .object({
-          value: z.string().min(1),
-        })
-        .optional(),
-      value: z.string().min(1).optional(),
+      data: z.record(z.string(), z.unknown()).optional(),
     })
-    .transform(data => ({
-      value: data.data?.value ?? data.value ?? "",
-    }))
-    .refine(data => data.value.length > 0, {
-      message: "Vault secret value must not be empty",
-    }),
+    .catchall(z.unknown())
+    .transform(data => data.data ?? data),
 })

@@ -13,7 +13,9 @@ export async function createLanguageActivities({
   systemPrompt,
   allowedSystemTools,
   tools,
+  tags,
   storageCredentials,
+  copilotClientProvider,
 }: CreateLanguageEngineOptions): Promise<LanguageActivities> {
   const languageEngine: LanguageEngine = await createLanguageEngine({
     services,
@@ -22,7 +24,9 @@ export async function createLanguageActivities({
     systemPrompt,
     allowedSystemTools,
     tools,
+    tags,
     storageCredentials,
+    copilotClientProvider,
   })
 
   registerGracefulShutdown(async () => {

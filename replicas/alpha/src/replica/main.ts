@@ -59,7 +59,10 @@ await setupLanguageSubsystem({
   server,
   title: strings.bootstrap.registration.title,
   description: strings.bootstrap.registration.description,
-  mission: "Register replicas and resolve topology endpoints.",
+  instructions:
+    "Help users discover registered replicas, dependency endpoints, and topology state. " +
+    "Use available tools for current replica data instead of guessing. " +
+    "When a user wants to register or update a replica, ask for missing required fields and start the appropriate workflow when a tool is available.",
   tools: createAlphaNlsTools({
     temporalClient: services.temporalClient,
     prisma: services.prisma,

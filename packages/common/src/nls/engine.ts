@@ -5,6 +5,7 @@ import { join } from "node:path"
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { CopilotClient, type CopilotSession, type SessionConfig } from "@github/copilot-sdk"
 import type { Pool } from "pg"
+import { z } from "zod"
 import { createStorageBucketService, type StorageBucketService } from "../database"
 import { crypto } from "../encryption"
 import { getReplicaName } from "../kubernetes"
@@ -24,6 +25,9 @@ const NLS_WORKSPACE_PREFIX = "reside-nls"
 const STORAGE_INIT_RETRY_MS = 1000
 const STORAGE_INIT_MAX_ATTEMPTS = 5
 const STORAGE_OPERATION_WAIT_TIMEOUT_MS = 30_000
+const LLM_SECRET_NAME = "llm"
+
+export type LanguageEngineModelTier = "light" | "smart"
 
 export type LanguageEngineServices = Pick<
   CommonServices<"access" | "infra">,
@@ -67,7 +71,7 @@ export type LanguageEngineStorageCredentials = {
 
 export type CreateLanguageEngineOptions = {
   services: LanguageEngineServices
-  model: string
+  model: LanguageEngineModelTier
   sessionPrefix: string
   systemPrompt: string
   allowedSystemTools: string[]
@@ -77,14 +81,24 @@ export type CreateLanguageEngineOptions = {
   copilotClientProvider?: () => CopilotClient
 }
 
+const llmSecretSchema = z.object({
+  endpoint: z.string().trim().min(1),
+  "api-key": z.string().trim().min(1),
+  "light-model": z.string().trim().min(1),
+  "smart-model": z.string().trim().min(1),
+})
+
 export async function createLanguageEngine(
   args: CreateLanguageEngineOptions,
 ): Promise<LanguageEngine> {
   ensureWebCryptoGlobals()
 
-  const model = args.model.trim()
-  if (model.length === 0) {
-    throw new Error("createLanguageEngine model must not be empty")
+  const llmSecret = await crypto.getSecret(llmSecretSchema, LLM_SECRET_NAME)
+  const model = selectLlmModel(llmSecret, args.model)
+  const provider: NonNullable<SessionConfig["provider"]> = {
+    type: "openai",
+    baseUrl: llmSecret.endpoint,
+    apiKey: llmSecret["api-key"],
   }
 
   const sessionPrefix = normalizeSessionPrefix(args.sessionPrefix)
@@ -108,14 +122,12 @@ export async function createLanguageEngine(
 
   let currentCopilotClient: CopilotClient | undefined
   if (!args.copilotClientProvider) {
-    const copilotToken = await crypto.getSecret("copilot-token")
     const nextClient = new CopilotClient({
-      githubToken: copilotToken,
       useLoggedInUser: false,
     })
     await nextClient.start()
     currentCopilotClient = nextClient
-    logger.info("nls copilot client initialized")
+    logger.info("nls language client initialized")
   }
 
   const sessionLocks = new Map<string, Promise<void>>()
@@ -222,6 +234,7 @@ export async function createLanguageEngine(
 
       const sessionConfig: SessionConfig = {
         model,
+        provider,
         streaming: true,
         workingDirectory: sessionWorkingDirectory,
         configDir: sessionDirPath,
@@ -620,6 +633,17 @@ function collectCustomToolNames(
   }
 
   return names
+}
+
+function selectLlmModel(
+  secret: z.infer<typeof llmSecretSchema>,
+  tier: LanguageEngineModelTier,
+): string {
+  if (tier === "light") {
+    return secret["light-model"]
+  }
+
+  return secret["smart-model"]
 }
 
 function normalizeSessionPrefix(sessionPrefix: string): string {
