@@ -1,0 +1,45 @@
+/// A bank account bound to an external user subject.
+model Account {
+  id Int @id @default(autoincrement())
+
+  /// The RHID of the external subject id.
+  subjectRhid String @unique
+
+  /// The ECID of the external subject id.
+  subjectEcid String @unique
+
+  /// The encrypted external subject id.
+  telegramSubject EncryptedContent @relation(name: "AccountTelegramSubject", fields: [subjectEcid], references: [ecid], onDelete: Restrict)
+
+  balance BigInt @default(0)
+
+  outgoingEntries LedgerEntry[] @relation(name: "OutgoingEntries")
+  incomingEntries LedgerEntry[] @relation(name: "IncomingEntries")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// An immutable currency movement between accounts.
+model LedgerEntry {
+  id Int @id @default(autoincrement())
+
+  senderId Int
+  sender Account @relation(name: "OutgoingEntries", fields: [senderId], references: [id], onDelete: Restrict)
+
+  recipientId Int
+  recipient Account @relation(name: "IncomingEntries", fields: [recipientId], references: [id], onDelete: Restrict)
+
+  amount BigInt
+
+  /// The ECID of the recipient label typed by the sender.
+  recipientLabelEcid String @unique
+
+  /// The encrypted recipient label typed by the sender.
+  recipientLabel EncryptedContent @relation(name: "LedgerRecipientLabel", fields: [recipientLabelEcid], references: [ecid], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@index([senderId, createdAt])
+  @@index([recipientId, createdAt])
+}

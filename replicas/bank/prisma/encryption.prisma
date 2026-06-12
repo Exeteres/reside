@@ -1,0 +1,10 @@
+model EncryptedContent {
+  /// The ECID of the encrypted content.
+  ecid String @id
+
+  /// The encrypted content data.
+  data String
+
+  accountTelegramSubject Account? @relation(name: "AccountTelegramSubject")
+  ledgerRecipientLabel   LedgerEntry? @relation(name: "LedgerRecipientLabel")
+}
