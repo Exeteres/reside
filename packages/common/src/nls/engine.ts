@@ -328,6 +328,8 @@ export async function createLanguageEngine(
         })
       }
 
+      let sessionError: unknown
+
       try {
         logger.info(
           'nls session prompt session_id="%s" prompt="%s"',
@@ -354,22 +356,54 @@ export async function createLanguageEngine(
         }
 
         return responseText
+      } catch (error) {
+        sessionError = error
+        const errorObject = normalizeError(error)
+
+        logger.error(
+          { error: errorObject },
+          'nls session failed session_id="%s"',
+          normalizedSessionId,
+        )
+
+        throw new Error(`NLS session "${normalizedSessionId}" failed`, {
+          cause: errorObject,
+        })
       } finally {
         stopCancellationWatcher()
         unsubscribeRealtimeLogs()
         unsubscribeAssistantMessageDelta?.()
         unsubscribeAssistantMessage?.()
-        await session.disconnect()
+
+        try {
+          await session.disconnect()
+        } catch (error) {
+          logger.warn(
+            { error: normalizeError(error) },
+            'nls session disconnect failed session_id="%s"',
+            normalizedSessionId,
+          )
+        }
 
         const currentSessionId = environment.sessionId?.trim()
         if (currentSessionId) {
-          await uploadSessionArchive(
-            storageBucketService,
-            environment.sessionDirPath,
-            sessionPrefix,
-            normalizedSessionId,
-            currentSessionId,
-          )
+          try {
+            await uploadSessionArchive(
+              storageBucketService,
+              environment.sessionDirPath,
+              sessionPrefix,
+              normalizedSessionId,
+              currentSessionId,
+            )
+          } catch (error) {
+            logger.warn(
+              { error: normalizeError(error) },
+              'nls session archive upload failed session_id="%s" copilot_session_id="%s" after_error="%s"',
+              normalizedSessionId,
+              currentSessionId,
+              sessionError === undefined ? "false" : "true",
+            )
+          }
         }
       }
     })
@@ -676,8 +710,9 @@ async function createOrResumeSession(
       return resumedSession
     } catch (error) {
       logger.warn(
-        { error: error instanceof Error ? error.message : String(error), previousSessionId },
-        "nls failed to resume session, creating a new one",
+        { error: normalizeError(error) },
+        'nls failed to resume session previous_session_id="%s"',
+        previousSessionId,
       )
     }
   }

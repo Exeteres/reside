@@ -415,19 +415,17 @@ function createAskReplicaTool(args: {
           response: askResponse.text,
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
+        const errorObject = normalizeError(error)
 
         logger.warn(
-          {
-            error: errorMessage,
-            replicaName: normalizedReplicaName,
-          },
-          "nls ask_replica failed",
+          { error: errorObject },
+          'nls ask_replica failed replica_name="%s"',
+          normalizedReplicaName,
         )
 
         return {
           replicaName: normalizedReplicaName,
-          response: `Failed to ask replica "${normalizedReplicaName}": ${errorMessage}`,
+          response: `Failed to ask replica "${normalizedReplicaName}": ${errorObject.message}`,
         }
       }
     },
@@ -481,17 +479,15 @@ function createQueryDatabaseTool(args: { services: LanguageEngineServices }) {
           rows,
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
+        const errorObject = normalizeError(error)
 
         logger.warn(
-          {
-            error: errorMessage,
-          },
+          { error: errorObject },
           "nls query_database failed",
         )
 
         return {
-          response: `Failed to query database: ${errorMessage}`,
+          response: `Failed to query database: ${errorObject.message}`,
         }
       }
     },
