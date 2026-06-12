@@ -487,6 +487,7 @@ export function createTaskActivities({
 
         if (updateResult.count > 0) {
           logger.info('engineer cancellation marked as requested task_id="%s"', String(dbTaskId))
+          await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
         } else {
           const currentTask = await prisma.task.findUnique({
             where: {
@@ -502,6 +503,10 @@ export function createTaskActivities({
             String(dbTaskId),
             currentTask?.status ?? "",
           )
+
+          if (currentTask?.status === "REQUESTED_CANCELLATION") {
+            await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+          }
         }
 
         return
@@ -509,6 +514,7 @@ export function createTaskActivities({
 
       if (task.status === "REQUESTED_CANCELLATION") {
         logger.info('engineer cancellation already requested task_id="%s"', String(dbTaskId))
+        await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
 
         return
       }

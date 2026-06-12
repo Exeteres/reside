@@ -1,5 +1,22 @@
+import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
+import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
+import type { OperationServiceClient } from "@reside/api/common/operation.v1"
+import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
+import type { LanguageEngine } from "@reside/common"
+import type { DeepMockProxy } from "@reside/common/testing"
+import type { PrismaClient } from "../../database"
+import type { EngineerAiRuntime } from "../business"
 import { describe, expect, test } from "bun:test"
-import { parseGeneratedTaskPreviewTitle } from "./task"
+import { mockDeepFn } from "@reside/common/testing"
+import { createTaskActivities, parseGeneratedTaskPreviewTitle } from "./task"
+
+type MockOctokit = {
+  rest: {
+    issues: {
+      update: (input: unknown) => Promise<unknown>
+    }
+  }
+}
 
 describe("parseGeneratedTaskPreviewTitle", () => {
   test("parses valid title json", () => {
@@ -18,3 +35,118 @@ describe("parseGeneratedTaskPreviewTitle", () => {
     expect(() => parseGeneratedTaskPreviewTitle('"Очистка контекста"')).toThrow()
   })
 })
+
+describe("requestCancellation", () => {
+  test("marks running task as requested and closes linked issue", async () => {
+    const { activities, prisma, octokit } = createFixture()
+    let findUniqueCalls = 0
+
+    prisma.task.findUnique.mockImplementation((async () => {
+      findUniqueCalls += 1
+
+      if (findUniqueCalls === 1) {
+        return {
+          id: 7,
+          phase: "IMPLEMENTATION",
+          status: "IN_PROGRESS",
+          issueId: 55,
+        }
+      }
+
+      return { issueId: 55 }
+    }) as never)
+    prisma.task.updateMany.mockResolvedValue({ count: 1 } as never)
+    octokit.rest.issues.update.mockResolvedValue({ data: {} } as never)
+
+    await activities.requestCancellation({ taskId: "7" })
+
+    expect(prisma.task.updateMany.spy()).toHaveBeenCalledWith({
+      where: {
+        id: 7,
+        status: "IN_PROGRESS",
+      },
+      data: {
+        status: "REQUESTED_CANCELLATION",
+      },
+    })
+    expect(octokit.rest.issues.update.spy()).toHaveBeenCalledWith({
+      owner: "exeteres",
+      repo: "reside4",
+      issue_number: 55,
+      state: "closed",
+      state_reason: "not_planned",
+    })
+    expect(prisma.task.update.spy()).toHaveBeenCalledTimes(0)
+  })
+
+  test("closes linked issue when cancellation was already requested", async () => {
+    const { activities, prisma, octokit } = createFixture()
+    let findUniqueCalls = 0
+
+    prisma.task.findUnique.mockImplementation((async () => {
+      findUniqueCalls += 1
+
+      if (findUniqueCalls === 1) {
+        return {
+          id: 7,
+          phase: "IMPLEMENTATION",
+          status: "REQUESTED_CANCELLATION",
+          issueId: 55,
+        }
+      }
+
+      return { issueId: 55 }
+    }) as never)
+    octokit.rest.issues.update.mockResolvedValue({ data: {} } as never)
+
+    await activities.requestCancellation({ taskId: "7" })
+
+    expect(prisma.task.updateMany.spy()).toHaveBeenCalledTimes(0)
+    expect(prisma.task.update.spy()).toHaveBeenCalledTimes(0)
+    expect(octokit.rest.issues.update.spy()).toHaveBeenCalledWith({
+      owner: "exeteres",
+      repo: "reside4",
+      issue_number: 55,
+      state: "closed",
+      state_reason: "not_planned",
+    })
+  })
+})
+
+function createFixture(): {
+  activities: ReturnType<typeof createTaskActivities>
+  prisma: DeepMockProxy<PrismaClient>
+  octokit: DeepMockProxy<MockOctokit>
+} {
+  const runtime = mockDeepFn<EngineerAiRuntime>()
+  const languageEngine = mockDeepFn<LanguageEngine>()
+  const prisma = mockDeepFn<PrismaClient>()
+  const notificationService = mockDeepFn<NotificationServiceClient>()
+  const permissionRequestService = mockDeepFn<PermissionRequestServiceClient>()
+  const accessOperationService = mockDeepFn<OperationServiceClient>()
+  const loadService = mockDeepFn<LoadServiceClient>()
+  const alphaOperationService = mockDeepFn<OperationServiceClient>()
+  const octokit = mockDeepFn<MockOctokit>()
+
+  runtime.getOctokit.mockReturnValue(octokit as never)
+  runtime.getRepositoryTarget.mockResolvedValue({
+    owner: "exeteres",
+    name: "reside4",
+    cloneUrl: "https://github.com/exeteres/reside4.git",
+  })
+
+  return {
+    activities: createTaskActivities({
+      runtime,
+      languageEngine,
+      prisma,
+      notificationService,
+      permissionRequestService,
+      accessOperationService,
+      loadService,
+      alphaOperationService,
+    }),
+    prisma,
+    octokit,
+  }
+}

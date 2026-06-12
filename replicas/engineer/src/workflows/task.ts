@@ -166,6 +166,7 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
     const notification = await sendPlanningProgressNotification(input.topicId)
     lastPlanning = await runPlanningFeedbackCycle({
       notificationId: notification.notificationId,
+      topicId: input.topicId,
       taskId,
       feedback: planningPromptForRetry,
       feedbackQueue,
@@ -224,6 +225,7 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
 
       let planningResult = await runPlanningFeedbackCycle({
         notificationId: notification.notificationId,
+        topicId: input.topicId,
         taskId,
         feedback,
         feedbackQueue,
@@ -240,6 +242,7 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
         const retryNotification = await sendPlanningProgressNotification(input.topicId)
         planningResult = await runPlanningFeedbackCycle({
           notificationId: retryNotification.notificationId,
+          topicId: input.topicId,
           taskId,
           feedback: planningPromptForRetry,
           feedbackQueue,
@@ -277,6 +280,7 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
 
       const result = await runImplementationCycle({
         notificationId: notification.notificationId,
+        topicId: input.topicId,
         taskId,
         prompt: implementationPrompt,
         feedbackQueue,
@@ -459,6 +463,7 @@ async function runPlanningCycle(input: {
 
 async function runPlanningFeedbackCycle(input: {
   notificationId: string
+  topicId: string
   taskId: string
   feedback: string
   feedbackQueue: TaskFeedbackSignalInput[]
@@ -478,6 +483,7 @@ async function runPlanningFeedbackCycle(input: {
     () => finished,
     async () => {
       await requestCancellation({ taskId: input.taskId })
+      await closeTaskTopic(input.topicId)
     },
   )
 
@@ -489,6 +495,7 @@ async function runPlanningFeedbackCycle(input: {
 
 async function runImplementationCycle(input: {
   notificationId: string
+  topicId: string
   taskId: string
   prompt: string
   feedbackQueue: TaskFeedbackSignalInput[]
@@ -508,6 +515,7 @@ async function runImplementationCycle(input: {
     () => finished,
     async () => {
       await requestCancellation({ taskId: input.taskId })
+      await closeTaskTopic(input.topicId)
     },
   )
 
