@@ -20,6 +20,7 @@ import { crypto as resideCrypto } from "@reside/common/encryption"
 import { WellKnownPermissions } from "@reside/registry"
 import { toError } from "@reside/utils"
 import OpenAI from "openai"
+import { zodResponseFormat } from "openai/helpers/zod"
 import { z } from "zod"
 import { strings } from "../../locale"
 import {
@@ -144,7 +145,7 @@ export function createTaskActivities({
         baseURL: llmSecret.endpoint,
       })
 
-      const response = await client.chat.completions.create({
+      const response = await client.chat.completions.parse({
         model: llmSecret["smart-model"],
         messages: [
           {
@@ -158,31 +159,15 @@ export function createTaskActivities({
             content: taskPrompt,
           },
         ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "task_preview_title",
-            strict: true,
-            schema: {
-              type: "object",
-              additionalProperties: false,
-              required: ["title"],
-              properties: {
-                title: {
-                  type: "string",
-                },
-              },
-            },
-          },
-        },
+        response_format: zodResponseFormat(generatedTitleSchema, "task_preview_title"),
       })
 
-      const content = response.choices[0]?.message.content
-      if (content === null || content === undefined || content.trim().length === 0) {
-        throw new Error("OpenAI title response is empty")
+      const parsedTitle = response.choices[0]?.message.parsed
+      if (!parsedTitle) {
+        throw new Error("OpenAI title response is missing parsed structured output")
       }
 
-      return generatedTitleSchema.parse(JSON.parse(content))
+      return parsedTitle
     },
 
     async startPlanningInteraction({

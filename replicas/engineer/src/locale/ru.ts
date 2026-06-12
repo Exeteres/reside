@@ -41,6 +41,11 @@ export const ru = {
       message: (messageLink?: string) =>
         messageLink === undefined ? "Топик задачи создан." : `Топик задачи создан: ${messageLink}`,
     },
+    taskCreationFailed: {
+      title: "Задача не создана",
+      defaultMessage: "Подготовка задачи завершилась с ошибкой без подробного сообщения.",
+      message: (errorMessage: string) => `Подготовка задачи завершилась с ошибкой: ${errorMessage}`,
+    },
     taskPlanning: {
       inProgressTitle: "Планирование задачи",
       readyTitle: "Планирование завершено",

@@ -54,11 +54,26 @@ export const createTaskCommandHandler = defineCommandHandler({
     }
 
     const mode = invocation.parameters?.mode === "implement" ? "implement" : "plan"
-    const preparation = await startTaskPreparationChild({
-      subjectId: invocation.subjectId,
-      prompt: params.task,
-      mode,
-    })
+    let preparation: PrepareTaskWorkflowOutput
+    try {
+      preparation = await startTaskPreparationChild({
+        subjectId: invocation.subjectId,
+        prompt: params.task,
+        mode,
+      })
+    } catch (error) {
+      await sendNotification({
+        contextToken: invocation.context?.token,
+        system: invocation.context?.token === undefined,
+        channel: EngineerNotificationChannels.TASKS,
+        title: strings.notifications.taskCreationFailed.title,
+        message: block(
+          strings.notifications.taskCreationFailed.message(normalizeWorkflowErrorMessage(error)),
+        ),
+      })
+
+      throw error
+    }
 
     await sendNotification({
       contextToken: invocation.context?.token,
@@ -428,4 +443,16 @@ function consumeQueuedFeedback(feedbackQueue: TaskFeedbackSignalInput[]): string
 
 function renderMarkdownAsTelegramHtml(markdown: string): MessageElement {
   return block(markdown)
+}
+
+function normalizeWorkflowErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message.trim()
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return error.trim()
+  }
+
+  return strings.notifications.taskCreationFailed.defaultMessage
 }
