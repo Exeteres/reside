@@ -116,6 +116,11 @@ type NotificationCancelableOutput<
   | (TCancelWhen extends undefined ? never : NotificationCancelledPayload)
 )
 
+type NotificationMetadataOutput = {
+  notificationId: string
+  messageLink?: string
+}
+
 export type NotificationInput<
   TActions extends NotificationActionsInput = Record<string, never>,
   TRequiresTextResponse extends boolean = boolean,
@@ -204,6 +209,12 @@ export type NotificationInput<
    * If it becomes true first, helper returns `type: "cancelled"`.
    */
   cancelWhen?: () => boolean
+
+  /**
+   * Whether to wait for a user response operation returned by the notification service.
+   * Defaults to true.
+   */
+  waitForResponse?: boolean
 }
 
 export type NotificationOutput<
@@ -302,9 +313,17 @@ export async function sendNotification<
   TActions extends NotificationActionsInput = Record<string, never>,
   TRequiresTextResponse extends boolean = false,
   TCancelWhen extends (() => boolean) | undefined = undefined,
+  TWaitForResponse extends boolean = true,
 >(
-  input: NotificationInput<TActions, TRequiresTextResponse> & { cancelWhen?: TCancelWhen },
-): Promise<NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>> {
+  input: NotificationInput<TActions, TRequiresTextResponse> & {
+    cancelWhen?: TCancelWhen
+    waitForResponse?: TWaitForResponse
+  },
+): Promise<
+  TWaitForResponse extends false
+    ? NotificationMetadataOutput
+    : NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
+> {
   const { sendNotification } = proxyActivities<InteractionActivities>({
     startToCloseTimeout: "5 minutes",
     retry: {
@@ -357,7 +376,18 @@ export async function sendNotification<
     return {
       notificationId,
       messageLink,
-    } as NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
+    } as TWaitForResponse extends false
+      ? NotificationMetadataOutput
+      : NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
+  }
+
+  if (input.waitForResponse === false) {
+    return {
+      notificationId,
+      messageLink,
+    } as TWaitForResponse extends false
+      ? NotificationMetadataOutput
+      : NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
   }
 
   if (response.operation.id === undefined) {

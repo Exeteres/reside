@@ -106,6 +106,7 @@ export async function prepareTaskWorkflow({
   const progress = await sendNotification({
     topicId: topic.topicId,
     acquireTopic: true,
+    waitForResponse: false,
     title:
       mode === "implement"
         ? strings.notifications.taskExecution.inProgressTitle

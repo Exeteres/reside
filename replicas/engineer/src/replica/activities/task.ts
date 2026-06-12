@@ -20,7 +20,6 @@ import { crypto as resideCrypto } from "@reside/common/encryption"
 import { WellKnownPermissions } from "@reside/registry"
 import { toError } from "@reside/utils"
 import OpenAI from "openai"
-import { zodResponseFormat } from "openai/helpers/zod"
 import { z } from "zod"
 import { strings } from "../../locale"
 import {
@@ -145,29 +144,29 @@ export function createTaskActivities({
         baseURL: llmSecret.endpoint,
       })
 
-      const response = await client.chat.completions.parse({
+      const response = await client.chat.completions.create({
         model: llmSecret["smart-model"],
         messages: [
           {
             role: "system",
             content:
               "Generate a short content-less Russian title for an engineering task topic. " +
-              "Do not include implementation details, issue numbers, markdown, quotes, or final punctuation.",
+              "Do not include implementation details, issue numbers, markdown, quotes, or final punctuation. " +
+              'Return only a valid JSON object with shape {"title":"..."} and no surrounding text.',
           },
           {
             role: "user",
             content: taskPrompt,
           },
         ],
-        response_format: zodResponseFormat(generatedTitleSchema, "task_preview_title"),
       })
 
-      const parsedTitle = response.choices[0]?.message.parsed
-      if (!parsedTitle) {
-        throw new Error("OpenAI title response is missing parsed structured output")
+      const content = response.choices[0]?.message.content
+      if (content === null || content === undefined || content.trim().length === 0) {
+        throw new Error("OpenAI title response is empty")
       }
 
-      return parsedTitle
+      return parseGeneratedTaskPreviewTitle(content)
     },
 
     async startPlanningInteraction({
@@ -802,6 +801,19 @@ export function createTaskActivities({
       }
     },
   }
+}
+
+export function parseGeneratedTaskPreviewTitle(content: string): { title: string } {
+  let parsedContent: unknown
+  try {
+    parsedContent = JSON.parse(content)
+  } catch (error) {
+    throw new Error("OpenAI title response is not valid JSON", {
+      cause: error,
+    })
+  }
+
+  return generatedTitleSchema.parse(parsedContent)
 }
 
 function createDeployReplicaTool({
