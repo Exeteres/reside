@@ -7,7 +7,7 @@ import type {
 } from "@reside/api/interaction/nls.v1"
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
-import { logger, rhid } from "@reside/common"
+import { logger, renderMarkdownAsTelegramHtml, rhid } from "@reside/common"
 import { encryptedStringSchema } from "../../definitions"
 import { strings } from "../../locale"
 import { canAskNls, requestNlsAskPermission } from "./authorization"
@@ -401,7 +401,7 @@ async function sendNlsReplyDraftMessage(args: {
     substituteInText: (text: string) => Promise<string>
   }
 }): Promise<void> {
-  const text = await args.ecidSubstitutor.substituteInText(args.text)
+  const text = await renderNlsReplyText(args.text, args.ecidSubstitutor)
 
   await args.bot.api.sendMessageDraft(args.chatId, args.draftId, text, {
     message_thread_id: args.messageThreadId,
@@ -444,7 +444,7 @@ async function streamNlsReplyDraftFrames(args: {
     })
 
     hasFrame = true
-    finalText = await args.ecidSubstitutor.substituteInText(frame.text)
+    finalText = frame.text
   }
 
   return finalText
@@ -478,7 +478,7 @@ async function streamNlsReplyGroupFrames(args: {
       return ""
     }
 
-    const firstText = await args.ecidSubstitutor.substituteInText(firstFrame.value.text)
+    const firstText = await renderNlsReplyText(firstFrame.value.text, args.ecidSubstitutor)
 
     const sentMessage = await args.bot.api.sendMessage(args.chatId, firstText, {
       parse_mode: "HTML",
@@ -512,7 +512,7 @@ async function streamNlsReplyGroupFrames(args: {
           continue
         }
 
-        latestPendingText = await args.ecidSubstitutor.substituteInText(frame.value.text)
+        latestPendingText = await renderNlsReplyText(frame.value.text, args.ecidSubstitutor)
         hasPendingUpdate = true
       }
     })().catch(error => {
@@ -624,7 +624,7 @@ async function sendNlsReplyMessage(args: {
     substituteInText: (text: string) => Promise<string>
   }
 }): Promise<void> {
-  const text = await args.ecidSubstitutor.substituteInText(args.text)
+  const text = await renderNlsReplyText(args.text, args.ecidSubstitutor)
 
   await args.bot.api.sendMessage(args.chatId, text, {
     parse_mode: "HTML",
@@ -635,4 +635,14 @@ async function sendNlsReplyMessage(args: {
       message_id: args.replyToMessageId,
     },
   })
+}
+
+async function renderNlsReplyText(
+  text: string,
+  ecidSubstitutor: {
+    substituteInText: (text: string) => Promise<string>
+  },
+): Promise<string> {
+  const substitutedText = await ecidSubstitutor.substituteInText(text)
+  return renderMarkdownAsTelegramHtml(substitutedText).html
 }

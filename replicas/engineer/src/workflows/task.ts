@@ -1,10 +1,10 @@
-import type { MessageElement } from "@reside/common"
 import {
   acceptNotificationResponse,
   block,
   closeNotificationTopic,
   createNotificationTopic,
   defineCommandHandler,
+  renderMarkdownAsTelegramHtml,
   reopenNotificationTopic,
   sendNotification,
   updateNotification,
@@ -557,10 +557,6 @@ function consumeQueuedFeedback(feedbackQueue: TaskFeedbackSignalInput[]): string
   feedbackQueue.splice(0, feedbackQueue.length)
 
   return text.length === 0 ? undefined : text
-}
-
-function renderMarkdownAsTelegramHtml(markdown: string): MessageElement {
-  return block(markdown)
 }
 
 function normalizeWorkflowErrorMessage(error: unknown): string {

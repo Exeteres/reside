@@ -35,6 +35,7 @@ export {
   RESIDE_MANIFEST_FILE,
   type ResideManifest,
 } from "./manifest"
+export { renderMarkdownAsTelegramHtml } from "./markdown"
 export * from "./nls"
 export {
   createGenericOperationService,

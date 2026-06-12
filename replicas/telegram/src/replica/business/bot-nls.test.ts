@@ -381,6 +381,69 @@ describe("handleNlsMessage", () => {
     expect(createTelegramBotClient).toHaveBeenCalledTimes(1)
   })
 
+  test("renders markdown in authorized nls replies before sending telegram html", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const discoveryService = mockDeepFn<DiscoveryServiceClient>()
+    const authzService = mockDeepFn<AuthzServiceClient>()
+    const permissionRequestService = mockDeepFn<PermissionRequestServiceClient>()
+    const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
+    const telegramBot = mockDeepFn<TelegramBotLike>()
+
+    mockTelegramChat(prisma)
+    prisma.naturalLanguageInteraction.findUnique.mockResolvedValue({
+      replicaName: "alpha",
+      user: {
+        telegramRhid: rhid("20"),
+      },
+    } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    authzService.checkPermission.mockResolvedValue({ authorized: true } as never)
+    discoveryService.getSubjectEndpoint.mockResolvedValue({ endpoint: "http://alpha" } as never)
+    nlsClient.askStream.mockImplementation(async function* () {
+      yield {
+        text: "**Задача выполнена**\n\nPR #10 влит в `main`.",
+        reset: true,
+      } as never
+    })
+    telegramBot.api.sendMessageDraft.mockResolvedValue(true as never)
+    telegramBot.api.sendMessage.mockResolvedValue({} as never)
+
+    await handleNlsMessage({
+      prisma,
+      discoveryService,
+      authzService,
+      permissionRequestService,
+      crypto: testCrypto,
+      getNaturalLanguageClient: () => nlsClient,
+      createTelegramBotClient: (() => telegramBot) as never,
+      managerToken: "manager-token",
+      chatId: 10,
+      userId: 20,
+      message: {
+        message_id: 30,
+      },
+      text: "hello",
+      mentionedUsername: undefined,
+    })
+
+    const expectedHtml = "<b>Задача выполнена</b>\n\nPR #10 влит в <code>main</code>."
+
+    expect(telegramBot.api.sendMessageDraft.spy()).toHaveBeenNthCalledWith(
+      2,
+      10,
+      30,
+      expectedHtml,
+      {
+        parse_mode: "HTML",
+      },
+    )
+    expect(telegramBot.api.sendMessage.spy()).toHaveBeenCalledWith(
+      10,
+      expectedHtml,
+      expect.anything(),
+    )
+  })
+
   test("uses topic thread id for sendMessageDraft only when message is in topic", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     const discoveryService = mockDeepFn<DiscoveryServiceClient>()

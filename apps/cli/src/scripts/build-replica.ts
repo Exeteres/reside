@@ -13,6 +13,7 @@ async function main(): Promise<void> {
   const distPath = resolve(packagePath, "dist")
   const runtimeOutputPath = resolve(distPath, "main")
   const workflowsSourcePath = resolve(packagePath, "src/workflows/index.ts")
+  const e2eSourcePath = resolve(packagePath, "src/e2e/main.ts")
   const prismaConfigSourcePath = resolve(packagePath, "prisma.config.ts")
   const prismaDirectoryPath = resolve(packagePath, "prisma")
 
@@ -28,7 +29,10 @@ async function main(): Promise<void> {
     root: packagePath,
     entrypoints: ["__reside_virtual_main.ts"],
     files: {
-      "__reside_virtual_main.ts": createVirtualRuntimeMainSource(packagePath),
+      "__reside_virtual_main.ts": createVirtualRuntimeMainSource(
+        packagePath,
+        await pathExists(e2eSourcePath),
+      ),
     },
     target: "bun",
     external: ["@temporalio/*"],
@@ -147,10 +151,13 @@ function assertBuildResult(result: Bun.BuildOutput, artifactName: string): void 
   throw new Error(`Failed to build ${artifactName} with Bun.build`)
 }
 
-function createVirtualRuntimeMainSource(packagePath: string): string {
+function createVirtualRuntimeMainSource(packagePath: string, hasE2EEntrypoint: boolean): string {
   const bootstrapPath = resolve(packagePath, "src/bootstrap/main.ts")
   const replicaPath = resolve(packagePath, "src/replica/main.ts")
   const e2ePath = resolve(packagePath, "src/e2e/main.ts")
+  const e2eCaseLines = hasE2EEntrypoint
+    ? [`    await import("${e2ePath}")`, "    break"]
+    : ['    throw new Error("Replica does not define an e2e entrypoint")']
 
   return [
     'const resideBin = process.env.RESIDE_BIN ?? "bootstrap"',
@@ -163,8 +170,7 @@ function createVirtualRuntimeMainSource(packagePath: string): string {
     `    await import("${replicaPath}")`,
     "    break",
     '  case "e2e":',
-    `    await import("${e2ePath}")`,
-    "    break",
+    ...e2eCaseLines,
     "  default:",
     '    throw new Error("Unsupported RESIDE_BIN " + resideBin)',
     "}",
