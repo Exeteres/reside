@@ -38,8 +38,9 @@ export const ru = {
     },
     taskCreated: {
       title: "Задача создана",
-      message: (messageLink?: string) =>
-        messageLink === undefined ? "Топик задачи создан." : `Топик задачи создан: ${messageLink}`,
+      actions: {
+        open: "Открыть задачу",
+      },
     },
     taskCreationFailed: {
       title: "Задача не создана",

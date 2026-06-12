@@ -558,47 +558,23 @@ export function createTaskActivities({
       )
 
       try {
-        const finalMessage = await languageEngine.askStream(
-          `task-${dbTaskId}`,
-          createImplementationPrompt(
-            owner,
-            repo,
-            `replica/task-${dbTaskId}/${iteration.id}`,
-            task.issueId,
-            parsedInput.prompt,
-          ),
-          async frame => {
-            await reportImplementationProgress(frame.text)
-          },
-          {
-            workingDirectory: environment.repositoryPath,
-            configDir: environment.sessionDirPath,
-            tools: [
-              createPullRequestTool({
-                runtime,
-                owner,
-                repo,
-                repositoryPath: environment.repositoryPath,
-                branchName: `replica/task-${dbTaskId}/${iteration.id}`,
-                issueNumber: task.issueId,
-              }),
-              createDeployReplicaTool({
-                runtime,
-                permissionRequestService,
-                accessOperationService,
-                loadService,
-                alphaOperationService,
-                owner,
-                repo,
-                branchName: `replica/task-${dbTaskId}/${iteration.id}`,
-                issueNumber: task.issueId,
-              }),
-            ],
-            allowedSystemTools: ["bash", "report_intent"],
-            shouldCancel: async () => await isTaskCancellationRequested(prisma, dbTaskId),
-            cancelPollIntervalMs: 1000,
-          },
-        )
+        const finalMessage = await runImplementationLanguageStream({
+          languageEngine,
+          reportImplementationProgress,
+          environment,
+          runtime,
+          permissionRequestService,
+          accessOperationService,
+          loadService,
+          alphaOperationService,
+          owner,
+          repo,
+          dbTaskId,
+          iterationId: iteration.id,
+          issueNumber: task.issueId,
+          prompt: parsedInput.prompt,
+          prisma,
+        })
 
         summary = extractSummaryFromFinalMessage(finalMessage)
 
@@ -1426,31 +1402,16 @@ async function runPlanningSession({
     strings.notifications.taskAnalysis.title,
   )
 
-  const finalMessage = await languageEngine.askStream(
-    `task-${taskId}`,
-    createPlanningPrompt(repository, prompt, previewTitle),
-    async frame => {
-      await reportPlanningProgress(frame.text)
-    },
-    {
-      workingDirectory: environment.repositoryPath,
-      configDir: environment.sessionDirPath,
-      tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
-      allowedSystemTools: [
-        "report_intent",
-        "submit_issue_draft",
-        "read_file",
-        "list_dir",
-        "rg",
-        "view",
-        "glob",
-        "grep_search",
-        "file_search",
-        "semantic_search",
-        "fetch_webpage",
-      ],
-    },
-  )
+  const finalMessage = await runPlanningLanguageStream({
+    languageEngine,
+    environment,
+    reportPlanningProgress,
+    draftStatesBySessionId,
+    repository,
+    prompt,
+    previewTitle,
+    taskId,
+  })
 
   const finalSummary = extractSummaryFromFinalMessage(finalMessage)
   const draftState = [...draftStatesBySessionId.values()].find(state => state.submittedDraft)
@@ -1462,6 +1423,136 @@ async function runPlanningSession({
     title: draftState.submittedDraft.title,
     body: draftState.submittedDraft.body,
     summary: finalSummary || "План обновлен и готов к подтверждению.",
+  }
+}
+
+async function runPlanningLanguageStream({
+  languageEngine,
+  environment,
+  reportPlanningProgress,
+  draftStatesBySessionId,
+  repository,
+  prompt,
+  previewTitle,
+  taskId,
+}: {
+  languageEngine: LanguageEngine
+  environment: CopilotEnvironment
+  reportPlanningProgress: ReturnType<typeof createProgressReporter>
+  draftStatesBySessionId: Map<string, { submittedDraft?: z.infer<typeof issueDraftSchema> }>
+  repository: Awaited<ReturnType<EngineerAiRuntime["getRepositoryTarget"]>>
+  prompt: string
+  previewTitle: string
+  taskId: number
+}): Promise<string> {
+  try {
+    return await languageEngine.askStream(
+      `task-${taskId}`,
+      createPlanningPrompt(repository, prompt, previewTitle),
+      async frame => {
+        await reportPlanningProgress.report(frame)
+      },
+      {
+        workingDirectory: environment.repositoryPath,
+        configDir: environment.sessionDirPath,
+        tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
+        allowedSystemTools: [
+          "report_intent",
+          "submit_issue_draft",
+          "read_file",
+          "list_dir",
+          "rg",
+          "view",
+          "glob",
+          "grep_search",
+          "file_search",
+          "semantic_search",
+          "fetch_webpage",
+        ],
+      },
+    )
+  } finally {
+    await reportPlanningProgress.flush()
+  }
+}
+
+async function runImplementationLanguageStream({
+  languageEngine,
+  reportImplementationProgress,
+  environment,
+  runtime,
+  permissionRequestService,
+  accessOperationService,
+  loadService,
+  alphaOperationService,
+  owner,
+  repo,
+  dbTaskId,
+  iterationId,
+  issueNumber,
+  prompt,
+  prisma,
+}: {
+  languageEngine: LanguageEngine
+  reportImplementationProgress: ReturnType<typeof createProgressReporter>
+  environment: CopilotEnvironment
+  runtime: EngineerAiRuntime
+  permissionRequestService: PermissionRequestServiceClient
+  accessOperationService: OperationServiceClient
+  loadService: LoadServiceClient
+  alphaOperationService: OperationServiceClient
+  owner: string
+  repo: string
+  dbTaskId: number
+  iterationId: number
+  issueNumber: number
+  prompt: string
+  prisma: PrismaClient
+}): Promise<string> {
+  try {
+    return await languageEngine.askStream(
+      `task-${dbTaskId}`,
+      createImplementationPrompt(
+        owner,
+        repo,
+        `replica/task-${dbTaskId}/${iterationId}`,
+        issueNumber,
+        prompt,
+      ),
+      async frame => {
+        await reportImplementationProgress.report(frame)
+      },
+      {
+        workingDirectory: environment.repositoryPath,
+        configDir: environment.sessionDirPath,
+        tools: [
+          createPullRequestTool({
+            runtime,
+            owner,
+            repo,
+            repositoryPath: environment.repositoryPath,
+            branchName: `replica/task-${dbTaskId}/${iterationId}`,
+            issueNumber,
+          }),
+          createDeployReplicaTool({
+            runtime,
+            permissionRequestService,
+            accessOperationService,
+            loadService,
+            alphaOperationService,
+            owner,
+            repo,
+            branchName: `replica/task-${dbTaskId}/${iterationId}`,
+            issueNumber,
+          }),
+        ],
+        allowedSystemTools: ["bash", "report_intent"],
+        shouldCancel: async () => await isTaskCancellationRequested(prisma, dbTaskId),
+        cancelPollIntervalMs: 1000,
+      },
+    )
+  } finally {
+    await reportImplementationProgress.flush()
   }
 }
 

@@ -1,32 +1,20 @@
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import { describe, expect, test } from "bun:test"
 import { mockDeepFn } from "@reside/common/testing"
-import { appendProgressLine, createProgressReporter, normalizeProgressLine } from "./task-progress"
+import { createProgressReporter, normalizeProgressText } from "./task-progress"
 
-describe("normalizeProgressLine", () => {
-  test("uses first non-empty line and normalizes punctuation", () => {
-    expect(normalizeProgressLine("\n  Checking files...\nDone")).toBe("checking files")
+describe("normalizeProgressText", () => {
+  test("trims streamed text without changing content", () => {
+    expect(normalizeProgressText("\n  Checking files...\nDone  ")).toBe("Checking files...\nDone")
   })
 
   test("returns undefined for blank input", () => {
-    expect(normalizeProgressLine(" \n ")).toBeUndefined()
-  })
-})
-
-describe("appendProgressLine", () => {
-  test("keeps only recent progress lines", () => {
-    const lines: string[] = []
-
-    for (let index = 1; index <= 7; index += 1) {
-      appendProgressLine(lines, `step ${index}`)
-    }
-
-    expect(lines).toEqual(["step 3", "step 4", "step 5", "step 6", "step 7"])
+    expect(normalizeProgressText(" \n ")).toBeUndefined()
   })
 })
 
 describe("createProgressReporter", () => {
-  test("updates notification with normalized progress and actions", async () => {
+  test("updates notification with latest streamed text and actions", async () => {
     const notificationService = mockDeepFn<NotificationServiceClient>()
     const reporter = createProgressReporter(
       notificationService,
@@ -41,12 +29,13 @@ describe("createProgressReporter", () => {
       ],
     )
 
-    await reporter("  Cloning repository...  ")
+    await reporter.report({ text: "  Cloning repository...  " })
+    await reporter.flush()
 
     expect(notificationService.updateNotification.spy()).toHaveBeenCalledWith({
       notificationId: "notification-1",
       title: "Working",
-      content: "Wait\n\n> cloning repository",
+      content: "Wait\n\nCloning repository...",
       actionRows: [
         {
           actions: [
@@ -60,11 +49,54 @@ describe("createProgressReporter", () => {
     })
   })
 
+  test("escapes progress text before updating notification", async () => {
+    const notificationService = mockDeepFn<NotificationServiceClient>()
+    const reporter = createProgressReporter(notificationService, "notification-1", "Working")
+
+    await reporter.report({ text: "Use transfer <amount> <user>" })
+    await reporter.flush()
+
+    expect(notificationService.updateNotification.spy()).toHaveBeenCalledWith({
+      notificationId: "notification-1",
+      title: "Working",
+      content: "Use transfer &lt;amount&gt; &lt;user&gt;",
+      actionRows: [],
+    })
+  })
+
+  test("does not throw when progress notification update fails", async () => {
+    const notificationService = mockDeepFn<NotificationServiceClient>()
+    notificationService.updateNotification.mockRejectedValue(new Error("telegram rejected html"))
+    const reporter = createProgressReporter(notificationService, "notification-1", "Working")
+
+    await reporter.report({ text: "Use transfer <amount> <user>" })
+    await reporter.flush()
+
+    expect(notificationService.updateNotification.spy()).toHaveBeenCalledTimes(2)
+  })
+
+  test("coalesces streamed text to latest frame", async () => {
+    const notificationService = mockDeepFn<NotificationServiceClient>()
+    const reporter = createProgressReporter(notificationService, "notification-1", "Working")
+
+    await reporter.report({ text: "first" })
+    await reporter.report({ text: "second" })
+    await reporter.flush()
+
+    expect(notificationService.updateNotification.spy()).toHaveBeenLastCalledWith({
+      notificationId: "notification-1",
+      title: "Working",
+      content: "second",
+      actionRows: [],
+    })
+  })
+
   test("ignores blank progress", async () => {
     const notificationService = mockDeepFn<NotificationServiceClient>()
     const reporter = createProgressReporter(notificationService, "notification-1", "Working")
 
-    await reporter(" \n ")
+    await reporter.report({ text: " \n " })
+    await reporter.flush()
 
     expect(notificationService.updateNotification.spy()).not.toHaveBeenCalled()
   })

@@ -18,6 +18,21 @@ describe("createPlanningPrompt", () => {
 
     expect(prompt).toContain("Repository: exeteres/reside4")
     expect(prompt).toContain("Use submit_issue_draft exactly once.")
+    expect(prompt).toContain(
+      "The issue body MUST have exactly two top-level sections: 'Контекст' and 'Требования'.",
+    )
+    expect(prompt).toContain(
+      "The issue body MUST NOT be a step-by-step implementation guide, task checklist, migration checklist, or process plan.",
+    )
+    expect(prompt).toContain(
+      "For command-like capabilities, infer a concise command name and required arguments from context when they are missing.",
+    )
+    expect(prompt).toContain(
+      "When command functionality is planned, infer matching natural-language/NLS tool availability so the same capability can be used through the natural interface.",
+    )
+    expect(prompt).toContain(
+      "If the user provides a concise command signature, keep that signature unchanged.",
+    )
     expect(prompt).toContain("Preview topic title: Новая команда")
     expect(prompt).toContain("User prompt: запланируй новую команду")
   })

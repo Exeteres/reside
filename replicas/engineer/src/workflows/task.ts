@@ -80,7 +80,12 @@ export const createTaskCommandHandler = defineCommandHandler({
       system: invocation.context?.token === undefined,
       channel: EngineerNotificationChannels.TASKS,
       title: strings.notifications.taskCreated.title,
-      message: block(strings.notifications.taskCreated.message(preparation.messageLink)),
+      actions: {
+        open: {
+          title: strings.notifications.taskCreated.actions.open,
+          url: preparation.messageLink,
+        },
+      },
     })
 
     await startTaskWorkflowChild({
