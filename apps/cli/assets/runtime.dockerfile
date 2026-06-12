@@ -38,5 +38,5 @@ RUN nix profile install \
 # prefetch the project devenv shell closure so engineer runtime containers do not
 # download common tooling on the first project command.
 WORKDIR /opt/reside-devenv-cache
-COPY devenv.nix devenv.yaml devenv.lock bun.lock ./
+COPY devenv.nix devenv.yaml devenv.lock ./
 RUN devenv shell -- true
