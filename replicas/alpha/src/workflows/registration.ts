@@ -3,15 +3,7 @@ import type {
   RegistrationActivities,
   WaitForReplicaRegistrationWorkflowInput,
 } from "../definitions"
-import {
-  block,
-  bold,
-  EMPTY_LINE,
-  inline,
-  SPACE,
-  safeSleep,
-  sendNotification,
-} from "@reside/common/workflow"
+import { block, bold, inline, SPACE, safeSleep, sendNotification } from "@reside/common/workflow"
 import { proxyActivities } from "@temporalio/workflow"
 import { AlphaNotificationChannels } from "../definitions"
 import { strings } from "../locale"
@@ -79,7 +71,7 @@ export async function notifyReplicaReleaseNotesWorkflow({
         oldVersion === null ? `v${newVersion}` : `v${oldVersion} -> v${newVersion}`,
       ),
       ...(normalizedChanges
-        ? [EMPTY_LINE, bold(strings.workflows.releaseNotes.changesLabel), normalizedChanges]
+        ? ["", bold(strings.workflows.releaseNotes.changesLabel), normalizedChanges]
         : []),
     ),
   })
