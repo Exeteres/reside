@@ -184,6 +184,17 @@ export const rateReplica = defineReplica({
   },
 })
 
+export const exampleReplica = defineReplica({
+  name: "example",
+  dependencies: {
+    replicas: {
+      infra: infraReplica,
+      access: accessReplica,
+      interaction: telegramReplica,
+    },
+  },
+})
+
 export const topology = sortReplicasByDependencies([
   accessReplica,
   infraReplica,

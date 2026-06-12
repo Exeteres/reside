@@ -7,7 +7,8 @@
     "ci:check-and-fix": "CI=1 nx run-many -t typecheck,biome,test",
     "ci:check": "CI=1 nx run-many -t typecheck,biome:check,test",
     "ci:publish": "CI=1 nx run-many -t publish",
-    "format": "nx run-many -t biome"
+    "format": "nx run-many -t biome",
+    "scaffold:replica": "bun scripts/scaffold-replica.ts"
   },
   "catalog": {
     "@fastify/otel": "^0.18.1",

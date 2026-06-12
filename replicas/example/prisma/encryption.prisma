@@ -1,0 +1,9 @@
+model EncryptedContent {
+  /// The ECID of the encrypted content.
+  ecid String @id
+
+  /// The encrypted content data.
+  data String
+
+  exampleNoteContent ExampleNote? @relation(name: "ExampleNoteContent")
+}

@@ -43,8 +43,8 @@ import {
 } from "../business"
 
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
-const ENGINEER_SESSION_DIR = ".engineer-session"
-const ENGINEER_NLS_IDLE_TIMEOUT_MS = 120_000
+const ENGINEER_SESSION_DIR = "session"
+const ENGINEER_NLS_IDLE_TIMEOUT_MS = 20 * 60_000
 const ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS = [
   NlsSystemTool.Bash,
   NlsSystemTool.ReadBash,
@@ -1008,7 +1008,7 @@ async function requestReplicaLoadPermission(input: {
   })
 }
 
-function createPullRequestTool({
+function createDeliverChangesTool({
   runtime,
   owner,
   repo,
@@ -1023,16 +1023,16 @@ function createPullRequestTool({
   branchName: string
   issueNumber?: number
 }) {
-  return defineTool("create_pull_request", {
+  return defineTool("deliver_changes", {
     description:
-      "Pushes committed changes from current branch, creates pull request, merges it with rebase and deletes source branch",
+      "Validates commits, pushes current branch, creates or updates pull request, waits for ci:check, merges it with rebase, and deletes source branch",
     parameters: z.object({
       title: z.string().min(1),
       body: z.string().min(1),
     }),
     handler: async ({ title, body }) => {
       logger.info(
-        'engineer create_pull_request started branch="%s" title="%s"',
+        'engineer deliver_changes started branch="%s" title="%s"',
         branchName,
         truncateOneLine(title, 160),
       )
@@ -1043,7 +1043,7 @@ function createPullRequestTool({
 
         if (currentBranch !== branchName) {
           throw new Error(
-            `Before create_pull_request (create_pr_branch), switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
+            `Before deliver_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
           )
         }
 
@@ -1122,7 +1122,7 @@ function createPullRequestTool({
           .catch(() => undefined)
 
         logger.info(
-          'engineer create_pull_request completed branch="%s" pr_number="%s"',
+          'engineer deliver_changes completed branch="%s" pr_number="%s"',
           branchName,
           String(pullRequest.number),
         )
@@ -1137,12 +1137,12 @@ function createPullRequestTool({
         const responseDetails = rewriteHint ? `${errorDetails}. ${rewriteHint}` : errorDetails
         logger.error(
           { error: toError(error) },
-          'engineer create_pull_request failed branch="%s" details="%s"',
+          'engineer deliver_changes failed branch="%s" details="%s"',
           branchName,
-          errorDetails,
+          responseDetails,
         )
 
-        return `create_pull_request failed: ${responseDetails}`
+        return `deliver_changes failed: ${responseDetails}`
       }
     },
   })
@@ -1562,7 +1562,7 @@ async function runImplementationLanguageStream({
         configDir: environment.sessionDirPath,
         idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [
-          createPullRequestTool({
+          createDeliverChangesTool({
             runtime,
             owner,
             repo,
@@ -1621,7 +1621,7 @@ async function createCopilotEnvironment(
   const worktreePath = join(tempRoot, "workspace")
   const repositoryPath = join(worktreePath, repository.name)
   const branchName = `replica/task-${taskId}/${iterationId}`
-  const sessionDirPath = join(repositoryPath, ENGINEER_SESSION_DIR)
+  const sessionDirPath = join(tempRoot, ENGINEER_SESSION_DIR)
 
   await rm(tempRoot, { recursive: true, force: true })
   await mkdir(worktreePath, { recursive: true })

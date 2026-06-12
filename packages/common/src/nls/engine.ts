@@ -32,6 +32,7 @@ const STORAGE_INIT_RETRY_MS = 1000
 const STORAGE_INIT_MAX_ATTEMPTS = 5
 const STORAGE_OPERATION_WAIT_TIMEOUT_MS = 30_000
 const DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS = 120_000
+const BASH_RESULT_LOG_OUTPUT_MAX_LENGTH = 4000
 const LLM_SECRET_NAME = "llm"
 
 export type LanguageEngineModelTier = "light" | "smart"
@@ -274,6 +275,12 @@ export async function createLanguageEngine(
               }
             }
 
+            logger.warn(
+              'nls tool execution denied session_id="%s" tool_name="%s"',
+              normalizedSessionId,
+              toolInvocation.toolName,
+            )
+
             return {
               permissionDecision: "deny" as const,
               permissionDecisionReason: `Tool "${toolInvocation.toolName}" is not allowed in language engine`,
@@ -450,6 +457,7 @@ export async function createLanguageEngine(
 }
 
 function registerLanguageSessionLogs(session: CopilotSession, sessionId: string): () => void {
+  const toolNamesByCallId = new Map<string, string>()
   const unsubscribers = [
     session.on("assistant.message", event => {
       const content = event.data.content.trim()
@@ -466,6 +474,7 @@ function registerLanguageSessionLogs(session: CopilotSession, sessionId: string)
     }),
     session.on("tool.execution_start", event => {
       const argumentSummary = summarizeToolArguments(event.data.toolName, event.data.arguments)
+      toolNamesByCallId.set(event.data.toolCallId, event.data.toolName)
 
       logger.info(
         'nls tool execution started session_id="%s" tool_name="%s" tool_call_id="%s" args="%s"',
@@ -475,6 +484,26 @@ function registerLanguageSessionLogs(session: CopilotSession, sessionId: string)
         argumentSummary,
       )
     }),
+    session.on("tool.execution_complete", event => {
+      const toolName = toolNamesByCallId.get(event.data.toolCallId)
+      toolNamesByCallId.delete(event.data.toolCallId)
+
+      if (toolName !== "bash") {
+        return
+      }
+
+      const bashResult = summarizeBashToolResult(event.data.result)
+
+      logger.info(
+        'nls bash execution completed session_id="%s" tool_call_id="%s" success="%s" exit_code="%s" output_truncated="%s" output="%s"',
+        sessionId,
+        event.data.toolCallId,
+        String(bashResult.success),
+        bashResult.exitCode === undefined ? "unknown" : String(bashResult.exitCode),
+        String(bashResult.outputTruncated),
+        bashResult.output,
+      )
+    }),
   ]
 
   return () => {
@@ -482,6 +511,75 @@ function registerLanguageSessionLogs(session: CopilotSession, sessionId: string)
       unsubscribe()
     }
   }
+}
+
+function summarizeBashToolResult(result: unknown): {
+  exitCode?: number
+  output: string
+  outputTruncated: boolean
+  success: boolean
+} {
+  const terminalContent = collectTerminalResultContent(result)
+  const output = terminalContent.output.length > 0 ? terminalContent.output : collectTextResultContent(result)
+  const normalizedOutput = output.replace(/\s+/g, " ").trim()
+  const truncatedOutput = truncateOneLine(output, BASH_RESULT_LOG_OUTPUT_MAX_LENGTH)
+
+  return {
+    exitCode: terminalContent.exitCode,
+    output: truncatedOutput,
+    outputTruncated: normalizedOutput.length > BASH_RESULT_LOG_OUTPUT_MAX_LENGTH,
+    success: terminalContent.exitCode === undefined || terminalContent.exitCode === 0,
+  }
+}
+
+function collectTerminalResultContent(result: unknown): { exitCode?: number; output: string } {
+  const resultObject = asRecord(result)
+  const contents = resultObject && Array.isArray(resultObject.contents) ? resultObject.contents : []
+  const terminalOutputs: string[] = []
+  let exitCode: number | undefined
+
+  for (const content of contents) {
+    const contentObject = asRecord(content)
+    if (!contentObject || contentObject.type !== "terminal") {
+      continue
+    }
+
+    if (typeof contentObject.text === "string") {
+      terminalOutputs.push(contentObject.text)
+    }
+    if (typeof contentObject.exitCode === "number") {
+      exitCode = contentObject.exitCode
+    }
+  }
+
+  return {
+    exitCode,
+    output: terminalOutputs.join("\n"),
+  }
+}
+
+function collectTextResultContent(result: unknown): string {
+  const resultObject = asRecord(result)
+  if (!resultObject) {
+    return ""
+  }
+
+  if (typeof resultObject.detailedContent === "string") {
+    return resultObject.detailedContent
+  }
+  if (typeof resultObject.content === "string") {
+    return resultObject.content
+  }
+
+  return ""
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined
+  }
+
+  return value as Record<string, unknown>
 }
 
 function watchLanguageSessionCancellation({

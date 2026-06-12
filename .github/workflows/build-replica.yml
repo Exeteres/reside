@@ -51,4 +51,4 @@ jobs:
         run: |
           set -euo pipefail
           cd "replicas/${{ inputs.replica_name }}"
-          bun ../../apps/cli/src/main.ts build --push --tag latest
+          bun ../../apps/cli/src/main.ts build --push

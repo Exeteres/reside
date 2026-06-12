@@ -10,6 +10,10 @@ To add a new replica:
 2. Add a package in `replicas/<replica-name>/`.
 3. New replica packages must include `reside.manifest.json` with `version` set to `0.1.0` and `image` set to the replica image repository, and include a `CHANGELOG.md` file containing an initial changelog entry describing the initial release.
 
+When a new replica should start from an existing replica, prefer `bun scripts/scaffold-replica.ts example <new-replica> [russian-title]` instead of manually copying directories, unless another existing replica is a closer domain or architecture match.
+The `example` replica is a scaffold source only and must not be registered in topology.
+The scaffold script skips dependency directories, generated clients, session state, and old migrations, preserves symlinks, initializes `package.json`, `reside.manifest.json`, and `CHANGELOG.md`, and leaves domain-specific logic for manual edits.
+
 ## Replica package structure
 
 Each replica package must follow this structure:

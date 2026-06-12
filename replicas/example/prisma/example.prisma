@@ -1,0 +1,30 @@
+/// A small domain record that demonstrates common replica persistence patterns.
+///
+/// It keeps searchable metadata as regular columns, stores sensitive user content
+/// through `EncryptedContent`, and points to an object stored in S3-compatible storage.
+model ExampleNote {
+  id String @id @default(cuid())
+
+  /// Non-sensitive display title used for lookup and UI summaries.
+  title String
+
+  /// Opaque origin label for the note, such as the command or integration that created it.
+  source String
+
+  /// The ECID of the encrypted note body.
+  contentEcid String @unique
+
+  /// The encrypted note body.
+  content EncryptedContent @relation(name: "ExampleNoteContent", fields: [contentEcid], references: [ecid], onDelete: Restrict)
+
+  /// The S3 object key for binary or large supplemental note content.
+  objectKey String
+
+  /// The time when the note record was created.
+  createdAt DateTime @default(now())
+
+  /// The time when the note metadata was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}

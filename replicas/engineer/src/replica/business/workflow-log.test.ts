@@ -30,4 +30,13 @@ describe("extractFailureMessageFromLog", () => {
 
     expect(extractFailureMessageFromLog(log)).toBe("final status unknown")
   })
+
+  test("prefers specific compiler failure over generic runner failure", () => {
+    const log = [
+      "2026-06-12T22:15:06.000Z src/workflows/bank.ts:20:53 - error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.",
+      "2026-06-12T22:15:07.1575736Z ##[error]Process completed with exit code 1.",
+    ].join("\n")
+
+    expect(extractFailureMessageFromLog(log)).toContain("error TS2345")
+  })
 })

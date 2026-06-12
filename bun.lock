@@ -190,6 +190,30 @@
         "zod": "catalog:",
       },
     },
+    "replicas/example": {
+      "name": "@replicas/example",
+      "dependencies": {
+        "@aws-sdk/client-s3": "^3.914.0",
+        "@connectrpc/connect": "catalog:",
+        "@connectrpc/connect-fastify": "catalog:",
+        "@github/copilot-sdk": "catalog:",
+        "@temporalio/client": "catalog:",
+        "@temporalio/worker": "catalog:",
+        "@temporalio/workflow": "catalog:",
+        "fastify": "catalog:",
+        "pg": "catalog:",
+        "prisma": "catalog:",
+      },
+      "devDependencies": {
+        "@prisma/client": "catalog:",
+        "@reside/api": "workspace:*",
+        "@reside/common": "workspace:*",
+        "@reside/registry": "workspace:*",
+        "@types/pg": "catalog:",
+        "@typescript/native-preview": "catalog:",
+        "zod": "catalog:",
+      },
+    },
     "replicas/infra": {
       "name": "@replicas/infra",
       "dependencies": {
@@ -950,6 +974,8 @@
     "@replicas/alpha": ["@replicas/alpha@workspace:replicas/alpha"],
 
     "@replicas/engineer": ["@replicas/engineer@workspace:replicas/engineer"],
+
+    "@replicas/example": ["@replicas/example@workspace:replicas/example"],
 
     "@replicas/infra": ["@replicas/infra@workspace:replicas/infra"],
 
