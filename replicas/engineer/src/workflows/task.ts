@@ -1,11 +1,12 @@
 import type { MessageElement } from "@reside/common"
 import {
   block,
+  createNotificationTopic,
   defineCommandHandler,
   sendNotification,
   updateNotification,
 } from "@reside/common/workflow"
-import { log, proxyActivities } from "@temporalio/workflow"
+import { defineQuery, log, proxyActivities, setHandler } from "@temporalio/workflow"
 import {
   createTaskCommand,
   EngineerNotificationChannels,
@@ -23,6 +24,8 @@ const {
   reviveTaskFromFeedback,
 } = proxyActivities<EngineerTaskActivities>({ scheduleToCloseTimeout: "30 minutes" })
 
+const taskMessageLinkQuery = defineQuery<string | undefined>("taskMessageLink")
+
 export const createTaskCommandHandler = defineCommandHandler({
   command: createTaskCommand,
   async handler({ params, invocation }) {
@@ -30,58 +33,78 @@ export const createTaskCommandHandler = defineCommandHandler({
       throw new Error("Command invocation is missing subjectId")
     }
 
+    let taskMessageLink: string | undefined
+    setHandler(taskMessageLinkQuery, () => taskMessageLink)
+
+    const mode = invocation.parameters?.mode === "implement" ? "implement" : "plan"
+
     let planning = await runPlanningInteraction({
       prompt: params.task,
       subjectId: invocation.subjectId,
     })
 
-    while (true) {
-      const planningReply = await updateNotification({
-        notificationId: planning.notificationId,
-        title: strings.notifications.taskPlanning.readyTitle,
-        content: renderMarkdownAsTelegramHtml(planning.result.resultSummary),
-        actions: {
-          issue: {
-            title: strings.notifications.taskPlanning.actions.issue,
-            url: planning.result.issueUrl,
-          },
-          approve: {
-            title: strings.notifications.taskPlanning.actions.approve,
-          },
-          cancel: {
-            title: strings.notifications.taskPlanning.actions.cancel,
-          },
-        },
-        requiresTextResponse: true,
-      })
+    const topic = await createNotificationTopic({
+      channel: EngineerNotificationChannels.TASKS,
+      title: planning.result.issueTitle,
+    })
 
-      if (planningReply.type === "action") {
-        if (planningReply.actionName === "cancel") {
-          await requestCancellation({
+    if (mode === "plan") {
+      while (true) {
+        const planningReply = await sendNotification({
+          topicId: topic.topicId,
+          acquireTopic: true,
+          channel: EngineerNotificationChannels.TASKS,
+          title: strings.notifications.taskPlanning.readyTitle,
+          message: renderMarkdownAsTelegramHtml(planning.result.resultSummary),
+          actions: {
+            issue: {
+              title: strings.notifications.taskPlanning.actions.issue,
+              url: planning.result.issueUrl,
+            },
+            approve: {
+              title: strings.notifications.taskPlanning.actions.approve,
+            },
+            cancel: {
+              title: strings.notifications.taskPlanning.actions.cancel,
+            },
+          },
+          requiresTextResponse: true,
+        })
+        taskMessageLink ??= planningReply.messageLink
+
+        if (planningReply.type === "action") {
+          if (planningReply.actionName === "cancel") {
+            await requestCancellation({
+              taskId: planning.result.taskId,
+            })
+
+            return
+          }
+
+          await approveTask({
             taskId: planning.result.taskId,
           })
 
-          return
+          break
         }
 
-        await approveTask({
-          taskId: planning.result.taskId,
+        await updateNotification({
+          notificationId: planningReply.notificationId,
+          title: strings.notifications.taskAnalysis.title,
+          content: block(strings.notifications.taskAnalysis.updating),
+          actions: {},
+          requiresTextResponse: false,
         })
 
-        break
+        planning = await runPlanningFeedbackInteraction({
+          notificationId: planningReply.notificationId,
+          taskId: planning.result.taskId,
+          feedback: planningReply.text,
+        })
       }
-
-      await updateNotification({
-        notificationId: planning.notificationId,
-        title: strings.notifications.taskAnalysis.title,
-        content: block(strings.notifications.taskAnalysis.updating),
-        actions: {},
-        requiresTextResponse: false,
-      })
-
-      planning = await runPlanningFeedbackInteraction({
+    } else {
+      await approveTask({
         taskId: planning.result.taskId,
-        feedback: planningReply.text,
       })
     }
 
@@ -97,10 +120,13 @@ export const createTaskCommandHandler = defineCommandHandler({
 
       const implementationNotification = await sendNotification({
         contextToken: implementationContextToken,
+        topicId: topic.topicId,
+        acquireTopic: true,
         channel: EngineerNotificationChannels.TASKS,
         title: strings.notifications.taskExecution.inProgressTitle,
         message: block(strings.notifications.taskExecution.inProgressMessage),
       })
+      taskMessageLink ??= implementationNotification.messageLink
 
       log.info("engineer workflow implementation notification sent", {
         taskId,
@@ -432,26 +458,22 @@ function escapeTelegramHtml(value: string): string {
 }
 
 async function runPlanningFeedbackInteraction({
+  notificationId,
   taskId,
   feedback,
 }: {
+  notificationId: string
   taskId: string
   feedback: string
 }) {
-  const notification = await sendNotification({
-    channel: EngineerNotificationChannels.TASKS,
-    title: strings.notifications.taskAnalysis.title,
-    message: block(strings.notifications.taskAnalysis.updating),
-  })
-
   const result = await submitPlanningFeedbackInteraction({
     taskId,
     feedback,
-    progressNotificationId: notification.notificationId,
+    progressNotificationId: notificationId,
   })
 
   return {
-    notificationId: notification.notificationId,
+    notificationId,
     result,
   }
 }

@@ -5,17 +5,16 @@ import type { NotificationServiceClient } from "@reside/api/interaction/notifica
 import type { PrismaClient } from "../../database"
 import type { EngineerTaskActivities } from "../../definitions"
 import type { EngineerAiRuntime } from "../business"
-import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, rm } from "node:fs/promises"
 import { join } from "node:path"
-import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3"
-import { type CopilotSession, defineTool, type SessionConfig } from "@github/copilot-sdk"
+import { defineTool } from "@github/copilot-sdk"
 import { waitForOperationSuccess } from "@reside/api"
 import {
+  type LanguageEngine,
   link,
   logger,
   parseResideManifest,
   RESIDE_MANIFEST_FILE,
-  type StorageBucketService,
 } from "@reside/common"
 import { WellKnownPermissions } from "@reside/registry"
 import { toError } from "@reside/utils"
@@ -23,20 +22,25 @@ import { z } from "zod"
 import { strings } from "../../locale"
 import {
   CommitValidationError,
+  createImplementationPrompt,
+  createPlanningPrompt,
+  createProgressReporter,
   extractFailureMessageFromLog,
+  extractSummaryFromFinalMessage,
   extractWorkflowRunId,
+  getNextIterationNumber,
+  getRepositoryIssueByNumber,
   hasIssueClosingTagAtBodyEnd,
+  isTaskCancellationRequested,
+  parseDbTaskId,
+  syncTaskIssueState,
+  upsertTaskIssue,
   validateBranchCommitLogOutput,
   validatePullRequestTitle,
 } from "../business"
 
-const COPILOT_SESSION_TIMEOUT_MS = 20 * 60 * 1000
-const PROGRESS_NOTIFICATION_HISTORY_LIMIT = 5
-const ENGINEER_SESSION_ARCHIVE_EXTENSION = "tgz"
-const ENGINEER_SESSION_ARCHIVE_PREFIX = "sessions"
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = ".engineer-session"
-const ENGINEER_SESSION_STATE_DIR = "session-state"
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
@@ -89,31 +93,29 @@ type CopilotEnvironment = {
   repositoryPath: string
   sessionDirPath: string
   taskId: number
-  storageBucketService: StorageBucketService
-  sessionId: string | undefined
   dispose: () => Promise<void>
 }
 
 type TaskActivityServices = {
   runtime: EngineerAiRuntime
+  languageEngine: LanguageEngine
   prisma: PrismaClient
   notificationService: NotificationServiceClient
   permissionRequestService: PermissionRequestServiceClient
   accessOperationService: OperationServiceClient
   loadService: LoadServiceClient
   alphaOperationService: OperationServiceClient
-  storageBucketService: StorageBucketService
 }
 
 export function createTaskActivities({
   runtime,
+  languageEngine,
   prisma,
   notificationService,
   permissionRequestService,
   accessOperationService,
   loadService,
   alphaOperationService,
-  storageBucketService,
 }: TaskActivityServices): EngineerTaskActivities {
   return {
     async startPlanningInteraction({ subjectId, prompt, progressNotificationId }) {
@@ -146,15 +148,10 @@ export function createTaskActivities({
       let environment: CopilotEnvironment | undefined
 
       try {
-        environment = await createCopilotEnvironment(
-          runtime,
-          storageBucketService,
-          task.id,
-          iteration.id,
-        )
+        environment = await createCopilotEnvironment(runtime, task.id, iteration.id)
 
         const draft = await runPlanningSession({
-          runtime,
+          languageEngine,
           environment,
           notificationService,
           progressNotificationId: parsedInput.progressNotificationId,
@@ -163,15 +160,15 @@ export function createTaskActivities({
           taskId: task.id,
         })
 
-        const issue = await upsertTaskIssue({
+        const issue = await upsertTaskIssue(
           prisma,
           runtime,
-          taskId: task.id,
-          owner: repository.owner,
-          repo: repository.name,
-          issueTitle: draft.title,
-          issueBody: draft.body,
-        })
+          task.id,
+          repository.owner,
+          repository.name,
+          draft.title,
+          draft.body,
+        )
 
         await prisma.taskIteration.update({
           where: {
@@ -221,13 +218,7 @@ export function createTaskActivities({
           },
         })
 
-        await syncTaskIssueState({
-          runtime,
-          prisma,
-          taskId: task.id,
-          state: "CLOSED",
-          stateReason: "NOT_PLANNED",
-        })
+        await syncTaskIssueState(prisma, runtime, task.id, "CLOSED", "NOT_PLANNED")
 
         throw error
       } finally {
@@ -271,16 +262,11 @@ export function createTaskActivities({
         },
       })
 
-      const environment = await createCopilotEnvironment(
-        runtime,
-        storageBucketService,
-        dbTaskId,
-        iteration.id,
-      )
+      const environment = await createCopilotEnvironment(runtime, dbTaskId, iteration.id)
 
       try {
         const draft = await runPlanningSession({
-          runtime,
+          languageEngine,
           environment,
           notificationService,
           progressNotificationId: parsedInput.progressNotificationId,
@@ -289,15 +275,15 @@ export function createTaskActivities({
           taskId: dbTaskId,
         })
 
-        const issue = await upsertTaskIssue({
+        const issue = await upsertTaskIssue(
           prisma,
           runtime,
-          taskId: dbTaskId,
-          owner: repository.owner,
-          repo: repository.name,
-          issueTitle: draft.title,
-          issueBody: draft.body,
-        })
+          dbTaskId,
+          repository.owner,
+          repository.name,
+          draft.title,
+          draft.body,
+        )
 
         await prisma.taskIteration.update({
           where: {
@@ -346,13 +332,7 @@ export function createTaskActivities({
           },
         })
 
-        await syncTaskIssueState({
-          runtime,
-          prisma,
-          taskId: dbTaskId,
-          state: "CLOSED",
-          stateReason: "NOT_PLANNED",
-        })
+        await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
 
         throw error
       } finally {
@@ -374,12 +354,7 @@ export function createTaskActivities({
         },
       })
 
-      await syncTaskIssueState({
-        runtime,
-        prisma,
-        taskId: dbTaskId,
-        state: "OPEN",
-      })
+      await syncTaskIssueState(prisma, runtime, dbTaskId, "OPEN")
     },
 
     async requestCancellation({ taskId }) {
@@ -456,13 +431,7 @@ export function createTaskActivities({
 
       logger.info('engineer cancellation completed immediately task_id="%s"', String(dbTaskId))
 
-      await syncTaskIssueState({
-        runtime,
-        prisma,
-        taskId: dbTaskId,
-        state: "CLOSED",
-        stateReason: "NOT_PLANNED",
-      })
+      await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
     },
 
     async runImplementationInteraction({ taskId, prompt, progressNotificationId }) {
@@ -506,132 +475,68 @@ export function createTaskActivities({
         },
       })
 
-      const environment = await createCopilotEnvironment(
-        runtime,
-        storageBucketService,
-        dbTaskId,
-        iteration.id,
-      )
-      const copilotClient = runtime.getCopilotClient()
+      const environment = await createCopilotEnvironment(runtime, dbTaskId, iteration.id)
       const [owner, repo] = [repository.owner, repository.name]
 
       let summary = ""
       let failureMessage = ""
-      const reportImplementationProgress = createProgressReporter({
+      const reportImplementationProgress = createProgressReporter(
         notificationService,
-        notificationId: parsedInput.progressNotificationId,
-        title: strings.notifications.taskExecution.inProgressTitle,
-        prefix: strings.notifications.taskExecution.runningAwaitingInput,
-        actions: [
+        parsedInput.progressNotificationId,
+        strings.notifications.taskExecution.inProgressTitle,
+        strings.notifications.taskExecution.runningAwaitingInput,
+        [
           {
             name: "cancel",
             title: strings.notifications.taskExecution.actions.cancel,
           },
         ],
-      })
+      )
 
       try {
-        const sessionConfig: SessionConfig = {
-          model: "gpt-5.3-codex",
-          workingDirectory: environment.repositoryPath,
-          configDir: environment.sessionDirPath,
-          onPermissionRequest: async () => ({ kind: "approved" as const }),
-          tools: [
-            createPullRequestTool({
-              runtime,
-              owner,
-              repo,
-              repositoryPath: environment.repositoryPath,
-              branchName: `replica/task-${dbTaskId}/${iteration.id}`,
-              issueNumber: task.issueId,
-            }),
-            createDeployReplicaTool({
-              runtime,
-              permissionRequestService,
-              accessOperationService,
-              loadService,
-              alphaOperationService,
-              owner,
-              repo,
-              branchName: `replica/task-${dbTaskId}/${iteration.id}`,
-              issueNumber: task.issueId,
-            }),
-          ],
-          hooks: {
-            onPreToolUse: async () => {
-              return {
-                permissionDecision: "allow" as const,
-              }
-            },
+        const finalMessage = await languageEngine.askStream(
+          `task-${dbTaskId}`,
+          createImplementationPrompt(
+            owner,
+            repo,
+            `replica/task-${dbTaskId}/${iteration.id}`,
+            task.issueId,
+            parsedInput.prompt,
+          ),
+          async frame => {
+            await reportImplementationProgress(frame.text)
           },
-        }
-
-        const session = await createOrResumeSession({
-          copilotClient,
-          environment,
-          sessionConfig,
-          flow: "implementation",
-          taskId: dbTaskId,
-          iterationId: iteration.id,
-        })
-
-        const unsubscribeRealtimeLogs = registerRealtimeSessionLogs(
-          session,
-          "implementation",
-          reportImplementationProgress,
+          {
+            workingDirectory: environment.repositoryPath,
+            configDir: environment.sessionDirPath,
+            tools: [
+              createPullRequestTool({
+                runtime,
+                owner,
+                repo,
+                repositoryPath: environment.repositoryPath,
+                branchName: `replica/task-${dbTaskId}/${iteration.id}`,
+                issueNumber: task.issueId,
+              }),
+              createDeployReplicaTool({
+                runtime,
+                permissionRequestService,
+                accessOperationService,
+                loadService,
+                alphaOperationService,
+                owner,
+                repo,
+                branchName: `replica/task-${dbTaskId}/${iteration.id}`,
+                issueNumber: task.issueId,
+              }),
+            ],
+            allowedSystemTools: ["bash", "report_intent"],
+            shouldCancel: async () => await isTaskCancellationRequested(prisma, dbTaskId),
+            cancelPollIntervalMs: 1000,
+          },
         )
 
-        const cancellationWatcher = watchRequestedCancellation({
-          prisma,
-          taskId: dbTaskId,
-          onCancel: async () => {
-            await session.disconnect()
-          },
-        })
-
-        try {
-          const finalMessage = await session.sendAndWait(
-            {
-              prompt: [
-                `Repository: ${owner}/${repo}`,
-                `Branch: replica/task-${dbTaskId}/${iteration.id}`,
-                `Issue: #${task.issueId}`,
-                "You are in implementation phase.",
-                "Git environment is already configured for commits on the provided branch.",
-                "You may use any git commands needed during implementation.",
-                "Before calling create_pull_request (create_pr_branch), ensure git HEAD is on the initial branch shown above.",
-                "Commit messages must be lowercase conventional commits with a single-line subject.",
-                "Do not create commit body or trailers.",
-                "When multiple invalid commits exist, rewrite current-branch history as needed before creating PR.",
-                "Use create_pull_request tool to push commits, create PR, merge with rebase, and delete source branch.",
-                "Commit messages MUST follow conventional commits format and stay lowercase (single-line subject only, no commit body).",
-                "For simple or tightly related changes prefer a single commit; for larger or clearly separable phases prefer multiple focused commits.",
-                "If create_pull_request fails with commit validation, rewrite invalid commit message(s) first (at minimum amend latest commit), then retry create_pull_request.",
-                "Before calling deploy_replica, commit your changes. If you are confident deploy is safe without PR, you may deploy directly.",
-                "deploy_replica can be called without version bump when no meaningful replica changes were made.",
-                "Do not bump replica version for dependency-only changes (packages or other replicas) or when there is no meaningful behavior change.",
-                "When repository review is needed, call create_pull_request with your own descriptive title before deploy.",
-                "PR title must be a regular capitalized title and MUST NOT be a conventional-commit title.",
-                "All details belong to PR body, not commit body.",
-                "PR body MUST end with issue closing tag (for example: Closes #<issue-number>).",
-                "Pull requests must use rebase merge and delete source branch.",
-                "When PR is used, deploy_replica should be called only after merged PR exists on this branch.",
-                "If deploy_replica fails, report the exact failure reason and continue by fixing the root cause.",
-                "Finish with a concise russian summary in one paragraph (prefer 3-5 short sentences).",
-                "Focus the summary on new, useful information for the user: key changes, important outcomes, risks, trade-offs, and immediate next implications.",
-                "Avoid process checklist narration and avoid describing rule compliance unless it changes user decisions.",
-                "Prefer plain prose summary (no lists, no headings, no multiple paragraphs) unless absolutely necessary.",
-                `Current user request: ${parsedInput.prompt}`,
-              ].join("\n"),
-            },
-            COPILOT_SESSION_TIMEOUT_MS,
-          )
-
-          summary = extractSummaryFromFinalMessage(finalMessage?.data.content)
-        } finally {
-          cancellationWatcher.stop()
-          unsubscribeRealtimeLogs()
-        }
+        summary = extractSummaryFromFinalMessage(finalMessage)
 
         const currentTask = await prisma.task.findUnique({
           where: {
@@ -675,13 +580,7 @@ export function createTaskActivities({
             },
           })
 
-          await syncTaskIssueState({
-            runtime,
-            prisma,
-            taskId: dbTaskId,
-            state: "CLOSED",
-            stateReason: "NOT_PLANNED",
-          })
+          await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
 
           await environment.dispose()
 
@@ -712,13 +611,7 @@ export function createTaskActivities({
           },
         })
 
-        await syncTaskIssueState({
-          runtime,
-          prisma,
-          taskId: dbTaskId,
-          state: "CLOSED",
-          stateReason: "COMPLETED",
-        })
+        await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "COMPLETED")
 
         await environment.dispose()
 
@@ -729,6 +622,38 @@ export function createTaskActivities({
         })
       } catch (error) {
         failureMessage = error instanceof Error ? error.message : String(error)
+
+        if (await isTaskCancellationRequested(prisma, dbTaskId)) {
+          failureMessage = strings.notifications.taskExecution.cancelledSummary
+
+          await prisma.task.update({
+            where: {
+              id: dbTaskId,
+            },
+            data: {
+              status: "CANCELLED",
+            },
+          })
+
+          await prisma.taskIteration.update({
+            where: {
+              id: iteration.id,
+            },
+            data: {
+              errorMessage: failureMessage,
+            },
+          })
+
+          await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+
+          await environment.dispose()
+
+          return implementationResultSchema.parse({
+            taskId: parsedInput.taskId,
+            status: "CANCELLED",
+            errorMessage: failureMessage,
+          })
+        }
 
         await prisma.task.update({
           where: {
@@ -748,13 +673,7 @@ export function createTaskActivities({
           },
         })
 
-        await syncTaskIssueState({
-          runtime,
-          prisma,
-          taskId: dbTaskId,
-          state: "CLOSED",
-          stateReason: "NOT_PLANNED",
-        })
+        await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
 
         await environment.dispose()
 
@@ -779,12 +698,7 @@ export function createTaskActivities({
         },
       })
 
-      await syncTaskIssueState({
-        runtime,
-        prisma,
-        taskId: dbTaskId,
-        state: "OPEN",
-      })
+      await syncTaskIssueState(prisma, runtime, dbTaskId, "OPEN")
     },
 
     async getTaskSnapshot({ taskId }) {
@@ -1406,7 +1320,7 @@ async function validateBranchCommitMessages(
 }
 
 async function runPlanningSession({
-  runtime,
+  languageEngine,
   environment,
   notificationService,
   progressNotificationId,
@@ -1414,7 +1328,7 @@ async function runPlanningSession({
   repository,
   taskId,
 }: {
-  runtime: EngineerAiRuntime
+  languageEngine: LanguageEngine
   environment: CopilotEnvironment
   notificationService: NotificationServiceClient
   progressNotificationId: string
@@ -1426,97 +1340,41 @@ async function runPlanningSession({
     string,
     { submittedDraft?: z.infer<typeof issueDraftSchema> }
   >()
-  const copilotClient = runtime.getCopilotClient()
 
-  const sessionConfig: SessionConfig = {
-    model: "gpt-5.3-codex",
-    workingDirectory: environment.repositoryPath,
-    configDir: environment.sessionDirPath,
-    onPermissionRequest: async () => ({ kind: "approved" as const }),
-    tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
-    hooks: {
-      onPreToolUse: async toolInvocation => {
-        if (
-          [
-            "report_intent",
-            "submit_issue_draft",
-            "read_file",
-            "list_dir",
-            "rg",
-            "view",
-            "glob",
-            "grep_search",
-            "file_search",
-            "semantic_search",
-            "fetch_webpage",
-          ].includes(toolInvocation.toolName)
-        ) {
-          return {
-            permissionDecision: "allow" as const,
-          }
-        }
-
-        return {
-          permissionDecision: "deny" as const,
-          permissionDecisionReason: "Planning phase allows only read-only and reporting tools",
-        }
-      },
-    },
-  }
-
-  const session = await createOrResumeSession({
-    copilotClient,
-    environment,
-    sessionConfig,
-    flow: "planning",
-    taskId,
-  })
-
-  const reportPlanningProgress = createProgressReporter({
+  const reportPlanningProgress = createProgressReporter(
     notificationService,
-    notificationId: progressNotificationId,
-    title: strings.notifications.taskAnalysis.title,
-  })
-
-  const unsubscribeRealtimeLogs = registerRealtimeSessionLogs(
-    session,
-    "planning",
-    reportPlanningProgress,
+    progressNotificationId,
+    strings.notifications.taskAnalysis.title,
   )
 
-  let finalSummary = ""
+  const finalMessage = await languageEngine.askStream(
+    `task-${taskId}`,
+    createPlanningPrompt(repository, prompt),
+    async frame => {
+      await reportPlanningProgress(frame.text)
+    },
+    {
+      workingDirectory: environment.repositoryPath,
+      configDir: environment.sessionDirPath,
+      tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
+      allowedSystemTools: [
+        "report_intent",
+        "submit_issue_draft",
+        "read_file",
+        "list_dir",
+        "rg",
+        "view",
+        "glob",
+        "grep_search",
+        "file_search",
+        "semantic_search",
+        "fetch_webpage",
+      ],
+    },
+  )
 
-  try {
-    const finalMessage = await session.sendAndWait(
-      {
-        prompt: [
-          `Repository: ${repository.owner}/${repository.name}`,
-          "Planning phase: produce issue draft update only.",
-          "Issue title, issue body, and plan summary MUST be in russian.",
-          "Do not invent tasks, requirements, or technical details that are not present in the user prompt or repository evidence.",
-          "If user prompt is high-level or minimal, keep the plan high-level and minimal as well.",
-          "Match detail level to available input; do not add speculative decomposition just to make plan look complete.",
-          "Do not enforce rigid issue-body structure. If you use sectioned structure, only first section 'Context' is required; all other sections are optional.",
-          "If user asks to just deploy replica, plan that intent without any implementation details (implementation agent knows how to deploy without instructions).",
-          "If user asks to create/update replica, assume that replica must be deployed as well and include deploy intent in the plan unless user explicitly states that no deploy is needed.",
-          "Use submit_issue_draft exactly once.",
-          "End assistant response with a concise russian summary in one paragraph (prefer 3-5 short sentences).",
-          "Focus the summary on new, useful information for the user: what changed in substance, what decisions matter now, and what follow-up is relevant.",
-          "Avoid process checklist narration and avoid describing rule compliance unless it affects user choices.",
-          "Prefer plain prose summary (no lists, no headings, no multiple paragraphs) unless absolutely necessary.",
-          `User prompt: ${prompt}`,
-        ].join("\n"),
-      },
-      COPILOT_SESSION_TIMEOUT_MS,
-    )
-
-    finalSummary = extractSummaryFromFinalMessage(finalMessage?.data.content)
-  } finally {
-    unsubscribeRealtimeLogs()
-    await session.disconnect()
-  }
-
-  const draftState = draftStatesBySessionId.get(session.sessionId)
+  const finalSummary = extractSummaryFromFinalMessage(finalMessage)
+  const draftState = [...draftStatesBySessionId.values()].find(state => state.submittedDraft)
   if (!draftState?.submittedDraft) {
     throw new Error("Copilot did not submit issue draft via submit_issue_draft tool")
   }
@@ -1543,71 +1401,8 @@ function createSubmitIssueDraftTool(
   })
 }
 
-async function createOrResumeSession({
-  copilotClient,
-  environment,
-  sessionConfig,
-  flow,
-  taskId,
-  iterationId,
-}: {
-  copilotClient: ReturnType<EngineerAiRuntime["getCopilotClient"]>
-  environment: CopilotEnvironment
-  sessionConfig: SessionConfig
-  flow: "planning" | "implementation"
-  taskId: number
-  iterationId?: number
-}): Promise<CopilotSession> {
-  const previousSessionId = environment.sessionId
-
-  if (previousSessionId) {
-    try {
-      const resumedSession = await copilotClient.resumeSession(previousSessionId, sessionConfig)
-      environment.sessionId = resumedSession.sessionId
-      await saveEnvironmentSessionArchive(environment)
-
-      logger.info(
-        'engineer copilot session resumed flow="%s" task_id="%s" iteration_id="%s" session_id="%s"',
-        flow,
-        String(taskId),
-        iterationId ? String(iterationId) : "",
-        resumedSession.sessionId,
-      )
-
-      return resumedSession
-    } catch (error) {
-      const errorValue = toError(error)
-
-      logger.warn(
-        { error: errorValue },
-        'engineer failed to resume copilot session flow="%s" task_id="%s" iteration_id="%s" session_id="%s"',
-        flow,
-        String(taskId),
-        iterationId ? String(iterationId) : "",
-        previousSessionId,
-      )
-    }
-  }
-
-  const newSession = await copilotClient.createSession(sessionConfig)
-  environment.sessionId = newSession.sessionId
-  await saveEnvironmentSessionArchive(environment)
-
-  logger.info(
-    'engineer copilot session created flow="%s" task_id="%s" iteration_id="%s" session_id="%s" source="%s"',
-    flow,
-    String(taskId),
-    iterationId ? String(iterationId) : "",
-    newSession.sessionId,
-    previousSessionId ? "fallback_after_resume_failure" : "new",
-  )
-
-  return newSession
-}
-
 async function createCopilotEnvironment(
   runtime: EngineerAiRuntime,
-  storageBucketService: StorageBucketService,
   taskId: number,
   iterationId: number,
 ): Promise<CopilotEnvironment> {
@@ -1652,510 +1447,12 @@ async function createCopilotEnvironment(
     repositoryPath,
     sessionDirPath,
     taskId,
-    storageBucketService,
-    sessionId: await restoreSessionArchive(storageBucketService, sessionDirPath, taskId),
     dispose: async () => {
-      if (environment.sessionId) {
-        await uploadSessionArchive(
-          environment.storageBucketService,
-          environment.sessionDirPath,
-          environment.taskId,
-          environment.sessionId,
-        )
-      }
-
       await rm(tempRoot, { recursive: true, force: true })
     },
   }
 
   return environment
-}
-
-async function saveEnvironmentSessionArchive(environment: CopilotEnvironment): Promise<void> {
-  const sessionId = environment.sessionId?.trim()
-  if (!sessionId) {
-    return
-  }
-
-  environment.sessionId = sessionId
-  await uploadSessionArchive(
-    environment.storageBucketService,
-    environment.sessionDirPath,
-    environment.taskId,
-    sessionId,
-  )
-}
-
-async function restoreSessionArchive(
-  storageBucketService: StorageBucketService,
-  sessionDirPath: string,
-  taskId: number,
-): Promise<string | undefined> {
-  const archiveKey = getSessionArchiveKey(taskId)
-  const archivePath = join(sessionDirPath, `session.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`)
-
-  try {
-    const object = await storageBucketService.client.send(
-      new GetObjectCommand({
-        Bucket: storageBucketService.bucket,
-        Key: archiveKey,
-      }),
-    )
-
-    if (!object.Body) {
-      return undefined
-    }
-
-    const bytes = await object.Body.transformToByteArray()
-    await writeFile(archivePath, Buffer.from(bytes))
-
-    const sessionId = await readSessionIdFromArchive(archivePath)
-    if (!sessionId) {
-      logger.warn('engineer session archive "%s" has invalid layout', archiveKey)
-      await rm(archivePath, { force: true })
-      return undefined
-    }
-
-    const restoredSessionPath = getSessionStatePath(sessionDirPath, sessionId)
-    await rm(restoredSessionPath, { recursive: true, force: true })
-    await mkdir(restoredSessionPath, { recursive: true })
-    await runCommand([
-      "tar",
-      "-xzf",
-      archivePath,
-      "-C",
-      restoredSessionPath,
-      "--strip-components=1",
-    ])
-    await rm(archivePath, { force: true })
-    return sessionId
-  } catch {
-    return undefined
-  }
-}
-
-async function uploadSessionArchive(
-  storageBucketService: StorageBucketService,
-  sessionDirPath: string,
-  taskId: number,
-  sessionId: string,
-): Promise<void> {
-  const sessionStatePath = getSessionStatePath(sessionDirPath, sessionId)
-  try {
-    await access(sessionStatePath)
-  } catch {
-    return
-  }
-
-  const archiveKey = getSessionArchiveKey(taskId)
-  const archivePath = join(
-    "/tmp",
-    `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`,
-    `session-upload.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`,
-  )
-  await runCommand([
-    "tar",
-    "-czf",
-    archivePath,
-    "-C",
-    sessionStatePath,
-    "--transform",
-    `s,^,${sessionId}/,`,
-    ".",
-  ])
-  const bytes = await readFile(archivePath)
-
-  await storageBucketService.client.send(
-    new PutObjectCommand({
-      Bucket: storageBucketService.bucket,
-      Key: archiveKey,
-      Body: bytes,
-      ContentType: "application/x-tar",
-    }),
-  )
-
-  await rm(archivePath, { force: true })
-}
-
-function getSessionArchiveKey(taskId: number): string {
-  return `${ENGINEER_SESSION_ARCHIVE_PREFIX}/task-${taskId}.${ENGINEER_SESSION_ARCHIVE_EXTENSION}`
-}
-
-function getSessionStatePath(sessionDirPath: string, sessionId: string): string {
-  return join(sessionDirPath, ENGINEER_SESSION_STATE_DIR, sessionId)
-}
-
-async function readSessionIdFromArchive(archivePath: string): Promise<string | undefined> {
-  const { stdout } = await runCommandWithOutput(["tar", "-tzf", archivePath])
-  const topLevelEntries = stdout
-    .split("\n")
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .map(line => line.split("/")[0])
-    .filter((entry): entry is string => typeof entry === "string" && entry.length > 0)
-
-  const uniqueEntries = [...new Set(topLevelEntries)]
-  if (uniqueEntries.length !== 1) {
-    return undefined
-  }
-
-  const [candidate] = uniqueEntries
-  if (
-    !candidate ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)
-  ) {
-    return undefined
-  }
-
-  return candidate
-}
-
-async function upsertTaskIssue({
-  prisma,
-  runtime,
-  taskId,
-  owner,
-  repo,
-  issueTitle,
-  issueBody,
-}: {
-  prisma: PrismaClient
-  runtime: EngineerAiRuntime
-  taskId: number
-  owner: string
-  repo: string
-  issueTitle: string
-  issueBody: string
-}) {
-  const octokit = runtime.getOctokit()
-  const task = await prisma.task.findUnique({
-    where: {
-      id: taskId,
-    },
-    select: {
-      issueId: true,
-    },
-  })
-
-  if (!task) {
-    throw new Error(`Unknown task "${taskId}"`)
-  }
-
-  if (!task.issueId) {
-    const createdIssue = await createIssueWithoutAssignee(
-      octokit,
-      owner,
-      repo,
-      issueTitle,
-      issueBody,
-    )
-
-    await prisma.task.update({
-      where: {
-        id: taskId,
-      },
-      data: {
-        issueId: createdIssue.number,
-      },
-    })
-
-    return createdIssue
-  }
-
-  return await updateRepositoryIssue(octokit, owner, repo, task.issueId, {
-    title: issueTitle,
-    body: issueBody,
-  })
-}
-
-type RepositoryIssue = {
-  id: string
-  number: number
-  title: string
-  body: string
-  url: string
-}
-
-async function createIssueWithoutAssignee(
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  owner: string,
-  repo: string,
-  title: string,
-  body: string,
-): Promise<RepositoryIssue> {
-  const createdIssue = await octokit.rest.issues.create({
-    owner,
-    repo,
-    title,
-    body,
-  })
-
-  return {
-    id: String(createdIssue.data.id),
-    number: createdIssue.data.number,
-    title: createdIssue.data.title,
-    body: createdIssue.data.body ?? "",
-    url: createdIssue.data.html_url,
-  }
-}
-
-async function getRepositoryIssueByNumber(
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-): Promise<RepositoryIssue> {
-  const issue = await octokit.rest.issues.get({
-    owner,
-    repo,
-    issue_number: issueNumber,
-  })
-
-  return {
-    id: String(issue.data.id),
-    number: issue.data.number,
-    title: issue.data.title,
-    body: issue.data.body ?? "",
-    url: issue.data.html_url,
-  }
-}
-
-async function updateRepositoryIssue(
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  updates: {
-    title?: string
-    body?: string
-    state?: "OPEN" | "CLOSED"
-  },
-): Promise<RepositoryIssue> {
-  const updatedIssue = await octokit.rest.issues.update({
-    owner,
-    repo,
-    issue_number: issueNumber,
-    title: updates.title,
-    body: updates.body,
-    state: updates.state?.toLowerCase() as "open" | "closed" | undefined,
-  })
-
-  return {
-    id: String(updatedIssue.data.id),
-    number: updatedIssue.data.number,
-    title: updatedIssue.data.title,
-    body: updatedIssue.data.body ?? "",
-    url: updatedIssue.data.html_url,
-  }
-}
-
-async function syncTaskIssueState({
-  runtime,
-  prisma,
-  taskId,
-  state,
-  stateReason,
-}: {
-  runtime: EngineerAiRuntime
-  prisma: PrismaClient
-  taskId: number
-  state: "OPEN" | "CLOSED"
-  stateReason?: "COMPLETED" | "NOT_PLANNED"
-}): Promise<void> {
-  const task = await prisma.task.findUnique({
-    where: {
-      id: taskId,
-    },
-    select: {
-      issueId: true,
-    },
-  })
-
-  if (!task?.issueId) {
-    return
-  }
-
-  const repository = await runtime.getRepositoryTarget()
-  await updateRepositoryIssueState(runtime.getOctokit(), {
-    owner: repository.owner,
-    repo: repository.name,
-    issueNumber: task.issueId,
-    state,
-    stateReason,
-  })
-}
-
-async function updateRepositoryIssueState(
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  input: {
-    owner: string
-    repo: string
-    issueNumber: number
-    state: "OPEN" | "CLOSED"
-    stateReason?: "COMPLETED" | "NOT_PLANNED"
-  },
-): Promise<void> {
-  await octokit.rest.issues.update({
-    owner: input.owner,
-    repo: input.repo,
-    issue_number: input.issueNumber,
-    state: input.state.toLowerCase() as "open" | "closed",
-    state_reason:
-      input.state === "CLOSED" && input.stateReason
-        ? mapIssueStateReason(input.stateReason)
-        : undefined,
-  })
-}
-
-function mapIssueStateReason(reason: "COMPLETED" | "NOT_PLANNED"): "completed" | "not_planned" {
-  return reason === "COMPLETED" ? "completed" : "not_planned"
-}
-
-function registerRealtimeSessionLogs(
-  session: CopilotSession,
-  context: "planning" | "implementation",
-  onProgressReported: (progressLine: string) => Promise<void>,
-): () => void {
-  const unsubscribers = [
-    session.on("assistant.message", event => {
-      const content = event.data.content.trim()
-      if (content.length === 0) {
-        return
-      }
-
-      logger.info(
-        'engineer copilot assistant message context="%s" message_id="%s" content="%s"',
-        context,
-        event.data.messageId,
-        content,
-      )
-    }),
-    session.on("tool.execution_start", event => {
-      const argumentSummary = summarizeToolArguments(event.data.toolName, event.data.arguments)
-
-      logger.info(
-        'engineer copilot tool execution started context="%s" tool_name="%s" tool_call_id="%s" args="%s"',
-        context,
-        event.data.toolName,
-        event.data.toolCallId,
-        argumentSummary,
-      )
-
-      if (event.data.toolName === "report_intent") {
-        void onProgressReported(extractReportIntentProgress(event.data.arguments)).catch(error => {
-          const errorValue = toError(error)
-
-          logger.warn(
-            { error: errorValue },
-            'engineer copilot progress update failed context="%s"',
-            context,
-          )
-        })
-      }
-    }),
-  ]
-
-  return () => {
-    for (const unsubscribe of unsubscribers) {
-      unsubscribe()
-    }
-  }
-}
-
-function summarizeToolArguments(toolName: string, argumentsValue: unknown): string {
-  if (!argumentsValue || typeof argumentsValue !== "object") {
-    return "{}"
-  }
-
-  const typedArguments = argumentsValue as Record<string, unknown>
-
-  if (toolName === "apply_patch") {
-    const patchInput = typeof typedArguments.input === "string" ? typedArguments.input : ""
-    const files = extractApplyPatchFilePaths(patchInput)
-    const listedFiles = files
-      .slice(0, 5)
-      .map(path => truncateOneLine(path, 120))
-      .join(",")
-    const filesPart =
-      files.length > 0
-        ? `files=${listedFiles}${files.length > 5 ? ` (+${files.length - 5} more)` : ""}`
-        : "files=<unknown>"
-    const explanation =
-      typeof typedArguments.explanation === "string"
-        ? truncateOneLine(typedArguments.explanation, 160)
-        : ""
-
-    return explanation.length > 0 ? `${filesPart} explanation=${explanation}` : filesPart
-  }
-
-  if (toolName === "bash") {
-    const command = typeof typedArguments.command === "string" ? typedArguments.command : ""
-    return `command=${truncateOneLine(command, 1000)}`
-  }
-
-  const pathKeys = [
-    "filePath",
-    "path",
-    "dirPath",
-    "workspaceRoot",
-    "workingDirectory",
-    "includePattern",
-    "query",
-  ]
-
-  const pathParts = pathKeys
-    .map(key => {
-      const value = typedArguments[key]
-      if (typeof value !== "string" || value.length === 0) {
-        return undefined
-      }
-
-      return `${key}=${truncateOneLine(value, 180)}`
-    })
-    .filter((value): value is string => Boolean(value))
-
-  if (pathParts.length > 0) {
-    return pathParts.join(" ")
-  }
-
-  const summary = Object.entries(typedArguments)
-    .filter(([key]) => !["content", "newCode", "codeSnippet", "prompt"].includes(key))
-    .map(([key, value]) => {
-      if (typeof value === "string") {
-        return `${key}=${truncateOneLine(value, 120)}`
-      }
-
-      if (typeof value === "number" || typeof value === "boolean") {
-        return `${key}=${String(value)}`
-      }
-
-      if (Array.isArray(value)) {
-        return `${key}=[${value.length}]`
-      }
-
-      if (value && typeof value === "object") {
-        return `${key}={...}`
-      }
-
-      return `${key}=null`
-    })
-    .join(" ")
-
-  return summary.length > 0 ? summary : "{}"
-}
-
-function extractApplyPatchFilePaths(patchInput: string): string[] {
-  if (patchInput.trim().length === 0) {
-    return []
-  }
-
-  const matches = [...patchInput.matchAll(/^\*\*\*\s+(?:Update|Add|Delete)\s+File:\s+(.+)$/gm)]
-  const paths = matches
-    .map(match => match[1]?.trim() ?? "")
-    .map(path => path.replace(/\s+->.+$/, "").trim())
-    .filter(path => path.length > 0)
-
-  return [...new Set(paths)]
 }
 
 function truncateOneLine(value: string, maxLength: number): string {
@@ -2165,187 +1462,6 @@ function truncateOneLine(value: string, maxLength: number): string {
   }
 
   return `${normalized.slice(0, maxLength)}...`
-}
-
-async function updateProgressNotification(
-  notificationService: NotificationServiceClient,
-  notificationId: string,
-  update: {
-    title: string
-    progressLines: string[]
-    prefix?: string
-    actions?: Array<{
-      name: string
-      title: string
-    }>
-  },
-): Promise<void> {
-  const progressLines = update.progressLines
-    .slice(-PROGRESS_NOTIFICATION_HISTORY_LIMIT)
-    .map(line => `> ${line}`)
-  const content = [update.prefix, progressLines.length > 0 ? "" : undefined, ...progressLines]
-    .filter((line): line is string => typeof line === "string")
-    .join("\n")
-
-  await notificationService.updateNotification({
-    notificationId,
-    title: update.title,
-    content,
-    actionRows: (update.actions ?? []).map(action => ({
-      actions: [action],
-    })),
-  })
-}
-
-function createProgressReporter(input: {
-  notificationService: NotificationServiceClient
-  notificationId: string
-  title: string
-  prefix?: string
-  actions?: Array<{
-    name: string
-    title: string
-  }>
-}): (progressLine: string) => Promise<void> {
-  const progressLines: string[] = []
-
-  return async progressLine => {
-    const normalizedProgressLine = normalizeProgressLine(progressLine)
-    if (!normalizedProgressLine) {
-      return
-    }
-
-    await updateProgressNotification(input.notificationService, input.notificationId, {
-      title: input.title,
-      prefix: input.prefix,
-      actions: input.actions,
-      progressLines: appendProgressLine(progressLines, normalizedProgressLine),
-    })
-  }
-}
-
-function appendProgressLine(progressLines: string[], progressLine: string): string[] {
-  progressLines.push(progressLine)
-  if (progressLines.length > PROGRESS_NOTIFICATION_HISTORY_LIMIT) {
-    progressLines.splice(0, progressLines.length - PROGRESS_NOTIFICATION_HISTORY_LIMIT)
-  }
-
-  return progressLines
-}
-
-function extractReportIntentProgress(argumentsValue: unknown): string {
-  if (!argumentsValue || typeof argumentsValue !== "object") {
-    return ""
-  }
-
-  const typedArguments = argumentsValue as Record<string, unknown>
-  for (const key of ["intent", "task", "title", "description", "progress", "message"]) {
-    const value = typedArguments[key]
-    if (typeof value === "string") {
-      return value
-    }
-  }
-
-  return ""
-}
-
-function normalizeProgressLine(value: string): string | undefined {
-  const normalized = value
-    .split("\n")
-    .map(line => line.trim())
-    .find(line => line.length > 0)
-
-  if (!normalized) {
-    return undefined
-  }
-
-  const lowercase = normalized.toLowerCase()
-  return (
-    lowercase
-      .replace(/[.!?,:;…]+$/g, "")
-      .slice(0, 120)
-      .trim() || undefined
-  )
-}
-
-function extractSummaryFromFinalMessage(content: string | undefined): string {
-  const normalized = content?.trim() ?? ""
-  if (normalized.length > 0) {
-    return normalized.slice(0, 2000)
-  }
-
-  return strings.notifications.taskExecution.defaultSummary
-}
-
-async function getNextIterationNumber(prisma: PrismaClient, taskId: number): Promise<number> {
-  const aggregate = await prisma.taskIteration.aggregate({
-    where: {
-      taskId,
-    },
-    _max: {
-      iteration: true,
-    },
-  })
-
-  return (aggregate._max.iteration ?? 0) + 1
-}
-
-function parseDbTaskId(taskId: string): number {
-  const parsedTaskId = Number.parseInt(taskId, 10)
-  if (!Number.isInteger(parsedTaskId) || parsedTaskId <= 0) {
-    throw new Error(`Invalid task id format "${taskId}"`)
-  }
-
-  return parsedTaskId
-}
-
-function watchRequestedCancellation({
-  prisma,
-  taskId,
-  onCancel,
-}: {
-  prisma: PrismaClient
-  taskId: number
-  onCancel: () => Promise<void>
-}) {
-  let stopped = false
-  let fired = false
-
-  const loop = (async () => {
-    while (!stopped && !fired) {
-      const task = await prisma.task.findUnique({
-        where: {
-          id: taskId,
-        },
-        select: {
-          status: true,
-        },
-      })
-
-      if (task?.status === "REQUESTED_CANCELLATION") {
-        fired = true
-        await onCancel()
-        return
-      }
-
-      await sleep(1000)
-    }
-  })().catch(error => {
-    const errorValue = toError(error)
-
-    logger.warn(
-      { error: errorValue },
-      'engineer cancellation watch failed task_id="%s"',
-      String(taskId),
-    )
-  })
-
-  return {
-    stop: () => {
-      stopped = true
-      void loop
-    },
-  }
 }
 
 async function runCommand(command: string[], options?: { cwd?: string }): Promise<void> {

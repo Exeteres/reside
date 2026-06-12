@@ -5,10 +5,12 @@ import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import {
   createCommandHandlerService,
   createInteractionActivities,
+  createLanguageEngine,
   createOperationSubscriptionService,
   createPingService,
   createServer,
   logger,
+  registerGracefulShutdown,
   setupEncryption,
   setupLanguageSubsystem,
   startServer,
@@ -21,6 +23,10 @@ import { startEngineerAiRuntime } from "./business"
 import { createCreateTaskTool } from "./nls"
 
 const services = await createServices()
+const runtime = await startEngineerAiRuntime()
+registerGracefulShutdown(async () => {
+  await runtime.stop()
+})
 
 const server = await createServer(services)
 
@@ -52,16 +58,27 @@ await setupLanguageSubsystem({
 
 await startServer(server)
 
-const runtime = await startEngineerAiRuntime()
+const taskLanguageEngine = await createLanguageEngine({
+  services,
+  model: "gpt-5.3-codex",
+  sessionPrefix: "sessions",
+  systemPrompt: "You implement engineer replica tasks inside prepared repository workspaces.",
+  allowedSystemTools: ["bash", "report_intent"],
+  copilotClientProvider: runtime.getCopilotClient,
+})
+registerGracefulShutdown(async () => {
+  await taskLanguageEngine.stop()
+})
+
 const taskActivities = createTaskActivities({
   runtime,
+  languageEngine: taskLanguageEngine,
   prisma: services.prisma,
   notificationService: services.notificationService,
   permissionRequestService: services.permissionRequestService,
   accessOperationService: services.accessOperationService,
   loadService: services.alphaLoadService,
   alphaOperationService: services.alphaOperationService,
-  storageBucketService: services.storageBucketService,
 })
 
 await startTemporalWorker({
@@ -70,6 +87,7 @@ await startTemporalWorker({
     ...createInteractionActivities(
       services.notificationService,
       services.interactionOperationService,
+      services.topicService,
     ),
     ...taskActivities,
   },

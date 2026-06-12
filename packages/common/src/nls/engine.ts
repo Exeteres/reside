@@ -50,6 +50,12 @@ export type LanguageEngine = {
 
 export type LanguageEngineAskOptions = {
   systemPrompt?: string
+  workingDirectory?: string
+  configDir?: string
+  tools?: NonNullable<SessionConfig["tools"]>
+  allowedSystemTools?: string[]
+  shouldCancel?: () => Promise<boolean>
+  cancelPollIntervalMs?: number
 }
 
 export type LanguageEngineStorageCredentials = {
@@ -68,6 +74,7 @@ export type CreateLanguageEngineOptions = {
   tools?: NonNullable<SessionConfig["tools"]>
   tags?: MemoryToolTagDefinitions
   storageCredentials?: LanguageEngineStorageCredentials
+  copilotClientProvider?: () => CopilotClient
 }
 
 export async function createLanguageEngine(
@@ -81,6 +88,7 @@ export async function createLanguageEngine(
   }
 
   const sessionPrefix = normalizeSessionPrefix(args.sessionPrefix)
+  const copilotClientProvider = args.copilotClientProvider
   const baseSystemPrompt = args.systemPrompt.trim()
   const systemPrompt = [baseSystemPrompt, createLanguageMemorySystemPrompt(args.tags)].join("\n\n")
   if (systemPrompt.length === 0) {
@@ -99,14 +107,16 @@ export async function createLanguageEngine(
       : createStorageBucketServiceFromCredentials(args.storageCredentials)
 
   let currentCopilotClient: CopilotClient | undefined
-  const copilotToken = await crypto.getSecret("copilot-token")
-  const nextClient = new CopilotClient({
-    githubToken: copilotToken,
-    useLoggedInUser: false,
-  })
-  await nextClient.start()
-  currentCopilotClient = nextClient
-  logger.info("nls copilot client initialized")
+  if (!args.copilotClientProvider) {
+    const copilotToken = await crypto.getSecret("copilot-token")
+    const nextClient = new CopilotClient({
+      githubToken: copilotToken,
+      useLoggedInUser: false,
+    })
+    await nextClient.start()
+    currentCopilotClient = nextClient
+    logger.info("nls copilot client initialized")
+  }
 
   const sessionLocks = new Map<string, Promise<void>>()
 
@@ -128,6 +138,12 @@ export async function createLanguageEngine(
         sessionId,
         text,
         systemPrompt: options?.systemPrompt,
+        workingDirectory: options?.workingDirectory,
+        configDir: options?.configDir,
+        tools: options?.tools,
+        allowedSystemTools: options?.allowedSystemTools,
+        shouldCancel: options?.shouldCancel,
+        cancelPollIntervalMs: options?.cancelPollIntervalMs,
       })
     },
     askStream: async (sessionId, text, onFrame, options) => {
@@ -136,6 +152,12 @@ export async function createLanguageEngine(
         text,
         onFrame,
         systemPrompt: options?.systemPrompt,
+        workingDirectory: options?.workingDirectory,
+        configDir: options?.configDir,
+        tools: options?.tools,
+        allowedSystemTools: options?.allowedSystemTools,
+        shouldCancel: options?.shouldCancel,
+        cancelPollIntervalMs: options?.cancelPollIntervalMs,
       })
     },
     stop: async () => {
@@ -149,6 +171,12 @@ export async function createLanguageEngine(
     sessionId: string
     text: string
     systemPrompt?: string
+    workingDirectory?: string
+    configDir?: string
+    tools?: NonNullable<SessionConfig["tools"]>
+    allowedSystemTools?: string[]
+    shouldCancel?: () => Promise<boolean>
+    cancelPollIntervalMs?: number
     onFrame?: (frame: { text: string; reset: boolean }) => Promise<void>
   }): Promise<string> {
     const normalizedSessionId = normalizeSessionId(args.sessionId)
@@ -158,13 +186,26 @@ export async function createLanguageEngine(
     }
 
     return await runWithSessionLock(sessionLocks, normalizedSessionId, async () => {
-      const copilotClient = currentCopilotClient
+      const copilotClient = copilotClientProvider?.() ?? currentCopilotClient
       if (!copilotClient) {
         throw new Error("Copilot client is not initialized")
       }
 
-      const sessionDirPath = join(workspacePath, NLS_SESSION_DIR)
+      const sessionWorkingDirectory = args.workingDirectory ?? workspacePath
+      const sessionDirPath = args.configDir ?? join(workspacePath, NLS_SESSION_DIR)
       await mkdir(sessionDirPath, { recursive: true })
+
+      const sessionTools = [...engineTools, ...(args.tools ?? [])]
+      const sessionAllowedSystemTools = new Set(allowedSystemTools)
+      for (const toolName of args.allowedSystemTools ?? []) {
+        const normalizedToolName = toolName.trim()
+        if (normalizedToolName.length > 0) {
+          sessionAllowedSystemTools.add(normalizedToolName)
+        }
+      }
+      for (const toolName of collectCustomToolNames(args.tools)) {
+        sessionAllowedSystemTools.add(toolName)
+      }
 
       const environment: {
         sessionId: string | undefined
@@ -182,17 +223,17 @@ export async function createLanguageEngine(
       const sessionConfig: SessionConfig = {
         model,
         streaming: true,
-        workingDirectory: workspacePath,
+        workingDirectory: sessionWorkingDirectory,
         configDir: sessionDirPath,
         systemMessage: {
           mode: "append",
           content: [systemPrompt, args.systemPrompt?.trim()].filter(Boolean).join("\n\n"),
         },
         onPermissionRequest: async () => ({ kind: "approved" }),
-        tools: engineTools,
+        tools: sessionTools,
         hooks: {
           onPreToolUse: async toolInvocation => {
-            if (allowedSystemTools.has(toolInvocation.toolName)) {
+            if (sessionAllowedSystemTools.has(toolInvocation.toolName)) {
               return {
                 permissionDecision: "allow" as const,
               }
@@ -208,6 +249,11 @@ export async function createLanguageEngine(
 
       const session = await createOrResumeSession(copilotClient, environment, sessionConfig)
       const unsubscribeRealtimeLogs = registerLanguageSessionLogs(session, normalizedSessionId)
+      const stopCancellationWatcher = watchLanguageSessionCancellation({
+        session,
+        shouldCancel: args.shouldCancel,
+        pollIntervalMs: args.cancelPollIntervalMs,
+      })
       let unsubscribeAssistantMessage: (() => void) | undefined
       let unsubscribeAssistantMessageDelta: (() => void) | undefined
       let frameChain = Promise.resolve()
@@ -309,6 +355,7 @@ export async function createLanguageEngine(
 
         return responseText
       } finally {
+        stopCancellationWatcher()
         unsubscribeRealtimeLogs()
         unsubscribeAssistantMessageDelta?.()
         unsubscribeAssistantMessage?.()
@@ -361,6 +408,49 @@ function registerLanguageSessionLogs(session: CopilotSession, sessionId: string)
     for (const unsubscribe of unsubscribers) {
       unsubscribe()
     }
+  }
+}
+
+function watchLanguageSessionCancellation({
+  session,
+  shouldCancel,
+  pollIntervalMs,
+}: {
+  session: CopilotSession
+  shouldCancel?: () => Promise<boolean>
+  pollIntervalMs?: number
+}): () => void {
+  if (!shouldCancel) {
+    return () => undefined
+  }
+
+  let stopped = false
+  const intervalMs = Math.max(250, pollIntervalMs ?? 1000)
+
+  const loop = async () => {
+    while (!stopped) {
+      await Bun.sleep(intervalMs)
+      if (stopped) {
+        return
+      }
+
+      try {
+        if (await shouldCancel()) {
+          await session.disconnect()
+          return
+        }
+      } catch (error) {
+        logger.warn({ error: normalizeError(error) }, "nls cancellation check failed")
+      }
+    }
+  }
+
+  void loop().catch(error => {
+    logger.warn({ error: normalizeError(error) }, "nls cancellation watcher failed")
+  })
+
+  return () => {
+    stopped = true
   }
 }
 

@@ -23,7 +23,7 @@ const githubRepositoryConfigSchema = z.object({
   name: z.string().min(1),
 })
 
-type GithubRepositoryTarget = {
+export type GithubRepositoryTarget = {
   owner: string
   name: string
   cloneUrl: string

@@ -1,4 +1,7 @@
 export * from "./ai-runtime"
 export * from "./commit-validation"
 export * from "./pull-request"
+export * from "./task-progress"
+export * from "./task-prompt"
+export * from "./task-state"
 export * from "./workflow-log"
