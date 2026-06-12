@@ -44,6 +44,22 @@ import {
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = ".engineer-session"
 const ENGINEER_NLS_IDLE_TIMEOUT_MS = 120_000
+const ENGINEER_IMPLEMENTATION_ALLOWED_SYSTEM_TOOLS = [
+  "bash",
+  "report_intent",
+  "apply_patch",
+  "git_apply_patch",
+  "create",
+  "edit",
+  "edit_file",
+  "read_file",
+  "get_file_contents",
+  "glob",
+  "search_code",
+  "search_code_subagent",
+  "str_replace_editor",
+  "fetch",
+]
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
@@ -1572,7 +1588,7 @@ async function runImplementationLanguageStream({
             issueNumber,
           }),
         ],
-        allowedSystemTools: ["bash", "report_intent"],
+        allowedSystemTools: ENGINEER_IMPLEMENTATION_ALLOWED_SYSTEM_TOOLS,
         shouldCancel: async () => await isTaskCancellationRequested(prisma, dbTaskId),
         cancelPollIntervalMs: 1000,
       },
