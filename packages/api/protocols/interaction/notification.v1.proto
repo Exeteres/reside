@@ -44,6 +44,8 @@ message SendNotificationRequest {
   optional string context_token = 1;
 
   // The channel to send the notification to.
+  // Required unless `topic_id` is provided.
+  // When `topic_id` is provided without a channel, implementations must derive the channel from the topic.
   string channel = 2;
 
   // The name of the partition inside the channel to send the notification to.
@@ -90,6 +92,7 @@ message SendNotificationRequest {
 
   // The optional notification topic to send the notification into.
   // This ID is opaque and must not be parsed.
+  // When this field is used as the routing source, callers must not provide interaction context routing details.
   google.protobuf.StringValue topic_id = 13;
 
   // Whether messages sent into the target topic should be treated as text responses to this notification.
@@ -144,6 +147,20 @@ message UpdateNotificationResponse {
   reside.common.operation.v1.Operation operation = 1;
 }
 
+// The request message for accepting more responses for an existing notification.
+message AcceptNotificationResponseRequest {
+  // The identifier of the notification to accept responses for.
+  // This ID is opaque and must not be parsed.
+  string notification_id = 1;
+}
+
+// The response message for accepting more responses for an existing notification.
+message AcceptNotificationResponseResponse {
+  // The pending operation representing the next response to the notification.
+  // If a pending response operation already exists for the notification, that operation is returned.
+  reside.common.operation.v1.Operation operation = 1;
+}
+
 // The request message for deleting an existing notification.
 message DeleteNotificationRequest {
   // The identifier of the notification to delete.
@@ -169,6 +186,10 @@ service NotificationService {
 
   // Updates title and content of an existing notification.
   rpc UpdateNotification(UpdateNotificationRequest) returns (UpdateNotificationResponse);
+
+  // Accepts the next response for an existing interactive notification.
+  // This call is idempotent while a pending response operation already exists.
+  rpc AcceptNotificationResponse(AcceptNotificationResponseRequest) returns (AcceptNotificationResponseResponse);
 
   // Deletes an existing notification.
   rpc DeleteNotification(DeleteNotificationRequest) returns (google.protobuf.Empty);

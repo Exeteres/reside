@@ -1,6 +1,8 @@
 import {
+  AcceptNotificationResponseResponseSchema,
   SendNotificationResponseSchema,
   UpdateNotificationResponseSchema,
+  type AcceptNotificationResponseRequest,
   type DeleteNotificationRequest,
   type NotificationServiceClient,
   type SendNotificationRequest,
@@ -38,6 +40,12 @@ export function createInteractionActivities(
       const response = await notificationService.updateNotification(request)
 
       return toJson(UpdateNotificationResponseSchema, response)
+    },
+
+    acceptNotificationResponse: async (request: AcceptNotificationResponseRequest) => {
+      const response = await notificationService.acceptNotificationResponse(request)
+
+      return toJson(AcceptNotificationResponseResponseSchema, response)
     },
 
     deleteNotification: async (request: DeleteNotificationRequest) => {

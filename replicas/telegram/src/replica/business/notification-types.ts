@@ -10,7 +10,7 @@ export type ActionRow = {
 }
 
 export type SendNotificationInput = {
-  channel: string
+  channel?: string
   title: string
   content?: string
   actionRows: ActionRow[]
@@ -74,6 +74,11 @@ export type TelegramBotLike = {
       },
     ): Promise<unknown>
     deleteMessage(chatId: string, messageId: number): Promise<true>
+    setMessageReaction?(
+      chatId: string,
+      messageId: number,
+      reaction: Array<{ type: "emoji"; emoji: "👀" }>,
+    ): Promise<true>
     sendPhoto(
       chatId: string,
       photo: InputFile,

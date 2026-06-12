@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/notification.v1.proto.
  */
 export const file_interaction_notification_v1: GenFile = /*@__PURE__*/
-  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24iyQUKF1NlbmROb3RpZmljYXRpb25SZXF1ZXN0EhoKDWNvbnRleHRfdG9rZW4YASABKAlIAIgBARIPCgdjaGFubmVsGAIgASgJEi8KCXBhcnRpdGlvbhgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRINCgV0aXRsZRgEIAEoCRItCgdjb250ZW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKBmltYWdlcxgGIAMoCzIhLnJlc2lkZS5jb21tb24uZmlsZS52MS5JbmxpbmVGaWxlEjYKC2F0dGFjaG1lbnRzGAcgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSTgoLYWN0aW9uX3Jvd3MYCCADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxI6ChZyZXF1aXJlc190ZXh0X3Jlc3BvbnNlGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRItCglwcm90ZWN0ZWQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEjgKEnNlbmRfYXNfc3ViamVjdF9pZBgLIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRI9ChlleHBlY3RfaW1tZWRpYXRlX2ZlZWRiYWNrGAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRIuCgh0b3BpY19pZBgNIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIxCg1hY3F1aXJlX3RvcGljGA4gASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZUIQCg5fY29udGV4dF90b2tlbiKhAQoYU2VuZE5vdGlmaWNhdGlvblJlc3BvbnNlEhcKD25vdGlmaWNhdGlvbl9pZBgCIAEoCRI4CglvcGVyYXRpb24YASABKAsyJS5yZXNpZGUuY29tbW9uLm9wZXJhdGlvbi52MS5PcGVyYXRpb24SMgoMbWVzc2FnZV9saW5rGAMgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIp8CChlVcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIPCgdjb250ZW50GAMgASgJEk4KC2FjdGlvbl9yb3dzGAQgAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb25Sb3cSOgoWcmVxdWlyZXNfdGV4dF9yZXNwb25zZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSPQoZZXhwZWN0X2ltbWVkaWF0ZV9mZWVkYmFjaxgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUiVgoaVXBkYXRlTm90aWZpY2F0aW9uUmVzcG9uc2USOAoJb3BlcmF0aW9uGAEgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uIjQKGURlbGV0ZU5vdGlmaWNhdGlvblJlcXVlc3QSFwoPbm90aWZpY2F0aW9uX2lkGAEgASgJIlIKFE5vdGlmaWNhdGlvblJlc3BvbnNlEhUKC2FjdGlvbl9uYW1lGAEgASgJSAASFwoNdGV4dF9yZXNwb25zZRgCIAEoCUgAQgoKCHJlc3BvbnNlKoMBChZOb3RpZmljYXRpb25BY3Rpb25JY29uEiEKHUNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9OT05FEAASIgoeQ09ORklSTUFUSU9OX0FDVElPTl9JQ09OX0NIRUNLEAESIgoeQ09ORklSTUFUSU9OX0FDVElPTl9JQ09OX0NST1NTEAIyqAMKE05vdGlmaWNhdGlvblNlcnZpY2USjQEKEFNlbmROb3RpZmljYXRpb24SOy5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlNlbmROb3RpZmljYXRpb25SZXF1ZXN0GjwucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5TZW5kTm90aWZpY2F0aW9uUmVzcG9uc2USkwEKElVwZGF0ZU5vdGlmaWNhdGlvbhI9LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuVXBkYXRlTm90aWZpY2F0aW9uUmVxdWVzdBo+LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuVXBkYXRlTm90aWZpY2F0aW9uUmVzcG9uc2USawoSRGVsZXRlTm90aWZpY2F0aW9uEj0ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5EZWxldGVOb3RpZmljYXRpb25SZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5YgZwcm90bzM", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
+  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24iyQUKF1NlbmROb3RpZmljYXRpb25SZXF1ZXN0EhoKDWNvbnRleHRfdG9rZW4YASABKAlIAIgBARIPCgdjaGFubmVsGAIgASgJEi8KCXBhcnRpdGlvbhgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRINCgV0aXRsZRgEIAEoCRItCgdjb250ZW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKBmltYWdlcxgGIAMoCzIhLnJlc2lkZS5jb21tb24uZmlsZS52MS5JbmxpbmVGaWxlEjYKC2F0dGFjaG1lbnRzGAcgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSTgoLYWN0aW9uX3Jvd3MYCCADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxI6ChZyZXF1aXJlc190ZXh0X3Jlc3BvbnNlGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRItCglwcm90ZWN0ZWQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEjgKEnNlbmRfYXNfc3ViamVjdF9pZBgLIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRI9ChlleHBlY3RfaW1tZWRpYXRlX2ZlZWRiYWNrGAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRIuCgh0b3BpY19pZBgNIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIxCg1hY3F1aXJlX3RvcGljGA4gASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZUIQCg5fY29udGV4dF90b2tlbiKhAQoYU2VuZE5vdGlmaWNhdGlvblJlc3BvbnNlEhcKD25vdGlmaWNhdGlvbl9pZBgCIAEoCRI4CglvcGVyYXRpb24YASABKAsyJS5yZXNpZGUuY29tbW9uLm9wZXJhdGlvbi52MS5PcGVyYXRpb24SMgoMbWVzc2FnZV9saW5rGAMgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIp8CChlVcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIPCgdjb250ZW50GAMgASgJEk4KC2FjdGlvbl9yb3dzGAQgAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb25Sb3cSOgoWcmVxdWlyZXNfdGV4dF9yZXNwb25zZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSPQoZZXhwZWN0X2ltbWVkaWF0ZV9mZWVkYmFjaxgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUiVgoaVXBkYXRlTm90aWZpY2F0aW9uUmVzcG9uc2USOAoJb3BlcmF0aW9uGAEgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uIjwKIUFjY2VwdE5vdGlmaWNhdGlvblJlc3BvbnNlUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkiXgoiQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXNwb25zZRI4CglvcGVyYXRpb24YASABKAsyJS5yZXNpZGUuY29tbW9uLm9wZXJhdGlvbi52MS5PcGVyYXRpb24iNAoZRGVsZXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkiUgoUTm90aWZpY2F0aW9uUmVzcG9uc2USFQoLYWN0aW9uX25hbWUYASABKAlIABIXCg10ZXh0X3Jlc3BvbnNlGAIgASgJSABCCgoIcmVzcG9uc2UqgwEKFk5vdGlmaWNhdGlvbkFjdGlvbkljb24SIQodQ09ORklSTUFUSU9OX0FDVElPTl9JQ09OX05PTkUQABIiCh5DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fQ0hFQ0sQARIiCh5DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fQ1JPU1MQAjLWBAoTTm90aWZpY2F0aW9uU2VydmljZRKNAQoQU2VuZE5vdGlmaWNhdGlvbhI7LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuU2VuZE5vdGlmaWNhdGlvblJlcXVlc3QaPC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlNlbmROb3RpZmljYXRpb25SZXNwb25zZRKTAQoSVXBkYXRlTm90aWZpY2F0aW9uEj0ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5VcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0Gj4ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5VcGRhdGVOb3RpZmljYXRpb25SZXNwb25zZRKrAQoaQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2USRS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLkFjY2VwdE5vdGlmaWNhdGlvblJlc3BvbnNlUmVxdWVzdBpGLnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXNwb25zZRJrChJEZWxldGVOb3RpZmljYXRpb24SPS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLkRlbGV0ZU5vdGlmaWNhdGlvblJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHliBnByb3RvMw", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
 
 /**
  * The action that a user can take in response to a notification, represented by a button in the UI.
@@ -149,6 +149,8 @@ export type SendNotificationRequest = Message<"reside.interaction.notification.v
 
   /**
    * The channel to send the notification to.
+   * Required unless `topic_id` is provided.
+   * When `topic_id` is provided without a channel, implementations must derive the channel from the topic.
    *
    * @generated from field: string channel = 2;
    */
@@ -239,6 +241,7 @@ export type SendNotificationRequest = Message<"reside.interaction.notification.v
   /**
    * The optional notification topic to send the notification into.
    * This ID is opaque and must not be parsed.
+   * When this field is used as the routing source, callers must not provide interaction context routing details.
    *
    * @generated from field: google.protobuf.StringValue topic_id = 13;
    */
@@ -270,6 +273,8 @@ export type SendNotificationRequestJson = {
 
   /**
    * The channel to send the notification to.
+   * Required unless `topic_id` is provided.
+   * When `topic_id` is provided without a channel, implementations must derive the channel from the topic.
    *
    * @generated from field: string channel = 2;
    */
@@ -360,6 +365,7 @@ export type SendNotificationRequestJson = {
   /**
    * The optional notification topic to send the notification into.
    * This ID is opaque and must not be parsed.
+   * When this field is used as the routing source, callers must not provide interaction context routing details.
    *
    * @generated from field: google.protobuf.StringValue topic_id = 13;
    */
@@ -601,6 +607,80 @@ export const UpdateNotificationResponseSchema: GenMessage<UpdateNotificationResp
   messageDesc(file_interaction_notification_v1, 5);
 
 /**
+ * The request message for accepting more responses for an existing notification.
+ *
+ * @generated from message reside.interaction.notification.v1.AcceptNotificationResponseRequest
+ */
+export type AcceptNotificationResponseRequest = Message<"reside.interaction.notification.v1.AcceptNotificationResponseRequest"> & {
+  /**
+   * The identifier of the notification to accept responses for.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string notification_id = 1;
+   */
+  notificationId: string;
+};
+
+/**
+ * The request message for accepting more responses for an existing notification.
+ *
+ * @generated from message reside.interaction.notification.v1.AcceptNotificationResponseRequest
+ */
+export type AcceptNotificationResponseRequestJson = {
+  /**
+   * The identifier of the notification to accept responses for.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string notification_id = 1;
+   */
+  notificationId?: string;
+};
+
+/**
+ * Describes the message reside.interaction.notification.v1.AcceptNotificationResponseRequest.
+ * Use `create(AcceptNotificationResponseRequestSchema)` to create a new message.
+ */
+export const AcceptNotificationResponseRequestSchema: GenMessage<AcceptNotificationResponseRequest, {jsonType: AcceptNotificationResponseRequestJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_notification_v1, 6);
+
+/**
+ * The response message for accepting more responses for an existing notification.
+ *
+ * @generated from message reside.interaction.notification.v1.AcceptNotificationResponseResponse
+ */
+export type AcceptNotificationResponseResponse = Message<"reside.interaction.notification.v1.AcceptNotificationResponseResponse"> & {
+  /**
+   * The pending operation representing the next response to the notification.
+   * If a pending response operation already exists for the notification, that operation is returned.
+   *
+   * @generated from field: reside.common.operation.v1.Operation operation = 1;
+   */
+  operation?: Operation;
+};
+
+/**
+ * The response message for accepting more responses for an existing notification.
+ *
+ * @generated from message reside.interaction.notification.v1.AcceptNotificationResponseResponse
+ */
+export type AcceptNotificationResponseResponseJson = {
+  /**
+   * The pending operation representing the next response to the notification.
+   * If a pending response operation already exists for the notification, that operation is returned.
+   *
+   * @generated from field: reside.common.operation.v1.Operation operation = 1;
+   */
+  operation?: OperationJson;
+};
+
+/**
+ * Describes the message reside.interaction.notification.v1.AcceptNotificationResponseResponse.
+ * Use `create(AcceptNotificationResponseResponseSchema)` to create a new message.
+ */
+export const AcceptNotificationResponseResponseSchema: GenMessage<AcceptNotificationResponseResponse, {jsonType: AcceptNotificationResponseResponseJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_notification_v1, 7);
+
+/**
  * The request message for deleting an existing notification.
  *
  * @generated from message reside.interaction.notification.v1.DeleteNotificationRequest
@@ -635,7 +715,7 @@ export type DeleteNotificationRequestJson = {
  * Use `create(DeleteNotificationRequestSchema)` to create a new message.
  */
 export const DeleteNotificationRequestSchema: GenMessage<DeleteNotificationRequest, {jsonType: DeleteNotificationRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 6);
+  messageDesc(file_interaction_notification_v1, 8);
 
 /**
  * The message representing the user's response to a notification, either by taking one of the provided actions or by providing a text response.
@@ -691,7 +771,7 @@ export type NotificationResponseJson = {
  * Use `create(NotificationResponseSchema)` to create a new message.
  */
 export const NotificationResponseSchema: GenMessage<NotificationResponse, {jsonType: NotificationResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 7);
+  messageDesc(file_interaction_notification_v1, 9);
 
 /**
  * The well-known icon to be displayed alongside a notification action.
@@ -753,6 +833,17 @@ export const NotificationService: GenService<{
     methodKind: "unary";
     input: typeof UpdateNotificationRequestSchema;
     output: typeof UpdateNotificationResponseSchema;
+  },
+  /**
+   * Accepts the next response for an existing interactive notification.
+   * This call is idempotent while a pending response operation already exists.
+   *
+   * @generated from rpc reside.interaction.notification.v1.NotificationService.AcceptNotificationResponse
+   */
+  acceptNotificationResponse: {
+    methodKind: "unary";
+    input: typeof AcceptNotificationResponseRequestSchema;
+    output: typeof AcceptNotificationResponseResponseSchema;
   },
   /**
    * Deletes an existing notification.

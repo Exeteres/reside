@@ -3,7 +3,11 @@ import type { PrismaClient } from "../../database"
 import type { AuthzServiceClientLike, TelegramBotLike } from "./notification-types"
 import { Code, ConnectError } from "@connectrpc/connect"
 import { rhid } from "@reside/common"
-import { encryptedStringSchema, telegramTopicThreadSchema } from "../../definitions"
+import {
+  encryptedStringSchema,
+  telegramChatDataSchema,
+  telegramTopicThreadSchema,
+} from "../../definitions"
 import { ensureTargetChatExists, resolveSenderSubjectId } from "./notification-access"
 
 export type NotificationTopicDeliveryConfig = {
@@ -46,6 +50,12 @@ export async function createNotificationTopicForReplica(
     input.createAsSubjectId,
   )
   const deliveryConfig = await loadDeliveryConfig()
+  const targetChatId = await resolveTopicCreationChatId(
+    crypto,
+    prisma,
+    channel.id,
+    deliveryConfig.systemChatId,
+  )
   const botToken = await resolveTopicBotToken(
     crypto,
     prisma,
@@ -59,7 +69,6 @@ export async function createNotificationTopicForReplica(
     throw new ConnectError("Telegram bot client does not support topic creation", Code.Internal)
   }
 
-  const targetChatId = deliveryConfig.systemChatId
   const topic = await bot.api.createForumTopic(targetChatId, title)
   const targetChat = await ensureTargetChatExists(crypto, prisma, targetChatId)
   const threadEcid = await crypto.encrypt({
@@ -84,6 +93,34 @@ export async function createNotificationTopicForReplica(
   return {
     topicId: String(notificationTopic.id),
   }
+}
+
+async function resolveTopicCreationChatId(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  channelId: number,
+  systemChatId: string,
+): Promise<string> {
+  const binding = await prisma.notificationChannelBinding.findUnique({
+    where: {
+      channelId,
+    },
+    select: {
+      chat: {
+        select: {
+          dataEcid: true,
+        },
+      },
+    },
+  })
+
+  if (binding === null) {
+    return systemChatId
+  }
+
+  const chat = await crypto.decrypt(telegramChatDataSchema, binding.chat.dataEcid)
+
+  return String(chat.id)
 }
 
 export async function updateNotificationTopicForReplica(

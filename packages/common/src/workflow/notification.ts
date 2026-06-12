@@ -6,6 +6,7 @@ import type {
   NotificationResponseJson,
 } from "@reside/api/interaction/notification.v1"
 import {
+  AcceptNotificationResponseRequestSchema,
   DeleteNotificationRequestSchema,
   NotificationActionRowSchema,
   NotificationActionSchema,
@@ -26,6 +27,21 @@ import { html } from "../telegram"
 
 type NotificationResponseResult = NotificationResponseJson & {
   contextToken?: string
+}
+
+export type AcceptNotificationResponseInput<
+  TActions extends NotificationActionsInput = Record<string, never>,
+  TRequiresTextResponse extends boolean = boolean,
+> = {
+  /**
+   * The identifier of the notification to accept more responses for.
+   */
+  notificationId: string
+
+  /**
+   * Optional cancellation predicate checked while waiting for notification response.
+   */
+  cancelWhen?: () => boolean
 }
 
 export type TopicOutput = {
@@ -118,8 +134,9 @@ export type NotificationInput<
 
   /**
    * The name of the channel to send the notification to.
+   * Omit this when routing by topic identifier.
    */
-  channel: string
+  channel?: string
 
   /**
    * The name of the partition in the channel to send the notification to.
@@ -297,6 +314,18 @@ export async function sendNotification<
 
   const contextToken = resolveNotificationContext(input)
 
+  if (input.topicId !== undefined) {
+    if (input.channel !== undefined) {
+      throw new Error("Topic-routed notification must not specify channel")
+    }
+
+    if (input.contextToken !== undefined || input.system !== undefined) {
+      throw new Error("Topic-routed notification must not specify interaction context")
+    }
+  } else if (input.channel === undefined) {
+    throw new Error("Notification channel is required when topicId is not provided")
+  }
+
   const actionRows = toApiActionRows(input.actions)
 
   const request = create(SendNotificationRequestSchema, {
@@ -365,8 +394,12 @@ export async function sendNotification<
 }
 
 function resolveNotificationContext(
-  input: Pick<NotificationInput, "contextToken" | "system">,
+  input: Pick<NotificationInput, "contextToken" | "system" | "topicId">,
 ): string | undefined {
+  if (input.topicId !== undefined) {
+    return undefined
+  }
+
   if (input.system === true) {
     return undefined
   }
@@ -425,6 +458,72 @@ export async function updateNotification<
 
   if (response.operation.id === undefined) {
     throw new Error("Notification operation response is missing operation id")
+  }
+
+  const responsePromise = waitNotificationOutput<TActions, TRequiresTextResponse>(
+    input.notificationId,
+    response.operation.id,
+    undefined,
+  )
+
+  if (input.cancelWhen === undefined) {
+    return (await responsePromise) as NotificationCancelableOutput<
+      TActions,
+      TRequiresTextResponse,
+      TCancelWhen
+    >
+  }
+
+  const cancelPromise = condition(input.cancelWhen).then(() => {
+    return {
+      notificationId: input.notificationId,
+      type: "cancelled" as const,
+    }
+  })
+
+  return (await Promise.race([responsePromise, cancelPromise])) as NotificationCancelableOutput<
+    TActions,
+    TRequiresTextResponse,
+    TCancelWhen
+  >
+}
+
+/**
+ * Accepts the next response for an existing interactive notification.
+ *
+ * If the notification already has a pending response operation, that operation is reused.
+ * Otherwise, a new response operation is created without editing the notification.
+ *
+ * @param input The notification response acceptance payload.
+ */
+export async function acceptNotificationResponse<
+  TActions extends NotificationActionsInput = Record<string, never>,
+  TRequiresTextResponse extends boolean = true,
+  TCancelWhen extends (() => boolean) | undefined = undefined,
+>(
+  input: AcceptNotificationResponseInput<TActions, TRequiresTextResponse> & {
+    cancelWhen?: TCancelWhen
+  },
+): Promise<NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>> {
+  const { acceptNotificationResponse } = proxyActivities<InteractionActivities>({
+    startToCloseTimeout: "5 minutes",
+    retry: {
+      initialInterval: "10 seconds",
+    },
+  })
+
+  const response = await acceptNotificationResponse(
+    create(AcceptNotificationResponseRequestSchema, {
+      notificationId: input.notificationId,
+    }),
+  )
+
+  if (!response.operation) {
+    throw new Error("Accept response operation is missing")
+  }
+
+  if (response.operation.id === undefined) {
+    throw new Error("Accept response operation id is missing")
   }
 
   const responsePromise = waitNotificationOutput<TActions, TRequiresTextResponse>(

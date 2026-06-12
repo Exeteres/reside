@@ -13,6 +13,7 @@ import {
   encryptedStringSchema,
   getTelegramMessageChatId,
   telegramSentMessageSchema,
+  telegramTopicThreadSchema,
 } from "../../definitions"
 import { strings } from "../../locale"
 import { createEcidTextSubstitutor } from "./ecid-substitution"
@@ -22,7 +23,10 @@ import {
   resolveSenderDisplayTitle,
   resolveSenderSubjectId,
 } from "./notification-access"
-import { resolveNotificationChannelRoute } from "./notification-channel-binding"
+import {
+  type NotificationChannelRoute,
+  resolveNotificationChannelRoute,
+} from "./notification-channel-binding"
 import {
   sendAvatarPrivacyModeWarning,
   sendNotificationWithReplyFallback,
@@ -36,6 +40,7 @@ import {
   toTelegramMessageTextValue,
 } from "./notification-message"
 import { getNotificationCallbackActionNames } from "./notification-pagination"
+import { parseNotificationTopicId } from "./notification-topic"
 
 const RESPONSE_OPERATION_TITLE = strings.server.notification.responseOperationTitle
 const TELEGRAM_REPLICA_SUBJECT_ID = "replica:telegram"
@@ -52,7 +57,10 @@ export async function sendNotificationForReplica(
 ): Promise<{ notificationId: string; operationId: number | undefined; messageLink?: string }> {
   const ecidSubstitutor = createEcidTextSubstitutor(crypto)
 
-  assertChannelName(input.channel)
+  if (input.topicId === undefined) {
+    assertChannelName(input.channel ?? "")
+  }
+
   assertActionRows(input.actionRows)
 
   const replicaSubjectId = `replica:${replicaName}`
@@ -67,19 +75,17 @@ export async function sendNotificationForReplica(
     senderSubjectId,
   )
 
-  const channel = await prisma.notificationChannel.findUnique({
-    where: {
-      name: input.channel,
-    },
+  const deliveryConfig = await loadDeliveryConfig()
+  const { channel, target } = await resolveNotificationTarget(crypto, prisma, {
+    channelName: input.channel,
+    topicId: input.topicId,
+    systemChatId: deliveryConfig.systemChatId,
   })
-
-  if (!channel) {
-    throw new ConnectError(`Channel with name "${input.channel}" was not found`, Code.NotFound)
-  }
 
   const callbackActions = collectCallbackActions(input.actionRows)
   const actionRows = toNotificationActionRows(input.actionRows)
-  const hasPendingResponse = callbackActions.length > 0 || input.requiresTextResponse === true
+  const hasPendingResponse =
+    callbackActions.length > 0 || input.requiresTextResponse === true || input.acquireTopic === true
 
   const avatar = await prisma.avatar.findUnique({
     where: {
@@ -104,7 +110,6 @@ export async function sendNotificationForReplica(
     avatar === null && !isTelegramReplicaSender,
   )
 
-  const deliveryConfig = await loadDeliveryConfig()
   const avatarToken =
     avatar === null ? undefined : await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)
   const effectiveAvatarToken =
@@ -119,12 +124,6 @@ export async function sendNotificationForReplica(
     input.contextToken,
     deliveryConfig.systemChatId,
   )
-  const target = await resolveNotificationChannelRoute(crypto, prisma, {
-    channelId: channel.id,
-    channelName: channel.name,
-    requestedTopicId: input.topicId,
-    systemChatId: deliveryConfig.systemChatId,
-  })
   const targetChatId = target.chatId
   const replyToMessageId =
     target.messageThreadId === undefined && interactionContext.chatId === targetChatId
@@ -307,6 +306,7 @@ export async function updateNotificationForReplica(
       messageEcid: true,
       actionRows: true,
       requiresTextResponse: true,
+      acquireTopic: true,
       operationId: true,
       operation: {
         select: {
@@ -324,7 +324,9 @@ export async function updateNotificationForReplica(
   const nextCallbackActionNames = getNotificationCallbackActionNames(nextActionRowsData)
   const nextRequiresTextResponse = input.requiresTextResponse ?? notification.requiresTextResponse
   const nextHasPendingResponse =
-    nextCallbackActionNames.length > 0 || nextRequiresTextResponse === true
+    nextCallbackActionNames.length > 0 ||
+    nextRequiresTextResponse === true ||
+    notification.acquireTopic === true
   const hasUrlActions = input.actionRows.some(row =>
     row.actions.some(action => action.url !== undefined),
   )
@@ -436,6 +438,124 @@ export async function updateNotificationForReplica(
   }
 }
 
+export async function acceptNotificationResponseForReplica(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
+  loadDeliveryConfig: () => Promise<{ botToken: string; systemChatId: string }>,
+  input: { notificationId: string },
+): Promise<{ operationId: number }> {
+  const notificationId = parseNotificationId(input.notificationId)
+  const notification = await prisma.notification.findUnique({
+    where: {
+      id: notificationId,
+    },
+    select: {
+      id: true,
+      messageEcid: true,
+      requiresTextResponse: true,
+      acquireTopic: true,
+      operationId: true,
+      sendAsSubjectId: true,
+      operation: {
+        select: {
+          status: true,
+        },
+      },
+    },
+  })
+
+  if (notification === null) {
+    throw new ConnectError(`Notification "${input.notificationId}" was not found`, Code.NotFound)
+  }
+
+  if (!notification.requiresTextResponse && !notification.acquireTopic) {
+    throw new ConnectError(
+      `Notification "${input.notificationId}" does not accept responses`,
+      Code.FailedPrecondition,
+    )
+  }
+
+  const deliveryConfig = await loadDeliveryConfig()
+  const botToken = await resolveNotificationReactionBotToken(
+    crypto,
+    prisma,
+    notification.sendAsSubjectId,
+    deliveryConfig.botToken,
+  )
+  const bot = createTelegramBotClient(botToken, {
+    role: "notification.accept-response",
+  })
+  if (!bot.api.setMessageReaction) {
+    throw new ConnectError("Telegram bot client does not support message reactions", Code.Internal)
+  }
+
+  const telegramMessage = await crypto.decrypt(telegramSentMessageSchema, notification.messageEcid)
+  const targetChatId = getTelegramMessageChatId(telegramMessage)
+
+  await bot.api.setMessageReaction(targetChatId, telegramMessage.message_id, [
+    {
+      type: "emoji",
+      emoji: "👀",
+    },
+  ])
+
+  if (notification.operationId !== null && notification.operation?.status === "PENDING") {
+    return {
+      operationId: notification.operationId,
+    }
+  }
+
+  return await prisma.$transaction(async tx => {
+    const current = await tx.notification.findUnique({
+      where: {
+        id: notification.id,
+      },
+      select: {
+        operationId: true,
+        operation: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    })
+
+    if (current === null) {
+      throw new ConnectError(`Notification "${input.notificationId}" was not found`, Code.NotFound)
+    }
+
+    if (current?.operationId !== null && current?.operation?.status === "PENDING") {
+      return {
+        operationId: current.operationId,
+      }
+    }
+
+    const operation = await tx.operation.create({
+      data: {
+        title: RESPONSE_OPERATION_TITLE,
+        description: null,
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    await tx.notification.update({
+      where: {
+        id: notification.id,
+      },
+      data: {
+        operationId: operation.id,
+      },
+    })
+
+    return {
+      operationId: operation.id,
+    }
+  })
+}
+
 export async function deleteNotificationForReplica(
   crypto: ResideCrypto,
   prisma: PrismaClient,
@@ -512,6 +632,116 @@ export async function deleteNotificationForReplica(
       },
     })
   })
+}
+
+async function resolveNotificationReactionBotToken(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  subjectId: string | null,
+  fallbackBotToken: string,
+): Promise<string> {
+  if (subjectId === null) {
+    return fallbackBotToken
+  }
+
+  const avatar = await prisma.avatar.findUnique({
+    where: {
+      subjectId,
+    },
+    select: {
+      tokenEcid: true,
+    },
+  })
+
+  if (avatar === null) {
+    return fallbackBotToken
+  }
+
+  return await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)
+}
+
+async function resolveNotificationTarget(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  input: {
+    channelName?: string
+    topicId?: string
+    systemChatId: string
+  },
+): Promise<{
+  channel: { id: number; name: string }
+  target: NotificationChannelRoute
+}> {
+  if (input.topicId !== undefined && input.topicId.trim().length > 0) {
+    const topicId = parseNotificationTopicId(input.topicId)
+    const topic = await prisma.notificationTopic.findUnique({
+      where: {
+        id: topicId,
+      },
+      select: {
+        id: true,
+        threadEcid: true,
+        channel: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    })
+
+    if (topic === null) {
+      throw new ConnectError(`Topic "${input.topicId}" was not found`, Code.NotFound)
+    }
+
+    if (
+      input.channelName !== undefined &&
+      input.channelName.trim().length > 0 &&
+      input.channelName !== topic.channel.name
+    ) {
+      throw new ConnectError(
+        `Topic "${input.topicId}" belongs to another notification channel`,
+        Code.InvalidArgument,
+      )
+    }
+
+    const thread = await crypto.decrypt(telegramTopicThreadSchema, topic.threadEcid)
+
+    return {
+      channel: topic.channel,
+      target: {
+        chatId: thread.chat_id,
+        messageThreadId: thread.message_thread_id,
+        topicId: topic.id,
+      },
+    }
+  }
+
+  const channelName = input.channelName ?? ""
+  assertChannelName(channelName)
+
+  const channel = await prisma.notificationChannel.findUnique({
+    where: {
+      name: channelName,
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  })
+
+  if (channel === null) {
+    throw new ConnectError(`Channel with name "${channelName}" was not found`, Code.NotFound)
+  }
+
+  return {
+    channel,
+    target: await resolveNotificationChannelRoute(crypto, prisma, {
+      channelId: channel.id,
+      channelName: channel.name,
+      systemChatId: input.systemChatId,
+    }),
+  }
 }
 
 export function parseNotificationId(notificationId: string): number {

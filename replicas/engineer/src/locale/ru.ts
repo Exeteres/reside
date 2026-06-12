@@ -36,11 +36,17 @@ export const ru = {
       creating: "Анализирую задачу перед созданием issue...",
       updating: "Анализирую ваш фидбек перед обновлением issue...",
     },
+    taskCreated: {
+      title: "Задача создана",
+      message: (messageLink?: string) =>
+        messageLink === undefined ? "Топик задачи создан." : `Топик задачи создан: ${messageLink}`,
+    },
     taskPlanning: {
-      readyTitle: "План готов",
+      inProgressTitle: "Планирование задачи",
+      readyTitle: "Планирование завершено",
       actions: {
         issue: "Открыть в GitHub",
-        approve: "Начать реализацию",
+        approve: "Начать выполнение",
         cancel: "Отменить задачу",
       },
     },
@@ -52,7 +58,7 @@ export const ru = {
       cancellationRequested: "Отмена запрошена. Ожидаю остановку текущей итерации.",
       changeRejectedWhileRunning:
         "Правки во время выполнения отклонены. Дождитесь завершения и отправьте новый фидбек.",
-      doneTitle: "Итерация завершена",
+      doneTitle: "Задача выполнена",
       failedTitle: "Итерация завершилась с ошибкой",
       initialPrompt: "Реализуй утвержденный план задачи.",
       defaultSummary: "Итерация завершена, но агент не предоставил итоговое резюме.",

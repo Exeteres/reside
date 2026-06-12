@@ -1,13 +1,9 @@
 import type { Client as TemporalClient } from "@temporalio/client"
+import type { PrepareTaskWorkflowOutput, TaskCreationMode } from "../../definitions"
 import { randomUUID } from "node:crypto"
 import { defineTool } from "@github/copilot-sdk"
 import { DEFAULT_TEMPORAL_TASK_QUEUE, getReplicaName } from "@reside/common"
 import { z } from "zod"
-import { createTaskCommand } from "../../definitions"
-
-const TASK_MESSAGE_LINK_QUERY = "taskMessageLink"
-const TASK_MESSAGE_LINK_WAIT_TIMEOUT_MS = 120_000
-const TASK_MESSAGE_LINK_POLL_INTERVAL_MS = 1_000
 
 type CreateTaskToolServices = {
   temporalClient: TemporalClient
@@ -15,7 +11,7 @@ type CreateTaskToolServices = {
 
 export function createCreateTaskTool({ temporalClient }: CreateTaskToolServices) {
   return defineTool("create_task", {
-    description: "Starts create_task workflow for the provided task description.",
+    description: "Prepares an engineer task topic and starts task processing workflow.",
     parameters: z.object({
       task: z.string().min(1),
       mode: z.enum(["plan", "implement"]).default("plan"),
@@ -23,55 +19,66 @@ export function createCreateTaskTool({ temporalClient }: CreateTaskToolServices)
     handler: async ({ task, mode }) => {
       const invocationId = randomUUID()
       const taskPrompt = task.trim()
-      const workflowId = `handle-command-${invocationId}`
+      const taskMode: TaskCreationMode = mode
+      const subjectId = `replica:${getReplicaName()}`
 
-      await temporalClient.workflow.start("handleCommandWorkflow", {
-        workflowId,
-        taskQueue: DEFAULT_TEMPORAL_TASK_QUEUE,
-        args: [
-          {
-            invocationId,
-            command: createTaskCommand,
-            parameters: {
-              task: taskPrompt,
-              mode,
+      if (taskPrompt.length === 0) {
+        return createFailedTaskResult(invocationId, "Task description must not be empty")
+      }
+
+      try {
+        const preparationHandle = await temporalClient.workflow.start("prepareTaskWorkflow", {
+          workflowId: `prepare-task-${invocationId}`,
+          taskQueue: DEFAULT_TEMPORAL_TASK_QUEUE,
+          args: [
+            {
+              subjectId,
+              prompt: taskPrompt,
+              mode: taskMode,
             },
-            subjectId: `replica:${getReplicaName()}`,
-          },
-        ],
-      })
+          ],
+        })
+        const preparation = (await preparationHandle.result()) as PrepareTaskWorkflowOutput
 
-      const messageLink = await waitForTaskMessageLink(temporalClient, workflowId)
+        await temporalClient.workflow.start("taskWorkflow", {
+          workflowId: `task-${preparation.topicId}`,
+          taskQueue: DEFAULT_TEMPORAL_TASK_QUEUE,
+          args: [
+            {
+              subjectId,
+              prompt: taskPrompt,
+              mode: taskMode,
+              ...preparation,
+            },
+          ],
+        })
 
-      return {
-        invocationId,
-        status: "started",
-        messageLink,
-        response: "Started create_task workflow.",
+        return {
+          invocationId,
+          status: "created",
+          messageLink: preparation.messageLink,
+          response: "Created task topic and started task workflow.",
+        }
+      } catch (error) {
+        return createFailedTaskResult(invocationId, normalizeError(error).message)
       }
     },
   })
 }
 
-async function waitForTaskMessageLink(
-  temporalClient: TemporalClient,
-  workflowId: string,
-): Promise<string> {
-  const startedAt = Date.now()
-  const handle = temporalClient.workflow.getHandle(workflowId)
-
-  while (Date.now() - startedAt < TASK_MESSAGE_LINK_WAIT_TIMEOUT_MS) {
-    const messageLink = await handle.query<string | undefined>(TASK_MESSAGE_LINK_QUERY)
-    if (messageLink !== undefined && messageLink.length > 0) {
-      return messageLink
-    }
-
-    await sleep(TASK_MESSAGE_LINK_POLL_INTERVAL_MS)
+function createFailedTaskResult(invocationId: string, errorMessage: string) {
+  return {
+    invocationId,
+    status: "failed",
+    errorMessage,
+    response: `Failed to create task: ${errorMessage}`,
   }
-
-  throw new Error(`Task workflow "${workflowId}" did not create a message link in time`)
 }
 
-async function sleep(ms: number): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, ms))
+function normalizeError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error
+  }
+
+  return new Error(String(error))
 }

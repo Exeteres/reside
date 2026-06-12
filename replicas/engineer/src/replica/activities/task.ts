@@ -16,8 +16,10 @@ import {
   parseResideManifest,
   RESIDE_MANIFEST_FILE,
 } from "@reside/common"
+import { crypto as resideCrypto } from "@reside/common/encryption"
 import { WellKnownPermissions } from "@reside/registry"
 import { toError } from "@reside/utils"
+import OpenAI from "openai"
 import { z } from "zod"
 import { strings } from "../../locale"
 import {
@@ -51,6 +53,18 @@ const startPlanningInputSchema = z.object({
   subjectId: z.string().min(1),
   prompt: z.string().min(1),
   progressNotificationId: z.string().min(1),
+  topicId: z.string().min(1),
+  previewTitle: z.string().min(1),
+})
+
+const llmSecretSchema = z.object({
+  endpoint: z.string().trim().min(1),
+  "api-key": z.string().trim().min(1),
+  "smart-model": z.string().trim().min(1),
+})
+
+const generatedTitleSchema = z.object({
+  title: z.string().trim().min(1).max(80),
 })
 
 const planningFeedbackInputSchema = z.object({
@@ -118,11 +132,72 @@ export function createTaskActivities({
   alphaOperationService,
 }: TaskActivityServices): EngineerTaskActivities {
   return {
-    async startPlanningInteraction({ subjectId, prompt, progressNotificationId }) {
+    async generateTaskPreviewTitle({ prompt }) {
+      const taskPrompt = prompt.trim()
+      if (taskPrompt.length === 0) {
+        throw new Error("Task prompt must not be empty")
+      }
+
+      const llmSecret = await resideCrypto.getSecret(llmSecretSchema, "llm")
+      const client = new OpenAI({
+        apiKey: llmSecret["api-key"],
+        baseURL: llmSecret.endpoint,
+      })
+
+      const response = await client.chat.completions.create({
+        model: llmSecret["smart-model"],
+        messages: [
+          {
+            role: "system",
+            content:
+              "Generate a short content-less Russian title for an engineering task topic. " +
+              "Do not include implementation details, issue numbers, markdown, quotes, or final punctuation.",
+          },
+          {
+            role: "user",
+            content: taskPrompt,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "task_preview_title",
+            strict: true,
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              required: ["title"],
+              properties: {
+                title: {
+                  type: "string",
+                },
+              },
+            },
+          },
+        },
+      })
+
+      const content = response.choices[0]?.message.content
+      if (content === null || content === undefined || content.trim().length === 0) {
+        throw new Error("OpenAI title response is empty")
+      }
+
+      return generatedTitleSchema.parse(JSON.parse(content))
+    },
+
+    async startPlanningInteraction({
+      subjectId,
+      prompt,
+      progressNotificationId,
+      topicId,
+      previewTitle,
+    }) {
       const parsedInput = startPlanningInputSchema.parse({
         subjectId,
         prompt,
         progressNotificationId,
+        topicId,
+        previewTitle,
       })
       const repository = await runtime.getRepositoryTarget()
       const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`
@@ -131,6 +206,9 @@ export function createTaskActivities({
         data: {
           phase: "PLANNING",
           status: "PLANNING",
+          topicId: parsedInput.topicId,
+          previewTitle: parsedInput.previewTitle,
+          progressNotificationId: parsedInput.progressNotificationId,
           createdBy: parsedInput.subjectId,
         },
       })
@@ -156,6 +234,7 @@ export function createTaskActivities({
           notificationService,
           progressNotificationId: parsedInput.progressNotificationId,
           prompt: parsedInput.prompt,
+          previewTitle: parsedInput.previewTitle,
           repository,
           taskId: task.id,
         })
@@ -271,6 +350,7 @@ export function createTaskActivities({
           notificationService,
           progressNotificationId: parsedInput.progressNotificationId,
           prompt: parsedInput.feedback,
+          previewTitle: task.previewTitle,
           repository,
           taskId: dbTaskId,
         })
@@ -1325,6 +1405,7 @@ async function runPlanningSession({
   notificationService,
   progressNotificationId,
   prompt,
+  previewTitle,
   repository,
   taskId,
 }: {
@@ -1333,6 +1414,7 @@ async function runPlanningSession({
   notificationService: NotificationServiceClient
   progressNotificationId: string
   prompt: string
+  previewTitle: string
   repository: Awaited<ReturnType<EngineerAiRuntime["getRepositoryTarget"]>>
   taskId: number
 }): Promise<{ title: string; body: string; summary: string }> {
@@ -1349,7 +1431,7 @@ async function runPlanningSession({
 
   const finalMessage = await languageEngine.askStream(
     `task-${taskId}`,
-    createPlanningPrompt(repository, prompt),
+    createPlanningPrompt(repository, prompt, previewTitle),
     async frame => {
       await reportPlanningProgress(frame.text)
     },

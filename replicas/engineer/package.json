@@ -17,6 +17,7 @@
     "@temporalio/common": "catalog:",
     "@temporalio/worker": "catalog:",
     "@temporalio/workflow": "catalog:",
+    "openai": "catalog:",
     "prisma": "catalog:",
     "@github/copilot-sdk": "catalog:"
   },

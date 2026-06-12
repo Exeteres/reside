@@ -31,10 +31,13 @@ enum TaskPhase {
 }
 
 model Task {
-  id      Int        @id @default(autoincrement())
-  phase   TaskPhase
-  status  TaskStatus
-  issueId Int?       @unique
+  id                     Int        @id @default(autoincrement())
+  phase                  TaskPhase
+  status                 TaskStatus
+  issueId                Int?       @unique
+  topicId                String     @unique
+  previewTitle           String
+  progressNotificationId String?
 
   createdBy String
   updatedBy String?

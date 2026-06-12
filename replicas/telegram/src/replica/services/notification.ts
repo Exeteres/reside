@@ -18,6 +18,7 @@ import {
   TELEGRAM_SYSTEM_CHAT_ID_KEY,
 } from "../business/config"
 import {
+  acceptNotificationResponseForReplica,
   assertActionRows,
   deleteNotificationForReplica,
   parseNotificationId,
@@ -151,6 +152,41 @@ export function createNotificationService({
       } catch (error) {
         logger.error({ error }, "failed to update telegram notification")
         throw new ConnectError("Failed to update telegram notification", Code.Internal)
+      }
+    },
+
+    async acceptNotificationResponse(request, context) {
+      const { name: replicaName } = await authenticateReplica(context)
+
+      logger.info(
+        "acceptNotificationResponse requested by replica %s for notificationId %s",
+        replicaName,
+        request.notificationId,
+      )
+
+      try {
+        parseNotificationId(request.notificationId)
+
+        const result = await acceptNotificationResponseForReplica(
+          crypto,
+          prisma,
+          createTelegramBotClient,
+          loadDeliveryConfig,
+          {
+            notificationId: request.notificationId,
+          },
+        )
+
+        return {
+          operation: await operationService.toApiOperation(result.operationId),
+        }
+      } catch (error) {
+        if (error instanceof ConnectError) {
+          throw error
+        }
+
+        logger.error({ error }, "failed to accept telegram notification response")
+        throw new ConnectError("Failed to accept telegram notification response", Code.Internal)
       }
     },
 

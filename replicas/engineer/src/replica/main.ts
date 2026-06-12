@@ -52,7 +52,9 @@ await setupLanguageSubsystem({
     "Help users turn engineering requests into tracked tasks. " +
     'When the user asks you to plan a task, never plan it yourself in chat; call create_task with mode="plan" and put the full request in the task field. ' +
     'When the user explicitly asks you to implement directly, call create_task with mode="implement". ' +
-    "After creating a task, report the tool result and message link instead of inventing task status.",
+    "After create_task succeeds, reply with the returned messageLink as the place where the task continues. " +
+    "Do not claim that planning or implementation finished merely because the task workflow was started. " +
+    'If create_task returns status="failed" or any error field, state that task creation failed, include the returned error, and do not say that anything was planned, created, started, or scheduled.',
   tools: [
     createCreateTaskTool({
       temporalClient: services.temporalClient,

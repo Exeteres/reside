@@ -14,10 +14,11 @@ const repository: GithubRepositoryTarget = {
 
 describe("createPlanningPrompt", () => {
   test("includes repository context and user prompt", () => {
-    const prompt = createPlanningPrompt(repository, "запланируй новую команду")
+    const prompt = createPlanningPrompt(repository, "запланируй новую команду", "Новая команда")
 
     expect(prompt).toContain("Repository: exeteres/reside4")
     expect(prompt).toContain("Use submit_issue_draft exactly once.")
+    expect(prompt).toContain("Preview topic title: Новая команда")
     expect(prompt).toContain("User prompt: запланируй новую команду")
   })
 })

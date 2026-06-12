@@ -1,11 +1,17 @@
 import type { GithubRepositoryTarget } from "./ai-runtime"
 import { strings } from "../../locale"
 
-export function createPlanningPrompt(repository: GithubRepositoryTarget, prompt: string): string {
+export function createPlanningPrompt(
+  repository: GithubRepositoryTarget,
+  prompt: string,
+  previewTitle: string,
+): string {
   return [
     `Repository: ${repository.owner}/${repository.name}`,
     "Planning phase: produce issue draft update only.",
     "Issue title, issue body, and plan summary MUST be in russian.",
+    `Preview topic title: ${previewTitle}`,
+    "You may keep the preview title if it is accurate, or replace it with a better issue title.",
     "Do not invent tasks, requirements, or technical details that are not present in the user prompt or repository evidence.",
     "If user prompt is high-level or minimal, keep the plan high-level and minimal as well.",
     "Match detail level to available input; do not add speculative decomposition just to make plan look complete.",

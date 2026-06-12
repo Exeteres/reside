@@ -1,3 +1,17 @@
+export type GenerateTaskPreviewTitleInput = {
+  /**
+   * The original user task prompt.
+   */
+  prompt: string
+}
+
+export type GenerateTaskPreviewTitleOutput = {
+  /**
+   * The generated short Russian preview title.
+   */
+  title: string
+}
+
 export type StartPlanningInteractionInput = {
   /**
    * The subject identifier that requested planning.
@@ -13,6 +27,16 @@ export type StartPlanningInteractionInput = {
    * The notification identifier used for progress updates.
    */
   progressNotificationId: string
+
+  /**
+   * The notification topic identifier associated with the task.
+   */
+  topicId: string
+
+  /**
+   * The generated preview title from task preparation.
+   */
+  previewTitle: string
 }
 
 export type SubmitPlanningFeedbackInteractionInput = {
@@ -178,6 +202,13 @@ export type GetTaskSnapshotOutput = {
 }
 
 export type EngineerTaskActivities = {
+  /**
+   * Generates a short preview title for task preparation.
+   */
+  generateTaskPreviewTitle: (
+    input: GenerateTaskPreviewTitleInput,
+  ) => Promise<GenerateTaskPreviewTitleOutput>
+
   /**
    * Starts a planning interaction for a task.
    */
