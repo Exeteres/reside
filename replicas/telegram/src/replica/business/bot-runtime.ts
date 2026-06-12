@@ -1,3 +1,4 @@
+import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
 import type { CommonServices, GenericOperationService } from "@reside/common"
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
@@ -23,6 +24,7 @@ export function createBotRuntime(args: {
     prisma: PrismaClient
     operationService: GenericOperationService<Operation>
     temporalClient: Client
+    subjectService: SubjectServiceClient
     crypto: ResideCrypto
   }
   webhookUrl: string
@@ -51,6 +53,7 @@ export function createBotRuntime(args: {
       discoveryService: args.services.discoveryService,
       authzService: args.services.authzService,
       permissionRequestService: args.services.permissionRequestService,
+      subjectService: args.services.subjectService,
       temporalClient: args.services.temporalClient,
       superAdminUserId: currentSuperAdminUserId,
       crypto: args.services.crypto,

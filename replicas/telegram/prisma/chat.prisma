@@ -15,6 +15,12 @@ model Chat {
   /// Notifications delivered to this chat.
   notifications Notification[] @relation("NotificationTargetChat")
 
+  /// Notification topics created in this chat.
+  notificationTopics NotificationTopic[] @relation("NotificationTopicTargetChat")
+
+  /// Notification channel bindings that route messages to this chat.
+  notificationChannelBindings NotificationChannelBinding[]
+
   /// Natural language interactions tracked for this chat.
   naturalLanguageInteractions NaturalLanguageInteraction[] @relation("NaturalLanguageInteractionChat")
 

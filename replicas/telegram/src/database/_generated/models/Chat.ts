@@ -220,6 +220,8 @@ export type ChatWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Chat"> | Date | string
   data?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
   notifications?: Prisma.NotificationListRelationFilter
+  notificationTopics?: Prisma.NotificationTopicListRelationFilter
+  notificationChannelBindings?: Prisma.NotificationChannelBindingListRelationFilter
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionListRelationFilter
 }
 
@@ -231,6 +233,8 @@ export type ChatOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   data?: Prisma.EncryptedContentOrderByWithRelationInput
   notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  notificationTopics?: Prisma.NotificationTopicOrderByRelationAggregateInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingOrderByRelationAggregateInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionOrderByRelationAggregateInput
 }
 
@@ -245,6 +249,8 @@ export type ChatWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Chat"> | Date | string
   data?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
   notifications?: Prisma.NotificationListRelationFilter
+  notificationTopics?: Prisma.NotificationTopicListRelationFilter
+  notificationChannelBindings?: Prisma.NotificationChannelBindingListRelationFilter
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionListRelationFilter
 }, "id" | "telegramRhid" | "dataEcid">
 
@@ -278,6 +284,8 @@ export type ChatCreateInput = {
   updatedAt?: Date | string
   data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutChatInput
+  notificationTopics?: Prisma.NotificationTopicCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChatInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutChatInput
 }
 
@@ -288,6 +296,8 @@ export type ChatUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
+  notificationTopics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChatInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutChatInput
 }
 
@@ -297,6 +307,8 @@ export type ChatUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutChatNestedInput
+  notificationTopics?: Prisma.NotificationTopicUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChatNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutChatNestedInput
 }
 
@@ -307,6 +319,8 @@ export type ChatUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
+  notificationTopics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChatNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutChatNestedInput
 }
 
@@ -330,6 +344,11 @@ export type ChatUncheckedUpdateManyInput = {
   dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ChatScalarRelationFilter = {
+  is?: Prisma.ChatWhereInput
+  isNot?: Prisma.ChatWhereInput
 }
 
 export type ChatCountOrderByAggregateInput = {
@@ -369,9 +388,18 @@ export type ChatNullableScalarRelationFilter = {
   isNot?: Prisma.ChatWhereInput | null
 }
 
-export type ChatScalarRelationFilter = {
-  is?: Prisma.ChatWhereInput
-  isNot?: Prisma.ChatWhereInput
+export type ChatCreateNestedOneWithoutNotificationChannelBindingsInput = {
+  create?: Prisma.XOR<Prisma.ChatCreateWithoutNotificationChannelBindingsInput, Prisma.ChatUncheckedCreateWithoutNotificationChannelBindingsInput>
+  connectOrCreate?: Prisma.ChatCreateOrConnectWithoutNotificationChannelBindingsInput
+  connect?: Prisma.ChatWhereUniqueInput
+}
+
+export type ChatUpdateOneRequiredWithoutNotificationChannelBindingsNestedInput = {
+  create?: Prisma.XOR<Prisma.ChatCreateWithoutNotificationChannelBindingsInput, Prisma.ChatUncheckedCreateWithoutNotificationChannelBindingsInput>
+  connectOrCreate?: Prisma.ChatCreateOrConnectWithoutNotificationChannelBindingsInput
+  upsert?: Prisma.ChatUpsertWithoutNotificationChannelBindingsInput
+  connect?: Prisma.ChatWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ChatUpdateToOneWithWhereWithoutNotificationChannelBindingsInput, Prisma.ChatUpdateWithoutNotificationChannelBindingsInput>, Prisma.ChatUncheckedUpdateWithoutNotificationChannelBindingsInput>
 }
 
 export type ChatCreateNestedOneWithoutDataInput = {
@@ -420,6 +448,20 @@ export type ChatUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput =
   update?: Prisma.XOR<Prisma.XOR<Prisma.ChatUpdateToOneWithWhereWithoutNaturalLanguageInteractionsInput, Prisma.ChatUpdateWithoutNaturalLanguageInteractionsInput>, Prisma.ChatUncheckedUpdateWithoutNaturalLanguageInteractionsInput>
 }
 
+export type ChatCreateNestedOneWithoutNotificationTopicsInput = {
+  create?: Prisma.XOR<Prisma.ChatCreateWithoutNotificationTopicsInput, Prisma.ChatUncheckedCreateWithoutNotificationTopicsInput>
+  connectOrCreate?: Prisma.ChatCreateOrConnectWithoutNotificationTopicsInput
+  connect?: Prisma.ChatWhereUniqueInput
+}
+
+export type ChatUpdateOneRequiredWithoutNotificationTopicsNestedInput = {
+  create?: Prisma.XOR<Prisma.ChatCreateWithoutNotificationTopicsInput, Prisma.ChatUncheckedCreateWithoutNotificationTopicsInput>
+  connectOrCreate?: Prisma.ChatCreateOrConnectWithoutNotificationTopicsInput
+  upsert?: Prisma.ChatUpsertWithoutNotificationTopicsInput
+  connect?: Prisma.ChatWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ChatUpdateToOneWithWhereWithoutNotificationTopicsInput, Prisma.ChatUpdateWithoutNotificationTopicsInput>, Prisma.ChatUncheckedUpdateWithoutNotificationTopicsInput>
+}
+
 export type ChatCreateNestedOneWithoutNotificationsInput = {
   create?: Prisma.XOR<Prisma.ChatCreateWithoutNotificationsInput, Prisma.ChatUncheckedCreateWithoutNotificationsInput>
   connectOrCreate?: Prisma.ChatCreateOrConnectWithoutNotificationsInput
@@ -434,11 +476,71 @@ export type ChatUpdateOneRequiredWithoutNotificationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ChatUpdateToOneWithWhereWithoutNotificationsInput, Prisma.ChatUpdateWithoutNotificationsInput>, Prisma.ChatUncheckedUpdateWithoutNotificationsInput>
 }
 
+export type ChatCreateWithoutNotificationChannelBindingsInput = {
+  telegramRhid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutChatInput
+  notificationTopics?: Prisma.NotificationTopicCreateNestedManyWithoutChatInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutChatInput
+}
+
+export type ChatUncheckedCreateWithoutNotificationChannelBindingsInput = {
+  id?: number
+  telegramRhid: string
+  dataEcid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
+  notificationTopics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChatInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutChatInput
+}
+
+export type ChatCreateOrConnectWithoutNotificationChannelBindingsInput = {
+  where: Prisma.ChatWhereUniqueInput
+  create: Prisma.XOR<Prisma.ChatCreateWithoutNotificationChannelBindingsInput, Prisma.ChatUncheckedCreateWithoutNotificationChannelBindingsInput>
+}
+
+export type ChatUpsertWithoutNotificationChannelBindingsInput = {
+  update: Prisma.XOR<Prisma.ChatUpdateWithoutNotificationChannelBindingsInput, Prisma.ChatUncheckedUpdateWithoutNotificationChannelBindingsInput>
+  create: Prisma.XOR<Prisma.ChatCreateWithoutNotificationChannelBindingsInput, Prisma.ChatUncheckedCreateWithoutNotificationChannelBindingsInput>
+  where?: Prisma.ChatWhereInput
+}
+
+export type ChatUpdateToOneWithWhereWithoutNotificationChannelBindingsInput = {
+  where?: Prisma.ChatWhereInput
+  data: Prisma.XOR<Prisma.ChatUpdateWithoutNotificationChannelBindingsInput, Prisma.ChatUncheckedUpdateWithoutNotificationChannelBindingsInput>
+}
+
+export type ChatUpdateWithoutNotificationChannelBindingsInput = {
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutChatNestedInput
+  notificationTopics?: Prisma.NotificationTopicUpdateManyWithoutChatNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutChatNestedInput
+}
+
+export type ChatUncheckedUpdateWithoutNotificationChannelBindingsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
+  notificationTopics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChatNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutChatNestedInput
+}
+
 export type ChatCreateWithoutDataInput = {
   telegramRhid: string
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationCreateNestedManyWithoutChatInput
+  notificationTopics?: Prisma.NotificationTopicCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChatInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutChatInput
 }
 
@@ -448,6 +550,8 @@ export type ChatUncheckedCreateWithoutDataInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
+  notificationTopics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChatInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutChatInput
 }
 
@@ -472,6 +576,8 @@ export type ChatUpdateWithoutDataInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUpdateManyWithoutChatNestedInput
+  notificationTopics?: Prisma.NotificationTopicUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChatNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutChatNestedInput
 }
 
@@ -481,6 +587,8 @@ export type ChatUncheckedUpdateWithoutDataInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
+  notificationTopics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChatNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutChatNestedInput
 }
 
@@ -490,6 +598,8 @@ export type ChatCreateWithoutNaturalLanguageInteractionsInput = {
   updatedAt?: Date | string
   data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutChatInput
+  notificationTopics?: Prisma.NotificationTopicCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChatInput
 }
 
 export type ChatUncheckedCreateWithoutNaturalLanguageInteractionsInput = {
@@ -499,6 +609,8 @@ export type ChatUncheckedCreateWithoutNaturalLanguageInteractionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
+  notificationTopics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChatInput
 }
 
 export type ChatCreateOrConnectWithoutNaturalLanguageInteractionsInput = {
@@ -523,6 +635,8 @@ export type ChatUpdateWithoutNaturalLanguageInteractionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutChatNestedInput
+  notificationTopics?: Prisma.NotificationTopicUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChatNestedInput
 }
 
 export type ChatUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
@@ -532,6 +646,66 @@ export type ChatUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
+  notificationTopics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChatNestedInput
+}
+
+export type ChatCreateWithoutNotificationTopicsInput = {
+  telegramRhid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChatInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutChatInput
+}
+
+export type ChatUncheckedCreateWithoutNotificationTopicsInput = {
+  id?: number
+  telegramRhid: string
+  dataEcid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChatInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutChatInput
+}
+
+export type ChatCreateOrConnectWithoutNotificationTopicsInput = {
+  where: Prisma.ChatWhereUniqueInput
+  create: Prisma.XOR<Prisma.ChatCreateWithoutNotificationTopicsInput, Prisma.ChatUncheckedCreateWithoutNotificationTopicsInput>
+}
+
+export type ChatUpsertWithoutNotificationTopicsInput = {
+  update: Prisma.XOR<Prisma.ChatUpdateWithoutNotificationTopicsInput, Prisma.ChatUncheckedUpdateWithoutNotificationTopicsInput>
+  create: Prisma.XOR<Prisma.ChatCreateWithoutNotificationTopicsInput, Prisma.ChatUncheckedCreateWithoutNotificationTopicsInput>
+  where?: Prisma.ChatWhereInput
+}
+
+export type ChatUpdateToOneWithWhereWithoutNotificationTopicsInput = {
+  where?: Prisma.ChatWhereInput
+  data: Prisma.XOR<Prisma.ChatUpdateWithoutNotificationTopicsInput, Prisma.ChatUncheckedUpdateWithoutNotificationTopicsInput>
+}
+
+export type ChatUpdateWithoutNotificationTopicsInput = {
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChatNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutChatNestedInput
+}
+
+export type ChatUncheckedUpdateWithoutNotificationTopicsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChatNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutChatNestedInput
 }
 
 export type ChatCreateWithoutNotificationsInput = {
@@ -539,6 +713,8 @@ export type ChatCreateWithoutNotificationsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
+  notificationTopics?: Prisma.NotificationTopicCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChatInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutChatInput
 }
 
@@ -548,6 +724,8 @@ export type ChatUncheckedCreateWithoutNotificationsInput = {
   dataEcid: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  notificationTopics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChatInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChatInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutChatInput
 }
 
@@ -572,6 +750,8 @@ export type ChatUpdateWithoutNotificationsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
+  notificationTopics?: Prisma.NotificationTopicUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChatNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutChatNestedInput
 }
 
@@ -581,6 +761,8 @@ export type ChatUncheckedUpdateWithoutNotificationsInput = {
   dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  notificationTopics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChatNestedInput
+  notificationChannelBindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChatNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutChatNestedInput
 }
 
@@ -591,11 +773,15 @@ export type ChatUncheckedUpdateWithoutNotificationsInput = {
 
 export type ChatCountOutputType = {
   notifications: number
+  notificationTopics: number
+  notificationChannelBindings: number
   naturalLanguageInteractions: number
 }
 
 export type ChatCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   notifications?: boolean | ChatCountOutputTypeCountNotificationsArgs
+  notificationTopics?: boolean | ChatCountOutputTypeCountNotificationTopicsArgs
+  notificationChannelBindings?: boolean | ChatCountOutputTypeCountNotificationChannelBindingsArgs
   naturalLanguageInteractions?: boolean | ChatCountOutputTypeCountNaturalLanguageInteractionsArgs
 }
 
@@ -619,6 +805,20 @@ export type ChatCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Ty
 /**
  * ChatCountOutputType without action
  */
+export type ChatCountOutputTypeCountNotificationTopicsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationTopicWhereInput
+}
+
+/**
+ * ChatCountOutputType without action
+ */
+export type ChatCountOutputTypeCountNotificationChannelBindingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationChannelBindingWhereInput
+}
+
+/**
+ * ChatCountOutputType without action
+ */
 export type ChatCountOutputTypeCountNaturalLanguageInteractionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.NaturalLanguageInteractionWhereInput
 }
@@ -632,6 +832,8 @@ export type ChatSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   updatedAt?: boolean
   data?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
   notifications?: boolean | Prisma.Chat$notificationsArgs<ExtArgs>
+  notificationTopics?: boolean | Prisma.Chat$notificationTopicsArgs<ExtArgs>
+  notificationChannelBindings?: boolean | Prisma.Chat$notificationChannelBindingsArgs<ExtArgs>
   naturalLanguageInteractions?: boolean | Prisma.Chat$naturalLanguageInteractionsArgs<ExtArgs>
   _count?: boolean | Prisma.ChatCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["chat"]>
@@ -666,6 +868,8 @@ export type ChatOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = run
 export type ChatInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   data?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
   notifications?: boolean | Prisma.Chat$notificationsArgs<ExtArgs>
+  notificationTopics?: boolean | Prisma.Chat$notificationTopicsArgs<ExtArgs>
+  notificationChannelBindings?: boolean | Prisma.Chat$notificationChannelBindingsArgs<ExtArgs>
   naturalLanguageInteractions?: boolean | Prisma.Chat$naturalLanguageInteractionsArgs<ExtArgs>
   _count?: boolean | Prisma.ChatCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -687,6 +891,14 @@ export type $ChatPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
      * Notifications delivered to this chat.
      */
     notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    /**
+     * Notification topics created in this chat.
+     */
+    notificationTopics: Prisma.$NotificationTopicPayload<ExtArgs>[]
+    /**
+     * Notification channel bindings that route messages to this chat.
+     */
+    notificationChannelBindings: Prisma.$NotificationChannelBindingPayload<ExtArgs>[]
     /**
      * Natural language interactions tracked for this chat.
      */
@@ -1109,6 +1321,8 @@ export interface Prisma__ChatClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   data<T extends Prisma.EncryptedContentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContentDefaultArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   notifications<T extends Prisma.Chat$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Chat$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notificationTopics<T extends Prisma.Chat$notificationTopicsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Chat$notificationTopicsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationTopicPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notificationChannelBindings<T extends Prisma.Chat$notificationChannelBindingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Chat$notificationChannelBindingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationChannelBindingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   naturalLanguageInteractions<T extends Prisma.Chat$naturalLanguageInteractionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Chat$naturalLanguageInteractionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NaturalLanguageInteractionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1561,6 +1775,54 @@ export type Chat$notificationsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+}
+
+/**
+ * Chat.notificationTopics
+ */
+export type Chat$notificationTopicsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationTopic
+   */
+  select?: Prisma.NotificationTopicSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationTopic
+   */
+  omit?: Prisma.NotificationTopicOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationTopicInclude<ExtArgs> | null
+  where?: Prisma.NotificationTopicWhereInput
+  orderBy?: Prisma.NotificationTopicOrderByWithRelationInput | Prisma.NotificationTopicOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationTopicWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationTopicScalarFieldEnum | Prisma.NotificationTopicScalarFieldEnum[]
+}
+
+/**
+ * Chat.notificationChannelBindings
+ */
+export type Chat$notificationChannelBindingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationChannelBinding
+   */
+  select?: Prisma.NotificationChannelBindingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationChannelBinding
+   */
+  omit?: Prisma.NotificationChannelBindingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationChannelBindingInclude<ExtArgs> | null
+  where?: Prisma.NotificationChannelBindingWhereInput
+  orderBy?: Prisma.NotificationChannelBindingOrderByWithRelationInput | Prisma.NotificationChannelBindingOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationChannelBindingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationChannelBindingScalarFieldEnum | Prisma.NotificationChannelBindingScalarFieldEnum[]
 }
 
 /**

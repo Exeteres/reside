@@ -1,6 +1,7 @@
 import type { PrismaClient } from "../../database"
 import { describe, expect, test } from "bun:test"
 import { mockDeepFn, testCrypto } from "@reside/common/testing"
+import { createInteractionContextToken } from "../../shared"
 import {
   assertActionRows,
   deleteNotificationForReplica,
@@ -154,12 +155,74 @@ describe("sendNotificationForReplica", () => {
     )
 
     expect(result).toEqual({
+      messageLink: expect.stringMatching(/^enc:test:/),
       notificationId: "77",
       operationId: undefined,
     })
     expect(bot.api.sendMessage.spy()).toHaveBeenCalledTimes(1)
     expect(prisma.notification.create.spy()).toHaveBeenCalledTimes(1)
     expect(prisma.operation.create.spy()).toHaveBeenCalledTimes(0)
+  })
+
+  test("replies to command message in same-chat command context", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<{
+      checkPermission: (args: {
+        permissionName: string
+        subjectId: string
+        scope: string
+      }) => Promise<{ authorized: boolean }>
+    }>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+    const contextToken = await createInteractionContextToken(testCrypto, {
+      chat_id: "-1001",
+      message_id: 42,
+    })
+
+    prisma.notificationChannel.findUnique.mockResolvedValue({ id: 11, name: "alerts" } as never)
+    prisma.notificationChannelBinding.findUnique.mockResolvedValue(null as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    prisma.chat.upsert.mockResolvedValue({ id: 1 } as never)
+    prisma.notification.create.mockResolvedValue({ id: 77 } as never)
+    subjectService.getSubjectDisplayInfo.mockResolvedValue({ title: "Sender" } as never)
+    bot.api.sendMessage.mockResolvedValue({ message_id: 123 } as never)
+
+    await sendNotificationForReplica(
+      testCrypto,
+      prisma,
+      authzService,
+      subjectService,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      "demo",
+      {
+        channel: "alerts",
+        title: "Title",
+        content: "Body",
+        actionRows: [],
+        images: [],
+        attachments: [],
+        contextToken,
+        requiresTextResponse: false,
+      },
+    )
+
+    expect(bot.api.sendMessage.spy()).toHaveBeenCalledWith(
+      "-1001",
+      expect.any(String),
+      expect.objectContaining({
+        reply_parameters: {
+          message_id: 42,
+        },
+        message_thread_id: undefined,
+      }),
+    )
   })
 
   test("creates wait operation when notification requires response", async () => {
@@ -222,6 +285,7 @@ describe("sendNotificationForReplica", () => {
     )
 
     expect(result).toEqual({
+      messageLink: expect.stringMatching(/^enc:test:/),
       notificationId: "77",
       operationId: 55,
     })

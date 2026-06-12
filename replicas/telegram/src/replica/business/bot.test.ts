@@ -2,12 +2,86 @@ import { describe, expect, test } from "bun:test"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
 import { strings } from "../../locale"
 import {
+  parseBindingCommandText,
+  resolveBindingMessageThreadId,
+  resolveBindingTopicInfo,
+} from "./bot"
+import {
   parseCommandInvocation,
   parseCommandParameters,
   parseLeadingMention,
   parseStoredCommandParameters,
   resolveNlsMessageThreadId,
 } from "./bot-command"
+
+describe("parseBindingCommandText", () => {
+  test("parses channel name", () => {
+    expect(
+      parseBindingCommandText("/bind_notification_channel alerts", "bind_notification_channel"),
+    ).toEqual({
+      channel: "alerts",
+    })
+  })
+
+  test("strips bot mention", () => {
+    expect(
+      parseBindingCommandText(
+        "/bind_notification_channel@reside_bot alerts",
+        "bind_notification_channel",
+      ),
+    ).toEqual({
+      channel: "alerts",
+    })
+  })
+
+  test("rejects topic id argument", () => {
+    expect(
+      parseBindingCommandText("/bind_notification_channel alerts 5", "bind_notification_channel"),
+    ).toBeNull()
+  })
+})
+
+describe("resolveBindingMessageThreadId", () => {
+  test("uses topic message thread id", () => {
+    expect(
+      resolveBindingMessageThreadId({
+        is_topic_message: true,
+        message_thread_id: 99,
+      }),
+    ).toBe(99)
+  })
+
+  test("ignores thread id outside topic message", () => {
+    expect(
+      resolveBindingMessageThreadId({
+        message_thread_id: 99,
+      }),
+    ).toBeUndefined()
+  })
+})
+
+describe("resolveBindingTopicInfo", () => {
+  test("uses telegram topic title from topic creation message", () => {
+    expect(
+      resolveBindingTopicInfo(
+        {
+          is_topic_message: true,
+          message_thread_id: 99,
+          reply_to_message: {
+            forum_topic_created: {
+              name: "Updates",
+            },
+          },
+        },
+        "-1001",
+      ),
+    ).toEqual({
+      chatId: "-1001",
+      messageThreadId: 99,
+      title: "Updates",
+    })
+  })
+})
 
 describe("parseCommandInvocation", () => {
   test("returns null for non-command text", () => {

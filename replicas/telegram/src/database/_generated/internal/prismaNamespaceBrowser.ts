@@ -56,12 +56,14 @@ export const ModelName = {
   AvatarProvisionRequest: 'AvatarProvisionRequest',
   UnauthorizedAvatar: 'UnauthorizedAvatar',
   NotificationChannel: 'NotificationChannel',
+  NotificationChannelBinding: 'NotificationChannelBinding',
   Chat: 'Chat',
   Command: 'Command',
   EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   NaturalLanguageInteraction: 'NaturalLanguageInteraction',
   NotificationResponse: 'NotificationResponse',
+  NotificationTopic: 'NotificationTopic',
   Notification: 'Notification',
   Operation: 'Operation',
   User: 'User'
@@ -153,6 +155,18 @@ export const NotificationChannelScalarFieldEnum = {
 export type NotificationChannelScalarFieldEnum = (typeof NotificationChannelScalarFieldEnum)[keyof typeof NotificationChannelScalarFieldEnum]
 
 
+export const NotificationChannelBindingScalarFieldEnum = {
+  id: 'id',
+  channelId: 'channelId',
+  chatId: 'chatId',
+  topicId: 'topicId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationChannelBindingScalarFieldEnum = (typeof NotificationChannelBindingScalarFieldEnum)[keyof typeof NotificationChannelBindingScalarFieldEnum]
+
+
 export const ChatScalarFieldEnum = {
   id: 'id',
   telegramRhid: 'telegramRhid',
@@ -224,11 +238,27 @@ export const NotificationResponseScalarFieldEnum = {
 export type NotificationResponseScalarFieldEnum = (typeof NotificationResponseScalarFieldEnum)[keyof typeof NotificationResponseScalarFieldEnum]
 
 
+export const NotificationTopicScalarFieldEnum = {
+  id: 'id',
+  chatId: 'chatId',
+  channelId: 'channelId',
+  threadRhid: 'threadRhid',
+  threadEcid: 'threadEcid',
+  creatorSubjectId: 'creatorSubjectId',
+  title: 'title',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationTopicScalarFieldEnum = (typeof NotificationTopicScalarFieldEnum)[keyof typeof NotificationTopicScalarFieldEnum]
+
+
 export const NotificationScalarFieldEnum = {
   id: 'id',
   operationId: 'operationId',
   chatId: 'chatId',
   channelId: 'channelId',
+  topicId: 'topicId',
   messageRhid: 'messageRhid',
   messageEcid: 'messageEcid',
   callingSubjectId: 'callingSubjectId',
@@ -239,6 +269,7 @@ export const NotificationScalarFieldEnum = {
   requiresTextResponse: 'requiresTextResponse',
   isProtected: 'isProtected',
   expectImmediateFeedback: 'expectImmediateFeedback',
+  acquireTopic: 'acquireTopic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

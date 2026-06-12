@@ -31,6 +31,55 @@ model NotificationResponse {
   operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
 }
 
+/// Represents a Telegram topic used for channel-scoped notifications.
+model NotificationTopic {
+  /// The unique numeric identifier of the topic.
+  id Int @id @default(autoincrement())
+
+  /// The internal chat identifier where this topic was created.
+  chatId Int
+
+  /// The Telegram chat entity where this topic was created.
+  chat Chat @relation("NotificationTopicTargetChat", fields: [chatId], references: [id], onDelete: Cascade)
+
+  /// The ID of the notification channel associated with this topic.
+  channelId Int
+
+  /// The notification channel associated with this topic.
+  channel NotificationChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  /// The RHID of the Telegram topic thread identifier.
+  threadRhid String
+
+  /// The ECID of the raw Telegram topic payload returned by Telegram.
+  threadEcid String @unique
+
+  /// The encrypted raw Telegram topic payload returned by Telegram.
+  thread EncryptedContent @relation(name: "NotificationTopicThread", fields: [threadEcid], references: [ecid])
+
+  /// The subject that created this topic.
+  creatorSubjectId String
+
+  /// The stored topic title.
+  title String
+
+  /// Notifications delivered to this topic.
+  notifications Notification[]
+
+  /// Notification channel bindings that route messages to this topic.
+  notificationChannelBindings NotificationChannelBinding[]
+
+  /// The timestamp when this topic was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this topic was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@unique([chatId, threadRhid])
+  @@index([channelId])
+  @@index([chatId])
+}
+
 /// Represents a sent notification tracked by the replica.
 model Notification {
   /// The unique numeric identifier of the notification.
@@ -53,6 +102,12 @@ model Notification {
 
   /// The notification channel associated with this notification.
   channel NotificationChannel @relation(fields: [channelId], references: [id])
+
+  /// The optional topic where this notification was sent.
+  topicId Int?
+
+  /// The topic where this notification was sent.
+  topic NotificationTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
 
   /// The RHID of the Telegram message identifier this notification is associated with.
   messageRhid String
@@ -88,6 +143,9 @@ model Notification {
   /// Whether callback selection should avoid accepted/chosen suffix rendering.
   expectImmediateFeedback Boolean @default(false)
 
+  /// Whether topic messages should resolve this notification as text responses.
+  acquireTopic Boolean @default(false)
+
   /// The avatar provisioning request that references this notification.
   avatarProvisionRequest AvatarProvisionRequest?
 
@@ -100,4 +158,5 @@ model Notification {
   @@unique([chatId, messageRhid])
   @@index([channelId])
   @@index([chatId])
+  @@index([topicId])
 }

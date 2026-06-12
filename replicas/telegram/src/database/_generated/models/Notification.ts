@@ -33,6 +33,7 @@ export type NotificationAvgAggregateOutputType = {
   operationId: number | null
   chatId: number | null
   channelId: number | null
+  topicId: number | null
 }
 
 export type NotificationSumAggregateOutputType = {
@@ -40,6 +41,7 @@ export type NotificationSumAggregateOutputType = {
   operationId: number | null
   chatId: number | null
   channelId: number | null
+  topicId: number | null
 }
 
 export type NotificationMinAggregateOutputType = {
@@ -47,6 +49,7 @@ export type NotificationMinAggregateOutputType = {
   operationId: number | null
   chatId: number | null
   channelId: number | null
+  topicId: number | null
   messageRhid: string | null
   messageEcid: string | null
   callingSubjectId: string | null
@@ -56,6 +59,7 @@ export type NotificationMinAggregateOutputType = {
   requiresTextResponse: boolean | null
   isProtected: boolean | null
   expectImmediateFeedback: boolean | null
+  acquireTopic: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -65,6 +69,7 @@ export type NotificationMaxAggregateOutputType = {
   operationId: number | null
   chatId: number | null
   channelId: number | null
+  topicId: number | null
   messageRhid: string | null
   messageEcid: string | null
   callingSubjectId: string | null
@@ -74,6 +79,7 @@ export type NotificationMaxAggregateOutputType = {
   requiresTextResponse: boolean | null
   isProtected: boolean | null
   expectImmediateFeedback: boolean | null
+  acquireTopic: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -83,6 +89,7 @@ export type NotificationCountAggregateOutputType = {
   operationId: number
   chatId: number
   channelId: number
+  topicId: number
   messageRhid: number
   messageEcid: number
   callingSubjectId: number
@@ -93,6 +100,7 @@ export type NotificationCountAggregateOutputType = {
   requiresTextResponse: number
   isProtected: number
   expectImmediateFeedback: number
+  acquireTopic: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -104,6 +112,7 @@ export type NotificationAvgAggregateInputType = {
   operationId?: true
   chatId?: true
   channelId?: true
+  topicId?: true
 }
 
 export type NotificationSumAggregateInputType = {
@@ -111,6 +120,7 @@ export type NotificationSumAggregateInputType = {
   operationId?: true
   chatId?: true
   channelId?: true
+  topicId?: true
 }
 
 export type NotificationMinAggregateInputType = {
@@ -118,6 +128,7 @@ export type NotificationMinAggregateInputType = {
   operationId?: true
   chatId?: true
   channelId?: true
+  topicId?: true
   messageRhid?: true
   messageEcid?: true
   callingSubjectId?: true
@@ -127,6 +138,7 @@ export type NotificationMinAggregateInputType = {
   requiresTextResponse?: true
   isProtected?: true
   expectImmediateFeedback?: true
+  acquireTopic?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -136,6 +148,7 @@ export type NotificationMaxAggregateInputType = {
   operationId?: true
   chatId?: true
   channelId?: true
+  topicId?: true
   messageRhid?: true
   messageEcid?: true
   callingSubjectId?: true
@@ -145,6 +158,7 @@ export type NotificationMaxAggregateInputType = {
   requiresTextResponse?: true
   isProtected?: true
   expectImmediateFeedback?: true
+  acquireTopic?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -154,6 +168,7 @@ export type NotificationCountAggregateInputType = {
   operationId?: true
   chatId?: true
   channelId?: true
+  topicId?: true
   messageRhid?: true
   messageEcid?: true
   callingSubjectId?: true
@@ -164,6 +179,7 @@ export type NotificationCountAggregateInputType = {
   requiresTextResponse?: true
   isProtected?: true
   expectImmediateFeedback?: true
+  acquireTopic?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -260,6 +276,7 @@ export type NotificationGroupByOutputType = {
   operationId: number | null
   chatId: number
   channelId: number
+  topicId: number | null
   messageRhid: string
   messageEcid: string
   callingSubjectId: string | null
@@ -270,6 +287,7 @@ export type NotificationGroupByOutputType = {
   requiresTextResponse: boolean
   isProtected: boolean
   expectImmediateFeedback: boolean
+  acquireTopic: boolean
   createdAt: Date
   updatedAt: Date
   _count: NotificationCountAggregateOutputType | null
@@ -302,6 +320,7 @@ export type NotificationWhereInput = {
   operationId?: Prisma.IntNullableFilter<"Notification"> | number | null
   chatId?: Prisma.IntFilter<"Notification"> | number
   channelId?: Prisma.IntFilter<"Notification"> | number
+  topicId?: Prisma.IntNullableFilter<"Notification"> | number | null
   messageRhid?: Prisma.StringFilter<"Notification"> | string
   messageEcid?: Prisma.StringFilter<"Notification"> | string
   callingSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
@@ -312,11 +331,13 @@ export type NotificationWhereInput = {
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
   expectImmediateFeedback?: Prisma.BoolFilter<"Notification"> | boolean
+  acquireTopic?: Prisma.BoolFilter<"Notification"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   operation?: Prisma.XOR<Prisma.OperationNullableScalarRelationFilter, Prisma.OperationWhereInput> | null
   chat?: Prisma.XOR<Prisma.ChatScalarRelationFilter, Prisma.ChatWhereInput>
   channel?: Prisma.XOR<Prisma.NotificationChannelScalarRelationFilter, Prisma.NotificationChannelWhereInput>
+  topic?: Prisma.XOR<Prisma.NotificationTopicNullableScalarRelationFilter, Prisma.NotificationTopicWhereInput> | null
   message?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
   avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
 }
@@ -326,6 +347,7 @@ export type NotificationOrderByWithRelationInput = {
   operationId?: Prisma.SortOrderInput | Prisma.SortOrder
   chatId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
+  topicId?: Prisma.SortOrderInput | Prisma.SortOrder
   messageRhid?: Prisma.SortOrder
   messageEcid?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -336,11 +358,13 @@ export type NotificationOrderByWithRelationInput = {
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
+  acquireTopic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   operation?: Prisma.OperationOrderByWithRelationInput
   chat?: Prisma.ChatOrderByWithRelationInput
   channel?: Prisma.NotificationChannelOrderByWithRelationInput
+  topic?: Prisma.NotificationTopicOrderByWithRelationInput
   message?: Prisma.EncryptedContentOrderByWithRelationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestOrderByWithRelationInput
 }
@@ -355,6 +379,7 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.NotificationWhereInput | Prisma.NotificationWhereInput[]
   chatId?: Prisma.IntFilter<"Notification"> | number
   channelId?: Prisma.IntFilter<"Notification"> | number
+  topicId?: Prisma.IntNullableFilter<"Notification"> | number | null
   messageRhid?: Prisma.StringFilter<"Notification"> | string
   callingSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
   sendAsSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
@@ -364,11 +389,13 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
   expectImmediateFeedback?: Prisma.BoolFilter<"Notification"> | boolean
+  acquireTopic?: Prisma.BoolFilter<"Notification"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   operation?: Prisma.XOR<Prisma.OperationNullableScalarRelationFilter, Prisma.OperationWhereInput> | null
   chat?: Prisma.XOR<Prisma.ChatScalarRelationFilter, Prisma.ChatWhereInput>
   channel?: Prisma.XOR<Prisma.NotificationChannelScalarRelationFilter, Prisma.NotificationChannelWhereInput>
+  topic?: Prisma.XOR<Prisma.NotificationTopicNullableScalarRelationFilter, Prisma.NotificationTopicWhereInput> | null
   message?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
   avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
 }, "id" | "operationId" | "messageEcid" | "chatId_messageRhid">
@@ -378,6 +405,7 @@ export type NotificationOrderByWithAggregationInput = {
   operationId?: Prisma.SortOrderInput | Prisma.SortOrder
   chatId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
+  topicId?: Prisma.SortOrderInput | Prisma.SortOrder
   messageRhid?: Prisma.SortOrder
   messageEcid?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -388,6 +416,7 @@ export type NotificationOrderByWithAggregationInput = {
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
+  acquireTopic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.NotificationCountOrderByAggregateInput
@@ -405,6 +434,7 @@ export type NotificationScalarWhereWithAggregatesInput = {
   operationId?: Prisma.IntNullableWithAggregatesFilter<"Notification"> | number | null
   chatId?: Prisma.IntWithAggregatesFilter<"Notification"> | number
   channelId?: Prisma.IntWithAggregatesFilter<"Notification"> | number
+  topicId?: Prisma.IntNullableWithAggregatesFilter<"Notification"> | number | null
   messageRhid?: Prisma.StringWithAggregatesFilter<"Notification"> | string
   messageEcid?: Prisma.StringWithAggregatesFilter<"Notification"> | string
   callingSubjectId?: Prisma.StringNullableWithAggregatesFilter<"Notification"> | string | null
@@ -415,6 +445,7 @@ export type NotificationScalarWhereWithAggregatesInput = {
   requiresTextResponse?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
   expectImmediateFeedback?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
+  acquireTopic?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Notification"> | Date | string
 }
@@ -429,11 +460,13 @@ export type NotificationCreateInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
@@ -443,6 +476,7 @@ export type NotificationUncheckedCreateInput = {
   operationId?: number | null
   chatId: number
   channelId: number
+  topicId?: number | null
   messageRhid: string
   messageEcid: string
   callingSubjectId?: string | null
@@ -453,6 +487,7 @@ export type NotificationUncheckedCreateInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
@@ -468,11 +503,13 @@ export type NotificationUpdateInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
@@ -482,6 +519,7 @@ export type NotificationUncheckedUpdateInput = {
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -492,6 +530,7 @@ export type NotificationUncheckedUpdateInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
@@ -502,6 +541,7 @@ export type NotificationCreateManyInput = {
   operationId?: number | null
   chatId: number
   channelId: number
+  topicId?: number | null
   messageRhid: string
   messageEcid: string
   callingSubjectId?: string | null
@@ -512,6 +552,7 @@ export type NotificationCreateManyInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -526,6 +567,7 @@ export type NotificationUpdateManyMutationInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -535,6 +577,7 @@ export type NotificationUncheckedUpdateManyInput = {
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -545,6 +588,7 @@ export type NotificationUncheckedUpdateManyInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -574,6 +618,7 @@ export type NotificationCountOrderByAggregateInput = {
   operationId?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
+  topicId?: Prisma.SortOrder
   messageRhid?: Prisma.SortOrder
   messageEcid?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrder
@@ -584,6 +629,7 @@ export type NotificationCountOrderByAggregateInput = {
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
+  acquireTopic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -593,6 +639,7 @@ export type NotificationAvgOrderByAggregateInput = {
   operationId?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
+  topicId?: Prisma.SortOrder
 }
 
 export type NotificationMaxOrderByAggregateInput = {
@@ -600,6 +647,7 @@ export type NotificationMaxOrderByAggregateInput = {
   operationId?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
+  topicId?: Prisma.SortOrder
   messageRhid?: Prisma.SortOrder
   messageEcid?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrder
@@ -609,6 +657,7 @@ export type NotificationMaxOrderByAggregateInput = {
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
+  acquireTopic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -618,6 +667,7 @@ export type NotificationMinOrderByAggregateInput = {
   operationId?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
+  topicId?: Prisma.SortOrder
   messageRhid?: Prisma.SortOrder
   messageEcid?: Prisma.SortOrder
   callingSubjectId?: Prisma.SortOrder
@@ -627,6 +677,7 @@ export type NotificationMinOrderByAggregateInput = {
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
+  acquireTopic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -636,6 +687,7 @@ export type NotificationSumOrderByAggregateInput = {
   operationId?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   channelId?: Prisma.SortOrder
+  topicId?: Prisma.SortOrder
 }
 
 export type NotificationCreateNestedOneWithoutAvatarProvisionRequestInput = {
@@ -770,6 +822,48 @@ export type NotificationUncheckedUpdateOneWithoutMessageNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationUpdateToOneWithWhereWithoutMessageInput, Prisma.NotificationUpdateWithoutMessageInput>, Prisma.NotificationUncheckedUpdateWithoutMessageInput>
 }
 
+export type NotificationCreateNestedManyWithoutTopicInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutTopicInput, Prisma.NotificationUncheckedCreateWithoutTopicInput> | Prisma.NotificationCreateWithoutTopicInput[] | Prisma.NotificationUncheckedCreateWithoutTopicInput[]
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutTopicInput | Prisma.NotificationCreateOrConnectWithoutTopicInput[]
+  createMany?: Prisma.NotificationCreateManyTopicInputEnvelope
+  connect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+}
+
+export type NotificationUncheckedCreateNestedManyWithoutTopicInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutTopicInput, Prisma.NotificationUncheckedCreateWithoutTopicInput> | Prisma.NotificationCreateWithoutTopicInput[] | Prisma.NotificationUncheckedCreateWithoutTopicInput[]
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutTopicInput | Prisma.NotificationCreateOrConnectWithoutTopicInput[]
+  createMany?: Prisma.NotificationCreateManyTopicInputEnvelope
+  connect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+}
+
+export type NotificationUpdateManyWithoutTopicNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutTopicInput, Prisma.NotificationUncheckedCreateWithoutTopicInput> | Prisma.NotificationCreateWithoutTopicInput[] | Prisma.NotificationUncheckedCreateWithoutTopicInput[]
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutTopicInput | Prisma.NotificationCreateOrConnectWithoutTopicInput[]
+  upsert?: Prisma.NotificationUpsertWithWhereUniqueWithoutTopicInput | Prisma.NotificationUpsertWithWhereUniqueWithoutTopicInput[]
+  createMany?: Prisma.NotificationCreateManyTopicInputEnvelope
+  set?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+  disconnect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+  delete?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+  connect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+  update?: Prisma.NotificationUpdateWithWhereUniqueWithoutTopicInput | Prisma.NotificationUpdateWithWhereUniqueWithoutTopicInput[]
+  updateMany?: Prisma.NotificationUpdateManyWithWhereWithoutTopicInput | Prisma.NotificationUpdateManyWithWhereWithoutTopicInput[]
+  deleteMany?: Prisma.NotificationScalarWhereInput | Prisma.NotificationScalarWhereInput[]
+}
+
+export type NotificationUncheckedUpdateManyWithoutTopicNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutTopicInput, Prisma.NotificationUncheckedCreateWithoutTopicInput> | Prisma.NotificationCreateWithoutTopicInput[] | Prisma.NotificationUncheckedCreateWithoutTopicInput[]
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutTopicInput | Prisma.NotificationCreateOrConnectWithoutTopicInput[]
+  upsert?: Prisma.NotificationUpsertWithWhereUniqueWithoutTopicInput | Prisma.NotificationUpsertWithWhereUniqueWithoutTopicInput[]
+  createMany?: Prisma.NotificationCreateManyTopicInputEnvelope
+  set?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+  disconnect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+  delete?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+  connect?: Prisma.NotificationWhereUniqueInput | Prisma.NotificationWhereUniqueInput[]
+  update?: Prisma.NotificationUpdateWithWhereUniqueWithoutTopicInput | Prisma.NotificationUpdateWithWhereUniqueWithoutTopicInput[]
+  updateMany?: Prisma.NotificationUpdateManyWithWhereWithoutTopicInput | Prisma.NotificationUpdateManyWithWhereWithoutTopicInput[]
+  deleteMany?: Prisma.NotificationScalarWhereInput | Prisma.NotificationScalarWhereInput[]
+}
+
 export type NotificationCreateNestedOneWithoutOperationInput = {
   create?: Prisma.XOR<Prisma.NotificationCreateWithoutOperationInput, Prisma.NotificationUncheckedCreateWithoutOperationInput>
   connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutOperationInput
@@ -812,11 +906,13 @@ export type NotificationCreateWithoutAvatarProvisionRequestInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
 }
 
@@ -825,6 +921,7 @@ export type NotificationUncheckedCreateWithoutAvatarProvisionRequestInput = {
   operationId?: number | null
   chatId: number
   channelId: number
+  topicId?: number | null
   messageRhid: string
   messageEcid: string
   callingSubjectId?: string | null
@@ -835,6 +932,7 @@ export type NotificationUncheckedCreateWithoutAvatarProvisionRequestInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -865,11 +963,13 @@ export type NotificationUpdateWithoutAvatarProvisionRequestInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
 }
 
@@ -878,6 +978,7 @@ export type NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -888,6 +989,7 @@ export type NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -902,10 +1004,12 @@ export type NotificationCreateWithoutChannelInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
+  topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
@@ -914,6 +1018,7 @@ export type NotificationUncheckedCreateWithoutChannelInput = {
   id?: number
   operationId?: number | null
   chatId: number
+  topicId?: number | null
   messageRhid: string
   messageEcid: string
   callingSubjectId?: string | null
@@ -924,6 +1029,7 @@ export type NotificationUncheckedCreateWithoutChannelInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
@@ -963,6 +1069,7 @@ export type NotificationScalarWhereInput = {
   operationId?: Prisma.IntNullableFilter<"Notification"> | number | null
   chatId?: Prisma.IntFilter<"Notification"> | number
   channelId?: Prisma.IntFilter<"Notification"> | number
+  topicId?: Prisma.IntNullableFilter<"Notification"> | number | null
   messageRhid?: Prisma.StringFilter<"Notification"> | string
   messageEcid?: Prisma.StringFilter<"Notification"> | string
   callingSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
@@ -973,6 +1080,7 @@ export type NotificationScalarWhereInput = {
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
   expectImmediateFeedback?: Prisma.BoolFilter<"Notification"> | boolean
+  acquireTopic?: Prisma.BoolFilter<"Notification"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
 }
@@ -987,10 +1095,12 @@ export type NotificationCreateWithoutChatInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
@@ -999,6 +1109,7 @@ export type NotificationUncheckedCreateWithoutChatInput = {
   id?: number
   operationId?: number | null
   channelId: number
+  topicId?: number | null
   messageRhid: string
   messageEcid: string
   callingSubjectId?: string | null
@@ -1009,6 +1120,7 @@ export type NotificationUncheckedCreateWithoutChatInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
@@ -1050,11 +1162,13 @@ export type NotificationCreateWithoutMessageInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
@@ -1063,6 +1177,7 @@ export type NotificationUncheckedCreateWithoutMessageInput = {
   operationId?: number | null
   chatId: number
   channelId: number
+  topicId?: number | null
   messageRhid: string
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
@@ -1072,6 +1187,7 @@ export type NotificationUncheckedCreateWithoutMessageInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
@@ -1103,11 +1219,13 @@ export type NotificationUpdateWithoutMessageInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1116,6 +1234,7 @@ export type NotificationUncheckedUpdateWithoutMessageInput = {
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1125,12 +1244,13 @@ export type NotificationUncheckedUpdateWithoutMessageInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
-export type NotificationCreateWithoutOperationInput = {
+export type NotificationCreateWithoutTopicInput = {
   messageRhid: string
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
@@ -1140,16 +1260,19 @@ export type NotificationCreateWithoutOperationInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
-export type NotificationUncheckedCreateWithoutOperationInput = {
+export type NotificationUncheckedCreateWithoutTopicInput = {
   id?: number
+  operationId?: number | null
   chatId: number
   channelId: number
   messageRhid: string
@@ -1162,6 +1285,74 @@ export type NotificationUncheckedCreateWithoutOperationInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
+}
+
+export type NotificationCreateOrConnectWithoutTopicInput = {
+  where: Prisma.NotificationWhereUniqueInput
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutTopicInput, Prisma.NotificationUncheckedCreateWithoutTopicInput>
+}
+
+export type NotificationCreateManyTopicInputEnvelope = {
+  data: Prisma.NotificationCreateManyTopicInput | Prisma.NotificationCreateManyTopicInput[]
+  skipDuplicates?: boolean
+}
+
+export type NotificationUpsertWithWhereUniqueWithoutTopicInput = {
+  where: Prisma.NotificationWhereUniqueInput
+  update: Prisma.XOR<Prisma.NotificationUpdateWithoutTopicInput, Prisma.NotificationUncheckedUpdateWithoutTopicInput>
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutTopicInput, Prisma.NotificationUncheckedCreateWithoutTopicInput>
+}
+
+export type NotificationUpdateWithWhereUniqueWithoutTopicInput = {
+  where: Prisma.NotificationWhereUniqueInput
+  data: Prisma.XOR<Prisma.NotificationUpdateWithoutTopicInput, Prisma.NotificationUncheckedUpdateWithoutTopicInput>
+}
+
+export type NotificationUpdateManyWithWhereWithoutTopicInput = {
+  where: Prisma.NotificationScalarWhereInput
+  data: Prisma.XOR<Prisma.NotificationUpdateManyMutationInput, Prisma.NotificationUncheckedUpdateManyWithoutTopicInput>
+}
+
+export type NotificationCreateWithoutOperationInput = {
+  messageRhid: string
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  actionRows:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
+  channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
+  message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
+}
+
+export type NotificationUncheckedCreateWithoutOperationInput = {
+  id?: number
+  chatId: number
+  channelId: number
+  topicId?: number | null
+  messageRhid: string
+  messageEcid: string
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  actionRows:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
@@ -1193,10 +1384,12 @@ export type NotificationUpdateWithoutOperationInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
@@ -1205,6 +1398,7 @@ export type NotificationUncheckedUpdateWithoutOperationInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1215,6 +1409,7 @@ export type NotificationUncheckedUpdateWithoutOperationInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
@@ -1224,6 +1419,7 @@ export type NotificationCreateManyChannelInput = {
   id?: number
   operationId?: number | null
   chatId: number
+  topicId?: number | null
   messageRhid: string
   messageEcid: string
   callingSubjectId?: string | null
@@ -1234,6 +1430,7 @@ export type NotificationCreateManyChannelInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1248,10 +1445,12 @@ export type NotificationUpdateWithoutChannelInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
+  topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
@@ -1260,6 +1459,7 @@ export type NotificationUncheckedUpdateWithoutChannelInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1270,6 +1470,7 @@ export type NotificationUncheckedUpdateWithoutChannelInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
@@ -1279,6 +1480,7 @@ export type NotificationUncheckedUpdateManyWithoutChannelInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1289,6 +1491,7 @@ export type NotificationUncheckedUpdateManyWithoutChannelInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1297,6 +1500,7 @@ export type NotificationCreateManyChatInput = {
   id?: number
   operationId?: number | null
   channelId: number
+  topicId?: number | null
   messageRhid: string
   messageEcid: string
   callingSubjectId?: string | null
@@ -1307,6 +1511,7 @@ export type NotificationCreateManyChatInput = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1321,10 +1526,12 @@ export type NotificationUpdateWithoutChatInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
@@ -1333,6 +1540,7 @@ export type NotificationUncheckedUpdateWithoutChatInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1343,6 +1551,7 @@ export type NotificationUncheckedUpdateWithoutChatInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
@@ -1352,6 +1561,7 @@ export type NotificationUncheckedUpdateManyWithoutChatInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
   messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
   callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1362,6 +1572,88 @@ export type NotificationUncheckedUpdateManyWithoutChatInput = {
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type NotificationCreateManyTopicInput = {
+  id?: number
+  operationId?: number | null
+  chatId: number
+  channelId: number
+  messageRhid: string
+  messageEcid: string
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  actionRows:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type NotificationUpdateWithoutTopicInput = {
+  messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  actionRows?:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
+  channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
+}
+
+export type NotificationUncheckedUpdateWithoutTopicInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  actionRows?:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
+}
+
+export type NotificationUncheckedUpdateManyWithoutTopicInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  actionRows?:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1373,6 +1665,7 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   operationId?: boolean
   chatId?: boolean
   channelId?: boolean
+  topicId?: boolean
   messageRhid?: boolean
   messageEcid?: boolean
   callingSubjectId?: boolean
@@ -1383,11 +1676,13 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
+  topic?: boolean | Prisma.Notification$topicArgs<ExtArgs>
   message?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
   avatarProvisionRequest?: boolean | Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>
 }, ExtArgs["result"]["notification"]>
@@ -1397,6 +1692,7 @@ export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   operationId?: boolean
   chatId?: boolean
   channelId?: boolean
+  topicId?: boolean
   messageRhid?: boolean
   messageEcid?: boolean
   callingSubjectId?: boolean
@@ -1407,11 +1703,13 @@ export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
+  topic?: boolean | Prisma.Notification$topicArgs<ExtArgs>
   message?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["notification"]>
 
@@ -1420,6 +1718,7 @@ export type NotificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   operationId?: boolean
   chatId?: boolean
   channelId?: boolean
+  topicId?: boolean
   messageRhid?: boolean
   messageEcid?: boolean
   callingSubjectId?: boolean
@@ -1430,11 +1729,13 @@ export type NotificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
+  topic?: boolean | Prisma.Notification$topicArgs<ExtArgs>
   message?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["notification"]>
 
@@ -1443,6 +1744,7 @@ export type NotificationSelectScalar = {
   operationId?: boolean
   chatId?: boolean
   channelId?: boolean
+  topicId?: boolean
   messageRhid?: boolean
   messageEcid?: boolean
   callingSubjectId?: boolean
@@ -1453,15 +1755,17 @@ export type NotificationSelectScalar = {
   requiresTextResponse?: boolean
   isProtected?: boolean
   expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "chatId" | "channelId" | "messageRhid" | "messageEcid" | "callingSubjectId" | "sendAsSubjectId" | "title" | "content" | "actionRows" | "requiresTextResponse" | "isProtected" | "expectImmediateFeedback" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
+export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "chatId" | "channelId" | "topicId" | "messageRhid" | "messageEcid" | "callingSubjectId" | "sendAsSubjectId" | "title" | "content" | "actionRows" | "requiresTextResponse" | "isProtected" | "expectImmediateFeedback" | "acquireTopic" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
 export type NotificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
+  topic?: boolean | Prisma.Notification$topicArgs<ExtArgs>
   message?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
   avatarProvisionRequest?: boolean | Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>
 }
@@ -1469,12 +1773,14 @@ export type NotificationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
+  topic?: boolean | Prisma.Notification$topicArgs<ExtArgs>
   message?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
 }
 export type NotificationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
+  topic?: boolean | Prisma.Notification$topicArgs<ExtArgs>
   message?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
 }
 
@@ -1493,6 +1799,10 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      * The notification channel associated with this notification.
      */
     channel: Prisma.$NotificationChannelPayload<ExtArgs>
+    /**
+     * The topic where this notification was sent.
+     */
+    topic: Prisma.$NotificationTopicPayload<ExtArgs> | null
     /**
      * The encrypted raw Telegram message payload returned by Telegram.
      */
@@ -1519,6 +1829,10 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      * The ID of the notification channel associated with this operation.
      */
     channelId: number
+    /**
+     * The optional topic where this notification was sent.
+     */
+    topicId: number | null
     /**
      * The RHID of the Telegram message identifier this notification is associated with.
      */
@@ -1560,6 +1874,10 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      * Whether callback selection should avoid accepted/chosen suffix rendering.
      */
     expectImmediateFeedback: boolean
+    /**
+     * Whether topic messages should resolve this notification as text responses.
+     */
+    acquireTopic: boolean
     /**
      * The timestamp when this notification was created.
      */
@@ -1965,6 +2283,7 @@ export interface Prisma__NotificationClient<T, Null = never, ExtArgs extends run
   operation<T extends Prisma.Notification$operationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$operationArgs<ExtArgs>>): Prisma.Prisma__OperationClient<runtime.Types.Result.GetResult<Prisma.$OperationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   chat<T extends Prisma.ChatDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChatDefaultArgs<ExtArgs>>): Prisma.Prisma__ChatClient<runtime.Types.Result.GetResult<Prisma.$ChatPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   channel<T extends Prisma.NotificationChannelDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.NotificationChannelDefaultArgs<ExtArgs>>): Prisma.Prisma__NotificationChannelClient<runtime.Types.Result.GetResult<Prisma.$NotificationChannelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  topic<T extends Prisma.Notification$topicArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$topicArgs<ExtArgs>>): Prisma.Prisma__NotificationTopicClient<runtime.Types.Result.GetResult<Prisma.$NotificationTopicPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   message<T extends Prisma.EncryptedContentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContentDefaultArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   avatarProvisionRequest<T extends Prisma.Notification$avatarProvisionRequestArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>>): Prisma.Prisma__AvatarProvisionRequestClient<runtime.Types.Result.GetResult<Prisma.$AvatarProvisionRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
@@ -2000,6 +2319,7 @@ export interface NotificationFieldRefs {
   readonly operationId: Prisma.FieldRef<"Notification", 'Int'>
   readonly chatId: Prisma.FieldRef<"Notification", 'Int'>
   readonly channelId: Prisma.FieldRef<"Notification", 'Int'>
+  readonly topicId: Prisma.FieldRef<"Notification", 'Int'>
   readonly messageRhid: Prisma.FieldRef<"Notification", 'String'>
   readonly messageEcid: Prisma.FieldRef<"Notification", 'String'>
   readonly callingSubjectId: Prisma.FieldRef<"Notification", 'String'>
@@ -2010,6 +2330,7 @@ export interface NotificationFieldRefs {
   readonly requiresTextResponse: Prisma.FieldRef<"Notification", 'Boolean'>
   readonly isProtected: Prisma.FieldRef<"Notification", 'Boolean'>
   readonly expectImmediateFeedback: Prisma.FieldRef<"Notification", 'Boolean'>
+  readonly acquireTopic: Prisma.FieldRef<"Notification", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Notification", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Notification", 'DateTime'>
 }
@@ -2424,6 +2745,25 @@ export type Notification$operationArgs<ExtArgs extends runtime.Types.Extensions.
    */
   include?: Prisma.OperationInclude<ExtArgs> | null
   where?: Prisma.OperationWhereInput
+}
+
+/**
+ * Notification.topic
+ */
+export type Notification$topicArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationTopic
+   */
+  select?: Prisma.NotificationTopicSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationTopic
+   */
+  omit?: Prisma.NotificationTopicOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationTopicInclude<ExtArgs> | null
+  where?: Prisma.NotificationTopicWhereInput
 }
 
 /**

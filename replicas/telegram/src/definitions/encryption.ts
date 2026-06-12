@@ -15,6 +15,23 @@ export const telegramSentMessageSchema = z
 
 export type TelegramSentMessage = z.infer<typeof telegramSentMessageSchema>
 
+export const telegramTopicThreadSchema = z
+  .object({
+    chat_id: z.string(),
+    message_thread_id: z.number(),
+  })
+  .passthrough()
+
+export type TelegramTopicThread = z.infer<typeof telegramTopicThreadSchema>
+
+export const telegramChatDataSchema = z
+  .object({
+    id: z.union([z.string(), z.number()]),
+  })
+  .passthrough()
+
+export type TelegramChatData = z.infer<typeof telegramChatDataSchema>
+
 export const telegramUserDataSchema = z
   .object({
     username: z.string().optional(),

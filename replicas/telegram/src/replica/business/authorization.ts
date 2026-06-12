@@ -39,6 +39,37 @@ export async function canInteractWithNotificationChannel(args: {
   }
 }
 
+export async function canManageNotificationChannel(args: {
+  authzService: AuthzServiceClient
+  userId: number
+  channelName: string
+}): Promise<boolean> {
+  const telegramUserId = String(args.userId)
+  const subjectId = `telegram:${telegramUserId}`
+
+  try {
+    const permissionCheck = await args.authzService.checkPermission({
+      permissionName: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_MANAGE,
+      subjectId,
+      scope: args.channelName,
+    })
+
+    return permissionCheck.authorized
+  } catch (error) {
+    logger.warn(
+      {
+        userId: telegramUserId,
+        subjectId,
+        channelName: args.channelName,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "failed to check notification channel manage permission",
+    )
+
+    return false
+  }
+}
+
 export async function canInvokeCommand(args: {
   authzService: AuthzServiceClient
   userId: number

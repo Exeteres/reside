@@ -12,5 +12,6 @@ model EncryptedContent {
   chatData                 Chat?                 @relation(name: "ChatData")
   notificationResponseText NotificationResponse? @relation(name: "NotificationResponseText")
   notificationMessage      Notification?         @relation(name: "NotificationMessage")
+  notificationTopicThread  NotificationTopic?    @relation(name: "NotificationTopicThread")
   avatarToken              Avatar?               @relation(name: "AvatarToken")
 }

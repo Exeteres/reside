@@ -19,7 +19,6 @@
     "@temporalio/client": "catalog:",
     "@temporalio/worker": "catalog:",
     "@temporalio/workflow": "catalog:",
-    "jose": "catalog:",
     "prisma": "catalog:",
     "zod": "catalog:"
   },

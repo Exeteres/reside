@@ -1,20 +1,9 @@
 import type { GenericOperationService } from "@reside/common"
 import type { Operation, PrismaClient } from "../../database"
-import { afterEach, beforeEach, describe, expect, test } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { rhid } from "@reside/common"
 import { mockDeepFn, testCrypto } from "@reside/common/testing"
-import { TELEGRAM_INTERACTION_CONTEXT_ENV_NAME } from "../../shared"
 import { completeOperationFromCallbackAction, completeOperationFromTextReply } from "./response"
-
-const originalContextKey = process.env[TELEGRAM_INTERACTION_CONTEXT_ENV_NAME]
-
-beforeEach(() => {
-  process.env[TELEGRAM_INTERACTION_CONTEXT_ENV_NAME] = Buffer.alloc(32, 1).toString("base64url")
-})
-
-afterEach(() => {
-  process.env[TELEGRAM_INTERACTION_CONTEXT_ENV_NAME] = originalContextKey
-})
 
 describe("completeOperationFromTextReply", () => {
   test("returns completed=false when no pending operation matches", async () => {

@@ -22,6 +22,7 @@ import {
   resolveSenderDisplayTitle,
   resolveSenderSubjectId,
 } from "./notification-access"
+import { resolveNotificationChannelRoute } from "./notification-channel-binding"
 import {
   sendAvatarPrivacyModeWarning,
   sendNotificationWithReplyFallback,
@@ -48,7 +49,7 @@ export async function sendNotificationForReplica(
   loadDeliveryConfig: () => Promise<{ botToken: string; systemChatId: string }>,
   replicaName: string,
   input: SendNotificationInput,
-): Promise<{ notificationId: string; operationId: number | undefined }> {
+): Promise<{ notificationId: string; operationId: number | undefined; messageLink?: string }> {
   const ecidSubstitutor = createEcidTextSubstitutor(crypto)
 
   assertChannelName(input.channel)
@@ -104,10 +105,6 @@ export async function sendNotificationForReplica(
   )
 
   const deliveryConfig = await loadDeliveryConfig()
-  const interactionContext = await parseInteractionContextToken(
-    input.contextToken,
-    deliveryConfig.systemChatId,
-  )
   const avatarToken =
     avatar === null ? undefined : await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)
   const effectiveAvatarToken =
@@ -117,15 +114,42 @@ export async function sendNotificationForReplica(
     role: "notification.send",
   })
   const replyMarkup = toInlineKeyboardMarkupFromActionRows(input.actionRows)
-  const targetChatId = interactionContext.chatId
-  const replyToMessageId = interactionContext.messageId
+  const interactionContext = await parseInteractionContextToken(
+    crypto,
+    input.contextToken,
+    deliveryConfig.systemChatId,
+  )
+  const target = await resolveNotificationChannelRoute(crypto, prisma, {
+    channelId: channel.id,
+    channelName: channel.name,
+    requestedTopicId: input.topicId,
+    systemChatId: deliveryConfig.systemChatId,
+  })
+  const targetChatId = target.chatId
+  const replyToMessageId =
+    target.messageThreadId === undefined && interactionContext.chatId === targetChatId
+      ? interactionContext.messageId
+      : undefined
   const isAvatarSender = effectiveAvatarToken !== undefined
 
   const targetChat = await ensureTargetChatExists(crypto, prisma, targetChatId)
 
-  const sendResult =
-    isAvatarSender && replyToMessageId !== undefined
-      ? await sendNotificationWithReplyFallback(
+  const sendResult = isAvatarSender
+    ? await sendNotificationWithReplyFallback(
+        bot,
+        targetChatId,
+        senderSubjectId,
+        {
+          images: input.images,
+          attachments: input.attachments,
+        },
+        messageText,
+        replyMarkup,
+        replyToMessageId,
+        target.messageThreadId,
+      )
+    : {
+        ...(await sendNotificationWithReplyFallback(
           bot,
           targetChatId,
           senderSubjectId,
@@ -136,25 +160,16 @@ export async function sendNotificationForReplica(
           messageText,
           replyMarkup,
           replyToMessageId,
-        )
-      : {
-          ...(await sendNotificationWithReplyFallback(
-            bot,
-            targetChatId,
-            senderSubjectId,
-            {
-              images: input.images,
-              attachments: input.attachments,
-            },
-            messageText,
-            replyMarkup,
-            undefined,
-          )),
-          usedReplyFallback: false,
-        }
+          target.messageThreadId,
+        )),
+        usedReplyFallback: false,
+      }
 
   const sentMessageId = sendResult.sentMessageId
   const sentMessageEcid = await crypto.encrypt(sendResult.sentMessage)
+  const messageLinkEcid = await crypto.encrypt(
+    createTelegramMessageLink(targetChatId, sentMessageId),
+  )
   const usedReplyFallback = sendResult.usedReplyFallback
 
   if (usedReplyFallback && senderSubjectId !== TELEGRAM_REPLICA_SUBJECT_ID) {
@@ -175,6 +190,7 @@ export async function sendNotificationForReplica(
         operationId: null,
         chatId: targetChat.id,
         channelId: channel.id,
+        topicId: target.topicId ?? null,
         messageRhid: rhid(sentMessageId),
         messageEcid: sentMessageEcid,
         callingSubjectId: replicaSubjectId,
@@ -184,6 +200,7 @@ export async function sendNotificationForReplica(
         actionRows,
         requiresTextResponse: input.requiresTextResponse === true,
         isProtected: input.protected === true,
+        acquireTopic: input.acquireTopic === true,
       },
       select: {
         id: true,
@@ -193,6 +210,7 @@ export async function sendNotificationForReplica(
     return {
       notificationId: String(notification.id),
       operationId: undefined,
+      messageLink: messageLinkEcid,
     }
   }
 
@@ -212,6 +230,7 @@ export async function sendNotificationForReplica(
         operationId: operation.id,
         chatId: targetChat.id,
         channelId: channel.id,
+        topicId: target.topicId ?? null,
         messageRhid: rhid(sentMessageId),
         messageEcid: sentMessageEcid,
         callingSubjectId: replicaSubjectId,
@@ -221,6 +240,7 @@ export async function sendNotificationForReplica(
         actionRows,
         requiresTextResponse: input.requiresTextResponse === true,
         isProtected: input.protected === true,
+        acquireTopic: input.acquireTopic === true,
       },
       select: {
         id: true,
@@ -236,6 +256,7 @@ export async function sendNotificationForReplica(
   return {
     notificationId: String(operationResult.notificationId),
     operationId: operationResult.operationId,
+    messageLink: messageLinkEcid,
   }
 }
 
@@ -504,6 +525,10 @@ export function parseNotificationId(notificationId: string): number {
   }
 
   return parsedNotificationId
+}
+
+function createTelegramMessageLink(chatId: string, messageId: number): string {
+  return `t.me/c/${chatId}/${messageId}`
 }
 
 export function assertActionRows(actions: Array<{ actions: Array<{ name: string }> }>): void {

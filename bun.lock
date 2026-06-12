@@ -277,7 +277,6 @@
         "@temporalio/worker": "catalog:",
         "@temporalio/workflow": "catalog:",
         "fastify": "catalog:",
-        "jose": "catalog:",
         "prisma": "catalog:",
         "zod": "catalog:",
       },

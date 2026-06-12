@@ -4,6 +4,7 @@ import { OperationService } from "@reside/api/common/operation.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
 import { DefinitionService as InteractionDefinitionService } from "@reside/api/interaction/definition.v1"
 import { NotificationService } from "@reside/api/interaction/notification.v1"
+import { TopicService } from "@reside/api/interaction/topic.v1"
 import {
   createClient,
   createCommonServices,
@@ -26,6 +27,7 @@ export async function createServices() {
     services.channels.self,
   )
   const notificationService = createClient(NotificationService, services.channels.self)
+  const topicService = createClient(TopicService, services.channels.self)
   const interactionOperationService = createClient(OperationService, services.channels.self)
 
   const { pool, adapter } = await createPostgresPool(services)
@@ -139,6 +141,7 @@ export async function createServices() {
     temporalClient,
     interactionDefinitionService,
     notificationService,
+    topicService,
     interactionOperationService,
     subjectService,
   }

@@ -1,6 +1,7 @@
 import type { AuthzServiceClient } from "@reside/api/access/authz.v1"
 import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
+import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
 import type { CommandHandlerServiceClient } from "@reside/api/interaction/command.v1"
 import type { NaturalLanguageServiceClient } from "@reside/api/interaction/nls.v1"
 import type { GenericOperationService, MessageElement } from "@reside/common"
@@ -16,6 +17,7 @@ import { strings } from "../../locale"
 import { createInteractionContextToken } from "../../shared"
 import {
   canInteractWithNotificationChannel,
+  canManageNotificationChannel,
   requestNotificationChannelInteractPermission,
 } from "./authorization"
 import { createTelegramBotClient } from "./bot-client"
@@ -23,6 +25,12 @@ import { parseCommandInvocation, parseLeadingMention } from "./bot-command"
 import { handleCommandInvocation } from "./bot-command-invocation"
 import { handleManagedBotLifecycleUpdate } from "./bot-managed"
 import { handleNlsMessage } from "./bot-nls"
+import { ensureTargetChatExists } from "./notification-access"
+import {
+  bindNotificationChannel,
+  deleteNotificationChannelBinding,
+} from "./notification-channel-binding"
+import { renderRepliedNotificationInfo, resolveRepliedNotificationInfo } from "./notification-info"
 import {
   buildNotificationInlineKeyboard,
   isNotificationPaginationActionName,
@@ -32,6 +40,7 @@ import {
   type CallbackCompletionResult,
   completeOperationFromCallbackAction,
   completeOperationFromTextReply,
+  completeOperationFromTopicMessage,
 } from "./response"
 
 export {
@@ -56,6 +65,7 @@ export async function createTelegramBot(args: {
   discoveryService: DiscoveryServiceClient
   authzService: AuthzServiceClient
   permissionRequestService: PermissionRequestServiceClient
+  subjectService: SubjectServiceClient
   temporalClient: Client
   superAdminUserId: string | undefined
   crypto: ResideCrypto
@@ -138,6 +148,159 @@ export async function createTelegramBot(args: {
     })
   })
 
+  bot.command("info", async context => {
+    const chatId = context.chat?.id
+    const messageId = context.message?.message_id
+    const repliedMessageId = context.message?.reply_to_message?.message_id
+    if (!chatId || !messageId) {
+      return
+    }
+
+    if (repliedMessageId === undefined) {
+      await sendSystemMessage(context, {
+        text: strings.worker.bot.notificationInfo.usage,
+        replyToMessageId: messageId,
+      })
+      return
+    }
+
+    const info = await resolveRepliedNotificationInfo(
+      args.prisma,
+      args.subjectService,
+      chatId,
+      repliedMessageId,
+    )
+
+    await sendSystemMessage(context, {
+      text:
+        info === null
+          ? strings.worker.bot.notificationInfo.notFound
+          : renderRepliedNotificationInfo(info),
+      replyToMessageId: messageId,
+    })
+  })
+
+  bot.command("bind_notification_channel", async context => {
+    const chatId = context.chat?.id
+    const userId = context.from?.id
+    const messageId = context.message?.message_id
+    const commandText = context.message?.text
+    if (!chatId || !userId || !messageId || !commandText) {
+      return
+    }
+
+    const parsed = parseBindingCommandText(commandText, "bind_notification_channel")
+    if (!parsed) {
+      await sendSystemMessage(context, {
+        text: strings.worker.bot.notificationChannelBinding.bindUsage,
+        replyToMessageId: messageId,
+      })
+      return
+    }
+
+    const authorized = await canManageNotificationChannelFromTelegramUser(
+      args,
+      userId,
+      parsed.channel,
+    )
+    if (!authorized) {
+      await sendSystemMessage(context, {
+        text: strings.common.accessDenied,
+        replyToMessageId: messageId,
+      })
+      return
+    }
+
+    try {
+      const chat = await ensureTargetChatExists(args.crypto, args.prisma, String(chatId))
+      const topic = resolveBindingTopicInfo(context.message!, String(chatId))
+      const result = await bindNotificationChannel(args.crypto, args.prisma, {
+        channelName: parsed.channel,
+        chatId: chat.id,
+        topic,
+      })
+
+      await sendSystemMessage(context, {
+        text:
+          result.topicTitle === undefined
+            ? strings.worker.bot.notificationChannelBinding.bound(result.channelTitle)
+            : strings.worker.bot.notificationChannelBinding.boundToTopic(
+                result.channelTitle,
+                result.topicTitle,
+              ),
+        replyToMessageId: messageId,
+      })
+    } catch (error) {
+      logger.warn(
+        {
+          error: error instanceof Error ? error : new Error(String(error)),
+        },
+        'failed to bind notification channel channel_name="%s"',
+        parsed.channel,
+      )
+
+      await sendSystemMessage(context, {
+        text: strings.worker.bot.notificationChannelBinding.failed,
+        replyToMessageId: messageId,
+      })
+    }
+  })
+
+  bot.command("unbind_notification_channel", async context => {
+    const userId = context.from?.id
+    const messageId = context.message?.message_id
+    const commandText = context.message?.text
+    if (!userId || !messageId || !commandText) {
+      return
+    }
+
+    const parsed = parseBindingCommandText(commandText, "unbind_notification_channel")
+    if (!parsed) {
+      await sendSystemMessage(context, {
+        text: strings.worker.bot.notificationChannelBinding.unbindUsage,
+        replyToMessageId: messageId,
+      })
+      return
+    }
+
+    const authorized = await canManageNotificationChannelFromTelegramUser(
+      args,
+      userId,
+      parsed.channel,
+    )
+    if (!authorized) {
+      await sendSystemMessage(context, {
+        text: strings.common.accessDenied,
+        replyToMessageId: messageId,
+      })
+      return
+    }
+
+    try {
+      const result = await deleteNotificationChannelBinding(args.prisma, parsed.channel)
+      await sendSystemMessage(context, {
+        text: result.deleted
+          ? strings.worker.bot.notificationChannelBinding.unbound(result.channelTitle)
+          : strings.worker.bot.notificationChannelBinding.noBinding(result.channelTitle),
+        replyToMessageId: messageId,
+      })
+    } catch (error) {
+      logger.warn(
+        {
+          error: error instanceof Error ? error.message : String(error),
+          userId,
+          channelName: parsed.channel,
+        },
+        "failed to unbind notification channel",
+      )
+
+      await sendSystemMessage(context, {
+        text: strings.worker.bot.notificationChannelBinding.failed,
+        replyToMessageId: messageId,
+      })
+    }
+  })
+
   bot.use(async (context, next) => {
     try {
       await handleManagedBotLifecycleUpdate(args, context, bot)
@@ -169,7 +332,7 @@ export async function createTelegramBot(args: {
 
     await ensureTelegramEntities(args.crypto, args.prisma, context)
 
-    const interactionContext = await buildInteractionContext(context, {
+    const interactionContext = await buildInteractionContext(args.crypto, context, {
       messageId: message.message_id,
     })
 
@@ -251,13 +414,34 @@ export async function createTelegramBot(args: {
       return
     }
 
-    const repliedMessageId = message.reply_to_message?.message_id
-    if (!repliedMessageId) {
+    const textResponse = message.text.trim()
+    if (textResponse.length === 0) {
       return
     }
 
-    const textResponse = message.text.trim()
-    if (textResponse.length === 0) {
+    const topicResult = await completeTopicMessageResponse({
+      crypto: args.crypto,
+      prisma: args.prisma,
+      operationService: args.operationService,
+      permissionRequestService: args.permissionRequestService,
+      authzService: args.authzService,
+      superAdminUserId: args.superAdminUserId,
+      chatId,
+      userId,
+      messageThreadId: message.message_thread_id,
+      responseMessageId: message.message_id,
+      textResponse,
+      sendSystemMessage: async input => {
+        await sendSystemMessage(context, input)
+      },
+    })
+
+    if (topicResult.handled) {
+      return
+    }
+
+    const repliedMessageId = message.reply_to_message?.message_id
+    if (!repliedMessageId) {
       return
     }
 
@@ -654,7 +838,92 @@ function toOptionalNonEmptyString(value: unknown): string | undefined {
   return normalized
 }
 
+async function canManageNotificationChannelFromTelegramUser(
+  args: {
+    authzService: AuthzServiceClient
+    superAdminUserId: string | undefined
+  },
+  userId: number,
+  channelName: string,
+): Promise<boolean> {
+  if (args.superAdminUserId !== undefined && String(userId) === args.superAdminUserId) {
+    return true
+  }
+
+  return await canManageNotificationChannel({
+    authzService: args.authzService,
+    userId,
+    channelName,
+  })
+}
+
+export function parseBindingCommandText(
+  text: string,
+  commandName: string,
+): { channel: string } | null {
+  const [rawCommand, ...rawArgs] = text.trim().split(/\s+/)
+  const normalizedCommand = rawCommand?.split("@")[0]
+  if (normalizedCommand !== `/${commandName}`) {
+    return null
+  }
+
+  const channel = rawArgs[0]?.trim()
+  if (!channel) {
+    return null
+  }
+
+  if (rawArgs.length > 1) {
+    return null
+  }
+
+  return {
+    channel,
+  }
+}
+
+export function resolveBindingMessageThreadId(message: {
+  is_topic_message?: boolean
+  message_thread_id?: number
+}): number | undefined {
+  return resolveBindingTopicInfo(message, "")?.messageThreadId
+}
+
+export function resolveBindingTopicInfo(
+  message: {
+    is_topic_message?: boolean
+    message_thread_id?: number
+    forum_topic_created?: {
+      name?: string
+    }
+    reply_to_message?: {
+      forum_topic_created?: {
+        name?: string
+      }
+    }
+  },
+  chatId: string,
+): { chatId: string; messageThreadId: number; title?: string } | undefined {
+  if (message.is_topic_message !== true) {
+    return undefined
+  }
+
+  const messageThreadId = message.message_thread_id
+  if (typeof messageThreadId !== "number" || !Number.isInteger(messageThreadId)) {
+    return undefined
+  }
+
+  const title =
+    message.forum_topic_created?.name ?? message.reply_to_message?.forum_topic_created?.name
+
+  return {
+    chatId,
+    messageThreadId,
+    title,
+  }
+}
+
 async function buildInteractionContext(
+  crypto: ResideCrypto,
   context: Context,
   options?: {
     messageId?: number
@@ -667,7 +936,7 @@ async function buildInteractionContext(
     throw new Error("Interaction context requires chat information")
   }
 
-  const interactionContextToken = await createInteractionContextToken({
+  const interactionContextToken = await createInteractionContextToken(crypto, {
     chat_id: String(chat.id),
     message_id: options?.messageId,
   })
@@ -951,6 +1220,81 @@ async function clearInlineActions(
       "failed to clear notification actions",
     )
   }
+}
+
+async function completeTopicMessageResponse(args: {
+  crypto: ResideCrypto
+  prisma: PrismaClient
+  operationService: GenericOperationService<Operation>
+  permissionRequestService: PermissionRequestServiceClient
+  authzService: AuthzServiceClient
+  superAdminUserId: string | undefined
+  chatId: number
+  userId: number
+  messageThreadId: number | undefined
+  responseMessageId: number
+  textResponse: string
+  sendSystemMessage: (input: { text: string; replyToMessageId: number }) => Promise<void>
+}): Promise<{ handled: boolean }> {
+  let result: {
+    completed: boolean
+    unauthorized: boolean
+    unauthorizedChannelName?: string | null
+  }
+
+  try {
+    result = await completeOperationFromTopicMessage({
+      crypto: args.crypto,
+      prisma: args.prisma,
+      operationService: args.operationService,
+      chatId: args.chatId,
+      userId: args.userId,
+      messageThreadId: args.messageThreadId,
+      responseMessageId: args.responseMessageId,
+      textResponse: args.textResponse,
+      isSuperAdminUser: candidateUserId =>
+        args.superAdminUserId !== undefined && String(candidateUserId) === args.superAdminUserId,
+      canInteractWithChannel: async (candidateUserId, channelName) =>
+        await canInteractWithNotificationChannel({
+          authzService: args.authzService,
+          userId: candidateUserId,
+          channelName,
+        }),
+    })
+  } catch (error) {
+    logger.error(
+      {
+        error: error instanceof Error ? error : new Error(String(error)),
+      },
+      "failed to complete operation from topic message",
+    )
+
+    await args.sendSystemMessage({
+      text: strings.worker.bot.unexpectedError,
+      replyToMessageId: args.responseMessageId,
+    })
+
+    return { handled: true }
+  }
+
+  if (result.unauthorized) {
+    if (result.unauthorizedChannelName) {
+      await requestNotificationChannelInteractPermission({
+        permissionRequestService: args.permissionRequestService,
+        userId: args.userId,
+        channelName: result.unauthorizedChannelName,
+      })
+    }
+
+    await args.sendSystemMessage({
+      text: strings.common.accessDenied,
+      replyToMessageId: args.responseMessageId,
+    })
+
+    return { handled: true }
+  }
+
+  return { handled: result.completed }
 }
 
 function resolveUrlOnlyReplyMarkup(context: Context, messageId: number) {

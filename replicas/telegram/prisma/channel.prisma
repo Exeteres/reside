@@ -14,4 +14,43 @@ model NotificationChannel {
 
   /// The notifications linked to this channel.
   notifications Notification[]
+
+  /// The Telegram chat bindings for this channel.
+  bindings NotificationChannelBinding[]
+
+  /// The topics linked to this channel.
+  topics NotificationTopic[]
+}
+
+/// Routes a notification channel to a Telegram chat and optional topic.
+model NotificationChannelBinding {
+  /// The unique numeric identifier of the binding.
+  id Int @id @default(autoincrement())
+
+  /// The ID of the notification channel routed by this binding.
+  channelId Int @unique
+
+  /// The notification channel routed by this binding.
+  channel NotificationChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  /// The target chat identifier for notifications sent to this channel.
+  chatId Int
+
+  /// The target Telegram chat for notifications sent to this channel.
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  /// The optional target topic for notifications sent to this channel.
+  topicId Int?
+
+  /// The optional target topic for notifications sent to this channel.
+  topic NotificationTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
+
+  /// The timestamp when this binding was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this binding was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@index([chatId])
+  @@index([topicId])
 }

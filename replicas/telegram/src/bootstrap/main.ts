@@ -1,5 +1,3 @@
-import { randomBytes } from "node:crypto"
-import { CoreV1Api } from "@kubernetes/client-node"
 import { waitForOperationSuccess } from "@reside/api"
 import {
   bootstrapGatewayRoute,
@@ -7,13 +5,10 @@ import {
   defineCommonResources,
   defineGateway,
   getReplicaCallbackEndpoint,
-  getReplicaNamespace,
-  kubeConfig,
   registerReplica,
   runPrismaMigrations,
 } from "@reside/common"
 import { telegramReplica, WellKnownPermissions } from "@reside/registry"
-import { getStatusCode } from "@reside/utils"
 import {
   TELEGRAM_GATEWAY_NAME,
   TELEGRAM_GATEWAY_ROUTE_NAME,
@@ -21,12 +16,7 @@ import {
   TelegramNotificationChannels,
 } from "../definitions"
 import { strings } from "../locale"
-import {
-  createServices,
-  TELEGRAM_INTERACTION_CONTEXT_ENV_NAME,
-  TELEGRAM_INTERACTION_CONTEXT_SECRET_KEY,
-  TELEGRAM_INTERACTION_CONTEXT_SECRET_NAME,
-} from "../shared"
+import { createServices } from "../shared"
 
 await registerReplica({
   replica: telegramReplica,
@@ -37,7 +27,6 @@ await registerReplica({
 const services = await createServices()
 
 await runPrismaMigrations(services.pool)
-await ensureInteractionContextTokenSecret()
 
 await defineCommonResources({
   services,
@@ -200,49 +189,4 @@ await services.accessDefinitionService.putApprover({
 
 await bootstrapService({
   longRunning: true,
-  extraEnv: [
-    {
-      name: TELEGRAM_INTERACTION_CONTEXT_ENV_NAME,
-      valueFrom: {
-        secretKeyRef: {
-          name: TELEGRAM_INTERACTION_CONTEXT_SECRET_NAME,
-          key: TELEGRAM_INTERACTION_CONTEXT_SECRET_KEY,
-        },
-      },
-    },
-  ],
 })
-
-async function ensureInteractionContextTokenSecret(): Promise<void> {
-  const coreApi = kubeConfig.makeApiClient(CoreV1Api)
-  const namespace = getReplicaNamespace()
-
-  try {
-    await coreApi.readNamespacedSecret({
-      namespace,
-      name: TELEGRAM_INTERACTION_CONTEXT_SECRET_NAME,
-    })
-    return
-  } catch (error) {
-    if (getStatusCode(error) !== 404) {
-      throw error
-    }
-  }
-
-  const key = randomBytes(32).toString("base64url")
-  await coreApi.createNamespacedSecret({
-    namespace,
-    body: {
-      apiVersion: "v1",
-      kind: "Secret",
-      metadata: {
-        name: TELEGRAM_INTERACTION_CONTEXT_SECRET_NAME,
-        namespace,
-      },
-      type: "Opaque",
-      data: {
-        [TELEGRAM_INTERACTION_CONTEXT_SECRET_KEY]: Buffer.from(key, "utf8").toString("base64"),
-      },
-    },
-  })
-}

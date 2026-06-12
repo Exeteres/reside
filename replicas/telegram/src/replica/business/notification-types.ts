@@ -20,6 +20,8 @@ export type SendNotificationInput = {
   sendAsSubjectId?: string
   requiresTextResponse?: boolean
   protected?: boolean
+  topicId?: string
+  acquireTopic?: boolean
 }
 
 export type UpdateNotificationInput = {
@@ -56,6 +58,7 @@ export type TelegramBotLike = {
         reply_parameters?: {
           message_id: number
         }
+        message_thread_id?: number
       },
     ): Promise<{ message_id: number }>
     editMessageText(
@@ -81,6 +84,7 @@ export type TelegramBotLike = {
         reply_parameters?: {
           message_id: number
         }
+        message_thread_id?: number
       },
     ): Promise<{ message_id: number }>
     sendDocument(
@@ -90,6 +94,7 @@ export type TelegramBotLike = {
         reply_parameters?: {
           message_id: number
         }
+        message_thread_id?: number
       },
     ): Promise<{ message_id: number }>
     sendMediaGroup(
@@ -99,7 +104,15 @@ export type TelegramBotLike = {
         reply_parameters?: {
           message_id: number
         }
+        message_thread_id?: number
       },
     ): Promise<{ message_id: number }[]>
+    createForumTopic?(chatId: string, name: string): Promise<{ message_thread_id: number }>
+    editForumTopic?(
+      chatId: string,
+      messageThreadId: number,
+      options: { name: string },
+    ): Promise<true>
+    deleteForumTopic?(chatId: string, messageThreadId: number): Promise<true>
   }
 }

@@ -43,6 +43,11 @@ export type UnauthorizedAvatar = Prisma.UnauthorizedAvatarModel
  */
 export type NotificationChannel = Prisma.NotificationChannelModel
 /**
+ * Model NotificationChannelBinding
+ * Routes a notification channel to a Telegram chat and optional topic.
+ */
+export type NotificationChannelBinding = Prisma.NotificationChannelBindingModel
+/**
  * Model Chat
  * Represents a Telegram chat known to the replica.
  */
@@ -72,6 +77,11 @@ export type NaturalLanguageInteraction = Prisma.NaturalLanguageInteractionModel
  * Represents a user response to a notification.
  */
 export type NotificationResponse = Prisma.NotificationResponseModel
+/**
+ * Model NotificationTopic
+ * Represents a Telegram topic used for channel-scoped notifications.
+ */
+export type NotificationTopic = Prisma.NotificationTopicModel
 /**
  * Model Notification
  * Represents a sent notification tracked by the replica.

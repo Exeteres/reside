@@ -1,8 +1,8 @@
 import type { PrismaClient } from "../../database"
-import { afterEach, beforeEach, describe, expect, test } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { rhid } from "@reside/common"
 import { mockDeepFn, testCrypto } from "@reside/common/testing"
-import { createInteractionContextToken, TELEGRAM_INTERACTION_CONTEXT_ENV_NAME } from "../../shared"
+import { createInteractionContextToken } from "../../shared"
 import {
   ensureTargetChatExists,
   parseInteractionContextToken,
@@ -107,18 +107,8 @@ describe("resolveSenderDisplayTitle", () => {
 })
 
 describe("parseInteractionContextToken", () => {
-  const originalContextKey = process.env[TELEGRAM_INTERACTION_CONTEXT_ENV_NAME]
-
-  beforeEach(() => {
-    process.env[TELEGRAM_INTERACTION_CONTEXT_ENV_NAME] = Buffer.alloc(32, 1).toString("base64url")
-  })
-
-  afterEach(() => {
-    process.env[TELEGRAM_INTERACTION_CONTEXT_ENV_NAME] = originalContextKey
-  })
-
   test("returns system chat id for missing token", async () => {
-    const context = await parseInteractionContextToken(undefined, "-1001")
+    const context = await parseInteractionContextToken(testCrypto, undefined, "-1001")
 
     expect(context).toEqual({
       chatId: "-1001",
@@ -127,12 +117,12 @@ describe("parseInteractionContextToken", () => {
   })
 
   test("parses encrypted interaction context token", async () => {
-    const token = await createInteractionContextToken({
+    const token = await createInteractionContextToken(testCrypto, {
       chat_id: "-222",
       message_id: 77,
     })
 
-    const context = await parseInteractionContextToken(token, "-1001")
+    const context = await parseInteractionContextToken(testCrypto, token, "-1001")
 
     expect(context).toEqual({
       chatId: "-222",
@@ -141,7 +131,7 @@ describe("parseInteractionContextToken", () => {
   })
 
   test("throws for invalid context token", async () => {
-    expect(parseInteractionContextToken("not-a-valid-token", "-1001")).rejects.toThrow(
+    expect(parseInteractionContextToken(testCrypto, "not-a-valid-token", "-1001")).rejects.toThrow(
       "Invalid context token",
     )
   })

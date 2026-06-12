@@ -57,7 +57,7 @@ export async function completeOperationFromTextReply(args: {
   }
 
   try {
-    const responseContextToken = await createInteractionContextToken({
+    const responseContextToken = await createInteractionContextToken(args.crypto, {
       chat_id: String(args.chatId),
       message_id: args.responseMessageId,
     })
@@ -110,6 +110,105 @@ export async function completeOperationFromTextReply(args: {
   await args.operationService.setCompleted(operation.id)
 
   logger.info({ operationId: operation.id }, "notification text response persisted")
+
+  return { completed: true, unauthorized: false }
+}
+
+export async function completeOperationFromTopicMessage(args: {
+  crypto: ResideCrypto
+  prisma: PrismaClient
+  operationService: GenericOperationService<Operation>
+  chatId: number
+  userId: number
+  messageThreadId: number | undefined
+  responseMessageId: number
+  textResponse: string
+  canInteractWithChannel: (userId: number, channelName: string | null) => Promise<boolean>
+  isSuperAdminUser: (userId: number) => boolean
+}): Promise<{
+  completed: boolean
+  unauthorized: boolean
+  unauthorizedChannelName?: string | null
+}> {
+  if (args.messageThreadId === undefined) {
+    return { completed: false, unauthorized: false }
+  }
+
+  const operation = await getPendingOperationByTopic(args.prisma, {
+    chatId: args.chatId,
+    messageThreadId: args.messageThreadId,
+  })
+
+  if (!operation) {
+    return { completed: false, unauthorized: false }
+  }
+
+  if (
+    operation.isProtected &&
+    !args.isSuperAdminUser(args.userId) &&
+    !(await args.canInteractWithChannel(args.userId, operation.channelName))
+  ) {
+    return {
+      completed: false,
+      unauthorized: true,
+      unauthorizedChannelName: operation.channelName,
+    }
+  }
+
+  try {
+    const responseContextToken = await createInteractionContextToken(args.crypto, {
+      chat_id: String(args.chatId),
+      message_id: args.responseMessageId,
+    })
+
+    await args.prisma.notificationResponse.create({
+      data: {
+        operationId: operation.id,
+        type: "TEXT",
+        actionName: null,
+        textResponseEcid: await args.crypto.encrypt(args.textResponse),
+      },
+    })
+
+    const operationRecord = await args.prisma.operation.findUnique({
+      where: {
+        id: operation.id,
+      },
+      select: {
+        customData: true,
+      },
+    })
+
+    const existingCustomData =
+      operationRecord && isRecord(operationRecord.customData) ? operationRecord.customData : {}
+
+    await args.prisma.operation.update({
+      where: {
+        id: operation.id,
+      },
+      data: {
+        customData: {
+          ...existingCustomData,
+          notificationResponseContextToken: responseContextToken,
+        },
+      },
+    })
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      if (await hasExistingResponseForPendingOperation(args.prisma, operation.id)) {
+        await args.operationService.setCompleted(operation.id)
+        return { completed: true, unauthorized: false }
+      }
+
+      return { completed: false, unauthorized: false }
+    }
+
+    throw error
+  }
+
+  await args.operationService.setCompleted(operation.id)
+
+  logger.info({ operationId: operation.id }, "notification topic response persisted")
 
   return { completed: true, unauthorized: false }
 }
@@ -403,6 +502,57 @@ async function getPendingOperationsByMessage(
       },
     ]
   })
+}
+
+async function getPendingOperationByTopic(
+  prisma: PrismaClient,
+  args: { chatId: number; messageThreadId: number },
+): Promise<{
+  id: number
+  channelName: string | null
+  isProtected: boolean
+} | null> {
+  const record = await prisma.notification.findFirst({
+    where: {
+      acquireTopic: true,
+      topic: {
+        threadRhid: rhid(args.messageThreadId),
+        chat: {
+          telegramRhid: rhid(String(args.chatId)),
+        },
+      },
+      operation: {
+        status: "PENDING",
+        notificationResponse: null,
+      },
+    },
+    select: {
+      isProtected: true,
+      channel: {
+        select: {
+          name: true,
+        },
+      },
+      operation: {
+        select: {
+          id: true,
+        },
+      },
+    },
+    orderBy: {
+      id: "desc",
+    },
+  })
+
+  if (!record?.operation) {
+    return null
+  }
+
+  return {
+    id: record.operation.id,
+    channelName: record.channel.name,
+    isProtected: record.isProtected,
+  }
 }
 
 function isChatAuthorized(targetChatRhid: string, chatId: number): boolean {

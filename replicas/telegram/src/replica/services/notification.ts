@@ -94,11 +94,14 @@ export function createNotificationService({
             sendAsSubjectId: request.sendAsSubjectId,
             requiresTextResponse: request.requiresTextResponse,
             protected: request.protected,
+            topicId: request.topicId,
+            acquireTopic: request.acquireTopic,
           },
         )
 
         return {
           notificationId: result.notificationId,
+          messageLink: result.messageLink,
           operation:
             result.operationId === undefined
               ? undefined

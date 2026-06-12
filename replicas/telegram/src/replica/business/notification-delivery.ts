@@ -19,6 +19,7 @@ export async function sendNotificationPayload(
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,
   replyToMessageId: number | undefined,
+  messageThreadId?: number,
 ): Promise<{ message_id: number }> {
   if (request.images.length === 0) {
     const sentMessage = await bot.api.sendMessage(chatId, messageText, {
@@ -28,10 +29,11 @@ export async function sendNotificationPayload(
       },
       reply_markup: replyMarkup,
       reply_parameters: toReplyParameters(replyToMessageId),
+      message_thread_id: messageThreadId,
     })
 
     if (request.attachments.length > 0) {
-      await sendAttachmentGroup(bot, chatId, request.attachments, replyToMessageId)
+      await sendAttachmentGroup(bot, chatId, request.attachments, replyToMessageId, messageThreadId)
     }
 
     return sentMessage
@@ -43,6 +45,7 @@ export async function sendNotificationPayload(
     request.images,
     messageText,
     replyToMessageId,
+    messageThreadId,
   )
   const firstImageMessage = imageMessages[0]
 
@@ -51,7 +54,7 @@ export async function sendNotificationPayload(
   }
 
   if (request.attachments.length > 0) {
-    await sendAttachmentGroup(bot, chatId, request.attachments, replyToMessageId)
+    await sendAttachmentGroup(bot, chatId, request.attachments, replyToMessageId, messageThreadId)
   }
 
   if (!replyMarkup) {
@@ -67,6 +70,7 @@ export async function sendNotificationPayload(
       },
       reply_markup: replyMarkup,
       reply_parameters: toReplyParameters(replyToMessageId),
+      message_thread_id: messageThreadId,
     },
   )
 
@@ -79,6 +83,7 @@ async function sendImageGroup(
   images: Array<{ content: Uint8Array; name: string }>,
   caption?: string,
   replyToMessageId?: number,
+  messageThreadId?: number,
 ): Promise<{ message_id: number }[]> {
   if (images.length === 1) {
     const [image] = images
@@ -92,6 +97,7 @@ async function sendImageGroup(
       parse_mode: caption ? "HTML" : undefined,
       show_caption_above_media: caption ? true : undefined,
       reply_parameters: toReplyParameters(replyToMessageId),
+      message_thread_id: messageThreadId,
     })
 
     return [sentMessage]
@@ -107,6 +113,7 @@ async function sendImageGroup(
 
   return await bot.api.sendMediaGroup(chatId, mediaGroup, {
     reply_parameters: toReplyParameters(replyToMessageId),
+    message_thread_id: messageThreadId,
   })
 }
 
@@ -115,6 +122,7 @@ async function sendAttachmentGroup(
   chatId: string,
   attachments: Array<{ content: Uint8Array; name: string }>,
   replyToMessageId?: number,
+  messageThreadId?: number,
 ): Promise<void> {
   if (attachments.length === 1) {
     const [attachment] = attachments
@@ -125,6 +133,7 @@ async function sendAttachmentGroup(
     const attachmentFile = new InputFile(Buffer.from(attachment.content), attachment.name)
     await bot.api.sendDocument(chatId, attachmentFile, {
       reply_parameters: toReplyParameters(replyToMessageId),
+      message_thread_id: messageThreadId,
     })
     return
   }
@@ -136,6 +145,7 @@ async function sendAttachmentGroup(
 
   await bot.api.sendMediaGroup(chatId, mediaGroup, {
     reply_parameters: toReplyParameters(replyToMessageId),
+    message_thread_id: messageThreadId,
   })
 }
 
@@ -150,6 +160,7 @@ export async function sendNotificationWithReplyFallback(
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,
   replyToMessageId: number | undefined,
+  messageThreadId?: number,
 ): Promise<{ sentMessage: unknown; sentMessageId: number; usedReplyFallback: boolean }> {
   try {
     const sentMessage = await sendNotificationPayload(
@@ -159,6 +170,7 @@ export async function sendNotificationWithReplyFallback(
       messageText,
       replyMarkup,
       replyToMessageId,
+      messageThreadId,
     )
 
     return {
@@ -187,6 +199,7 @@ export async function sendNotificationWithReplyFallback(
       messageText,
       replyMarkup,
       undefined,
+      messageThreadId,
     )
 
     return {

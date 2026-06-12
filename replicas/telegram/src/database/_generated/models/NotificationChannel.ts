@@ -211,6 +211,8 @@ export type NotificationChannelWhereInput = {
   title?: Prisma.StringFilter<"NotificationChannel"> | string
   description?: Prisma.StringNullableFilter<"NotificationChannel"> | string | null
   notifications?: Prisma.NotificationListRelationFilter
+  bindings?: Prisma.NotificationChannelBindingListRelationFilter
+  topics?: Prisma.NotificationTopicListRelationFilter
 }
 
 export type NotificationChannelOrderByWithRelationInput = {
@@ -219,6 +221,8 @@ export type NotificationChannelOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  bindings?: Prisma.NotificationChannelBindingOrderByRelationAggregateInput
+  topics?: Prisma.NotificationTopicOrderByRelationAggregateInput
 }
 
 export type NotificationChannelWhereUniqueInput = Prisma.AtLeast<{
@@ -230,6 +234,8 @@ export type NotificationChannelWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"NotificationChannel"> | string
   description?: Prisma.StringNullableFilter<"NotificationChannel"> | string | null
   notifications?: Prisma.NotificationListRelationFilter
+  bindings?: Prisma.NotificationChannelBindingListRelationFilter
+  topics?: Prisma.NotificationTopicListRelationFilter
 }, "id" | "name">
 
 export type NotificationChannelOrderByWithAggregationInput = {
@@ -259,6 +265,8 @@ export type NotificationChannelCreateInput = {
   title: string
   description?: string | null
   notifications?: Prisma.NotificationCreateNestedManyWithoutChannelInput
+  bindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChannelInput
+  topics?: Prisma.NotificationTopicCreateNestedManyWithoutChannelInput
 }
 
 export type NotificationChannelUncheckedCreateInput = {
@@ -267,6 +275,8 @@ export type NotificationChannelUncheckedCreateInput = {
   title: string
   description?: string | null
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChannelInput
+  bindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChannelInput
+  topics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChannelInput
 }
 
 export type NotificationChannelUpdateInput = {
@@ -274,6 +284,8 @@ export type NotificationChannelUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notifications?: Prisma.NotificationUpdateManyWithoutChannelNestedInput
+  bindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChannelNestedInput
+  topics?: Prisma.NotificationTopicUpdateManyWithoutChannelNestedInput
 }
 
 export type NotificationChannelUncheckedUpdateInput = {
@@ -282,6 +294,8 @@ export type NotificationChannelUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChannelNestedInput
+  bindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChannelNestedInput
+  topics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChannelNestedInput
 }
 
 export type NotificationChannelCreateManyInput = {
@@ -338,6 +352,34 @@ export type NotificationChannelScalarRelationFilter = {
   isNot?: Prisma.NotificationChannelWhereInput
 }
 
+export type NotificationChannelCreateNestedOneWithoutBindingsInput = {
+  create?: Prisma.XOR<Prisma.NotificationChannelCreateWithoutBindingsInput, Prisma.NotificationChannelUncheckedCreateWithoutBindingsInput>
+  connectOrCreate?: Prisma.NotificationChannelCreateOrConnectWithoutBindingsInput
+  connect?: Prisma.NotificationChannelWhereUniqueInput
+}
+
+export type NotificationChannelUpdateOneRequiredWithoutBindingsNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationChannelCreateWithoutBindingsInput, Prisma.NotificationChannelUncheckedCreateWithoutBindingsInput>
+  connectOrCreate?: Prisma.NotificationChannelCreateOrConnectWithoutBindingsInput
+  upsert?: Prisma.NotificationChannelUpsertWithoutBindingsInput
+  connect?: Prisma.NotificationChannelWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationChannelUpdateToOneWithWhereWithoutBindingsInput, Prisma.NotificationChannelUpdateWithoutBindingsInput>, Prisma.NotificationChannelUncheckedUpdateWithoutBindingsInput>
+}
+
+export type NotificationChannelCreateNestedOneWithoutTopicsInput = {
+  create?: Prisma.XOR<Prisma.NotificationChannelCreateWithoutTopicsInput, Prisma.NotificationChannelUncheckedCreateWithoutTopicsInput>
+  connectOrCreate?: Prisma.NotificationChannelCreateOrConnectWithoutTopicsInput
+  connect?: Prisma.NotificationChannelWhereUniqueInput
+}
+
+export type NotificationChannelUpdateOneRequiredWithoutTopicsNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationChannelCreateWithoutTopicsInput, Prisma.NotificationChannelUncheckedCreateWithoutTopicsInput>
+  connectOrCreate?: Prisma.NotificationChannelCreateOrConnectWithoutTopicsInput
+  upsert?: Prisma.NotificationChannelUpsertWithoutTopicsInput
+  connect?: Prisma.NotificationChannelWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationChannelUpdateToOneWithWhereWithoutTopicsInput, Prisma.NotificationChannelUpdateWithoutTopicsInput>, Prisma.NotificationChannelUncheckedUpdateWithoutTopicsInput>
+}
+
 export type NotificationChannelCreateNestedOneWithoutNotificationsInput = {
   create?: Prisma.XOR<Prisma.NotificationChannelCreateWithoutNotificationsInput, Prisma.NotificationChannelUncheckedCreateWithoutNotificationsInput>
   connectOrCreate?: Prisma.NotificationChannelCreateOrConnectWithoutNotificationsInput
@@ -352,10 +394,112 @@ export type NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput 
   update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationChannelUpdateToOneWithWhereWithoutNotificationsInput, Prisma.NotificationChannelUpdateWithoutNotificationsInput>, Prisma.NotificationChannelUncheckedUpdateWithoutNotificationsInput>
 }
 
+export type NotificationChannelCreateWithoutBindingsInput = {
+  name: string
+  title: string
+  description?: string | null
+  notifications?: Prisma.NotificationCreateNestedManyWithoutChannelInput
+  topics?: Prisma.NotificationTopicCreateNestedManyWithoutChannelInput
+}
+
+export type NotificationChannelUncheckedCreateWithoutBindingsInput = {
+  id?: number
+  name: string
+  title: string
+  description?: string | null
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChannelInput
+  topics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChannelInput
+}
+
+export type NotificationChannelCreateOrConnectWithoutBindingsInput = {
+  where: Prisma.NotificationChannelWhereUniqueInput
+  create: Prisma.XOR<Prisma.NotificationChannelCreateWithoutBindingsInput, Prisma.NotificationChannelUncheckedCreateWithoutBindingsInput>
+}
+
+export type NotificationChannelUpsertWithoutBindingsInput = {
+  update: Prisma.XOR<Prisma.NotificationChannelUpdateWithoutBindingsInput, Prisma.NotificationChannelUncheckedUpdateWithoutBindingsInput>
+  create: Prisma.XOR<Prisma.NotificationChannelCreateWithoutBindingsInput, Prisma.NotificationChannelUncheckedCreateWithoutBindingsInput>
+  where?: Prisma.NotificationChannelWhereInput
+}
+
+export type NotificationChannelUpdateToOneWithWhereWithoutBindingsInput = {
+  where?: Prisma.NotificationChannelWhereInput
+  data: Prisma.XOR<Prisma.NotificationChannelUpdateWithoutBindingsInput, Prisma.NotificationChannelUncheckedUpdateWithoutBindingsInput>
+}
+
+export type NotificationChannelUpdateWithoutBindingsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notifications?: Prisma.NotificationUpdateManyWithoutChannelNestedInput
+  topics?: Prisma.NotificationTopicUpdateManyWithoutChannelNestedInput
+}
+
+export type NotificationChannelUncheckedUpdateWithoutBindingsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChannelNestedInput
+  topics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChannelNestedInput
+}
+
+export type NotificationChannelCreateWithoutTopicsInput = {
+  name: string
+  title: string
+  description?: string | null
+  notifications?: Prisma.NotificationCreateNestedManyWithoutChannelInput
+  bindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChannelInput
+}
+
+export type NotificationChannelUncheckedCreateWithoutTopicsInput = {
+  id?: number
+  name: string
+  title: string
+  description?: string | null
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChannelInput
+  bindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChannelInput
+}
+
+export type NotificationChannelCreateOrConnectWithoutTopicsInput = {
+  where: Prisma.NotificationChannelWhereUniqueInput
+  create: Prisma.XOR<Prisma.NotificationChannelCreateWithoutTopicsInput, Prisma.NotificationChannelUncheckedCreateWithoutTopicsInput>
+}
+
+export type NotificationChannelUpsertWithoutTopicsInput = {
+  update: Prisma.XOR<Prisma.NotificationChannelUpdateWithoutTopicsInput, Prisma.NotificationChannelUncheckedUpdateWithoutTopicsInput>
+  create: Prisma.XOR<Prisma.NotificationChannelCreateWithoutTopicsInput, Prisma.NotificationChannelUncheckedCreateWithoutTopicsInput>
+  where?: Prisma.NotificationChannelWhereInput
+}
+
+export type NotificationChannelUpdateToOneWithWhereWithoutTopicsInput = {
+  where?: Prisma.NotificationChannelWhereInput
+  data: Prisma.XOR<Prisma.NotificationChannelUpdateWithoutTopicsInput, Prisma.NotificationChannelUncheckedUpdateWithoutTopicsInput>
+}
+
+export type NotificationChannelUpdateWithoutTopicsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notifications?: Prisma.NotificationUpdateManyWithoutChannelNestedInput
+  bindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChannelNestedInput
+}
+
+export type NotificationChannelUncheckedUpdateWithoutTopicsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChannelNestedInput
+  bindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChannelNestedInput
+}
+
 export type NotificationChannelCreateWithoutNotificationsInput = {
   name: string
   title: string
   description?: string | null
+  bindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChannelInput
+  topics?: Prisma.NotificationTopicCreateNestedManyWithoutChannelInput
 }
 
 export type NotificationChannelUncheckedCreateWithoutNotificationsInput = {
@@ -363,6 +507,8 @@ export type NotificationChannelUncheckedCreateWithoutNotificationsInput = {
   name: string
   title: string
   description?: string | null
+  bindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChannelInput
+  topics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChannelInput
 }
 
 export type NotificationChannelCreateOrConnectWithoutNotificationsInput = {
@@ -385,6 +531,8 @@ export type NotificationChannelUpdateWithoutNotificationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChannelNestedInput
+  topics?: Prisma.NotificationTopicUpdateManyWithoutChannelNestedInput
 }
 
 export type NotificationChannelUncheckedUpdateWithoutNotificationsInput = {
@@ -392,6 +540,8 @@ export type NotificationChannelUncheckedUpdateWithoutNotificationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChannelNestedInput
+  topics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChannelNestedInput
 }
 
 
@@ -401,10 +551,14 @@ export type NotificationChannelUncheckedUpdateWithoutNotificationsInput = {
 
 export type NotificationChannelCountOutputType = {
   notifications: number
+  bindings: number
+  topics: number
 }
 
 export type NotificationChannelCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   notifications?: boolean | NotificationChannelCountOutputTypeCountNotificationsArgs
+  bindings?: boolean | NotificationChannelCountOutputTypeCountBindingsArgs
+  topics?: boolean | NotificationChannelCountOutputTypeCountTopicsArgs
 }
 
 /**
@@ -424,6 +578,20 @@ export type NotificationChannelCountOutputTypeCountNotificationsArgs<ExtArgs ext
   where?: Prisma.NotificationWhereInput
 }
 
+/**
+ * NotificationChannelCountOutputType without action
+ */
+export type NotificationChannelCountOutputTypeCountBindingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationChannelBindingWhereInput
+}
+
+/**
+ * NotificationChannelCountOutputType without action
+ */
+export type NotificationChannelCountOutputTypeCountTopicsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationTopicWhereInput
+}
+
 
 export type NotificationChannelSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -431,6 +599,8 @@ export type NotificationChannelSelect<ExtArgs extends runtime.Types.Extensions.I
   title?: boolean
   description?: boolean
   notifications?: boolean | Prisma.NotificationChannel$notificationsArgs<ExtArgs>
+  bindings?: boolean | Prisma.NotificationChannel$bindingsArgs<ExtArgs>
+  topics?: boolean | Prisma.NotificationChannel$topicsArgs<ExtArgs>
   _count?: boolean | Prisma.NotificationChannelCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["notificationChannel"]>
 
@@ -458,6 +628,8 @@ export type NotificationChannelSelectScalar = {
 export type NotificationChannelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "title" | "description", ExtArgs["result"]["notificationChannel"]>
 export type NotificationChannelInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   notifications?: boolean | Prisma.NotificationChannel$notificationsArgs<ExtArgs>
+  bindings?: boolean | Prisma.NotificationChannel$bindingsArgs<ExtArgs>
+  topics?: boolean | Prisma.NotificationChannel$topicsArgs<ExtArgs>
   _count?: boolean | Prisma.NotificationChannelCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type NotificationChannelIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -470,6 +642,14 @@ export type $NotificationChannelPayload<ExtArgs extends runtime.Types.Extensions
      * The notifications linked to this channel.
      */
     notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    /**
+     * The Telegram chat bindings for this channel.
+     */
+    bindings: Prisma.$NotificationChannelBindingPayload<ExtArgs>[]
+    /**
+     * The topics linked to this channel.
+     */
+    topics: Prisma.$NotificationTopicPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     /**
@@ -883,6 +1063,8 @@ readonly fields: NotificationChannelFieldRefs;
 export interface Prisma__NotificationChannelClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   notifications<T extends Prisma.NotificationChannel$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.NotificationChannel$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  bindings<T extends Prisma.NotificationChannel$bindingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.NotificationChannel$bindingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationChannelBindingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  topics<T extends Prisma.NotificationChannel$topicsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.NotificationChannel$topicsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationTopicPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1325,6 +1507,54 @@ export type NotificationChannel$notificationsArgs<ExtArgs extends runtime.Types.
   take?: number
   skip?: number
   distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+}
+
+/**
+ * NotificationChannel.bindings
+ */
+export type NotificationChannel$bindingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationChannelBinding
+   */
+  select?: Prisma.NotificationChannelBindingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationChannelBinding
+   */
+  omit?: Prisma.NotificationChannelBindingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationChannelBindingInclude<ExtArgs> | null
+  where?: Prisma.NotificationChannelBindingWhereInput
+  orderBy?: Prisma.NotificationChannelBindingOrderByWithRelationInput | Prisma.NotificationChannelBindingOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationChannelBindingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationChannelBindingScalarFieldEnum | Prisma.NotificationChannelBindingScalarFieldEnum[]
+}
+
+/**
+ * NotificationChannel.topics
+ */
+export type NotificationChannel$topicsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationTopic
+   */
+  select?: Prisma.NotificationTopicSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationTopic
+   */
+  omit?: Prisma.NotificationTopicOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationTopicInclude<ExtArgs> | null
+  where?: Prisma.NotificationTopicWhereInput
+  orderBy?: Prisma.NotificationTopicOrderByWithRelationInput | Prisma.NotificationTopicOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationTopicWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationTopicScalarFieldEnum | Prisma.NotificationTopicScalarFieldEnum[]
 }
 
 /**

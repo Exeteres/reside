@@ -389,12 +389,14 @@ export const ModelName = {
   AvatarProvisionRequest: 'AvatarProvisionRequest',
   UnauthorizedAvatar: 'UnauthorizedAvatar',
   NotificationChannel: 'NotificationChannel',
+  NotificationChannelBinding: 'NotificationChannelBinding',
   Chat: 'Chat',
   Command: 'Command',
   EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   NaturalLanguageInteraction: 'NaturalLanguageInteraction',
   NotificationResponse: 'NotificationResponse',
+  NotificationTopic: 'NotificationTopic',
   Notification: 'Notification',
   Operation: 'Operation',
   User: 'User'
@@ -413,7 +415,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "approvalRequest" | "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "chat" | "command" | "encryptedContent" | "memoryNote" | "naturalLanguageInteraction" | "notificationResponse" | "notification" | "operation" | "user"
+    modelProps: "approvalRequest" | "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "notificationChannelBinding" | "chat" | "command" | "encryptedContent" | "memoryNote" | "naturalLanguageInteraction" | "notificationResponse" | "notificationTopic" | "notification" | "operation" | "user"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -784,6 +786,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.NotificationChannelCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.NotificationChannelCountAggregateOutputType> | number
+        }
+      }
+    }
+    NotificationChannelBinding: {
+      payload: Prisma.$NotificationChannelBindingPayload<ExtArgs>
+      fields: Prisma.NotificationChannelBindingFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NotificationChannelBindingFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NotificationChannelBindingFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>
+        }
+        findFirst: {
+          args: Prisma.NotificationChannelBindingFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NotificationChannelBindingFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>
+        }
+        findMany: {
+          args: Prisma.NotificationChannelBindingFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>[]
+        }
+        create: {
+          args: Prisma.NotificationChannelBindingCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>
+        }
+        createMany: {
+          args: Prisma.NotificationChannelBindingCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NotificationChannelBindingCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>[]
+        }
+        delete: {
+          args: Prisma.NotificationChannelBindingDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>
+        }
+        update: {
+          args: Prisma.NotificationChannelBindingUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>
+        }
+        deleteMany: {
+          args: Prisma.NotificationChannelBindingDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NotificationChannelBindingUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NotificationChannelBindingUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>[]
+        }
+        upsert: {
+          args: Prisma.NotificationChannelBindingUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationChannelBindingPayload>
+        }
+        aggregate: {
+          args: Prisma.NotificationChannelBindingAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNotificationChannelBinding>
+        }
+        groupBy: {
+          args: Prisma.NotificationChannelBindingGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NotificationChannelBindingGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NotificationChannelBindingCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NotificationChannelBindingCountAggregateOutputType> | number
         }
       }
     }
@@ -1231,6 +1307,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    NotificationTopic: {
+      payload: Prisma.$NotificationTopicPayload<ExtArgs>
+      fields: Prisma.NotificationTopicFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NotificationTopicFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NotificationTopicFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>
+        }
+        findFirst: {
+          args: Prisma.NotificationTopicFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NotificationTopicFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>
+        }
+        findMany: {
+          args: Prisma.NotificationTopicFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>[]
+        }
+        create: {
+          args: Prisma.NotificationTopicCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>
+        }
+        createMany: {
+          args: Prisma.NotificationTopicCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NotificationTopicCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>[]
+        }
+        delete: {
+          args: Prisma.NotificationTopicDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>
+        }
+        update: {
+          args: Prisma.NotificationTopicUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>
+        }
+        deleteMany: {
+          args: Prisma.NotificationTopicDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NotificationTopicUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NotificationTopicUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>[]
+        }
+        upsert: {
+          args: Prisma.NotificationTopicUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationTopicPayload>
+        }
+        aggregate: {
+          args: Prisma.NotificationTopicAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNotificationTopic>
+        }
+        groupBy: {
+          args: Prisma.NotificationTopicGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NotificationTopicGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NotificationTopicCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NotificationTopicCountAggregateOutputType> | number
+        }
+      }
+    }
     Notification: {
       payload: Prisma.$NotificationPayload<ExtArgs>
       fields: Prisma.NotificationFieldRefs
@@ -1562,6 +1712,18 @@ export const NotificationChannelScalarFieldEnum = {
 export type NotificationChannelScalarFieldEnum = (typeof NotificationChannelScalarFieldEnum)[keyof typeof NotificationChannelScalarFieldEnum]
 
 
+export const NotificationChannelBindingScalarFieldEnum = {
+  id: 'id',
+  channelId: 'channelId',
+  chatId: 'chatId',
+  topicId: 'topicId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationChannelBindingScalarFieldEnum = (typeof NotificationChannelBindingScalarFieldEnum)[keyof typeof NotificationChannelBindingScalarFieldEnum]
+
+
 export const ChatScalarFieldEnum = {
   id: 'id',
   telegramRhid: 'telegramRhid',
@@ -1633,11 +1795,27 @@ export const NotificationResponseScalarFieldEnum = {
 export type NotificationResponseScalarFieldEnum = (typeof NotificationResponseScalarFieldEnum)[keyof typeof NotificationResponseScalarFieldEnum]
 
 
+export const NotificationTopicScalarFieldEnum = {
+  id: 'id',
+  chatId: 'chatId',
+  channelId: 'channelId',
+  threadRhid: 'threadRhid',
+  threadEcid: 'threadEcid',
+  creatorSubjectId: 'creatorSubjectId',
+  title: 'title',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationTopicScalarFieldEnum = (typeof NotificationTopicScalarFieldEnum)[keyof typeof NotificationTopicScalarFieldEnum]
+
+
 export const NotificationScalarFieldEnum = {
   id: 'id',
   operationId: 'operationId',
   chatId: 'chatId',
   channelId: 'channelId',
+  topicId: 'topicId',
   messageRhid: 'messageRhid',
   messageEcid: 'messageEcid',
   callingSubjectId: 'callingSubjectId',
@@ -1648,6 +1826,7 @@ export const NotificationScalarFieldEnum = {
   requiresTextResponse: 'requiresTextResponse',
   isProtected: 'isProtected',
   expectImmediateFeedback: 'expectImmediateFeedback',
+  acquireTopic: 'acquireTopic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1958,12 +2137,14 @@ export type GlobalOmitConfig = {
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestOmit
   unauthorizedAvatar?: Prisma.UnauthorizedAvatarOmit
   notificationChannel?: Prisma.NotificationChannelOmit
+  notificationChannelBinding?: Prisma.NotificationChannelBindingOmit
   chat?: Prisma.ChatOmit
   command?: Prisma.CommandOmit
   encryptedContent?: Prisma.EncryptedContentOmit
   memoryNote?: Prisma.MemoryNoteOmit
   naturalLanguageInteraction?: Prisma.NaturalLanguageInteractionOmit
   notificationResponse?: Prisma.NotificationResponseOmit
+  notificationTopic?: Prisma.NotificationTopicOmit
   notification?: Prisma.NotificationOmit
   operation?: Prisma.OperationOmit
   user?: Prisma.UserOmit

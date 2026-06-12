@@ -8,6 +8,7 @@ import { SubjectService } from "@reside/api/common/subject.v1"
 import { AvatarService } from "@reside/api/interaction/avatar.v1"
 import { DefinitionService } from "@reside/api/interaction/definition.v1"
 import { NotificationService } from "@reside/api/interaction/notification.v1"
+import { TopicService } from "@reside/api/interaction/topic.v1"
 import {
   createInteractionActivities,
   createOperationSubscriptionService,
@@ -35,6 +36,7 @@ import { createAvatarService } from "./services/avatar"
 import { createDefinitionService } from "./services/definition"
 import { createNotificationService } from "./services/notification"
 import { createSubjectService } from "./services/subject"
+import { createTopicService } from "./services/topic"
 
 const SECRET_POLL_INTERVAL_MS = 5_000
 
@@ -47,6 +49,7 @@ await server.register(fastifyConnectPlugin, {
   routes(router) {
     router.service(DefinitionService, createDefinitionService(services))
     router.service(NotificationService, createNotificationService({ ...services, crypto }))
+    router.service(TopicService, createTopicService({ ...services, crypto }))
     router.service(ApprovalService, createApprovalService(services))
     router.service(AvatarService, createAvatarService({ ...services, crypto }))
     router.service(SubjectService, createSubjectService({ ...services, crypto }))
@@ -119,6 +122,7 @@ if (stopSignal.stopped) {
       ...createInteractionActivities(
         services.notificationService,
         services.interactionOperationService,
+        services.topicService,
       ),
       ...createTelegramActivities({
         prisma: services.prisma,

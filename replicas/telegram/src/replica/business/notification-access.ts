@@ -62,6 +62,7 @@ export async function resolveSenderDisplayTitle(
 }
 
 export async function parseInteractionContextToken(
+  crypto: ResideCrypto,
   token: string | undefined,
   systemChatId: string,
 ): Promise<{
@@ -76,7 +77,7 @@ export async function parseInteractionContextToken(
   }
 
   try {
-    const context = await decryptInteractionContextToken(token)
+    const context = await decryptInteractionContextToken(crypto, token)
 
     return {
       chatId: context.chat_id,

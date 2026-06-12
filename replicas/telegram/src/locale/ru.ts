@@ -155,6 +155,32 @@ export const ru = {
       privateChatTitle: "Личный чат",
       chatById: (chatId: string | number) => `Чат ${chatId}`,
       userById: (userId: string | number) => `Пользователь ${userId}`,
+      notificationChannelBinding: {
+        bindUsage: "Использование: /bind_notification_channel <канал>",
+        unbindUsage: "Использование: /unbind_notification_channel <канал>",
+        bound: (channelTitle: string) =>
+          `Канал уведомлений «${channelTitle}» привязан к этому чату.`,
+        boundToTopic: (channelTitle: string, topicTitle: string) =>
+          `Канал уведомлений «${channelTitle}» привязан к теме «${topicTitle}».`,
+        unbound: (channelTitle: string) => `Привязка канала уведомлений «${channelTitle}» удалена.`,
+        noBinding: (channelTitle: string) =>
+          `У канала уведомлений «${channelTitle}» не было привязки.`,
+        failed: "Не удалось изменить привязку канала уведомлений.",
+        topicFallbackTitle: (messageThreadId: number) => `Тема ${messageThreadId}`,
+      },
+      notificationInfo: {
+        usage: "Ответьте командой /info на уведомление.",
+        notFound: "В ответе нет известного уведомления.",
+        title: "Информация об уведомлении",
+        channelSection: "Канал уведомлений",
+        channelTitle: (title: string) => `Название: ${title}`,
+        channelName: (name: string) => `Имя: ${name}`,
+        channelDescription: (description: string) => `Описание: ${description}`,
+        senderSection: "Субъект-отправитель",
+        senderTitle: (title: string) => `Название: ${title}`,
+        senderSubjectId: (subjectId: string) => `ID: ${subjectId}`,
+        senderUnknown: "Субъект не указан.",
+      },
     },
     ecidSubstitution: {
       decryptReason: "Для отображения зашифрованных данных пользователю",
