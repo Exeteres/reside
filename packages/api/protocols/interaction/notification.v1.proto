@@ -87,6 +87,14 @@ message SendNotificationRequest {
   // Whether callback interactions should avoid delayed "chosen" suffix rendering.
   // Useful for interactions where immediate in-place UI updates are expected.
   google.protobuf.BoolValue expect_immediate_feedback = 12;
+
+  // The optional notification topic to send the notification into.
+  // This ID is opaque and must not be parsed.
+  google.protobuf.StringValue topic_id = 13;
+
+  // Whether messages sent into the target topic should be treated as text responses to this notification.
+  // Implementations must authorize topic messages before resolving the notification response.
+  google.protobuf.BoolValue acquire_topic = 14;
 }
 
 // The response message for a notification sent to a channel.
@@ -99,6 +107,10 @@ message SendNotificationResponse {
   // If the notification has no actions and does not set `requires_text_response` to true, this will be null, as there is no response to await.
   // Once user takes an action or provides a text response, the operation will be resolved with the NotificationResponse message.
   reside.common.operation.v1.Operation operation = 1;
+
+  // The optional external link to the created notification message.
+  // This link is intended for display to the caller and must not be parsed.
+  google.protobuf.StringValue message_link = 3;
 }
 
 // The request message for updating an existing notification.
@@ -161,4 +173,3 @@ service NotificationService {
   // Deletes an existing notification.
   rpc DeleteNotification(DeleteNotificationRequest) returns (google.protobuf.Empty);
 }
-

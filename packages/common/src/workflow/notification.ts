@@ -12,6 +12,11 @@ import {
   SendNotificationRequestSchema,
   UpdateNotificationRequestSchema,
 } from "@reside/api/interaction/notification.v1"
+import {
+  CreateTopicRequestSchema,
+  DeleteTopicRequestSchema,
+  UpdateTopicRequestSchema,
+} from "@reside/api/interaction/topic.v1"
 import { waitForOperationResult } from "./operation"
 import { condition, proxyActivities, workflowInfo } from "@temporalio/workflow"
 import type { InlineFile } from "@reside/api/common/file.v1"
@@ -21,6 +26,10 @@ import { html } from "../telegram"
 
 type NotificationResponseResult = NotificationResponseJson & {
   contextToken?: string
+}
+
+export type TopicOutput = {
+  topicId: string
 }
 
 export type NotificationActionInput = {
@@ -85,6 +94,7 @@ type NotificationCancelableOutput<
   TCancelWhen extends (() => boolean) | undefined,
 > = {
   notificationId: string
+  messageLink?: string
 } & (
   | NotificationResponsePayload<TActions, TRequiresTextResponse>
   | (TCancelWhen extends undefined ? never : NotificationCancelledPayload)
@@ -163,6 +173,16 @@ export type NotificationInput<
   expectImmediateFeedback?: boolean
 
   /**
+   * Optional opaque topic identifier to send the notification into.
+   */
+  topicId?: string
+
+  /**
+   * Whether messages sent into the target topic should be treated as text responses.
+   */
+  acquireTopic?: boolean
+
+  /**
    * Optional cancellation predicate checked while waiting for notification response.
    * If it becomes true first, helper returns `type: "cancelled"`.
    */
@@ -174,7 +194,37 @@ export type NotificationOutput<
   TRequiresTextResponse extends boolean,
 > = {
   notificationId: string
+  messageLink?: string
 } & NotificationResponsePayload<TActions, TRequiresTextResponse>
+
+export type CreateTopicInput = {
+  /**
+   * The name of the channel where the topic should be created.
+   */
+  channel: string
+
+  /**
+   * The human-readable topic title.
+   */
+  title: string
+
+  /**
+   * Optional subject identifier to create the topic on behalf of.
+   */
+  createAsSubjectId?: string
+}
+
+export type UpdateTopicInput = {
+  /**
+   * The opaque topic identifier.
+   */
+  topicId: string
+
+  /**
+   * The updated human-readable topic title.
+   */
+  title: string
+}
 
 export type UpdateNotificationInput<
   TActions extends NotificationActionsInput = Record<string, never>,
@@ -260,12 +310,15 @@ export async function sendNotification<
     protected: input.protected,
     sendAsSubjectId: input.sendAsSubjectId,
     expectImmediateFeedback: input.expectImmediateFeedback,
+    topicId: input.topicId,
+    acquireTopic: input.acquireTopic,
     attachments: input.attachments ?? [],
     images: input.images ?? [],
   })
 
   const response = await sendNotification(request)
   const notificationId = response.notificationId
+  const messageLink = response.messageLink
 
   if (!notificationId) {
     throw new Error("Notification service response is missing notificationId")
@@ -274,6 +327,7 @@ export async function sendNotification<
   if (!response.operation) {
     return {
       notificationId,
+      messageLink,
     } as NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
   }
 
@@ -284,6 +338,7 @@ export async function sendNotification<
   const responsePromise = waitNotificationOutput<TActions, TRequiresTextResponse>(
     notificationId,
     response.operation.id,
+    messageLink,
   )
 
   if (input.cancelWhen === undefined) {
@@ -297,6 +352,7 @@ export async function sendNotification<
   const cancelPromise = condition(input.cancelWhen).then(() => {
     return {
       notificationId,
+      messageLink,
       type: "cancelled" as const,
     }
   })
@@ -374,6 +430,7 @@ export async function updateNotification<
   const responsePromise = waitNotificationOutput<TActions, TRequiresTextResponse>(
     input.notificationId,
     response.operation.id,
+    undefined,
   )
 
   if (input.cancelWhen === undefined) {
@@ -418,12 +475,85 @@ export async function deleteNotification(notificationId: string): Promise<void> 
   await deleteNotification(request)
 }
 
+/**
+ * Creates a notification topic inside a channel.
+ *
+ * @param input The input for the topic to create.
+ * @returns The opaque identifier of the created topic.
+ */
+export async function createNotificationTopic(input: CreateTopicInput): Promise<TopicOutput> {
+  const { createTopic } = proxyActivities<InteractionActivities>({
+    startToCloseTimeout: "5 minutes",
+    retry: {
+      initialInterval: "10 seconds",
+    },
+  })
+
+  const response = await createTopic(
+    create(CreateTopicRequestSchema, {
+      channel: input.channel,
+      title: input.title,
+      createAsSubjectId: input.createAsSubjectId,
+    }),
+  )
+
+  if (!response.topicId) {
+    throw new Error("Topic service response is missing topicId")
+  }
+
+  return {
+    topicId: response.topicId,
+  }
+}
+
+/**
+ * Updates an existing notification topic.
+ *
+ * @param input The topic update input.
+ */
+export async function updateNotificationTopic(input: UpdateTopicInput): Promise<void> {
+  const { updateTopic } = proxyActivities<InteractionActivities>({
+    startToCloseTimeout: "5 minutes",
+    retry: {
+      initialInterval: "10 seconds",
+    },
+  })
+
+  await updateTopic(
+    create(UpdateTopicRequestSchema, {
+      topicId: input.topicId,
+      title: input.title,
+    }),
+  )
+}
+
+/**
+ * Deletes an existing notification topic.
+ *
+ * @param topicId The opaque topic identifier.
+ */
+export async function deleteNotificationTopic(topicId: string): Promise<void> {
+  const { deleteTopic } = proxyActivities<InteractionActivities>({
+    startToCloseTimeout: "5 minutes",
+    retry: {
+      initialInterval: "10 seconds",
+    },
+  })
+
+  await deleteTopic(
+    create(DeleteTopicRequestSchema, {
+      topicId,
+    }),
+  )
+}
+
 async function waitNotificationOutput<
   TActions extends NotificationActionsInput,
   TRequiresTextResponse extends boolean,
 >(
   notificationId: string,
   operationId: number,
+  messageLink: string | undefined,
 ): Promise<NotificationOutput<TActions, TRequiresTextResponse>> {
   const { subscribeToOperationCompletion } = proxyActivities<InteractionActivities>({
     startToCloseTimeout: "5 minutes",
@@ -440,6 +570,7 @@ async function waitNotificationOutput<
   if (operation.actionName) {
     return {
       notificationId,
+      messageLink,
       type: "action",
       actionName: operation.actionName as keyof TActions,
       contextToken: operation.contextToken,
@@ -449,6 +580,7 @@ async function waitNotificationOutput<
   if (operation.textResponse) {
     return {
       notificationId,
+      messageLink,
       type: "text",
       text: operation.textResponse,
       contextToken: operation.contextToken,

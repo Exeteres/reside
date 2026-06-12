@@ -6,6 +6,13 @@ import {
   type SendNotificationRequest,
   type UpdateNotificationRequest,
 } from "@reside/api/interaction/notification.v1"
+import type {
+  CreateTopicRequest,
+  DeleteTopicRequest,
+  TopicServiceClient,
+  UpdateTopicRequest,
+} from "@reside/api/interaction/topic.v1"
+import { CreateTopicResponseSchema } from "@reside/api/interaction/topic.v1"
 import { authenticate } from "../auth"
 import { createOperationActivities } from "./operation"
 import type { CommandHandlerServiceImplementation } from "@reside/api/interaction/command.v1"
@@ -18,6 +25,7 @@ import { DEFAULT_TEMPORAL_TASK_QUEUE } from "../database"
 export function createInteractionActivities(
   notificationService: NotificationServiceClient,
   interactionOperationService: OperationServiceClient,
+  topicService?: TopicServiceClient,
 ) {
   return {
     sendNotification: async (request: SendNotificationRequest) => {
@@ -34,6 +42,36 @@ export function createInteractionActivities(
 
     deleteNotification: async (request: DeleteNotificationRequest) => {
       await notificationService.deleteNotification(request)
+
+      return {}
+    },
+
+    createTopic: async (request: CreateTopicRequest) => {
+      if (!topicService) {
+        throw new Error("Topic service is not configured")
+      }
+
+      const response = await topicService.createTopic(request)
+
+      return toJson(CreateTopicResponseSchema, response)
+    },
+
+    updateTopic: async (request: UpdateTopicRequest) => {
+      if (!topicService) {
+        throw new Error("Topic service is not configured")
+      }
+
+      await topicService.updateTopic(request)
+
+      return {}
+    },
+
+    deleteTopic: async (request: DeleteTopicRequest) => {
+      if (!topicService) {
+        throw new Error("Topic service is not configured")
+      }
+
+      await topicService.deleteTopic(request)
 
       return {}
     },

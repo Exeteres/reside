@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/notification.v1.proto.
  */
 export const file_interaction_notification_v1: GenFile = /*@__PURE__*/
-  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24i5gQKF1NlbmROb3RpZmljYXRpb25SZXF1ZXN0EhoKDWNvbnRleHRfdG9rZW4YASABKAlIAIgBARIPCgdjaGFubmVsGAIgASgJEi8KCXBhcnRpdGlvbhgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRINCgV0aXRsZRgEIAEoCRItCgdjb250ZW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKBmltYWdlcxgGIAMoCzIhLnJlc2lkZS5jb21tb24uZmlsZS52MS5JbmxpbmVGaWxlEjYKC2F0dGFjaG1lbnRzGAcgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSTgoLYWN0aW9uX3Jvd3MYCCADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxI6ChZyZXF1aXJlc190ZXh0X3Jlc3BvbnNlGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRItCglwcm90ZWN0ZWQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEjgKEnNlbmRfYXNfc3ViamVjdF9pZBgLIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRI9ChlleHBlY3RfaW1tZWRpYXRlX2ZlZWRiYWNrGAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZUIQCg5fY29udGV4dF90b2tlbiJtChhTZW5kTm90aWZpY2F0aW9uUmVzcG9uc2USFwoPbm90aWZpY2F0aW9uX2lkGAIgASgJEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiKfAgoZVXBkYXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkSDQoFdGl0bGUYAiABKAkSDwoHY29udGVudBgDIAEoCRJOCgthY3Rpb25fcm93cxgEIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uQWN0aW9uUm93EjoKFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYBSABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEj0KGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYBiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlIlYKGlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiI0ChlEZWxldGVOb3RpZmljYXRpb25SZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCSJSChROb3RpZmljYXRpb25SZXNwb25zZRIVCgthY3Rpb25fbmFtZRgBIAEoCUgAEhcKDXRleHRfcmVzcG9uc2UYAiABKAlIAEIKCghyZXNwb25zZSqDAQoWTm90aWZpY2F0aW9uQWN0aW9uSWNvbhIhCh1DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fTk9ORRAAEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DSEVDSxABEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DUk9TUxACMqgDChNOb3RpZmljYXRpb25TZXJ2aWNlEo0BChBTZW5kTm90aWZpY2F0aW9uEjsucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5TZW5kTm90aWZpY2F0aW9uUmVxdWVzdBo8LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuU2VuZE5vdGlmaWNhdGlvblJlc3BvbnNlEpMBChJVcGRhdGVOb3RpZmljYXRpb24SPS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlVwZGF0ZU5vdGlmaWNhdGlvblJlcXVlc3QaPi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEmsKEkRlbGV0ZU5vdGlmaWNhdGlvbhI9LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuRGVsZXRlTm90aWZpY2F0aW9uUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
+  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24iyQUKF1NlbmROb3RpZmljYXRpb25SZXF1ZXN0EhoKDWNvbnRleHRfdG9rZW4YASABKAlIAIgBARIPCgdjaGFubmVsGAIgASgJEi8KCXBhcnRpdGlvbhgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRINCgV0aXRsZRgEIAEoCRItCgdjb250ZW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKBmltYWdlcxgGIAMoCzIhLnJlc2lkZS5jb21tb24uZmlsZS52MS5JbmxpbmVGaWxlEjYKC2F0dGFjaG1lbnRzGAcgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSTgoLYWN0aW9uX3Jvd3MYCCADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxI6ChZyZXF1aXJlc190ZXh0X3Jlc3BvbnNlGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRItCglwcm90ZWN0ZWQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEjgKEnNlbmRfYXNfc3ViamVjdF9pZBgLIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRI9ChlleHBlY3RfaW1tZWRpYXRlX2ZlZWRiYWNrGAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRIuCgh0b3BpY19pZBgNIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIxCg1hY3F1aXJlX3RvcGljGA4gASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZUIQCg5fY29udGV4dF90b2tlbiKhAQoYU2VuZE5vdGlmaWNhdGlvblJlc3BvbnNlEhcKD25vdGlmaWNhdGlvbl9pZBgCIAEoCRI4CglvcGVyYXRpb24YASABKAsyJS5yZXNpZGUuY29tbW9uLm9wZXJhdGlvbi52MS5PcGVyYXRpb24SMgoMbWVzc2FnZV9saW5rGAMgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIp8CChlVcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIPCgdjb250ZW50GAMgASgJEk4KC2FjdGlvbl9yb3dzGAQgAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb25Sb3cSOgoWcmVxdWlyZXNfdGV4dF9yZXNwb25zZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSPQoZZXhwZWN0X2ltbWVkaWF0ZV9mZWVkYmFjaxgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUiVgoaVXBkYXRlTm90aWZpY2F0aW9uUmVzcG9uc2USOAoJb3BlcmF0aW9uGAEgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uIjQKGURlbGV0ZU5vdGlmaWNhdGlvblJlcXVlc3QSFwoPbm90aWZpY2F0aW9uX2lkGAEgASgJIlIKFE5vdGlmaWNhdGlvblJlc3BvbnNlEhUKC2FjdGlvbl9uYW1lGAEgASgJSAASFwoNdGV4dF9yZXNwb25zZRgCIAEoCUgAQgoKCHJlc3BvbnNlKoMBChZOb3RpZmljYXRpb25BY3Rpb25JY29uEiEKHUNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9OT05FEAASIgoeQ09ORklSTUFUSU9OX0FDVElPTl9JQ09OX0NIRUNLEAESIgoeQ09ORklSTUFUSU9OX0FDVElPTl9JQ09OX0NST1NTEAIyqAMKE05vdGlmaWNhdGlvblNlcnZpY2USjQEKEFNlbmROb3RpZmljYXRpb24SOy5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlNlbmROb3RpZmljYXRpb25SZXF1ZXN0GjwucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5TZW5kTm90aWZpY2F0aW9uUmVzcG9uc2USkwEKElVwZGF0ZU5vdGlmaWNhdGlvbhI9LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuVXBkYXRlTm90aWZpY2F0aW9uUmVxdWVzdBo+LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuVXBkYXRlTm90aWZpY2F0aW9uUmVzcG9uc2USawoSRGVsZXRlTm90aWZpY2F0aW9uEj0ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5EZWxldGVOb3RpZmljYXRpb25SZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5YgZwcm90bzM", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
 
 /**
  * The action that a user can take in response to a notification, represented by a button in the UI.
@@ -235,6 +235,22 @@ export type SendNotificationRequest = Message<"reside.interaction.notification.v
    * @generated from field: google.protobuf.BoolValue expect_immediate_feedback = 12;
    */
   expectImmediateFeedback?: boolean;
+
+  /**
+   * The optional notification topic to send the notification into.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: google.protobuf.StringValue topic_id = 13;
+   */
+  topicId?: string;
+
+  /**
+   * Whether messages sent into the target topic should be treated as text responses to this notification.
+   * Implementations must authorize topic messages before resolving the notification response.
+   *
+   * @generated from field: google.protobuf.BoolValue acquire_topic = 14;
+   */
+  acquireTopic?: boolean;
 };
 
 /**
@@ -340,6 +356,22 @@ export type SendNotificationRequestJson = {
    * @generated from field: google.protobuf.BoolValue expect_immediate_feedback = 12;
    */
   expectImmediateFeedback?: BoolValueJson;
+
+  /**
+   * The optional notification topic to send the notification into.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: google.protobuf.StringValue topic_id = 13;
+   */
+  topicId?: StringValueJson;
+
+  /**
+   * Whether messages sent into the target topic should be treated as text responses to this notification.
+   * Implementations must authorize topic messages before resolving the notification response.
+   *
+   * @generated from field: google.protobuf.BoolValue acquire_topic = 14;
+   */
+  acquireTopic?: BoolValueJson;
 };
 
 /**
@@ -371,6 +403,14 @@ export type SendNotificationResponse = Message<"reside.interaction.notification.
    * @generated from field: reside.common.operation.v1.Operation operation = 1;
    */
   operation?: Operation;
+
+  /**
+   * The optional external link to the created notification message.
+   * This link is intended for display to the caller and must not be parsed.
+   *
+   * @generated from field: google.protobuf.StringValue message_link = 3;
+   */
+  messageLink?: string;
 };
 
 /**
@@ -395,6 +435,14 @@ export type SendNotificationResponseJson = {
    * @generated from field: reside.common.operation.v1.Operation operation = 1;
    */
   operation?: OperationJson;
+
+  /**
+   * The optional external link to the created notification message.
+   * This link is intended for display to the caller and must not be parsed.
+   *
+   * @generated from field: google.protobuf.StringValue message_link = 3;
+   */
+  messageLink?: StringValueJson;
 };
 
 /**

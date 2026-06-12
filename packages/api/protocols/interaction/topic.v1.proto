@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package reside.interaction.topic.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+// The request message for creating a notification topic inside a channel.
+message CreateTopicRequest {
+  // The notification channel where the topic should be created.
+  string channel = 1;
+
+  // The human-readable topic title.
+  string title = 2;
+
+  // Optional subject identifier on behalf of which the topic is created.
+  // Implementations may require additional permission checks to allow impersonation.
+  google.protobuf.StringValue create_as_subject_id = 3;
+}
+
+// The response message for a created notification topic.
+message CreateTopicResponse {
+  // The identifier of the created topic.
+  // This ID is opaque and must not be parsed.
+  string topic_id = 1;
+}
+
+// The request message for updating a notification topic.
+message UpdateTopicRequest {
+  // The identifier of the topic to update.
+  // This ID is opaque and must not be parsed.
+  string topic_id = 1;
+
+  // The updated human-readable topic title.
+  string title = 2;
+}
+
+// The request message for deleting a notification topic.
+message DeleteTopicRequest {
+  // The identifier of the topic to delete.
+  // This ID is opaque and must not be parsed.
+  string topic_id = 1;
+}
+
+// The topic service manages notification topics used by interaction implementations.
+service TopicService {
+  // Creates a notification topic inside a channel.
+  rpc CreateTopic(CreateTopicRequest) returns (CreateTopicResponse);
+
+  // Updates a notification topic title.
+  rpc UpdateTopic(UpdateTopicRequest) returns (google.protobuf.Empty);
+
+  // Deletes a notification topic.
+  rpc DeleteTopic(DeleteTopicRequest) returns (google.protobuf.Empty);
+}

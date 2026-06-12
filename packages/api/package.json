@@ -56,7 +56,9 @@
     "./interaction/nls.v1_pb": "./src/_generated/interaction/nls.v1_pb.ts",
     "./interaction/nls.v1": "./src/_generated/interaction/nls.v1.ts",
     "./interaction/notification.v1_pb": "./src/_generated/interaction/notification.v1_pb.ts",
-    "./interaction/notification.v1": "./src/_generated/interaction/notification.v1.ts"
+    "./interaction/notification.v1": "./src/_generated/interaction/notification.v1.ts",
+    "./interaction/topic.v1_pb": "./src/_generated/interaction/topic.v1_pb.ts",
+    "./interaction/topic.v1": "./src/_generated/interaction/topic.v1.ts"
   },
   "dependencies": {
     "@bufbuild/protobuf": "catalog:",
