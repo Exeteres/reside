@@ -1,6 +1,7 @@
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
 import type {
+  ActionRow,
   AuthzServiceClientLike,
   SendNotificationInput,
   SubjectServiceClientLike,
@@ -100,6 +101,7 @@ export async function sendNotificationForReplica(
 
   const renderedTitle = await ecidSubstitutor.substituteInText(input.title)
   const renderedContent = await ecidSubstitutor.substituteInText(input.content ?? "")
+  const renderedActionRows = await renderActionRowsForTelegram(ecidSubstitutor, input.actionRows)
 
   const messageText = toTelegramMessageText(
     {
@@ -118,7 +120,7 @@ export async function sendNotificationForReplica(
   const bot = createTelegramBotClient(botToken, {
     role: "notification.send",
   })
-  const replyMarkup = toInlineKeyboardMarkupFromActionRows(input.actionRows)
+  const replyMarkup = toInlineKeyboardMarkupFromActionRows(renderedActionRows)
   const interactionContext = await parseInteractionContextToken(
     crypto,
     input.contextToken,
@@ -167,7 +169,7 @@ export async function sendNotificationForReplica(
   const sentMessageId = sendResult.sentMessageId
   const sentMessageEcid = await crypto.encrypt(sendResult.sentMessage)
   const messageLinkEcid = await crypto.encrypt(
-    createTelegramMessageLink(targetChatId, sentMessageId),
+    createTelegramMessageLink(targetChatId, sentMessageId, target.messageThreadId),
   )
   const usedReplyFallback = sendResult.usedReplyFallback
 
@@ -348,10 +350,10 @@ export async function updateNotificationForReplica(
   const bot = createTelegramBotClient(botToken, {
     role: "notification.update",
   })
-  const replyMarkup = toInlineKeyboardMarkupFromActionRows(input.actionRows)
-
   const renderedTitle = await ecidSubstitutor.substituteInText(input.title)
   const renderedContent = await ecidSubstitutor.substituteInText(input.content)
+  const renderedActionRows = await renderActionRowsForTelegram(ecidSubstitutor, input.actionRows)
+  const replyMarkup = toInlineKeyboardMarkupFromActionRows(renderedActionRows)
 
   const messageText = toTelegramMessageTextValue(
     {
@@ -476,6 +478,98 @@ export async function acceptNotificationResponseForReplica(
     )
   }
 
+  if (notification.operationId !== null && notification.operation?.status === "PENDING") {
+    await setNotificationAcceptedReaction(
+      crypto,
+      prisma,
+      createTelegramBotClient,
+      loadDeliveryConfig,
+      notification,
+    )
+
+    return {
+      operationId: notification.operationId,
+    }
+  }
+
+  const result = await prisma.$transaction(async tx => {
+    const current = await tx.notification.findUnique({
+      where: {
+        id: notification.id,
+      },
+      select: {
+        operationId: true,
+        operation: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    })
+
+    if (current === null) {
+      throw new ConnectError(`Notification "${input.notificationId}" was not found`, Code.NotFound)
+    }
+
+    if (current?.operationId !== null && current?.operation?.status === "PENDING") {
+      return {
+        operationId: current.operationId,
+        shouldReact: true,
+      }
+    }
+
+    const shouldReact = current?.operation?.status === "COMPLETED"
+
+    const operation = await tx.operation.create({
+      data: {
+        title: RESPONSE_OPERATION_TITLE,
+        description: null,
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    await tx.notification.update({
+      where: {
+        id: notification.id,
+      },
+      data: {
+        operationId: operation.id,
+      },
+    })
+
+    return {
+      operationId: operation.id,
+      shouldReact,
+    }
+  })
+
+  if (result.shouldReact) {
+    await setNotificationAcceptedReaction(
+      crypto,
+      prisma,
+      createTelegramBotClient,
+      loadDeliveryConfig,
+      notification,
+    )
+  }
+
+  return {
+    operationId: result.operationId,
+  }
+}
+
+async function setNotificationAcceptedReaction(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  createTelegramBotClient: (token: string, args: { role: string }) => TelegramBotLike,
+  loadDeliveryConfig: () => Promise<{ botToken: string; systemChatId: string }>,
+  notification: {
+    messageEcid: string
+    sendAsSubjectId: string | null
+  },
+): Promise<void> {
   const deliveryConfig = await loadDeliveryConfig()
   const botToken = await resolveNotificationReactionBotToken(
     crypto,
@@ -499,61 +593,6 @@ export async function acceptNotificationResponseForReplica(
       emoji: "👀",
     },
   ])
-
-  if (notification.operationId !== null && notification.operation?.status === "PENDING") {
-    return {
-      operationId: notification.operationId,
-    }
-  }
-
-  return await prisma.$transaction(async tx => {
-    const current = await tx.notification.findUnique({
-      where: {
-        id: notification.id,
-      },
-      select: {
-        operationId: true,
-        operation: {
-          select: {
-            status: true,
-          },
-        },
-      },
-    })
-
-    if (current === null) {
-      throw new ConnectError(`Notification "${input.notificationId}" was not found`, Code.NotFound)
-    }
-
-    if (current?.operationId !== null && current?.operation?.status === "PENDING") {
-      return {
-        operationId: current.operationId,
-      }
-    }
-
-    const operation = await tx.operation.create({
-      data: {
-        title: RESPONSE_OPERATION_TITLE,
-        description: null,
-      },
-      select: {
-        id: true,
-      },
-    })
-
-    await tx.notification.update({
-      where: {
-        id: notification.id,
-      },
-      data: {
-        operationId: operation.id,
-      },
-    })
-
-    return {
-      operationId: operation.id,
-    }
-  })
 }
 
 export async function deleteNotificationForReplica(
@@ -757,8 +796,47 @@ export function parseNotificationId(notificationId: string): number {
   return parsedNotificationId
 }
 
-function createTelegramMessageLink(chatId: string, messageId: number): string {
-  return `t.me/c/${chatId}/${messageId}`
+async function renderActionRowsForTelegram(
+  ecidSubstitutor: { substituteInText: (text: string) => Promise<string> },
+  actionRows: ActionRow[],
+): Promise<ActionRow[]> {
+  const renderedRows: ActionRow[] = []
+
+  for (const row of actionRows) {
+    const renderedActions: ActionRow["actions"] = []
+
+    for (const action of row.actions) {
+      if (action.url === undefined) {
+        renderedActions.push(action)
+        continue
+      }
+
+      renderedActions.push({
+        ...action,
+        url: await ecidSubstitutor.substituteInText(action.url),
+      })
+    }
+
+    renderedRows.push({
+      actions: renderedActions,
+    })
+  }
+
+  return renderedRows
+}
+
+function createTelegramMessageLink(
+  chatId: string,
+  messageId: number,
+  messageThreadId?: number,
+): string {
+  const linkChatId = chatId.startsWith("-100") ? chatId.slice(4) : chatId
+
+  if (messageThreadId !== undefined) {
+    return `t.me/c/${linkChatId}/${messageThreadId}/${messageId}`
+  }
+
+  return `t.me/c/${linkChatId}/${messageId}`
 }
 
 export function assertActionRows(actions: Array<{ actions: Array<{ name: string }> }>): void {

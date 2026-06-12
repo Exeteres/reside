@@ -1,8 +1,10 @@
 import type { PrismaClient } from "../../database"
 import { describe, expect, test } from "bun:test"
 import { mockDeepFn, testCrypto } from "@reside/common/testing"
+import { z } from "zod"
 import { createInteractionContextToken } from "../../shared"
 import {
+  acceptNotificationResponseForReplica,
   assertActionRows,
   deleteNotificationForReplica,
   parseNotificationId,
@@ -29,6 +31,11 @@ type TelegramBotLike = {
       options?: Record<string, unknown>,
     ) => Promise<unknown>
     deleteMessage: (chatId: string, messageId: number) => Promise<true>
+    setMessageReaction: (
+      chatId: string,
+      messageId: number,
+      reaction: Array<{ type: "emoji"; emoji: "👀" }>,
+    ) => Promise<true>
     sendPhoto: (...args: unknown[]) => Promise<{ message_id: number }>
     sendDocument: (...args: unknown[]) => Promise<{ message_id: number }>
     sendMediaGroup: (...args: unknown[]) => Promise<{ message_id: number }[]>
@@ -159,9 +166,164 @@ describe("sendNotificationForReplica", () => {
       notificationId: "77",
       operationId: undefined,
     })
+    const messageLink = await testCrypto.decrypt(z.string(), result.messageLink ?? "")
+    expect(messageLink).toBe("t.me/c/1/123")
     expect(bot.api.sendMessage.spy()).toHaveBeenCalledTimes(1)
     expect(prisma.notification.create.spy()).toHaveBeenCalledTimes(1)
     expect(prisma.operation.create.spy()).toHaveBeenCalledTimes(0)
+  })
+
+  test("creates topic message link with normalized chat id", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<{
+      checkPermission: (args: {
+        permissionName: string
+        subjectId: string
+        scope: string
+      }) => Promise<{ authorized: boolean }>
+    }>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    prisma.notificationTopic.findUnique.mockResolvedValue({
+      id: 5,
+      threadEcid: await testCrypto.encrypt({
+        chat_id: "-1002",
+        message_thread_id: 99,
+      }),
+      channel: {
+        id: 11,
+        name: "alerts",
+      },
+    } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    prisma.chat.upsert.mockResolvedValue({ id: 1 } as never)
+    prisma.notification.create.mockResolvedValue({ id: 77 } as never)
+    subjectService.getSubjectDisplayInfo.mockResolvedValue({ title: "Sender" } as never)
+    bot.api.sendMessage.mockResolvedValue({ message_id: 123 } as never)
+
+    const result = await sendNotificationForReplica(
+      testCrypto,
+      prisma,
+      authzService,
+      subjectService,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      "demo",
+      {
+        topicId: "5",
+        title: "Title",
+        content: "Body",
+        actionRows: [],
+        images: [],
+        attachments: [],
+        requiresTextResponse: false,
+      },
+    )
+
+    const messageLink = await testCrypto.decrypt(z.string(), result.messageLink ?? "")
+    expect(messageLink).toBe("t.me/c/2/99/123")
+    expect(bot.api.sendMessage.spy()).toHaveBeenCalledWith(
+      "-1002",
+      expect.any(String),
+      expect.objectContaining({
+        message_thread_id: 99,
+      }),
+    )
+  })
+
+  test("decrypts ecids in action urls only for telegram markup", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<{
+      checkPermission: (args: {
+        permissionName: string
+        subjectId: string
+        scope: string
+      }) => Promise<{ authorized: boolean }>
+    }>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+    const linkEcid = await testCrypto.encrypt("https://example.test/task")
+
+    prisma.notificationChannel.findUnique.mockResolvedValue({ id: 11 } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    prisma.chat.upsert.mockResolvedValue({ id: 1 } as never)
+    prisma.notification.create.mockResolvedValue({ id: 77 } as never)
+    subjectService.getSubjectDisplayInfo.mockResolvedValue({ title: "Sender" } as never)
+    bot.api.sendMessage.mockResolvedValue({ message_id: 123 } as never)
+
+    await sendNotificationForReplica(
+      testCrypto,
+      prisma,
+      authzService,
+      subjectService,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      "demo",
+      {
+        channel: "alerts",
+        title: "Title",
+        content: "Body",
+        actionRows: [
+          {
+            actions: [
+              {
+                name: "open",
+                title: "Open",
+                url: linkEcid,
+              },
+            ],
+          },
+        ],
+        images: [],
+        attachments: [],
+        requiresTextResponse: false,
+      },
+    )
+
+    expect(bot.api.sendMessage.spy()).toHaveBeenCalledWith(
+      "-1001",
+      expect.any(String),
+      expect.objectContaining({
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Open",
+                url: "https://example.test/task",
+              },
+            ],
+          ],
+        },
+      }),
+    )
+    expect(prisma.notification.create.spy()).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          actionRows: [
+            {
+              actions: [
+                {
+                  name: "open",
+                  title: "Open",
+                  url: linkEcid,
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    )
   })
 
   test("replies to command message in same-chat command context", async () => {
@@ -461,6 +623,100 @@ describe("updateNotificationForReplica", () => {
     expect(prisma.notification.update.spy()).toHaveBeenCalledTimes(1)
   })
 
+  test("decrypts ecids in updated action urls only for telegram markup", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+    const linkEcid = await testCrypto.encrypt("https://example.test/task")
+
+    subjectService.getSubjectDisplayInfo.mockResolvedValue({ title: "Sender" } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    prisma.notification.findFirst.mockResolvedValue({
+      id: 7,
+      title: "Old title",
+      content: "Old content",
+      messageEcid: await encryptTelegramMessage(900),
+      actionRows: [],
+      requiresTextResponse: false,
+      operationId: null,
+      operation: null,
+    } as never)
+    bot.api.editMessageText.mockResolvedValue({} as never)
+    prisma.notification.update.mockResolvedValue({ id: 7 } as never)
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: TransactionPrisma) => Promise<unknown>) => {
+        return await callback(prisma as unknown as TransactionPrisma)
+      },
+    )
+
+    await updateNotificationForReplica(
+      testCrypto,
+      prisma,
+      subjectService,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      "demo",
+      {
+        notificationId: "7",
+        title: "New title",
+        content: "New content",
+        actionRows: [
+          {
+            actions: [
+              {
+                name: "open",
+                title: "Open",
+                url: linkEcid,
+              },
+            ],
+          },
+        ],
+        requiresTextResponse: false,
+      },
+    )
+
+    expect(bot.api.editMessageText.spy()).toHaveBeenCalledWith(
+      "-1001",
+      900,
+      expect.any(String),
+      expect.objectContaining({
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Open",
+                url: "https://example.test/task",
+              },
+            ],
+          ],
+        },
+      }),
+    )
+    expect(prisma.notification.update.spy()).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          actionRows: [
+            {
+              actions: [
+                {
+                  name: "open",
+                  title: "Open",
+                  url: linkEcid,
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    )
+  })
+
   test("creates operation when update introduces pending response", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     const subjectService = mockDeepFn<{
@@ -636,6 +892,144 @@ describe("updateNotificationForReplica", () => {
     expect(editedText).toContain("New title")
     expect(editedText).toContain("New content")
     expect(editedText).not.toContain("Sender")
+  })
+})
+
+describe("acceptNotificationResponseForReplica", () => {
+  test("creates response operation without setting reaction", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    prisma.notification.findUnique.mockResolvedValueOnce({
+      id: 7,
+      messageEcid: await encryptTelegramMessage(900),
+      requiresTextResponse: false,
+      acquireTopic: true,
+      operationId: null,
+      sendAsSubjectId: null,
+      operation: null,
+    } as never)
+    prisma.notification.findUnique.mockResolvedValueOnce({
+      operationId: null,
+      operation: null,
+    } as never)
+    prisma.operation.create.mockResolvedValue({ id: 88 } as never)
+    prisma.notification.update.mockResolvedValue({ id: 7 } as never)
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: TransactionPrisma) => Promise<unknown>) => {
+        return await callback(prisma as unknown as TransactionPrisma)
+      },
+    )
+
+    const result = await acceptNotificationResponseForReplica(
+      testCrypto,
+      prisma,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      {
+        notificationId: "7",
+      },
+    )
+
+    expect(result).toEqual({ operationId: 88 })
+    expect(bot.api.setMessageReaction.spy()).toHaveBeenCalledTimes(0)
+  })
+
+  test("sets reaction when reusing pending response operation", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    prisma.notification.findUnique.mockResolvedValue({
+      id: 7,
+      messageEcid: await encryptTelegramMessage(900),
+      requiresTextResponse: false,
+      acquireTopic: true,
+      operationId: 88,
+      sendAsSubjectId: null,
+      operation: {
+        status: "PENDING",
+      },
+    } as never)
+    bot.api.setMessageReaction.mockResolvedValue(true as never)
+
+    const result = await acceptNotificationResponseForReplica(
+      testCrypto,
+      prisma,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      {
+        notificationId: "7",
+      },
+    )
+
+    expect(result).toEqual({ operationId: 88 })
+    expect(bot.api.setMessageReaction.spy()).toHaveBeenCalledWith("-1001", 900, [
+      {
+        type: "emoji",
+        emoji: "👀",
+      },
+    ])
+    expect(prisma.operation.create.spy()).toHaveBeenCalledTimes(0)
+  })
+
+  test("sets reaction when creating response operation after completed operation", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    prisma.notification.findUnique.mockResolvedValueOnce({
+      id: 7,
+      messageEcid: await encryptTelegramMessage(900),
+      requiresTextResponse: false,
+      acquireTopic: true,
+      operationId: 87,
+      sendAsSubjectId: null,
+      operation: {
+        status: "COMPLETED",
+      },
+    } as never)
+    prisma.notification.findUnique.mockResolvedValueOnce({
+      operationId: 87,
+      operation: {
+        status: "COMPLETED",
+      },
+    } as never)
+    prisma.operation.create.mockResolvedValue({ id: 88 } as never)
+    prisma.notification.update.mockResolvedValue({ id: 7 } as never)
+    bot.api.setMessageReaction.mockResolvedValue(true as never)
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: TransactionPrisma) => Promise<unknown>) => {
+        return await callback(prisma as unknown as TransactionPrisma)
+      },
+    )
+
+    const result = await acceptNotificationResponseForReplica(
+      testCrypto,
+      prisma,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      {
+        notificationId: "7",
+      },
+    )
+
+    expect(result).toEqual({ operationId: 88 })
+    expect(bot.api.setMessageReaction.spy()).toHaveBeenCalledWith("-1001", 900, [
+      {
+        type: "emoji",
+        emoji: "👀",
+      },
+    ])
   })
 })
 
