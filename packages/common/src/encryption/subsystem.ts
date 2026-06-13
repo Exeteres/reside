@@ -1,13 +1,13 @@
+import type { ConnectRouter } from "@connectrpc/connect"
+import type { FastifyInstance } from "fastify"
 import type { CommonServices } from "../services"
 import { Buffer } from "node:buffer"
-import type { ConnectRouter } from "@connectrpc/connect"
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
 import { createId } from "@paralleldrive/cuid2"
 import { waitForOperationSuccess } from "@reside/api"
 import { EncryptionService, type EncryptionServiceClient } from "@reside/api/common/encryption.v1"
 import { WellKnownPermissions } from "@reside/registry"
 import { decode, encode } from "cbor2"
-import type { FastifyInstance } from "fastify"
 import { z } from "zod"
 import { createChannel, createClient } from "../api"
 import { getReplicaName, getTokenForAudience } from "../kubernetes"
@@ -23,10 +23,7 @@ const VAULT_TOKEN_EXPIRATION_SKEW_MS = 60_000
 
 export type ResideCrypto = {
   encrypt: (data: unknown) => Promise<string>
-  getSecret: <TSchema extends z.ZodType>(
-    schema: TSchema,
-    name: string,
-  ) => Promise<z.infer<TSchema>>
+  getSecret: <TSchema extends z.ZodType>(schema: TSchema, name: string) => Promise<z.infer<TSchema>>
   decrypt: <TSchema extends z.ZodType>(
     schema: TSchema,
     ecid: string | string[],

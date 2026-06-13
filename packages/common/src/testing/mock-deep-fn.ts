@@ -1,5 +1,5 @@
-import { type Mock, mock } from "bun:test"
 import type { DeepMockProxy } from "./types"
+import { type Mock, mock } from "bun:test"
 
 export const mockDeepFn = <T extends object>(): DeepMockProxy<T> => {
   const createDeepMock = <U extends object>(): DeepMockProxy<U> => {

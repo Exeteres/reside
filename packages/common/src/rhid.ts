@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto"
 import { Buffer } from "node:buffer"
+import { createHash } from "node:crypto"
 import { encode } from "cbor2"
 import { getReplicaName } from "./kubernetes"
 

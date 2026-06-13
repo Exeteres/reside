@@ -1,16 +1,16 @@
 import type { Client } from "@temporalio/client"
 import { toJson } from "@bufbuild/protobuf"
-import { Code, type HandlerContext, ConnectError } from "@connectrpc/connect"
+import { Code, ConnectError, type HandlerContext } from "@connectrpc/connect"
 import {
   OperationSchema,
-  OperationStatus,
-  SubscribeToOperationCompletionResponseSchema,
   type OperationServiceClient,
+  OperationStatus,
   type OperationSubscriptionServiceImplementation,
+  SubscribeToOperationCompletionResponseSchema,
 } from "@reside/api/common/operation.v1"
 import { authenticate } from "../auth"
-import { logger } from "../logger"
 import { getReplicaEndpoint } from "../kubernetes"
+import { logger } from "../logger"
 import { getOperationCompletedSignal } from "../workflow"
 
 type OperationActivitiesService = Pick<

@@ -1,4 +1,4 @@
-import type { JWTPayload, createRemoteJWKSet } from "jose"
+import type { createRemoteJWKSet, JWTPayload } from "jose"
 import { z } from "zod"
 
 export type ReplicaTokenPayload = JWTPayload & {

@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf"
 import { DurationSchema } from "@bufbuild/protobuf/wkt"
-import { DateTimeSchema, type DateTime } from "@reside/api/google/type/datetime"
+import { type DateTime, DateTimeSchema } from "@reside/api/google/type/datetime"
 
 /**
  * Converts a JavaScript Date into google.type.DateTime-compatible shape.

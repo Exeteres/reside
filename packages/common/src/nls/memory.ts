@@ -2,11 +2,13 @@ import { defineTool, type SessionConfig } from "@github/copilot-sdk"
 import { z } from "zod"
 
 const MEMORY_SEARCH_LIMIT = 10
+const MEMORY_SEARCH_WORD_LIMIT = 12
 const MEMORY_NOTE_TITLE_MAX_LENGTH = 20
 const MEMORY_NOTE_TITLE_MAX_WORDS = 5
 const MEMORY_NOTE_DESCRIPTION_MAX_LENGTH = 80
 const MEMORY_TAG_MAX_LENGTH = 20
 const MEMORY_TAG_PATTERN = /^[a-z][a-z0-9-]*$/
+const MEMORY_SEARCH_WORD_PATTERN = /[\p{L}\p{N}]{2,}/gu
 
 const memoryNoteTitleSchema = z
   .string()
@@ -34,7 +36,7 @@ const languageMemorySystemPromptBase = [
   "- keep description concise (max 80 chars) and content factual.",
   "- write note title, description, and content in the same language as the user interaction that produced the note.",
   "- do not include the current timestamp in content; creation and update timestamps are stored automatically.",
-  "- before adding new memory, search existing notes and reuse/update when possible.",
+  "- before adding new memory, search existing notes by passing separate important words to find_notes and reuse/update when possible.",
   "- keep notes compact and practical: clear title, concise description, factual content.",
   "- read full note content before making decisions based on a note summary.",
   "- update stale notes when facts change; remove notes that are no longer useful.",
@@ -81,6 +83,12 @@ type MemoryNoteId = {
   id: number
 }
 
+export type MemorySearchWords = {
+  words: string[]
+  anyTermQuery: string
+  likePatterns: string[]
+}
+
 type MemoryNoteUpdateData = {
   title?: string
   description?: string
@@ -114,7 +122,7 @@ export type MemoryToolServices = {
 }
 
 const findNotesParametersSchema = z.object({
-  search: z.string().min(1),
+  words: z.array(z.string().trim().min(1)).min(1).max(MEMORY_SEARCH_WORD_LIMIT),
   tags: memoryTagListSchema.optional(),
 })
 
@@ -162,12 +170,12 @@ export function createMemoryTools({
   return [
     defineTool("find_notes", {
       description:
-        'Finds the most relevant memory notes for a search pattern. Search uses PostgreSQL websearch syntax: multiple words are AND by default (for example, "alpha beta"), use "OR" explicitly for OR (for example, "alpha OR beta").',
+        "Finds memory notes containing any of the provided important words. Pass separate meaningful words from the request; do not build a search query or full sentence.",
       parameters: findNotesParametersSchema,
-      handler: async ({ search, tags }) => {
-        const normalizedSearch = search.trim()
+      handler: async ({ words, tags }) => {
+        const searchWords = createMemorySearchWords(words)
         const normalizedTags = normalizeTags(tags, allowedTags)
-        if (normalizedSearch.length === 0) {
+        if (searchWords.words.length === 0) {
           return {
             notes: [] as MemoryNotePreview[],
           }
@@ -183,10 +191,17 @@ export function createMemoryTools({
             m."updatedAt"
           FROM "MemoryNote" AS m
           WHERE
-            setweight(to_tsvector('simple', coalesce(m.title, '')), 'A') ||
-            setweight(to_tsvector('simple', coalesce(m.description, '')), 'B') ||
-            setweight(to_tsvector('simple', coalesce(m.content, '')), 'C')
-            @@ websearch_to_tsquery('simple', ${normalizedSearch})
+            (
+              setweight(to_tsvector('simple', coalesce(m.title, '')), 'A') ||
+              setweight(to_tsvector('simple', coalesce(m.description, '')), 'B') ||
+              setweight(to_tsvector('simple', coalesce(m.content, '')), 'C')
+              @@ to_tsquery('simple', ${searchWords.anyTermQuery})
+              OR EXISTS (
+                SELECT 1
+                FROM unnest(${searchWords.likePatterns}::text[]) AS pattern(value)
+                WHERE lower(concat_ws(' ', m.title, m.description, m.content)) LIKE pattern.value ESCAPE '\'
+              )
+            )
             AND (
               COALESCE(array_length(${normalizedTags}::text[], 1), 0) = 0
               OR m.tags && ${normalizedTags}::text[]
@@ -196,7 +211,12 @@ export function createMemoryTools({
               setweight(to_tsvector('simple', coalesce(m.title, '')), 'A') ||
               setweight(to_tsvector('simple', coalesce(m.description, '')), 'B') ||
               setweight(to_tsvector('simple', coalesce(m.content, '')), 'C'),
-              websearch_to_tsquery('simple', ${normalizedSearch})
+              to_tsquery('simple', ${searchWords.anyTermQuery})
+            ) DESC,
+            (
+              SELECT count(*)
+              FROM unnest(${searchWords.likePatterns}::text[]) AS pattern(value)
+              WHERE lower(concat_ws(' ', m.title, m.description, m.content)) LIKE pattern.value ESCAPE '\'
             ) DESC,
             m.id DESC
           LIMIT ${MEMORY_SEARCH_LIMIT}
@@ -316,4 +336,21 @@ function normalizeTags(tags: string[] | undefined, allowedTags: Set<string> | un
   }
 
   return normalized
+}
+
+export function createMemorySearchWords(words: string[]): MemorySearchWords {
+  const normalizedWords = words.flatMap(word =>
+    Array.from(word.toLowerCase().matchAll(MEMORY_SEARCH_WORD_PATTERN), match => match[0]),
+  )
+  const uniqueWords = Array.from(new Set(normalizedWords)).slice(0, MEMORY_SEARCH_WORD_LIMIT)
+
+  return {
+    words: uniqueWords,
+    anyTermQuery: uniqueWords.join(" | "),
+    likePatterns: uniqueWords.map(word => `%${escapeLikePattern(word)}%`),
+  }
+}
+
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, match => `\\${match}`)
 }

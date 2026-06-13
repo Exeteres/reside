@@ -1,5 +1,5 @@
-import { readFile } from "node:fs/promises"
 import type { IssuerDefinition } from "./shared"
+import { readFile } from "node:fs/promises"
 
 const kubernetesServiceAccountTokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 let kubernetesServiceAccountTokenPromise: Promise<string> | null = null

@@ -1,5 +1,5 @@
 import { type CallOptions, Code, ConnectError, type HandlerContext } from "@connectrpc/connect"
-import { authenticateToken, type AuthenticationResult } from "./jwks"
+import { type AuthenticationResult, authenticateToken } from "./jwks"
 import { logger } from "./logger"
 
 export type ReplicaAuthenticationResult = AuthenticationResult<"replica"> & {

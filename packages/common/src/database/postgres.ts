@@ -1,8 +1,8 @@
+import type { CommonServices } from "../services"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { waitForResult } from "@reside/api"
-import { logger } from "../logger"
 import { Pool } from "pg"
-import type { CommonServices } from "../services"
+import { logger } from "../logger"
 import { registerGracefulShutdown } from "../utils"
 
 export type PostgresConnectionCredentials = {

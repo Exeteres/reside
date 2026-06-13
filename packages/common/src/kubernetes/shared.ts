@@ -1,4 +1,4 @@
-import { KubeConfig, type ApiConstructor, type ApiType } from "@kubernetes/client-node"
+import { type ApiConstructor, type ApiType, KubeConfig } from "@kubernetes/client-node"
 import { SpanStatusCode, trace } from "@opentelemetry/api"
 
 const kubernetesTracer = trace.getTracer("reside.kubernetes")

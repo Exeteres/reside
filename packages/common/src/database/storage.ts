@@ -1,11 +1,11 @@
-import { S3Client } from "@aws-sdk/client-s3"
-import { waitForResult } from "@reside/api"
 import type {
   GetStorageBucketCredentialsResponse,
   StorageBucketCredentials,
 } from "@reside/api/infra/provision.v1"
-import { logger } from "../logger"
 import type { CommonServices } from "../services"
+import { S3Client } from "@aws-sdk/client-s3"
+import { waitForResult } from "@reside/api"
+import { logger } from "../logger"
 
 type StorageBucketCredentialsServices = Pick<
   CommonServices<"infra">,

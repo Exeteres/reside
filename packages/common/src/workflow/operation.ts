@@ -1,6 +1,6 @@
 import type { OperationJson } from "@reside/api/common/operation.v1"
-import { condition, defineSignal, log, setHandler, workflowInfo } from "@temporalio/workflow"
 import type { OperationActivities } from "../temporal"
+import { condition, defineSignal, log, setHandler, workflowInfo } from "@temporalio/workflow"
 
 /**
  * Waits for an operation to resolve to a completed state (either success or failure) by subscribing to its completion via the operation service.

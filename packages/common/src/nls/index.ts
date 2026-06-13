@@ -8,9 +8,9 @@ export {
 export {
   createMemoryTools,
   languageMemorySystemPrompt,
-  type MemoryToolTagDefinitions,
   type MemoryToolServices,
   type MemoryToolsPrisma,
+  type MemoryToolTagDefinitions,
 } from "./memory"
 export { setupLanguageSubsystem } from "./subsystem"
 export {

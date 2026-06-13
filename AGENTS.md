@@ -11,7 +11,7 @@ Some simple rules to follow:
 - When implementing new replica or API, follow the structure and patterns of existing replicas and APIs as closely as possible.
 - Try to use LSP tools to check your code first.
 - All titles/descriptions in UI in the project must be in Russian, but all code and comments must be in English.
-- Use `devenv shell -- {command}` for development, don't run commands directly.
+- Use `devenv shell -- {command}` for `bun`, `nx`, `prisma` and other dev commands, but don't use it for system-wide tools like `git`, `cat`, `ls`, `rm`, etc.
 
 Rule routing (load additional rules by situation):
 

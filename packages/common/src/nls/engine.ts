@@ -541,7 +541,8 @@ function summarizeBashToolResult(result: unknown): {
   success: boolean
 } {
   const terminalContent = collectTerminalResultContent(result)
-  const output = terminalContent.output.length > 0 ? terminalContent.output : collectTextResultContent(result)
+  const output =
+    terminalContent.output.length > 0 ? terminalContent.output : collectTextResultContent(result)
   const detectedExitCode = terminalContent.exitCode ?? extractExitCodeFromOutput(output)
   const normalizedOutput = output.replace(/\s+/g, " ").trim()
   const truncatedOutput = truncateOneLine(output, BASH_RESULT_LOG_OUTPUT_MAX_LENGTH)
@@ -694,7 +695,9 @@ async function sendAndWaitForSessionIdle(
 
     timeoutId = setTimeout(() => {
       rejectIdle(
-        new Error(`Timeout after ${idleTimeoutMs}ms without session activity waiting for session.idle`),
+        new Error(
+          `Timeout after ${idleTimeoutMs}ms without session activity waiting for session.idle`,
+        ),
       )
     }, idleTimeoutMs)
   }

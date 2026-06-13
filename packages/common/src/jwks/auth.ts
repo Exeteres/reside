@@ -1,15 +1,15 @@
 import { createRemoteJWKSet, customFetch, decodeJwt, jwtVerify } from "jose"
+import { getReplicaEndpoint } from "../kubernetes"
+import { logger } from "../logger"
 import { kubernetesIssuerDefinitions } from "./kubernetes"
 import {
   type AuthenticationResult,
   type OpenIdConfiguration,
+  openIdConfigurationSchema,
   type ReplicaTokenPayload,
   type TokenVerifier,
-  openIdConfigurationSchema,
   tokenPayloadSchema,
 } from "./shared"
-import { getReplicaEndpoint } from "../kubernetes"
-import { logger } from "../logger"
 
 export const issuer = {
   ...kubernetesIssuerDefinitions,

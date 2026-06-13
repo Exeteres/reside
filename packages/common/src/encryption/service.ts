@@ -1,13 +1,13 @@
+import type { EncryptionRuntime } from "./subsystem"
 import { create } from "@bufbuild/protobuf"
 import { Code, ConnectError, type HandlerContext } from "@connectrpc/connect"
 import {
-  TransferResponseSchema,
   type EncryptionServiceImplementation,
+  TransferResponseSchema,
 } from "@reside/api/common/encryption.v1"
 import { WellKnownPermissions } from "@reside/registry"
 import { authenticateReplica } from "../auth"
 import { getReplicaName } from "../kubernetes"
-import type { EncryptionRuntime } from "./subsystem"
 
 export type EncryptionServiceOptions = {
   runtime: EncryptionRuntime

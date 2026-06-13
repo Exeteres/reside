@@ -9,6 +9,12 @@
     "./definitions": "./src/definitions/index.ts",
     "./testing": "./src/testing/index.ts"
   },
+  "scripts": {
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings",
+    "test": "bun test --pass-with-no-tests"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.914.0",
     "@bufbuild/protobuf": "catalog:",
@@ -49,6 +55,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@typescript/native-preview": "catalog:",
     "@types/pg": "catalog:"
   }
 }

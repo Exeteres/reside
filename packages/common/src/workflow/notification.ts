@@ -1,10 +1,13 @@
-import { create } from "@bufbuild/protobuf"
+import type { InlineFile } from "@reside/api/common/file.v1"
 import type {
   NotificationAction,
-  NotificationActionRow,
   NotificationActionIcon,
+  NotificationActionRow,
   NotificationResponseJson,
 } from "@reside/api/interaction/notification.v1"
+import type { MessageContent } from "../telegram"
+import type { InteractionActivities } from "../temporal"
+import { create } from "@bufbuild/protobuf"
 import {
   AcceptNotificationResponseRequestSchema,
   DeleteNotificationRequestSchema,
@@ -20,20 +23,17 @@ import {
   ReopenTopicRequestSchema,
   UpdateTopicRequestSchema,
 } from "@reside/api/interaction/topic.v1"
-import { waitForOperationResult } from "./operation"
 import { condition, proxyActivities, workflowInfo } from "@temporalio/workflow"
-import type { InlineFile } from "@reside/api/common/file.v1"
-import type { InteractionActivities } from "../temporal"
-import type { MessageContent } from "../telegram"
 import { html } from "../telegram"
+import { waitForOperationResult } from "./operation"
 
 type NotificationResponseResult = NotificationResponseJson & {
   contextToken?: string
 }
 
 export type AcceptNotificationResponseInput<
-  TActions extends NotificationActionsInput = Record<string, never>,
-  TRequiresTextResponse extends boolean = boolean,
+  _TActions extends NotificationActionsInput = Record<string, never>,
+  _TRequiresTextResponse extends boolean = boolean,
 > = {
   /**
    * The identifier of the notification to accept more responses for.

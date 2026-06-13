@@ -1,5 +1,5 @@
-import { type Mock, mock } from "bun:test"
 import type { MockFnWithSpy, MockProxy } from "./types"
+import { type Mock, mock } from "bun:test"
 
 export function mockFn(): MockFnWithSpy
 export function mockFn<T>(): MockProxy<T>

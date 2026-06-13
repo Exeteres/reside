@@ -1,16 +1,16 @@
-import { waitForOperationSuccess, waitForResult } from "@reside/api"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { EnsureGatewayResult } from "@reside/api/infra/gateway.v1"
 import type { AvatarServiceClient as InteractionAvatarServiceClient } from "@reside/api/interaction/avatar.v1"
+import type { CommonServices } from "./services"
+import type {
+  CommandDefinitionParameter,
+  CommandDefinition as WorkflowCommandDefinition,
+} from "./workflow/command"
+import { waitForOperationSuccess, waitForResult } from "@reside/api"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
 import { WellKnownPermissions } from "@reside/registry"
 import { getReplicaCallbackEndpoint, getReplicaEndpoint, getReplicaName } from "./kubernetes"
 import { logger } from "./logger"
-import type {
-  CommandDefinition as WorkflowCommandDefinition,
-  CommandDefinitionParameter,
-} from "./workflow/command"
-import type { CommonServices } from "./services"
 
 export type PermissionDefinition = {
   name: string

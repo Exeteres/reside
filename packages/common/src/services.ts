@@ -1,12 +1,19 @@
+import type { TracerProvider } from "@opentelemetry/api"
+import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
 import { AuthzService, type AuthzServiceClient } from "@reside/api/access/authz.v1"
-import {
-  PermissionRequestService,
-  type PermissionRequestServiceClient,
-} from "@reside/api/access/request.v1"
 import {
   DefinitionService as AccessDefinitionService,
   type DefinitionServiceClient as AccessDefinitionServiceClient,
 } from "@reside/api/access/definition.v1"
+import {
+  PermissionRequestService,
+  type PermissionRequestServiceClient,
+} from "@reside/api/access/request.v1"
+import { DiscoveryService, type DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
+import {
+  RegistrationService,
+  type RegistrationServiceClient,
+} from "@reside/api/alpha/registration.v1"
 import { OperationService, type OperationServiceClient } from "@reside/api/common/operation.v1"
 import { GatewayService, type GatewayServiceClient } from "@reside/api/infra/gateway.v1"
 import {
@@ -14,26 +21,19 @@ import {
   type ObservabilityServiceClient,
 } from "@reside/api/infra/observability.v1"
 import { ProvisionService, type ProvisionServiceClient } from "@reside/api/infra/provision.v1"
-import {
-  NotificationService,
-  type NotificationServiceClient,
-} from "@reside/api/interaction/notification.v1"
+import { TimerService, type TimerServiceClient } from "@reside/api/infra/timer.v1"
+import { VaultService, type VaultServiceClient } from "@reside/api/infra/vault.v1"
 import { AvatarService, type AvatarServiceClient } from "@reside/api/interaction/avatar.v1"
 import {
   DefinitionService as InteractionDefinitionService,
   type DefinitionServiceClient as InteractionDefinitionServiceClient,
 } from "@reside/api/interaction/definition.v1"
 import {
-  RegistrationService,
-  type RegistrationServiceClient,
-} from "@reside/api/alpha/registration.v1"
-import { DiscoveryService, type DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
-import type { TracerProvider } from "@opentelemetry/api"
+  NotificationService,
+  type NotificationServiceClient,
+} from "@reside/api/interaction/notification.v1"
 import { createChannels, createClient } from "./api"
-import { TimerService, type TimerServiceClient } from "@reside/api/infra/timer.v1"
-import { VaultService, type VaultServiceClient } from "@reside/api/infra/vault.v1"
 import { setupTelemetry } from "./telemetry"
-import type { SubjectServiceClient } from "@reside/api/common/subject.v1"
 
 /**
  * The rules for naming services in the topology are the following:

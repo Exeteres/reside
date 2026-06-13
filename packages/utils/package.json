@@ -4,5 +4,14 @@
     ".": "./src/index.ts",
     "./package.json": "./package.json"
   },
-  "main": "./src/index.ts"
+  "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings",
+    "test": "bun test --pass-with-no-tests"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:"
+  }
 }

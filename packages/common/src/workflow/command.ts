@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: to simplify parameter parsing logic */
 
 import type { CommandInvocationJson } from "@reside/api/interaction/command.v1"
-import { upsertMemo } from "@temporalio/workflow"
 import type { Simplify } from "type-fest"
+import { upsertMemo } from "@temporalio/workflow"
 
 export type CommandDefinition<
   TParameters extends Record<string, CommandDefinitionParameter> = Record<

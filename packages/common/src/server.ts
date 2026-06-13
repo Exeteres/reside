@@ -1,10 +1,10 @@
-import Fastify, { type FastifyInstance } from "fastify"
+import type { TracerProvider } from "@opentelemetry/api"
 import { ConnectError, type Interceptor } from "@connectrpc/connect"
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
 import FastifyOtelInstrumentation from "@fastify/otel"
-import { registerGracefulShutdown } from "./utils"
+import Fastify, { type FastifyInstance } from "fastify"
 import { logger } from "./logger"
-import type { TracerProvider } from "@opentelemetry/api"
+import { registerGracefulShutdown } from "./utils"
 
 const connectRpcErrorLoggingInterceptor: Interceptor = next => async request => {
   try {

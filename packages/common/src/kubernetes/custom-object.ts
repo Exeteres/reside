@@ -1,4 +1,4 @@
-import { KubernetesObjectApi, PatchStrategy, type KubernetesObject } from "@kubernetes/client-node"
+import { type KubernetesObject, KubernetesObjectApi, PatchStrategy } from "@kubernetes/client-node"
 import { kubeConfig } from "./shared"
 
 export async function applyObject(body: Record<string, unknown>): Promise<void> {

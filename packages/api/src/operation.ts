@@ -1,7 +1,7 @@
 import {
-  OperationStatus,
   type Operation,
   type OperationServiceClient,
+  OperationStatus,
 } from "@reside/api/common/operation.v1"
 
 export type FullOperationWaitOptions = {

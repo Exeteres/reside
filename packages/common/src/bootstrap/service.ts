@@ -1,9 +1,9 @@
+import type { ReplicaEnvironmentVariable } from "./types"
 import { CustomObjectsApi } from "@kubernetes/client-node"
 import { getReplicaImage, getReplicaName, getReplicaNamespace, kubeConfig } from "../kubernetes"
 import { logger } from "../logger"
 import { ensureKnativeService } from "./resources"
 import { buildReplicaContainerEnv } from "./shared"
-import type { ReplicaEnvironmentVariable } from "./types"
 
 export type ServiceOptions = {
   /**

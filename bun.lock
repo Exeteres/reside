@@ -65,6 +65,7 @@
       },
       "devDependencies": {
         "@bufbuild/buf": "catalog:",
+        "@typescript/native-preview": "catalog:",
       },
     },
     "packages/common": {
@@ -110,13 +111,20 @@
       },
       "devDependencies": {
         "@types/pg": "catalog:",
+        "@typescript/native-preview": "catalog:",
       },
     },
     "packages/registry": {
       "name": "@reside/registry",
+      "devDependencies": {
+        "@typescript/native-preview": "catalog:",
+      },
     },
     "packages/utils": {
       "name": "@reside/utils",
+      "devDependencies": {
+        "@typescript/native-preview": "catalog:",
+      },
     },
     "replicas/access": {
       "name": "@replicas/access",

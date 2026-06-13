@@ -1,10 +1,7 @@
-import {
-  OpenTelemetryProtocol,
-  type ObservabilityServiceClient,
-} from "@reside/api/infra/observability.v1"
 import { Metadata } from "@grpc/grpc-js"
 import { type TracerProvider, trace } from "@opentelemetry/api"
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc"
+import { PinoInstrumentation } from "@opentelemetry/instrumentation-pino"
 import { resourceFromAttributes } from "@opentelemetry/resources"
 import { NodeSDK } from "@opentelemetry/sdk-node"
 import {
@@ -13,9 +10,12 @@ import {
   ATTR_SERVICE_VERSION,
 } from "@opentelemetry/semantic-conventions"
 import { PrismaInstrumentation } from "@prisma/instrumentation"
+import {
+  type ObservabilityServiceClient,
+  OpenTelemetryProtocol,
+} from "@reside/api/infra/observability.v1"
 import { logger } from "./logger"
 import { registerGracefulShutdown } from "./utils"
-import { PinoInstrumentation } from "@opentelemetry/instrumentation-pino"
 
 export type TelemetryInfraService = Pick<ObservabilityServiceClient, "getOpenTelemetryCredentials">
 

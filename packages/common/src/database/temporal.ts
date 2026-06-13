@@ -1,9 +1,9 @@
+import type { CommonServices } from "../services"
 import { waitForResult } from "@reside/api"
 import { Client, Connection } from "@temporalio/client"
 import { NativeConnection, Worker } from "@temporalio/worker"
 import { createAuthInterceptor, getTokenForAudience } from "../kubernetes"
 import { logger } from "../logger"
-import type { CommonServices } from "../services"
 import { registerGracefulShutdown } from "../utils"
 
 export const DEFAULT_TEMPORAL_TASK_QUEUE = "default"

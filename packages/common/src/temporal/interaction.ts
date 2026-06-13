@@ -1,13 +1,5 @@
-import {
-  AcceptNotificationResponseResponseSchema,
-  SendNotificationResponseSchema,
-  UpdateNotificationResponseSchema,
-  type AcceptNotificationResponseRequest,
-  type DeleteNotificationRequest,
-  type NotificationServiceClient,
-  type SendNotificationRequest,
-  type UpdateNotificationRequest,
-} from "@reside/api/interaction/notification.v1"
+import type { OperationServiceClient } from "@reside/api/common/operation.v1"
+import type { CommandHandlerServiceImplementation } from "@reside/api/interaction/command.v1"
 import type {
   CloseTopicRequest,
   CreateTopicRequest,
@@ -16,15 +8,23 @@ import type {
   TopicServiceClient,
   UpdateTopicRequest,
 } from "@reside/api/interaction/topic.v1"
-import { CreateTopicResponseSchema } from "@reside/api/interaction/topic.v1"
-import { authenticate } from "../auth"
-import { createOperationActivities } from "./operation"
-import type { CommandHandlerServiceImplementation } from "@reside/api/interaction/command.v1"
-import { CommandInvocationSchema } from "@reside/api/interaction/command.v1"
 import type { Client as TemporalClient } from "@temporalio/client"
 import { toJson } from "@bufbuild/protobuf"
-import type { OperationServiceClient } from "@reside/api/common/operation.v1"
+import { CommandInvocationSchema } from "@reside/api/interaction/command.v1"
+import {
+  type AcceptNotificationResponseRequest,
+  AcceptNotificationResponseResponseSchema,
+  type DeleteNotificationRequest,
+  type NotificationServiceClient,
+  type SendNotificationRequest,
+  SendNotificationResponseSchema,
+  type UpdateNotificationRequest,
+  UpdateNotificationResponseSchema,
+} from "@reside/api/interaction/notification.v1"
+import { CreateTopicResponseSchema } from "@reside/api/interaction/topic.v1"
+import { authenticate } from "../auth"
 import { DEFAULT_TEMPORAL_TASK_QUEUE } from "../database"
+import { createOperationActivities } from "./operation"
 
 export function createInteractionActivities(
   notificationService: NotificationServiceClient,
