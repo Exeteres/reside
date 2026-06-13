@@ -32,7 +32,7 @@ const SIGNOZ_DATABASE_SECRET_NAME = "signoz"
 const SIGNOZ_SERVICE_NAME = "signoz"
 const SIGNOZ_SERVICE_PORT = 8080
 const SIGNOZ_OTEL_COLLECTOR_SERVICE_NAME = `${SIGNOZ_SERVICE_NAME}-otel-collector`
-const SIGNOZ_OTLP_GRPC_PORT = 4317
+const SIGNOZ_OTLP_HTTP_PORT = 4318
 const SIGNOZ_POSTGRES_DATABASE_NAME = "signoz"
 const SIGNOZ_POSTGRES_USERNAME = "signoz"
 const SIGNOZ_SECRET_POSTGRES_PASSWORD_KEY = "postgres-password"
@@ -300,7 +300,7 @@ async function createSignozK8sInfraValuesFile(namespace: string): Promise<string
   const filePath = join(directoryPath, "values.yaml")
 
   const values = {
-    otelCollectorEndpoint: `${SIGNOZ_OTEL_COLLECTOR_SERVICE_NAME}.${namespace}.svc.cluster.local:${SIGNOZ_OTLP_GRPC_PORT}`,
+    otelCollectorEndpoint: `http://${SIGNOZ_OTEL_COLLECTOR_SERVICE_NAME}.${namespace}.svc.cluster.local:${SIGNOZ_OTLP_HTTP_PORT}`,
     otelInsecure: true,
     insecureSkipVerify: false,
     presets: {
