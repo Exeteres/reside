@@ -2,6 +2,8 @@ import type { BankServices } from "../../shared"
 import { defineTool } from "@github/copilot-sdk"
 import { crypto } from "@reside/common"
 import { z } from "zod"
+import { InsufficientFundsError, InvalidTransferAmountError } from "../../definitions"
+import { strings } from "../../locale"
 import { getBalance, getTransactions, transferAmount } from "../business"
 
 type BankToolServices = Pick<BankServices, "prisma">
@@ -29,9 +31,32 @@ export function createBankTools({ prisma }: BankToolServices) {
         recipientSubjectRhid: z.string().min(1),
         amount: z.number().int().positive(),
       }),
-      handler: async ({ senderSubjectRhid, recipientSubjectRhid, amount }) => ({
-        response: `Переведено ${await transferAmount(crypto, prisma, senderSubjectRhid, recipientSubjectRhid, amount)} ∅.`,
-      }),
+      handler: async ({ senderSubjectRhid, recipientSubjectRhid, amount }) => {
+        try {
+          const transferredAmount = await transferAmount(
+            crypto,
+            prisma,
+            senderSubjectRhid,
+            recipientSubjectRhid,
+            amount,
+          )
+          return { response: strings.notifications.transfer.success(transferredAmount) }
+        } catch (error) {
+          return { response: getTransferFailureResponse(error) }
+        }
+      },
     }),
   ]
+}
+
+function getTransferFailureResponse(error: unknown): string {
+  if (error instanceof InsufficientFundsError) {
+    return strings.notifications.errors.insufficientFunds
+  }
+
+  if (error instanceof InvalidTransferAmountError) {
+    return strings.notifications.errors.invalidAmount
+  }
+
+  return strings.notifications.transfer.failure
 }
