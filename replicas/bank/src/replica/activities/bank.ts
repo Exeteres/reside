@@ -1,7 +1,7 @@
 import type { BankActivities } from "../../definitions"
 import type { BankServices } from "../../shared"
 import { crypto } from "@reside/common"
-import { getBalance, getTransactions, transferAmount } from "../business"
+import { getBalance, getSecurityAuditReport, getTransactions, transferAmount } from "../business"
 
 type BankActivityServices = Pick<BankServices, "prisma">
 
@@ -23,6 +23,9 @@ export function createBankActivities({ prisma }: BankActivityServices): BankActi
           input.amount,
         ),
       }
+    },
+    async getSecurityAuditReport() {
+      return getSecurityAuditReport()
     },
   }
 }

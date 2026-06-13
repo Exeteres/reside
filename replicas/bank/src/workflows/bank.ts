@@ -7,6 +7,7 @@ import {
   balanceCommand,
   InsufficientFundsError,
   InvalidTransferAmountError,
+  securityAuditCommand,
   transactionsCommand,
   transferCommand,
 } from "../definitions"
@@ -49,6 +50,17 @@ export const transactionsCommandHandler = defineCommandHandler({
     })
   },
 })
+export const securityAuditCommandHandler = defineCommandHandler({
+  command: securityAuditCommand,
+  async handler() {
+    const report = await activities.getSecurityAuditReport()
+    await sendNotification({
+      channel: BankNotificationChannels.COMMAND,
+      title: formatSecurityAuditReport(report),
+      system: true,
+    })
+  },
+})
 export const transferCommandHandler = defineCommandHandler({
   command: transferCommand,
   async handler({ invocation, params }) {
@@ -79,6 +91,31 @@ export const transferCommandHandler = defineCommandHandler({
     }
   },
 })
+
+function formatSecurityAuditReport(report: {
+  summary: string
+  criticalOrHighRiskFinding: boolean
+  findings: Array<{
+    severity: "medium" | "low" | "info"
+    title: string
+    impact: string
+    recommendation: string
+  }>
+}): string {
+  const lines = [
+    strings.notifications.securityAudit.title,
+    report.summary,
+    report.criticalOrHighRiskFinding ? "" : strings.notifications.securityAudit.noCriticalOrHigh,
+    strings.notifications.securityAudit.findingsTitle,
+    ...report.findings.map(
+      finding =>
+        `- [${strings.notifications.securityAudit.severity[finding.severity]}] ${finding.title}. ` +
+        `Влияние: ${finding.impact} Рекомендация: ${finding.recommendation}`,
+    ),
+  ]
+
+  return lines.filter(line => line.length > 0).join("\n")
+}
 
 function getTransferFailureTitle(error: unknown): string {
   if (isResideError(error, InsufficientFundsError.name)) {

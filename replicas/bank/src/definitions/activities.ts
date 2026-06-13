@@ -1,3 +1,5 @@
+import type { BankSecurityAuditReport } from "./audit"
+
 export type BankActivities = {
   getBalance: (input: { subjectRhid: string }) => Promise<{ amount: string }>
   getTransactions: (input: { subjectRhid: string }) => Promise<{ lines: string[] }>
@@ -6,4 +8,5 @@ export type BankActivities = {
     recipientSubjectRhid: string
     amount: number
   }) => Promise<{ amount: string }>
+  getSecurityAuditReport: () => Promise<BankSecurityAuditReport>
 }

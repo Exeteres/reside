@@ -14,6 +14,10 @@ export const ru = {
       title: "Показать историю",
       description: "Показывает последние операции по вашему счету.",
     },
+    securityAudit: {
+      title: "Провести аудит безопасности",
+      description: "Показывает отчет аудита безопасности банковской реплики.",
+    },
     transfer: {
       title: "Перевести нихуя",
       description: "Переводит нихуя другому пользователю.",
@@ -40,6 +44,16 @@ export const ru = {
     transactions: {
       empty: "История операций пуста.",
       title: "Последние операции:",
+    },
+    securityAudit: {
+      title: "Аудит безопасности банковской реплики",
+      noCriticalOrHigh: "Критичные и высокорисковые проблемы не обнаружены.",
+      findingsTitle: "Найденные риски и рекомендации:",
+      severity: {
+        medium: "средний",
+        low: "низкий",
+        info: "информация",
+      },
     },
     transfer: {
       success: (amount: string) => `Переведено ${amount} ∅.`,
