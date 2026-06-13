@@ -37,6 +37,7 @@ const {
   generateTaskPreviewTitle,
   startPlanningInteraction,
   submitPlanningFeedbackInteraction,
+  startImplementationOnlyTask,
   approveTask,
   requestCancellation,
   runImplementationInteraction,
@@ -143,6 +144,25 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
   setHandler(taskStartImplementationSignal, () => {
     startImplementationRequested = true
   })
+
+  if (input.mode === "implement") {
+    const task = await startImplementationOnlyTask({
+      subjectId: input.subjectId,
+      progressNotificationId: input.notificationId,
+      topicId: input.topicId,
+      previewTitle: input.previewTitle,
+    })
+
+    await runImplementationUntilDone({
+      topicId: input.topicId,
+      taskId: task.taskId,
+      prompt: input.prompt,
+      initialNotificationId: input.notificationId,
+      feedbackQueue,
+    })
+
+    return
+  }
 
   let lastPlanning = await runPlanningCycle({
     progressNotificationId: input.notificationId,
@@ -265,70 +285,97 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
       implementationPrompt = queuedFeedback
     }
 
-    while (true) {
-      const notification = await sendNotification({
-        topicId: input.topicId,
-        acquireTopic: true,
-        waitForResponse: false,
-        title: strings.notifications.taskExecution.inProgressTitle,
-        actions: {
-          cancel: {
-            title: strings.notifications.taskExecution.actions.cancel,
-          },
-        },
-      })
+    await runImplementationUntilDone({
+      topicId: input.topicId,
+      taskId,
+      prompt: implementationPrompt,
+      feedbackQueue,
+    })
 
-      const result = await runImplementationCycle({
-        notificationId: notification.notificationId,
-        topicId: input.topicId,
-        taskId,
-        prompt: implementationPrompt,
-        feedbackQueue,
-      })
+    return
+  }
+}
 
-      if (result.status === "CANCELLED") {
-        await updateNotification({
-          notificationId: notification.notificationId,
-          title: strings.notifications.taskExecution.doneTitle,
-          content: block(strings.notifications.taskExecution.cancelledSummary),
-          actions: {},
-          requiresTextResponse: false,
-        })
-        await closeTaskTopic(input.topicId)
-        return
-      }
+async function runImplementationUntilDone(input: {
+  topicId: string
+  taskId: string
+  prompt: string
+  initialNotificationId?: string
+  feedbackQueue: TaskFeedbackSignalInput[]
+}): Promise<void> {
+  let nextNotificationId = input.initialNotificationId
 
-      if (result.status === "COMPLETED") {
-        await updateNotification({
-          notificationId: notification.notificationId,
-          title: strings.notifications.taskExecution.doneTitle,
-          content: renderMarkdownAsTelegramHtml(
-            result.resultSummary ?? strings.notifications.taskExecution.defaultSummary,
-          ),
-          actions: {},
-          requiresTextResponse: false,
-        })
-        await closeTaskTopic(input.topicId)
-        return
-      }
+  while (true) {
+    const notificationId =
+      nextNotificationId ?? (await sendImplementationProgressNotification(input.topicId))
+    nextNotificationId = undefined
 
+    const result = await runImplementationCycle({
+      notificationId,
+      topicId: input.topicId,
+      taskId: input.taskId,
+      prompt: input.prompt,
+      feedbackQueue: input.feedbackQueue,
+    })
+
+    if (result.status === "CANCELLED") {
       await updateNotification({
-        notificationId: notification.notificationId,
-        title: strings.notifications.taskExecution.failedTitle,
+        notificationId,
+        title: strings.notifications.taskExecution.doneTitle,
+        content: block(strings.notifications.taskExecution.cancelledSummary),
+        actions: {},
+        requiresTextResponse: false,
+      })
+      await closeTaskTopic(input.topicId)
+      return
+    }
+
+    if (result.status === "COMPLETED") {
+      await updateNotification({
+        notificationId,
+        title: strings.notifications.taskExecution.doneTitle,
         content: renderMarkdownAsTelegramHtml(
-          result.errorMessage ?? strings.notifications.taskExecution.defaultFailure,
+          result.resultSummary ?? strings.notifications.taskExecution.defaultSummary,
         ),
         actions: {},
         requiresTextResponse: false,
       })
-
-      await waitForFailedIterationRetry({
-        topicId: input.topicId,
-        errorMessage: result.errorMessage,
-      })
-      await reopenTaskForRetry(input.topicId, taskId)
+      await closeTaskTopic(input.topicId)
+      return
     }
+
+    await updateNotification({
+      notificationId,
+      title: strings.notifications.taskExecution.failedTitle,
+      content: renderMarkdownAsTelegramHtml(
+        result.errorMessage ?? strings.notifications.taskExecution.defaultFailure,
+      ),
+      actions: {},
+      requiresTextResponse: false,
+    })
+
+    await waitForFailedIterationRetry({
+      topicId: input.topicId,
+      errorMessage: result.errorMessage,
+    })
+    await reopenTaskForRetry(input.topicId, input.taskId)
   }
+}
+
+async function sendImplementationProgressNotification(topicId: string): Promise<string> {
+  const notification = await sendNotification({
+    topicId,
+    acquireTopic: true,
+    waitForResponse: false,
+    title: strings.notifications.taskExecution.inProgressTitle,
+    actions: {
+      cancel: {
+        title: strings.notifications.taskExecution.actions.cancel,
+      },
+    },
+  })
+
+  return notification.notificationId
 }
 
 async function closeTaskTopic(topicId: string): Promise<void> {

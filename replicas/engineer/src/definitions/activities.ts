@@ -56,6 +56,35 @@ export type SubmitPlanningFeedbackInteractionInput = {
   progressNotificationId: string
 }
 
+export type StartImplementationOnlyTaskInput = {
+  /**
+   * The subject identifier that requested implementation.
+   */
+  subjectId: string
+
+  /**
+   * The notification identifier used for progress updates.
+   */
+  progressNotificationId: string
+
+  /**
+   * The notification topic identifier associated with the task.
+   */
+  topicId: string
+
+  /**
+   * The generated preview title from task preparation.
+   */
+  previewTitle: string
+}
+
+export type StartImplementationOnlyTaskOutput = {
+  /**
+   * The task identifier.
+   */
+  taskId: string
+}
+
 export type ApproveTaskInput = {
   /**
    * The task identifier.
@@ -234,6 +263,13 @@ export type EngineerTaskActivities = {
   submitPlanningFeedbackInteraction: (
     input: SubmitPlanningFeedbackInteractionInput,
   ) => Promise<SubmitPlanningFeedbackInteractionOutput>
+
+  /**
+   * Starts an implementation-only task without creating a planning issue.
+   */
+  startImplementationOnlyTask: (
+    input: StartImplementationOnlyTaskInput,
+  ) => Promise<StartImplementationOnlyTaskOutput>
 
   /**
    * Approves a task for implementation.

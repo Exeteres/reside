@@ -41,13 +41,23 @@ export function createImplementationPrompt(
   owner: string,
   repo: string,
   branchName: string,
-  issueNumber: number,
+  issueNumber: number | undefined,
   userPrompt: string,
 ): string {
+  const issueContext = issueNumber
+    ? [
+        `Issue: #${issueNumber}`,
+        "PR body MUST end with issue closing tag (for example: Closes #<issue-number>).",
+      ]
+    : [
+        "Issue: none. This implementation-only task intentionally has no GitHub issue.",
+        "PR body MUST NOT add an issue closing tag.",
+      ]
+
   return [
     `Repository: ${owner}/${repo}`,
     `Branch: ${branchName}`,
-    `Issue: #${issueNumber}`,
+    ...issueContext,
     "You are in implementation phase.",
     "Git environment is already configured for commits on the provided branch.",
     "You may use any git commands needed during implementation.",
@@ -66,7 +76,6 @@ export function createImplementationPrompt(
     "When repository review is needed, call deliver_changes with your own descriptive title before deploy.",
     "PR title must be a regular capitalized title and MUST NOT be a conventional-commit title.",
     "All details belong to PR body, not commit body.",
-    "PR body MUST end with issue closing tag (for example: Closes #<issue-number>).",
     "Pull requests must use rebase merge and delete source branch.",
     "When PR is used, deploy_replica should be called only after merged PR exists on this branch.",
     "If deploy_replica fails, report the exact failure reason and continue by fixing the root cause.",

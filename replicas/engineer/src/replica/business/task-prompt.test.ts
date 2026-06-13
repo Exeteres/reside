@@ -51,6 +51,7 @@ describe("createImplementationPrompt", () => {
     expect(prompt).toContain("Repository: exeteres/reside4")
     expect(prompt).toContain("Branch: replica/task-7/11")
     expect(prompt).toContain("Issue: #42")
+    expect(prompt).toContain("PR body MUST end with issue closing tag")
     expect(prompt).toContain(
       "Run Prisma, Bun, repository scripts, checks, generators, and other project-specific tools through `devenv shell -- <command>`.",
     )
@@ -64,6 +65,23 @@ describe("createImplementationPrompt", () => {
     expect(prompt).toContain("Do not manually push or force-push")
     expect(prompt).toContain("bun scripts/scaffold-replica.ts example <new-replica>")
     expect(prompt).toContain("Current user request: реализуй задачу")
+  })
+
+  test("omits issue closing requirement without issue", () => {
+    const prompt = createImplementationPrompt(
+      "exeteres",
+      "reside4",
+      "replica/task-7/11",
+      undefined,
+      "сразу реализуй задачу",
+    )
+
+    expect(prompt).toContain("Issue: none.")
+    expect(prompt).toContain("implementation-only task intentionally has no GitHub issue")
+    expect(prompt).toContain("PR body MUST NOT add an issue closing tag")
+    expect(prompt).not.toContain("Issue: #")
+    expect(prompt).not.toContain("PR body MUST end with issue closing tag")
+    expect(prompt).toContain("Current user request: сразу реализуй задачу")
   })
 })
 

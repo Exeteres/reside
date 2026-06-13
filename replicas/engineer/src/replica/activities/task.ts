@@ -85,6 +85,13 @@ const planningFeedbackInputSchema = z.object({
   progressNotificationId: z.string().min(1),
 })
 
+const implementationOnlyTaskInputSchema = z.object({
+  subjectId: z.string().min(1),
+  progressNotificationId: z.string().min(1),
+  topicId: z.string().min(1),
+  previewTitle: z.string().min(1),
+})
+
 const taskIdInputSchema = z.object({
   taskId: z.string().min(1),
 })
@@ -428,6 +435,35 @@ export function createTaskActivities({
       }
     },
 
+    async startImplementationOnlyTask({
+      subjectId,
+      progressNotificationId,
+      topicId,
+      previewTitle,
+    }) {
+      const parsedInput = implementationOnlyTaskInputSchema.parse({
+        subjectId,
+        progressNotificationId,
+        topicId,
+        previewTitle,
+      })
+
+      const task = await prisma.task.create({
+        data: {
+          phase: "IMPLEMENTATION",
+          status: "IN_PROGRESS",
+          topicId: parsedInput.topicId,
+          previewTitle: parsedInput.previewTitle,
+          progressNotificationId: parsedInput.progressNotificationId,
+          createdBy: parsedInput.subjectId,
+        },
+      })
+
+      return {
+        taskId: String(task.id),
+      }
+    },
+
     async approveTask({ taskId }) {
       const parsedInput = taskIdInputSchema.parse({ taskId })
       const dbTaskId = parseDbTaskId(parsedInput.taskId)
@@ -554,10 +590,6 @@ export function createTaskActivities({
         throw new Error(`Task "${parsedInput.taskId}" is not in running state`)
       }
 
-      if (!task.issueId) {
-        throw new Error(`Task "${parsedInput.taskId}" is missing issue id`)
-      }
-
       const iterationNumber = await getNextIterationNumber(prisma, dbTaskId)
       const iteration = await prisma.taskIteration.create({
         data: {
@@ -601,7 +633,7 @@ export function createTaskActivities({
           repo,
           dbTaskId,
           iterationId: iteration.id,
-          issueNumber: task.issueId,
+          issueNumber: task.issueId ?? undefined,
           prompt: parsedInput.prompt,
           prisma,
         })
@@ -1044,9 +1076,8 @@ function createDeliverChangesTool({
 
         validatePullRequestTitle(title)
 
-        if (!hasIssueClosingTagAtBodyEnd(body, issueNumber)) {
-          const suffix = issueNumber ? ` #${issueNumber}` : " #<issue-number>"
-          throw new Error(`Pull request body must end with "Closes${suffix}".`)
+        if (issueNumber && !hasIssueClosingTagAtBodyEnd(body, issueNumber)) {
+          throw new Error(`Pull request body must end with "Closes #${issueNumber}".`)
         }
 
         await validateBranchCommitMessages(repositoryPath, branchName)
@@ -1603,7 +1634,7 @@ async function runImplementationLanguageStream({
   repo: string
   dbTaskId: number
   iterationId: number
-  issueNumber: number
+  issueNumber?: number
   prompt: string
   prisma: PrismaClient
 }): Promise<string> {

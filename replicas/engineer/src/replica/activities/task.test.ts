@@ -113,6 +113,33 @@ describe("requestCancellation", () => {
   })
 })
 
+describe("startImplementationOnlyTask", () => {
+  test("creates implementation task without issue", async () => {
+    const { activities, prisma } = createFixture()
+
+    prisma.task.create.mockResolvedValue({ id: 17 } as never)
+
+    const result = await activities.startImplementationOnlyTask({
+      subjectId: "replica:engineer",
+      progressNotificationId: "notification-1",
+      topicId: "topic-1",
+      previewTitle: "Быстрая правка",
+    })
+
+    expect(result).toEqual({ taskId: "17" })
+    expect(prisma.task.create.spy()).toHaveBeenCalledWith({
+      data: {
+        phase: "IMPLEMENTATION",
+        status: "IN_PROGRESS",
+        topicId: "topic-1",
+        previewTitle: "Быстрая правка",
+        progressNotificationId: "notification-1",
+        createdBy: "replica:engineer",
+      },
+    })
+  })
+})
+
 function createFixture(): {
   activities: ReturnType<typeof createTaskActivities>
   prisma: DeepMockProxy<PrismaClient>
