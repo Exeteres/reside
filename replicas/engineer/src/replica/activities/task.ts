@@ -1132,7 +1132,7 @@ function createDeliverChangesTool({
         const errorDetails = describeToolError(error) || "unknown error"
         const rewriteHint =
           error instanceof CommitValidationError
-            ? "Rewrite invalid commit message(s) before retry. Keep each commit subject as a single-line lowercase conventional commit without body or trailers"
+            ? "Rewrite invalid commit message(s) before retry. Follow docs/changes.md for commit message rules"
             : undefined
         const responseDetails = rewriteHint ? `${errorDetails}. ${rewriteHint}` : errorDetails
         logger.error(

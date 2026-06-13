@@ -2,13 +2,15 @@
 
 This document defines the required structure, patterns, and helpers for replicas in ReSide 4.
 
+Changelog and versioning rules are defined in `docs/changes.md`.
+
 ## Registration and placement
 
 To add a new replica:
 
 1. Define it in `packages/registry/src/topology.ts`.
 2. Add a package in `replicas/<replica-name>/`.
-3. New replica packages must include `reside.manifest.json` with `version` set to `0.1.0` and `image` set to the replica image repository, and include a `CHANGELOG.md` file containing an initial changelog entry describing the initial release.
+3. Follow `docs/changes.md` for initial `reside.manifest.json` and `CHANGELOG.md` requirements.
 
 When a new replica should start from an existing replica, prefer `bun scripts/scaffold-replica.ts example <new-replica> [russian-title]` instead of manually copying directories, unless another existing replica is a closer domain or architecture match.
 The `example` replica is a scaffold source only and must not be registered in topology.
@@ -35,11 +37,9 @@ Each replica package must follow this structure:
 - `prisma/` — split Prisma schema files (required if replica has DB).
 - `prisma.config.ts` — Prisma config (required if replica has DB).
 - `package.json` — must define `name`, `exports`, `dependencies`; must not define `version`, `reside`, `main`, or `types`.
-- `reside.manifest.json` — must define the current replica `version` and image repository `image`; this is the source of truth for image builds, image tags, deploys, and Alpha registration.
-- `CHANGELOG.md` — must define version history for meaningful replica changes.
+- `reside.manifest.json` — required by `docs/changes.md`.
+- `CHANGELOG.md` — required by `docs/changes.md`.
 - `tsconfig.json` — extends `../../tsconfig.base.json`; includes `src` and `prisma.config.ts` when present.
-
-Changelog entries must be written in Russian passive voice and must use the replica title from `src/locale/ru.ts` when naming the replica.
 
 Replica package root must not contain extra top-level files/directories outside this contract.
 

@@ -128,9 +128,7 @@ async function main(): Promise<void> {
 
   console.log(`Updated ${path.relative(rootDir, manifestPath)} to version ${nextVersion}`)
   console.log(`Updated ${path.relative(rootDir, changelogPath)}`)
-  console.log(
-    "Note: do not bump version for dependency-only changes (packages or other replicas) or no meaningful changes.",
-  )
+  console.log("Note: follow docs/changes.md for replica versioning and changelog policy.")
 }
 
 await main()

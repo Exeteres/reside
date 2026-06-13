@@ -270,7 +270,7 @@ async function main(): Promise<void> {
 
   console.log(`Created replicas/${targetName} from replicas/${sourceName}`)
   console.log(
-    "Next steps: adjust domain logic, register topology, run generators, then update version/changelog after meaningful changes.",
+    "Next steps: adjust domain logic, register topology, run generators, then follow docs/changes.md for version and changelog updates.",
   )
 }
 

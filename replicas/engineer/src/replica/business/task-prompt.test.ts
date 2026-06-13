@@ -57,6 +57,7 @@ describe("createImplementationPrompt", () => {
     expect(prompt).toContain(
       "Do not call project-local Bun, Prisma, Nx, Biome, TypeScript, or generated-client commands outside `devenv shell -- ...`.",
     )
+    expect(prompt).toContain("read and follow `docs/changes.md`")
     expect(prompt).toContain("Before calling deliver_changes")
     expect(prompt).toContain("Do not manually push or force-push")
     expect(prompt).toContain("bun scripts/scaffold-replica.ts example <new-replica>")
