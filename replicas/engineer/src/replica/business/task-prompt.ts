@@ -1,6 +1,12 @@
 import type { GithubRepositoryTarget } from "./ai-runtime"
 import { strings } from "../../locale"
 
+export type ImplementationIssueContext = {
+  number: number
+  title: string
+  body: string
+}
+
 export function createPlanningPrompt(
   repository: GithubRepositoryTarget,
   prompt: string,
@@ -41,12 +47,14 @@ export function createImplementationPrompt(
   owner: string,
   repo: string,
   branchName: string,
-  issueNumber: number | undefined,
+  issue: ImplementationIssueContext | undefined,
   userPrompt: string,
 ): string {
-  const issueContext = issueNumber
+  const issueContext = issue
     ? [
-        `Issue: #${issueNumber}`,
+        `Issue: #${issue.number}`,
+        `Issue title: ${issue.title}`,
+        `Issue body:\n${issue.body}`,
         "PR body MUST end with issue closing tag (for example: Closes #<issue-number>).",
       ]
     : [
@@ -59,6 +67,11 @@ export function createImplementationPrompt(
     `Branch: ${branchName}`,
     ...issueContext,
     "You are in implementation phase.",
+    "First classify the task from the current request and issue body as either code-changing or research-only.",
+    "Research-only tasks include audits, investigations, reviews, analysis, reports, and finding risks or recommendations when they do not explicitly ask to implement fixes or add product behavior.",
+    "For research-only tasks, do not change repository files, do not create commands, APIs, NLS tools, tests, changelog entries, PRs, deployments, or persistent report artifacts unless the issue explicitly asks for those exact repository changes.",
+    "For research-only tasks, inspect the repository and finish with a concise russian report that lists findings, impact, recommendations, and explicitly states when no critical or high-risk problems were found.",
+    "Only call commit_changes, deliver_changes, or deploy_replica for code-changing tasks with actual repository changes.",
     "Git environment is already configured for commits on the provided branch.",
     "You may use any git commands needed during implementation.",
     "Run Prisma, Bun, repository scripts, checks, generators, and other project-specific tools through `devenv shell -- <command>`.",
@@ -71,6 +84,7 @@ export function createImplementationPrompt(
     "Use deliver_changes to validate commits, push the branch, create or update PR, wait for ci:check, merge with rebase, and delete the source branch.",
     "Do not manually push or force-push the branch before deliver_changes unless recovering from an explicit deliver_changes failure.",
     "If deliver_changes fails with commit validation, rewrite invalid commit message(s) first (at minimum amend latest commit), then retry deliver_changes.",
+    "Run focused checks for touched packages first. Run broader repository checks when practical, but if a broad check fails only because of unrelated packages, missing local infrastructure, or environment configuration outside the task, do not change unrelated code to mask it; report the exact unrelated failures and keep the focused checks as the task verification.",
     "When creating a new replica from an existing replica, prefer `bun scripts/scaffold-replica.ts example <new-replica>` before manual copying, unless another existing replica is a closer domain or architecture match.",
     "Before calling deploy_replica, commit your changes. If you are confident deploy is safe without PR, you may deploy directly.",
     "When repository review is needed, call deliver_changes with your own descriptive title before deploy.",

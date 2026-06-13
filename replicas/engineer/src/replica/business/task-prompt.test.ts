@@ -44,14 +44,25 @@ describe("createImplementationPrompt", () => {
       "exeteres",
       "reside4",
       "replica/task-7/11",
-      42,
+      {
+        number: 42,
+        title: "Аудит безопасности банковской реплики",
+        body: "Провести аудит и предоставить список рисков с рекомендациями.",
+      },
       "реализуй задачу",
     )
 
     expect(prompt).toContain("Repository: exeteres/reside4")
     expect(prompt).toContain("Branch: replica/task-7/11")
     expect(prompt).toContain("Issue: #42")
+    expect(prompt).toContain("Issue title: Аудит безопасности банковской реплики")
+    expect(prompt).toContain("Issue body:")
+    expect(prompt).toContain("Провести аудит и предоставить список рисков")
     expect(prompt).toContain("PR body MUST end with issue closing tag")
+    expect(prompt).toContain("First classify the task")
+    expect(prompt).toContain("Research-only tasks include audits")
+    expect(prompt).toContain("For research-only tasks, do not change repository files")
+    expect(prompt).toContain("Only call commit_changes, deliver_changes, or deploy_replica")
     expect(prompt).toContain(
       "Run Prisma, Bun, repository scripts, checks, generators, and other project-specific tools through `devenv shell -- <command>`.",
     )
@@ -63,6 +74,8 @@ describe("createImplementationPrompt", () => {
     expect(prompt).toContain("read and follow `docs/changes.md`")
     expect(prompt).toContain("Before calling deliver_changes")
     expect(prompt).toContain("Do not manually push or force-push")
+    expect(prompt).toContain("Run focused checks for touched packages first")
+    expect(prompt).toContain("missing local infrastructure")
     expect(prompt).toContain("bun scripts/scaffold-replica.ts example <new-replica>")
     expect(prompt).toContain("Current user request: реализуй задачу")
   })

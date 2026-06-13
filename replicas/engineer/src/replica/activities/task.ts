@@ -603,6 +603,9 @@ export function createTaskActivities({
 
       const environment = await createCopilotEnvironment(runtime, dbTaskId, iteration.id)
       const [owner, repo] = [repository.owner, repository.name]
+      const issue = task.issueId
+        ? await getRepositoryIssueByNumber(runtime.getOctokit(), owner, repo, task.issueId)
+        : undefined
 
       let summary = ""
       let failureMessage = ""
@@ -633,7 +636,7 @@ export function createTaskActivities({
           repo,
           dbTaskId,
           iterationId: iteration.id,
-          issueNumber: task.issueId ?? undefined,
+          issue,
           prompt: parsedInput.prompt,
           prisma,
         })
@@ -1618,7 +1621,7 @@ async function runImplementationLanguageStream({
   repo,
   dbTaskId,
   iterationId,
-  issueNumber,
+  issue,
   prompt,
   prisma,
 }: {
@@ -1634,7 +1637,11 @@ async function runImplementationLanguageStream({
   repo: string
   dbTaskId: number
   iterationId: number
-  issueNumber?: number
+  issue?: {
+    number: number
+    title: string
+    body: string
+  }
   prompt: string
   prisma: PrismaClient
 }): Promise<string> {
@@ -1645,7 +1652,7 @@ async function runImplementationLanguageStream({
         owner,
         repo,
         `replica/task-${dbTaskId}/${iterationId}`,
-        issueNumber,
+        issue,
         prompt,
       ),
       async frame => {
@@ -1666,7 +1673,7 @@ async function runImplementationLanguageStream({
             repo,
             repositoryPath: environment.repositoryPath,
             branchName: `replica/task-${dbTaskId}/${iterationId}`,
-            issueNumber,
+            issueNumber: issue?.number,
           }),
           createDeployReplicaTool({
             runtime,
@@ -1677,7 +1684,7 @@ async function runImplementationLanguageStream({
             owner,
             repo,
             branchName: `replica/task-${dbTaskId}/${iterationId}`,
-            issueNumber,
+            issueNumber: issue?.number,
           }),
         ],
         allowedSystemTools: ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS,
