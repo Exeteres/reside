@@ -1,6 +1,7 @@
 import type { ResideLogger } from "./logger"
-import { stat } from "node:fs/promises"
-import { relative, resolve } from "node:path"
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join, relative, resolve } from "node:path"
 import { loadResideManifest, RESIDE_MANIFEST_FILE } from "@reside/common"
 import { createDockerfile } from "./docker"
 import { loadPackageConfig } from "./package-config"
@@ -67,27 +68,47 @@ export async function buildPackageImage(
     args.logger.info('building image "%s"', image)
   }
 
-  await runCommand(
-    ["docker", "build", rootPath, "-f", "-", "-t", image, args.push ? ["--push"] : []].flat(),
-    {
-      commandLog: args.commandLog,
-      input: dockerfile,
-      passthroughOutput: args.interactiveDockerOutput === true,
-    },
-  )
+  const metadataDir = args.push ? await mkdtemp(join(tmpdir(), "reside-build-")) : undefined
+  const metadataFile = metadataDir ? join(metadataDir, "metadata.json") : undefined
 
-  const resolvedImage = args.push
-    ? await resolvePushedImageReference(image, args.commandLog)
-    : image
+  try {
+    await runCommand(
+      [
+        "docker",
+        "build",
+        rootPath,
+        "-f",
+        "-",
+        "-t",
+        image,
+        createGithubActionsCacheArgs(),
+        metadataFile ? ["--metadata-file", metadataFile] : [],
+        args.push ? ["--push"] : [],
+      ].flat(),
+      {
+        commandLog: args.commandLog,
+        input: dockerfile,
+        passthroughOutput: args.interactiveDockerOutput === true,
+      },
+    )
 
-  if (args.push) {
-    args.logger.info("resolved pushed image to %s", resolvedImage)
-    args.logger.info({ success: true }, "image built and pushed successfully")
-  } else {
-    args.logger.info({ success: true }, "image built successfully")
+    const resolvedImage = args.push
+      ? await resolvePushedImageReference(image, args.commandLog, metadataFile)
+      : image
+
+    if (args.push) {
+      args.logger.info("resolved pushed image to %s", resolvedImage)
+      args.logger.info({ success: true }, "image built and pushed successfully")
+    } else {
+      args.logger.info({ success: true }, "image built successfully")
+    }
+
+    return resolvedImage
+  } finally {
+    if (metadataDir) {
+      await rm(metadataDir, { recursive: true, force: true })
+    }
   }
-
-  return resolvedImage
 }
 
 export async function resolveBuildImageTag(
@@ -95,6 +116,14 @@ export async function resolveBuildImageTag(
   requestedTag?: string,
 ): Promise<string> {
   return requestedTag ?? (await loadResideManifest(packagePath))?.version ?? "latest"
+}
+
+export function createGithubActionsCacheArgs(env: NodeJS.ProcessEnv = process.env): string[] {
+  if (env.GITHUB_ACTIONS !== "true") {
+    return []
+  }
+
+  return ["--cache-from", "type=gha", "--cache-to", "type=gha,mode=max"]
 }
 
 async function pathExists(path: string): Promise<boolean> {
@@ -109,7 +138,16 @@ async function pathExists(path: string): Promise<boolean> {
 async function resolvePushedImageReference(
   image: string,
   commandLog?: CommandLog,
+  metadataFile?: string,
 ): Promise<string> {
+  const metadataReference = metadataFile
+    ? await resolveImageReferenceFromBuildMetadata(image, metadataFile)
+    : undefined
+
+  if (metadataReference) {
+    return metadataReference
+  }
+
   const output = await runCommand(
     ["docker", "image", "inspect", image, "--format", "{{json .RepoDigests}}"],
     {
@@ -132,6 +170,35 @@ async function resolvePushedImageReference(
   }
 
   throw new Error(`Failed to resolve repo digest for pushed image "${image}"`)
+}
+
+export async function resolveImageReferenceFromBuildMetadata(
+  image: string,
+  metadataFile: string,
+): Promise<string | undefined> {
+  let content = ""
+
+  try {
+    content = await readFile(metadataFile, "utf8")
+  } catch {
+    return undefined
+  }
+
+  if (content.trim().length === 0) {
+    return undefined
+  }
+
+  const parsedValue: unknown = JSON.parse(content)
+  if (!parsedValue || typeof parsedValue !== "object" || Array.isArray(parsedValue)) {
+    throw new Error("Docker build metadata returned an invalid payload")
+  }
+
+  const digest = (parsedValue as Record<string, unknown>)["containerimage.digest"]
+  if (typeof digest !== "string" || digest.trim().length === 0) {
+    return undefined
+  }
+
+  return `${getImageRepository(image)}@${digest.trim()}`
 }
 
 function parseRepoDigests(output: string): string[] {
