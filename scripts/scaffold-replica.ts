@@ -9,6 +9,7 @@ import {
   readFile,
   readdir,
   readlink,
+  rename,
   rm,
   symlink,
   writeFile,
@@ -83,6 +84,13 @@ function escapeRegExp(value: string): string {
 function replaceReplicaToken(content: string, sourceName: string, targetName: string): string {
   return content.replace(
     new RegExp(`(?<![a-z0-9-])${escapeRegExp(sourceName)}(?![a-z0-9-])`, "g"),
+    targetName,
+  )
+}
+
+function replaceReplicaPathToken(value: string, sourceName: string, targetName: string): string {
+  return value.replace(
+    new RegExp(`(?<![a-z0-9])${escapeRegExp(sourceName)}(?![a-z0-9])`, "g"),
     targetName,
   )
 }
@@ -183,6 +191,37 @@ async function rewriteTextFiles(input: {
   await visit(input.targetDir)
 }
 
+async function renameTemplatePaths(input: {
+  targetDir: string
+  sourceName: string
+  targetName: string
+}): Promise<void> {
+  async function visit(directory: string): Promise<void> {
+    const entries = await readdir(directory, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const entryPath = path.join(directory, entry.name)
+      if (entry.isDirectory()) {
+        await visit(entryPath)
+      }
+
+      const nextName = replaceReplicaPathToken(entry.name, input.sourceName, input.targetName)
+      if (nextName === entry.name) {
+        continue
+      }
+
+      const nextPath = path.join(directory, nextName)
+      if (await exists(nextPath)) {
+        fail(`Error: cannot rename scaffold path because target already exists: ${nextPath}`)
+      }
+
+      await rename(entryPath, nextPath)
+    }
+  }
+
+  await visit(input.targetDir)
+}
+
 async function updatePackageJson(targetDir: string, targetName: string): Promise<void> {
   const packagePath = path.join(targetDir, "package.json")
   if (!(await exists(packagePath))) {
@@ -261,6 +300,7 @@ async function main(): Promise<void> {
   }
 
   await copyTemplate(sourceDir, targetDir)
+  await renameTemplatePaths({ targetDir, sourceName, targetName })
   await rewriteTextFiles({ targetDir, sourceName, targetName })
   await updatePackageJson(targetDir, targetName)
   await updateManifest(targetDir, targetName)

@@ -9,6 +9,7 @@ export enum NlsSystemTool {
   ListBash = "list_bash",
   ReadBash = "read_bash",
   ReportIntent = "report_intent",
+  Sql = "sql",
   StopBash = "stop_bash",
   StrReplaceEditor = "str_replace_editor",
   Task = "task",
@@ -27,4 +28,5 @@ export const DEFAULT_NLS_SYSTEM_TOOLS: NlsSystemTool[] = [
   NlsSystemTool.StopBash,
   NlsSystemTool.ListBash,
   NlsSystemTool.ReportIntent,
+  NlsSystemTool.Sql,
 ]

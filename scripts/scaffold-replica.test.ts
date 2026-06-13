@@ -34,6 +34,10 @@ describe("scaffold-replica", () => {
     )
     const changelog = await readFile(path.join(targetDir, "CHANGELOG.md"), "utf8")
     const main = await readFile(path.join(targetDir, "src", "replica", "main.ts"), "utf8")
+    const business = await readFile(
+      path.join(targetDir, "src", "replica", "business", "target.ts"),
+      "utf8",
+    )
 
     expect(packageJson.name).toBe("@replicas/target")
     expect(packageJson.scripts.generate).toBe("prisma generate")
@@ -43,9 +47,15 @@ describe("scaffold-replica", () => {
     })
     expect(changelog).toContain("Создана начальная версия Тестовая реплика.")
     expect(main).toContain("Target target targetCommand @replicas/target")
+    expect(business).toContain("targetFeature")
 
     await expectPathMissing(path.join(targetDir, "node_modules"))
     await expectPathMissing(path.join(targetDir, "src", "database", "_generated"))
+    await expectPathMissing(path.join(targetDir, "src", "replica", "business", "source.ts"))
+    await expectPathMissing(path.join(targetDir, "prisma", "source.prisma"))
+    await expectPathMissing(path.join(targetDir, "src", "source-feature"))
+    await expectPathExists(path.join(targetDir, "prisma", "target.prisma"))
+    await expectPathExists(path.join(targetDir, "src", "target-feature", "target.ts"))
     await expectPathMissing(path.join(targetDir, "prisma", "migrations", "old", "migration.sql"))
     await expectPathExists(path.join(targetDir, "prisma", "migrations", "migration_lock.toml"))
 
@@ -60,7 +70,8 @@ async function createTemporaryRepository(): Promise<string> {
   temporaryRoots.push(root)
 
   const sourceDir = path.join(root, "replicas", "source")
-  await mkdir(path.join(sourceDir, "src", "replica"), { recursive: true })
+  await mkdir(path.join(sourceDir, "src", "replica", "business"), { recursive: true })
+  await mkdir(path.join(sourceDir, "src", "source-feature"), { recursive: true })
   await mkdir(path.join(sourceDir, "src", "database", "_generated"), { recursive: true })
   await mkdir(path.join(sourceDir, "prisma", "migrations", "old"), { recursive: true })
   await mkdir(path.join(sourceDir, "node_modules", "ignored"), { recursive: true })
@@ -89,6 +100,17 @@ async function createTemporaryRepository(): Promise<string> {
     "export const sourceCommand = 'Source source sourceCommand @replicas/source'\n",
     "utf8",
   )
+  await writeFile(
+    path.join(sourceDir, "src", "replica", "business", "source.ts"),
+    "export const sourceFeature = 'source'\n",
+    "utf8",
+  )
+  await writeFile(
+    path.join(sourceDir, "src", "source-feature", "source.ts"),
+    "export const sourceFeature = 'source'\n",
+    "utf8",
+  )
+  await writeFile(path.join(sourceDir, "prisma", "source.prisma"), "model Source {}\n", "utf8")
   await writeFile(
     path.join(sourceDir, "src", "database", "_generated", "client.ts"),
     "generated",

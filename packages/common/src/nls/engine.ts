@@ -162,6 +162,7 @@ export async function createLanguageEngine(
         configDir: options?.configDir,
         tools: options?.tools,
         allowedSystemTools: options?.allowedSystemTools,
+        idleTimeoutMs: options?.idleTimeoutMs,
         shouldCancel: options?.shouldCancel,
         cancelPollIntervalMs: options?.cancelPollIntervalMs,
       })
@@ -176,6 +177,7 @@ export async function createLanguageEngine(
         configDir: options?.configDir,
         tools: options?.tools,
         allowedSystemTools: options?.allowedSystemTools,
+        idleTimeoutMs: options?.idleTimeoutMs,
         shouldCancel: options?.shouldCancel,
         cancelPollIntervalMs: options?.cancelPollIntervalMs,
       })
@@ -275,15 +277,18 @@ export async function createLanguageEngine(
               }
             }
 
+            const reason = `Tool "${toolInvocation.toolName}" is not allowed in language engine`
+
             logger.warn(
-              'nls tool execution denied session_id="%s" tool_name="%s"',
+              'nls tool execution denied session_id="%s" tool_name="%s" reason="%s"',
               normalizedSessionId,
               toolInvocation.toolName,
+              reason,
             )
 
             return {
               permissionDecision: "deny" as const,
-              permissionDecisionReason: `Tool "${toolInvocation.toolName}" is not allowed in language engine`,
+              permissionDecisionReason: reason,
             }
           },
         },
@@ -458,6 +463,7 @@ export async function createLanguageEngine(
 
 function registerLanguageSessionLogs(session: CopilotSession, sessionId: string): () => void {
   const toolNamesByCallId = new Map<string, string>()
+  const toolStartTimesByCallId = new Map<string, number>()
   const unsubscribers = [
     session.on("assistant.message", event => {
       const content = event.data.content.trim()
@@ -475,6 +481,7 @@ function registerLanguageSessionLogs(session: CopilotSession, sessionId: string)
     session.on("tool.execution_start", event => {
       const argumentSummary = summarizeToolArguments(event.data.toolName, event.data.arguments)
       toolNamesByCallId.set(event.data.toolCallId, event.data.toolName)
+      toolStartTimesByCallId.set(event.data.toolCallId, Date.now())
 
       logger.info(
         'nls tool execution started session_id="%s" tool_name="%s" tool_call_id="%s" args="%s"',
@@ -487,20 +494,33 @@ function registerLanguageSessionLogs(session: CopilotSession, sessionId: string)
     session.on("tool.execution_complete", event => {
       const toolName = toolNamesByCallId.get(event.data.toolCallId)
       toolNamesByCallId.delete(event.data.toolCallId)
+      const startedAt = toolStartTimesByCallId.get(event.data.toolCallId)
+      toolStartTimesByCallId.delete(event.data.toolCallId)
+      const durationMs = startedAt === undefined ? undefined : Date.now() - startedAt
 
       if (toolName !== "bash") {
+        logger.info(
+          'nls tool execution completed session_id="%s" tool_name="%s" tool_call_id="%s" duration_ms="%s" result="%s"',
+          sessionId,
+          toolName ?? "unknown",
+          event.data.toolCallId,
+          durationMs === undefined ? "unknown" : String(durationMs),
+          summarizeToolResult(event.data.result),
+        )
         return
       }
 
       const bashResult = summarizeBashToolResult(event.data.result)
 
       logger.info(
-        'nls bash execution completed session_id="%s" tool_call_id="%s" success="%s" exit_code="%s" output_truncated="%s" output="%s"',
+        'nls bash execution completed session_id="%s" tool_call_id="%s" success="%s" exit_code="%s" duration_ms="%s" output_truncated="%s" output_file="%s" output="%s"',
         sessionId,
         event.data.toolCallId,
         String(bashResult.success),
         bashResult.exitCode === undefined ? "unknown" : String(bashResult.exitCode),
+        durationMs === undefined ? "unknown" : String(durationMs),
         String(bashResult.outputTruncated),
+        bashResult.outputFile ?? "",
         bashResult.output,
       )
     }),
@@ -516,20 +536,46 @@ function registerLanguageSessionLogs(session: CopilotSession, sessionId: string)
 function summarizeBashToolResult(result: unknown): {
   exitCode?: number
   output: string
+  outputFile?: string
   outputTruncated: boolean
   success: boolean
 } {
   const terminalContent = collectTerminalResultContent(result)
   const output = terminalContent.output.length > 0 ? terminalContent.output : collectTextResultContent(result)
+  const detectedExitCode = terminalContent.exitCode ?? extractExitCodeFromOutput(output)
   const normalizedOutput = output.replace(/\s+/g, " ").trim()
   const truncatedOutput = truncateOneLine(output, BASH_RESULT_LOG_OUTPUT_MAX_LENGTH)
 
   return {
-    exitCode: terminalContent.exitCode,
+    exitCode: detectedExitCode,
     output: truncatedOutput,
+    outputFile: extractSavedOutputPath(output),
     outputTruncated: normalizedOutput.length > BASH_RESULT_LOG_OUTPUT_MAX_LENGTH,
-    success: terminalContent.exitCode === undefined || terminalContent.exitCode === 0,
+    success: detectedExitCode === undefined || detectedExitCode === 0,
   }
+}
+
+function summarizeToolResult(result: unknown): string {
+  const output = collectTextResultContent(result)
+  if (output.length > 0) {
+    return truncateOneLine(output, 400)
+  }
+
+  return truncateOneLine(JSON.stringify(result) ?? "", 400)
+}
+
+function extractExitCodeFromOutput(output: string): number | undefined {
+  const match = output.match(/<exited with exit code (\d+)>/u)
+  if (!match) {
+    return undefined
+  }
+
+  return Number.parseInt(match[1]!, 10)
+}
+
+function extractSavedOutputPath(output: string): string | undefined {
+  const match = output.match(/Saved to:\s+(\/\S+)/u)
+  return match?.[1]
 }
 
 function collectTerminalResultContent(result: unknown): { exitCode?: number; output: string } {
@@ -725,7 +771,7 @@ function summarizeToolArguments(toolName: string, argumentsValue: unknown): stri
     return `command=${truncateOneLine(command, 1000)}`
   }
 
-  if (toolName === "query_database") {
+  if (toolName === "query_database" || toolName === "sql") {
     const sql = typeof typedArguments.sql === "string" ? typedArguments.sql : ""
     return `sql_length=${sql.length}`
   }

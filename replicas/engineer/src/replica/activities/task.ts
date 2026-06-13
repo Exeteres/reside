@@ -10,6 +10,7 @@ import { join } from "node:path"
 import { defineTool } from "@github/copilot-sdk"
 import { waitForOperationSuccess } from "@reside/api"
 import {
+  DEFAULT_NLS_SYSTEM_TOOLS,
   type LanguageEngine,
   link,
   logger,
@@ -46,16 +47,10 @@ const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = "session"
 const ENGINEER_NLS_IDLE_TIMEOUT_MS = 20 * 60_000
 const ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS = [
-  NlsSystemTool.Bash,
-  NlsSystemTool.ReadBash,
-  NlsSystemTool.WriteBash,
-  NlsSystemTool.StopBash,
-  NlsSystemTool.ListBash,
+  ...DEFAULT_NLS_SYSTEM_TOOLS,
   NlsSystemTool.View,
   NlsSystemTool.Create,
   NlsSystemTool.Edit,
-  NlsSystemTool.WebFetch,
-  NlsSystemTool.ReportIntent,
   NlsSystemTool.Grep,
   NlsSystemTool.Glob,
   NlsSystemTool.Task,
@@ -1148,6 +1143,74 @@ function createDeliverChangesTool({
   })
 }
 
+function createCommitChangesTool({
+  repositoryPath,
+  branchName,
+}: {
+  repositoryPath: string
+  branchName: string
+}) {
+  return defineTool("commit_changes", {
+    description:
+      "Stages repository paths and creates a validated conventional commit without a commit body",
+    parameters: z.object({
+      message: z.string().min(1),
+      paths: z.array(z.string().min(1)).min(1).default(["."]),
+    }),
+    handler: async ({ message, paths }) => {
+      logger.info(
+        'engineer commit_changes started branch="%s" message="%s" paths_count="%s"',
+        branchName,
+        truncateOneLine(message, 160),
+        String(paths.length),
+      )
+
+      try {
+        const currentBranch = await getCurrentGitBranch(repositoryPath)
+        if (currentBranch !== branchName) {
+          throw new Error(
+            `Before commit_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
+          )
+        }
+
+        validateBranchCommitLogOutput(`0000000000000000000000000000000000000000\0${message}\0\0`)
+
+        await runCommand(["git", "-C", repositoryPath, "add", "--", ...paths])
+        await runCommand(["git", "-C", repositoryPath, "commit", "-m", message])
+        await validateBranchCommitMessages(repositoryPath, branchName)
+
+        const { stdout } = await runCommandWithOutput([
+          "git",
+          "-C",
+          repositoryPath,
+          "rev-parse",
+          "--short",
+          "HEAD",
+        ])
+        const commitHash = stdout.trim()
+
+        logger.info(
+          'engineer commit_changes completed branch="%s" commit="%s"',
+          branchName,
+          commitHash,
+        )
+
+        return `Created validated commit ${commitHash}.`
+      } catch (error) {
+        const errorDetails = describeToolError(error) || "unknown error"
+        logger.error(
+          { error: toError(error) },
+          'engineer commit_changes failed branch="%s" details="%s"',
+          branchName,
+          errorDetails,
+        )
+
+        return `commit_changes failed: ${errorDetails}`
+      }
+    },
+  })
+}
+
 async function waitForWorkflowRun(input: {
   octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
   owner: string
@@ -1562,6 +1625,10 @@ async function runImplementationLanguageStream({
         configDir: environment.sessionDirPath,
         idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [
+          createCommitChangesTool({
+            repositoryPath: environment.repositoryPath,
+            branchName: `replica/task-${dbTaskId}/${iterationId}`,
+          }),
           createDeliverChangesTool({
             runtime,
             owner,
