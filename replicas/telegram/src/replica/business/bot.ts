@@ -398,6 +398,7 @@ export async function createTelegramBot(args: {
       try {
         await handleCommandInvocation({
           prisma: args.prisma,
+          crypto: args.crypto,
           authzService: args.authzService,
           permissionRequestService: args.permissionRequestService,
           getCommandHandlerClient,
@@ -405,6 +406,9 @@ export async function createTelegramBot(args: {
           userId,
           messageId: message.message_id,
           text: message.text,
+          entities: message.entities as
+            | Array<{ type: string; offset: number; length: number; user?: { id?: number } }>
+            | undefined,
           interactionContext,
           sendSystemMessage: async input => {
             await sendSystemMessage(context, input)
