@@ -4,7 +4,7 @@ import type { CommandHandlerServiceClient } from "@reside/api/interaction/comman
 import type { PrismaClient } from "../../database"
 import { describe, expect, mock, test } from "bun:test"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
-import { mockDeepFn } from "@reside/common/testing"
+import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import { strings } from "../../locale"
 import { handleCommandInvocation } from "./bot-command-invocation"
 
@@ -18,6 +18,7 @@ describe("handleCommandInvocation", () => {
 
     await handleCommandInvocation({
       prisma,
+      crypto: testCrypto,
       authzService,
       permissionRequestService,
       getCommandHandlerClient: () => commandHandlerClient,
@@ -47,6 +48,7 @@ describe("handleCommandInvocation", () => {
 
     await handleCommandInvocation({
       prisma,
+      crypto: testCrypto,
       authzService,
       permissionRequestService,
       getCommandHandlerClient: () => commandHandlerClient,
@@ -88,6 +90,7 @@ describe("handleCommandInvocation", () => {
 
     await handleCommandInvocation({
       prisma,
+      crypto: testCrypto,
       authzService,
       permissionRequestService,
       getCommandHandlerClient: () => commandHandlerClient,
@@ -129,6 +132,7 @@ describe("handleCommandInvocation", () => {
 
     await handleCommandInvocation({
       prisma,
+      crypto: testCrypto,
       authzService,
       permissionRequestService,
       getCommandHandlerClient: () => commandHandlerClient,
@@ -177,6 +181,7 @@ describe("handleCommandInvocation", () => {
 
     await handleCommandInvocation({
       prisma,
+      crypto: testCrypto,
       authzService,
       permissionRequestService,
       getCommandHandlerClient: () => commandHandlerClient,
@@ -217,6 +222,7 @@ describe("handleCommandInvocation", () => {
 
     await handleCommandInvocation({
       prisma,
+      crypto: testCrypto,
       authzService,
       permissionRequestService,
       getCommandHandlerClient: () => commandHandlerClient,
@@ -273,6 +279,7 @@ describe("handleCommandInvocation", () => {
     } as never)
     await handleCommandInvocation({
       prisma,
+      crypto: testCrypto,
       authzService,
       permissionRequestService,
       getCommandHandlerClient: () => commandHandlerClient,

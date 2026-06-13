@@ -16,7 +16,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file interaction/command.v1.proto.
  */
 export const file_interaction_command_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChxpbnRlcmFjdGlvbi9jb21tYW5kLnYxLnByb3RvEh1yZXNpZGUuaW50ZXJhY3Rpb24uY29tbWFuZC52MSLrAQoRQ29tbWFuZEludm9jYXRpb24SFQoNaW52b2NhdGlvbl9pZBgBIAEoCRI6Cgdjb21tYW5kGAIgASgLMikucmVzaWRlLmludGVyYWN0aW9uLmRlZmluaXRpb24udjEuQ29tbWFuZBJCCgdjb250ZXh0GAMgASgLMjEucmVzaWRlLmludGVyYWN0aW9uLmNvbnRleHQudjEuSW50ZXJhY3Rpb25Db250ZXh0EisKCnBhcmFtZXRlcnMYBCABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhIKCnN1YmplY3RfaWQYBSABKAkycgoVQ29tbWFuZEhhbmRsZXJTZXJ2aWNlElkKDUludm9rZUNvbW1hbmQSMC5yZXNpZGUuaW50ZXJhY3Rpb24uY29tbWFuZC52MS5Db21tYW5kSW52b2NhdGlvbhoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_struct, file_google_protobuf_empty, file_interaction_definition_v1, file_interaction_context_v1]);
+  fileDesc("ChxpbnRlcmFjdGlvbi9jb21tYW5kLnYxLnByb3RvEh1yZXNpZGUuaW50ZXJhY3Rpb24uY29tbWFuZC52MSL4AgoRQ29tbWFuZEludm9jYXRpb24SFQoNaW52b2NhdGlvbl9pZBgBIAEoCRI6Cgdjb21tYW5kGAIgASgLMikucmVzaWRlLmludGVyYWN0aW9uLmRlZmluaXRpb24udjEuQ29tbWFuZBJCCgdjb250ZXh0GAMgASgLMjEucmVzaWRlLmludGVyYWN0aW9uLmNvbnRleHQudjEuSW50ZXJhY3Rpb25Db250ZXh0EisKCnBhcmFtZXRlcnMYBCABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhIKCnN1YmplY3RfaWQYBSABKAkSVwoMc3ViamVjdF9pbmZvGAYgAygLMkEucmVzaWRlLmludGVyYWN0aW9uLmNvbW1hbmQudjEuQ29tbWFuZEludm9jYXRpb24uU3ViamVjdEluZm9FbnRyeRoyChBTdWJqZWN0SW5mb0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEycgoVQ29tbWFuZEhhbmRsZXJTZXJ2aWNlElkKDUludm9rZUNvbW1hbmQSMC5yZXNpZGUuaW50ZXJhY3Rpb24uY29tbWFuZC52MS5Db21tYW5kSW52b2NhdGlvbhoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_struct, file_google_protobuf_empty, file_interaction_definition_v1, file_interaction_context_v1]);
 
 /**
  * The context of a command invocation passed to the command handler.
@@ -58,6 +58,13 @@ export type CommandInvocation = Message<"reside.interaction.command.v1.CommandIn
    * @generated from field: string subject_id = 5;
    */
   subjectId: string;
+
+  /**
+   * Opaque caller-provided subject metadata.
+   *
+   * @generated from field: map<string, string> subject_info = 6;
+   */
+  subjectInfo: { [key: string]: string };
 };
 
 /**
@@ -100,6 +107,13 @@ export type CommandInvocationJson = {
    * @generated from field: string subject_id = 5;
    */
   subjectId?: string;
+
+  /**
+   * Opaque caller-provided subject metadata.
+   *
+   * @generated from field: map<string, string> subject_info = 6;
+   */
+  subjectInfo?: { [key: string]: string };
 };
 
 /**
