@@ -11,6 +11,11 @@ export const transactionsCommand = defineCommand({
   title: strings.commands.transactions.title,
   description: strings.commands.transactions.description,
 })
+export const securityAuditCommand = defineCommand({
+  name: "security-audit",
+  title: strings.commands.securityAudit.title,
+  description: strings.commands.securityAudit.description,
+})
 export const transferCommand = defineCommand({
   name: "transfer",
   title: strings.commands.transfer.title,

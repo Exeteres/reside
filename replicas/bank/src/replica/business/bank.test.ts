@@ -3,7 +3,7 @@ import type { PrismaClient } from "../../database"
 import { describe, expect, it } from "bun:test"
 import { mockDeepFn } from "@reside/common/testing"
 import { InsufficientFundsError, InvalidTransferAmountError } from "../../definitions"
-import { getBalance, getTransactions, transferAmount } from "./bank"
+import { getBalance, getSecurityAuditReport, getTransactions, transferAmount } from "./bank"
 
 function createCrypto(values: Record<string, { amount: string }> = {}): ResideCrypto {
   return {
@@ -20,6 +20,20 @@ function createCrypto(values: Record<string, { amount: string }> = {}): ResideCr
     },
   }
 }
+
+describe("getSecurityAuditReport", () => {
+  it("returns findings with impact and recommendations", () => {
+    const report = getSecurityAuditReport()
+
+    expect(report.criticalOrHighRiskFinding).toBe(false)
+    expect(report.findings.length).toBeGreaterThan(0)
+    for (const finding of report.findings) {
+      expect(finding.title.length).toBeGreaterThan(0)
+      expect(finding.impact.length).toBeGreaterThan(0)
+      expect(finding.recommendation.length).toBeGreaterThan(0)
+    }
+  })
+})
 
 describe("getBalance", () => {
   it("creates an encrypted initial-balance account when it is missing", async () => {
