@@ -2,6 +2,7 @@ import type { ResideCrypto } from "@reside/common"
 import type { PrismaClient } from "../../database"
 import { describe, expect, it } from "bun:test"
 import { mockDeepFn } from "@reside/common/testing"
+import { InsufficientFundsError, InvalidTransferAmountError } from "../../definitions"
 import { getBalance, getTransactions, transferAmount } from "./bank"
 
 function createCrypto(values: Record<string, { amount: string }> = {}): ResideCrypto {
@@ -21,16 +22,16 @@ function createCrypto(values: Record<string, { amount: string }> = {}): ResideCr
 }
 
 describe("getBalance", () => {
-  it("creates an encrypted zero-balance account when it is missing", async () => {
+  it("creates an encrypted initial-balance account when it is missing", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     const crypto = createCrypto()
 
     prisma.account.findUnique.mockResolvedValue(null)
-    prisma.account.create.mockResolvedValue({ id: "account_1", balanceEcid: "ecid:0" } as never)
+    prisma.account.create.mockResolvedValue({ id: "account_1", balanceEcid: "ecid:100" } as never)
 
-    await expect(getBalance(crypto, prisma, "subject_rhid")).resolves.toBe("0")
+    await expect(getBalance(crypto, prisma, "subject_rhid")).resolves.toBe("100")
     expect(prisma.account.create.spy()).toHaveBeenCalledWith({
-      data: { subjectRhid: "subject_rhid", balanceEcid: "ecid:0" },
+      data: { subjectRhid: "subject_rhid", balanceEcid: "ecid:100" },
       select: { id: true, balanceEcid: true },
     })
   })
@@ -97,6 +98,15 @@ describe("transferAmount", () => {
 
     await expect(
       transferAmount(crypto, prisma, "sender_rhid", "recipient_rhid", 3),
-    ).rejects.toThrow("insufficient_funds")
+    ).rejects.toBeInstanceOf(InsufficientFundsError)
+  })
+
+  it("rejects invalid transfer amounts with a domain error", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const crypto = createCrypto()
+
+    await expect(
+      transferAmount(crypto, prisma, "sender_rhid", "recipient_rhid", 0),
+    ).rejects.toBeInstanceOf(InvalidTransferAmountError)
   })
 })

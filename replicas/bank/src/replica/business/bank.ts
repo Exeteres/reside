@@ -1,7 +1,9 @@
 import type { ResideCrypto } from "@reside/common"
 import type { PrismaClient } from "../../database"
 import { z } from "zod"
+import { InsufficientFundsError, InvalidTransferAmountError } from "../../definitions"
 
+const initialBalance = 100n
 const encryptedAmountSchema = z.object({ amount: z.string() })
 type BankPrisma = Pick<PrismaClient, "account" | "transaction" | "$transaction">
 
@@ -42,13 +44,18 @@ export async function transferAmount(
   recipientSubjectRhid: string,
   amount: number,
 ): Promise<string> {
-  if (!Number.isInteger(amount) || amount <= 0) throw new Error("invalid_amount")
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new InvalidTransferAmountError(amount)
+  }
+
   return await prisma.$transaction(async tx => {
     const sender = await ensureAccount(crypto, tx, senderSubjectRhid)
     const recipient = await ensureAccount(crypto, tx, recipientSubjectRhid)
     const senderBalance = BigInt(await decryptAmount(crypto, sender.balanceEcid))
     const transfer = BigInt(amount)
-    if (senderBalance < transfer) throw new Error("insufficient_funds")
+    if (senderBalance < transfer) {
+      throw new InsufficientFundsError(senderBalance, transfer)
+    }
     const recipientBalance = BigInt(await decryptAmount(crypto, recipient.balanceEcid))
     const amountText = transfer.toString()
     await tx.account.update({
@@ -81,7 +88,7 @@ async function ensureAccount(
   })
   if (existing) return existing
   return await prisma.account.create({
-    data: { subjectRhid, balanceEcid: await encryptAmount(crypto, 0n) },
+    data: { subjectRhid, balanceEcid: await encryptAmount(crypto, initialBalance) },
     select: { id: true, balanceEcid: true },
   })
 }
