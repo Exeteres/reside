@@ -1,12 +1,25 @@
+import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
 import type { PrismaClient } from "../../database"
 import { DEFAULT_TEMPORAL_TASK_QUEUE, logger } from "@reside/common"
 import { WorkflowIdReusePolicy } from "@temporalio/client"
 import {
+  encryptedStringSchema,
   getAvatarProvisionWorkflowId,
   TELEGRAM_AVATAR_PROVISION_WORKFLOW_TYPE,
 } from "../../definitions"
 import { strings } from "../../locale"
+import { decryptInteractionContextToken } from "../../shared"
+
+type AvatarChatTitleBotFactory = (
+  token: string,
+  args: { role?: string },
+) => {
+  api: {
+    getChat(chatId: string): Promise<{ title?: string }>
+    setChatTitle(chatId: string, title: string): Promise<unknown>
+  }
+}
 
 type AvatarVersionTagBotFactory = (
   token: string,
@@ -130,6 +143,46 @@ export async function ensureAvatarProvision(
   }
 }
 
+export async function getAvatarChatTitle(
+  prisma: PrismaClient,
+  crypto: ResideCrypto,
+  createTelegramBotClient: AvatarChatTitleBotFactory,
+  replicaName: string,
+  contextToken: string,
+): Promise<string> {
+  const { chat_id: chatId } = await decryptInteractionContextToken(crypto, contextToken)
+  const avatarBot = createTelegramBotClient(await getAvatarBotToken(prisma, crypto, replicaName), {
+    role: "avatar.chat-title",
+  })
+  const chat = await avatarBot.api.getChat(chatId)
+  const title = chat.title?.trim()
+
+  if (!title) {
+    throw new Error(`Telegram chat "${chatId}" has no title`)
+  }
+
+  return title
+}
+
+export async function updateAvatarChatTitle(
+  prisma: PrismaClient,
+  crypto: ResideCrypto,
+  createTelegramBotClient: AvatarChatTitleBotFactory,
+  args: {
+    replicaName: string
+    contextToken: string
+    title: string
+  },
+): Promise<void> {
+  const { chat_id: chatId } = await decryptInteractionContextToken(crypto, args.contextToken)
+  const avatarBot = createTelegramBotClient(
+    await getAvatarBotToken(prisma, crypto, args.replicaName),
+    { role: "avatar.chat-title" },
+  )
+
+  await avatarBot.api.setChatTitle(chatId, args.title)
+}
+
 export async function updateAvatarVersionTag(
   prisma: PrismaClient,
   createTelegramBotClient: AvatarVersionTagBotFactory,
@@ -194,4 +247,25 @@ export async function updateAvatarVersionTag(
     String(managedBotId),
     `v${args.newVersion}`,
   )
+}
+
+async function getAvatarBotToken(
+  prisma: PrismaClient,
+  crypto: ResideCrypto,
+  replicaName: string,
+): Promise<string> {
+  const avatar = await prisma.avatar.findUnique({
+    where: {
+      replicaName,
+    },
+    select: {
+      tokenEcid: true,
+    },
+  })
+
+  if (avatar === null) {
+    throw new Error(`Avatar for replica "${replicaName}" was not found`)
+  }
+
+  return await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)
 }

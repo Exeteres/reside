@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/avatar.v1.proto.
  */
 export const file_interaction_avatar_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChtpbnRlcmFjdGlvbi9hdmF0YXIudjEucHJvdG8SHHJlc2lkZS5pbnRlcmFjdGlvbi5hdmF0YXIudjEiLAoTRW5zdXJlQXZhdGFyUmVxdWVzdBIVCg1yZXBsaWNhX3RpdGxlGAEgASgJIlAKFEVuc3VyZUF2YXRhclJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiJHChpVcGRhdGVBdmF0YXJWZXJzaW9uUmVxdWVzdBIUCgxyZXBsaWNhX25hbWUYASABKAkSEwoLbmV3X3ZlcnNpb24YAiABKAky7wEKDUF2YXRhclNlcnZpY2USdQoMRW5zdXJlQXZhdGFyEjEucmVzaWRlLmludGVyYWN0aW9uLmF2YXRhci52MS5FbnN1cmVBdmF0YXJSZXF1ZXN0GjIucmVzaWRlLmludGVyYWN0aW9uLmF2YXRhci52MS5FbnN1cmVBdmF0YXJSZXNwb25zZRJnChNVcGRhdGVBdmF0YXJWZXJzaW9uEjgucmVzaWRlLmludGVyYWN0aW9uLmF2YXRhci52MS5VcGRhdGVBdmF0YXJWZXJzaW9uUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_common_operation_v1, file_google_protobuf_empty]);
+  fileDesc("ChtpbnRlcmFjdGlvbi9hdmF0YXIudjEucHJvdG8SHHJlc2lkZS5pbnRlcmFjdGlvbi5hdmF0YXIudjEiLAoTRW5zdXJlQXZhdGFyUmVxdWVzdBIVCg1yZXBsaWNhX3RpdGxlGAEgASgJIlAKFEVuc3VyZUF2YXRhclJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbiJHChpVcGRhdGVBdmF0YXJWZXJzaW9uUmVxdWVzdBIUCgxyZXBsaWNhX25hbWUYASABKAkSEwoLbmV3X3ZlcnNpb24YAiABKAkiMgoZR2V0QXZhdGFyQ2hhdFRpdGxlUmVxdWVzdBIVCg1jb250ZXh0X3Rva2VuGAEgASgJIisKGkdldEF2YXRhckNoYXRUaXRsZVJlc3BvbnNlEg0KBXRpdGxlGAEgASgJIkQKHFVwZGF0ZUF2YXRhckNoYXRUaXRsZVJlcXVlc3QSFQoNY29udGV4dF90b2tlbhgBIAEoCRINCgV0aXRsZRgCIAEoCTLmAwoNQXZhdGFyU2VydmljZRJ1CgxFbnN1cmVBdmF0YXISMS5yZXNpZGUuaW50ZXJhY3Rpb24uYXZhdGFyLnYxLkVuc3VyZUF2YXRhclJlcXVlc3QaMi5yZXNpZGUuaW50ZXJhY3Rpb24uYXZhdGFyLnYxLkVuc3VyZUF2YXRhclJlc3BvbnNlEmcKE1VwZGF0ZUF2YXRhclZlcnNpb24SOC5yZXNpZGUuaW50ZXJhY3Rpb24uYXZhdGFyLnYxLlVwZGF0ZUF2YXRhclZlcnNpb25SZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5EocBChJHZXRBdmF0YXJDaGF0VGl0bGUSNy5yZXNpZGUuaW50ZXJhY3Rpb24uYXZhdGFyLnYxLkdldEF2YXRhckNoYXRUaXRsZVJlcXVlc3QaOC5yZXNpZGUuaW50ZXJhY3Rpb24uYXZhdGFyLnYxLkdldEF2YXRhckNoYXRUaXRsZVJlc3BvbnNlEmsKFVVwZGF0ZUF2YXRhckNoYXRUaXRsZRI6LnJlc2lkZS5pbnRlcmFjdGlvbi5hdmF0YXIudjEuVXBkYXRlQXZhdGFyQ2hhdFRpdGxlUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_common_operation_v1, file_google_protobuf_empty]);
 
 /**
  * The request message for ensuring that the caller replica has its managed avatar bot configured.
@@ -138,6 +138,125 @@ export const UpdateAvatarVersionRequestSchema: GenMessage<UpdateAvatarVersionReq
   messageDesc(file_interaction_avatar_v1, 2);
 
 /**
+ * The request message for getting a Telegram chat title through caller replica avatar bot.
+ *
+ * @generated from message reside.interaction.avatar.v1.GetAvatarChatTitleRequest
+ */
+export type GetAvatarChatTitleRequest = Message<"reside.interaction.avatar.v1.GetAvatarChatTitleRequest"> & {
+  /**
+   * The opaque interaction context token identifying the Telegram chat.
+   *
+   * @generated from field: string context_token = 1;
+   */
+  contextToken: string;
+};
+
+/**
+ * The request message for getting a Telegram chat title through caller replica avatar bot.
+ *
+ * @generated from message reside.interaction.avatar.v1.GetAvatarChatTitleRequest
+ */
+export type GetAvatarChatTitleRequestJson = {
+  /**
+   * The opaque interaction context token identifying the Telegram chat.
+   *
+   * @generated from field: string context_token = 1;
+   */
+  contextToken?: string;
+};
+
+/**
+ * Describes the message reside.interaction.avatar.v1.GetAvatarChatTitleRequest.
+ * Use `create(GetAvatarChatTitleRequestSchema)` to create a new message.
+ */
+export const GetAvatarChatTitleRequestSchema: GenMessage<GetAvatarChatTitleRequest, {jsonType: GetAvatarChatTitleRequestJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_avatar_v1, 3);
+
+/**
+ * The response message containing a Telegram chat title.
+ *
+ * @generated from message reside.interaction.avatar.v1.GetAvatarChatTitleResponse
+ */
+export type GetAvatarChatTitleResponse = Message<"reside.interaction.avatar.v1.GetAvatarChatTitleResponse"> & {
+  /**
+   * The current human-readable Telegram chat title.
+   *
+   * @generated from field: string title = 1;
+   */
+  title: string;
+};
+
+/**
+ * The response message containing a Telegram chat title.
+ *
+ * @generated from message reside.interaction.avatar.v1.GetAvatarChatTitleResponse
+ */
+export type GetAvatarChatTitleResponseJson = {
+  /**
+   * The current human-readable Telegram chat title.
+   *
+   * @generated from field: string title = 1;
+   */
+  title?: string;
+};
+
+/**
+ * Describes the message reside.interaction.avatar.v1.GetAvatarChatTitleResponse.
+ * Use `create(GetAvatarChatTitleResponseSchema)` to create a new message.
+ */
+export const GetAvatarChatTitleResponseSchema: GenMessage<GetAvatarChatTitleResponse, {jsonType: GetAvatarChatTitleResponseJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_avatar_v1, 4);
+
+/**
+ * The request message for updating a Telegram chat title through caller replica avatar bot.
+ *
+ * @generated from message reside.interaction.avatar.v1.UpdateAvatarChatTitleRequest
+ */
+export type UpdateAvatarChatTitleRequest = Message<"reside.interaction.avatar.v1.UpdateAvatarChatTitleRequest"> & {
+  /**
+   * The opaque interaction context token identifying the Telegram chat.
+   *
+   * @generated from field: string context_token = 1;
+   */
+  contextToken: string;
+
+  /**
+   * The new human-readable Telegram chat title.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+};
+
+/**
+ * The request message for updating a Telegram chat title through caller replica avatar bot.
+ *
+ * @generated from message reside.interaction.avatar.v1.UpdateAvatarChatTitleRequest
+ */
+export type UpdateAvatarChatTitleRequestJson = {
+  /**
+   * The opaque interaction context token identifying the Telegram chat.
+   *
+   * @generated from field: string context_token = 1;
+   */
+  contextToken?: string;
+
+  /**
+   * The new human-readable Telegram chat title.
+   *
+   * @generated from field: string title = 2;
+   */
+  title?: string;
+};
+
+/**
+ * Describes the message reside.interaction.avatar.v1.UpdateAvatarChatTitleRequest.
+ * Use `create(UpdateAvatarChatTitleRequestSchema)` to create a new message.
+ */
+export const UpdateAvatarChatTitleRequestSchema: GenMessage<UpdateAvatarChatTitleRequest, {jsonType: UpdateAvatarChatTitleRequestJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_avatar_v1, 5);
+
+/**
  * The avatar service for managed bot provisioning.
  *
  * @generated from service reside.interaction.avatar.v1.AvatarService
@@ -161,6 +280,26 @@ export const AvatarService: GenService<{
   updateAvatarVersion: {
     methodKind: "unary";
     input: typeof UpdateAvatarVersionRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * Gets the title of the Telegram chat identified by the interaction context token using the caller replica avatar bot.
+   *
+   * @generated from rpc reside.interaction.avatar.v1.AvatarService.GetAvatarChatTitle
+   */
+  getAvatarChatTitle: {
+    methodKind: "unary";
+    input: typeof GetAvatarChatTitleRequestSchema;
+    output: typeof GetAvatarChatTitleResponseSchema;
+  },
+  /**
+   * Updates the title of the Telegram chat identified by the interaction context token using the caller replica avatar bot.
+   *
+   * @generated from rpc reside.interaction.avatar.v1.AvatarService.UpdateAvatarChatTitle
+   */
+  updateAvatarChatTitle: {
+    methodKind: "unary";
+    input: typeof UpdateAvatarChatTitleRequestSchema;
     output: typeof EmptySchema;
   },
 }> = /*@__PURE__*/

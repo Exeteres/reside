@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test"
 import { XMLParser } from "fast-xml-parser"
-import { fetchKeyRate, parseLatestRateRowFromXml } from "./rate"
+import { fetchKeyRate, parseLatestRateRowFromXml, replaceSingleRateInTitle } from "./rate"
 
 const xmlParser = new XMLParser({
   ignoreAttributes: true,
@@ -68,6 +68,24 @@ describe("parseLatestRateRowFromXml", () => {
     })
 
     expect(row).toBeUndefined()
+  })
+})
+
+describe("replaceSingleRateInTitle", () => {
+  it("replaces one rate-like number and preserves comma format", () => {
+    expect(replaceSingleRateInTitle("Ключевая ставка 16,5%", 18.25)).toBe("Ключевая ставка 18,25%")
+  })
+
+  it("replaces one rate-like number and preserves dot format", () => {
+    expect(replaceSingleRateInTitle("Rate: 16.5%", 18.25)).toBe("Rate: 18.25%")
+  })
+
+  it("does not replace when title has no rate-like number", () => {
+    expect(replaceSingleRateInTitle("Ключевая ставка", 18.25)).toBeUndefined()
+  })
+
+  it("does not replace when title has multiple numbers", () => {
+    expect(replaceSingleRateInTitle("Ставка 16,5 от 2026", 18.25)).toBeUndefined()
   })
 })
 

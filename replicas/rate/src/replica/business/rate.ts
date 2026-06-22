@@ -105,6 +105,38 @@ function buildKeyRateSoapEnvelope(fromDate: string, toDate: string): string {
 </soap:Envelope>`
 }
 
+export function replaceSingleRateInTitle(title: string, rate: number): string | undefined {
+  const matches = [...title.matchAll(/\d+(?:[\s.,]\d+)?/g)]
+
+  if (matches.length !== 1) {
+    return undefined
+  }
+
+  const match = matches[0]
+  if (match === undefined) {
+    return undefined
+  }
+
+  const matchedValue = match[0]
+  const index = match.index
+
+  if (index === undefined) {
+    return undefined
+  }
+
+  return `${title.slice(0, index)}${formatRateForTitle(rate, matchedValue)}${title.slice(index + matchedValue.length)}`
+}
+
+function formatRateForTitle(rate: number, previousValue: string): string {
+  const normalizedRate = Number.isInteger(rate) ? String(rate) : String(rate).replace(".", ",")
+
+  if (previousValue.includes(".")) {
+    return normalizedRate.replace(",", ".")
+  }
+
+  return normalizedRate
+}
+
 export function parseLatestRateRowFromXml({
   xml,
   parseXml,
