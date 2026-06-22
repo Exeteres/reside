@@ -27,6 +27,27 @@ message UpdateAvatarVersionRequest {
   string new_version = 2;
 }
 
+// The request message for getting a Telegram chat title through caller replica avatar bot.
+message GetAvatarChatTitleRequest {
+  // The opaque interaction context token identifying the Telegram chat.
+  string context_token = 1;
+}
+
+// The response message containing a Telegram chat title.
+message GetAvatarChatTitleResponse {
+  // The current human-readable Telegram chat title.
+  string title = 1;
+}
+
+// The request message for updating a Telegram chat title through caller replica avatar bot.
+message UpdateAvatarChatTitleRequest {
+  // The opaque interaction context token identifying the Telegram chat.
+  string context_token = 1;
+
+  // The new human-readable Telegram chat title.
+  string title = 2;
+}
+
 // The avatar service for managed bot provisioning.
 service AvatarService {
   // Ensures a managed avatar bot exists for the caller replica.
@@ -34,4 +55,10 @@ service AvatarService {
 
   // Updates managed avatar bot admin tag in system chat for the given replica.
   rpc UpdateAvatarVersion(UpdateAvatarVersionRequest) returns (google.protobuf.Empty);
+
+  // Gets the title of the Telegram chat identified by the interaction context token using the caller replica avatar bot.
+  rpc GetAvatarChatTitle(GetAvatarChatTitleRequest) returns (GetAvatarChatTitleResponse);
+
+  // Updates the title of the Telegram chat identified by the interaction context token using the caller replica avatar bot.
+  rpc UpdateAvatarChatTitle(UpdateAvatarChatTitleRequest) returns (google.protobuf.Empty);
 }

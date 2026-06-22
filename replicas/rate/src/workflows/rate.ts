@@ -3,7 +3,7 @@ import { proxyActivities } from "@temporalio/workflow"
 import { type RateActivities, RateNotificationChannels, rateCommand } from "../definitions"
 import { strings } from "../locale"
 
-const { fetchKeyRate } = proxyActivities<RateActivities>({
+const { fetchKeyRate, updateChatTitleRate } = proxyActivities<RateActivities>({
   scheduleToCloseTimeout: "30 seconds",
   retry: {
     initialInterval: "3 seconds",
@@ -14,9 +14,17 @@ const { fetchKeyRate } = proxyActivities<RateActivities>({
 
 export const rateCommandHandler = defineCommandHandler({
   command: rateCommand,
-  async handler() {
+  async handler({ invocation }) {
     try {
       const { rate } = await fetchKeyRate()
+      const contextToken = invocation.context?.token
+
+      if (contextToken) {
+        await updateChatTitleRate({
+          contextToken,
+          rate,
+        })
+      }
 
       await sendNotification({
         channel: RateNotificationChannels.RATE,

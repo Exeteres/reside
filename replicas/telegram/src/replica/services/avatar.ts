@@ -6,10 +6,18 @@ import type { Operation, PrismaClient } from "../../database"
 import { create } from "@bufbuild/protobuf"
 import { Code, ConnectError } from "@connectrpc/connect"
 import { CoreV1Api } from "@kubernetes/client-node"
-import { EnsureAvatarResponseSchema } from "@reside/api/interaction/avatar.v1"
+import {
+  EnsureAvatarResponseSchema,
+  GetAvatarChatTitleResponseSchema,
+} from "@reside/api/interaction/avatar.v1"
 import { authenticateReplica, getReplicaNamespace, kubeConfig, logger } from "@reside/common"
 import { WellKnownPermissions } from "@reside/registry"
-import { ensureAvatarProvision, updateAvatarVersionTag } from "../business/avatar"
+import {
+  ensureAvatarProvision,
+  getAvatarChatTitle,
+  updateAvatarChatTitle,
+  updateAvatarVersionTag,
+} from "../business/avatar"
 import { createTelegramBotClient } from "../business/bot-client"
 import {
   loadTelegramConfigState,
@@ -80,6 +88,69 @@ export function createAvatarService(
       return create(EnsureAvatarResponseSchema, {
         operation: await services.operationService.toApiOperation(outcome.operationId),
       })
+    },
+
+    async getAvatarChatTitle(request, context) {
+      const { name: replicaName } = await authenticateReplica(context)
+      const contextToken = request.contextToken.trim()
+
+      if (contextToken.length === 0) {
+        throw new ConnectError("contextToken must not be empty", Code.InvalidArgument)
+      }
+
+      try {
+        const title = await getAvatarChatTitle(
+          services.prisma,
+          services.crypto,
+          createTelegramBotClient,
+          replicaName,
+          contextToken,
+        )
+
+        return create(GetAvatarChatTitleResponseSchema, { title })
+      } catch (error) {
+        const errorObject = error instanceof Error ? error : new Error(String(error))
+        logger.error(
+          { error: errorObject },
+          'failed to get avatar chat title replica_name="%s"',
+          replicaName,
+        )
+
+        throw new ConnectError("Failed to get avatar chat title", Code.Internal)
+      }
+    },
+
+    async updateAvatarChatTitle(request, context) {
+      const { name: replicaName } = await authenticateReplica(context)
+      const contextToken = request.contextToken.trim()
+      const title = request.title.trim()
+
+      if (contextToken.length === 0) {
+        throw new ConnectError("contextToken must not be empty", Code.InvalidArgument)
+      }
+
+      if (title.length === 0) {
+        throw new ConnectError("title must not be empty", Code.InvalidArgument)
+      }
+
+      try {
+        await updateAvatarChatTitle(services.prisma, services.crypto, createTelegramBotClient, {
+          replicaName,
+          contextToken,
+          title,
+        })
+
+        return {}
+      } catch (error) {
+        const errorObject = error instanceof Error ? error : new Error(String(error))
+        logger.error(
+          { error: errorObject },
+          'failed to update avatar chat title replica_name="%s"',
+          replicaName,
+        )
+
+        throw new ConnectError("Failed to update avatar chat title", Code.Internal)
+      }
     },
 
     async updateAvatarVersion(request, context) {

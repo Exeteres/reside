@@ -16,7 +16,7 @@ import {
 import { strings } from "../locale"
 import { createServices } from "../shared"
 import { createRateActivities } from "./activities"
-import { getRateTool } from "./nls"
+import { createGetRateTool } from "./nls"
 
 const services = await createServices()
 
@@ -40,7 +40,7 @@ await setupLanguageSubsystem({
     "Help users get and understand Central Bank key rate information. " +
     "Use get_rate for current key rate requests. " +
     "Explain rate changes briefly and say clearly when rate data is unavailable.",
-  tools: [getRateTool],
+  tools: [createGetRateTool(services)],
 })
 
 await startServer(server)
@@ -48,7 +48,7 @@ await startServer(server)
 await startTemporalWorker({
   services,
   activities: {
-    ...createRateActivities(),
+    ...createRateActivities(services),
     ...createInteractionActivities(
       services.notificationService,
       services.interactionOperationService,
