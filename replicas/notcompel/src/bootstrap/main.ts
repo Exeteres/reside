@@ -5,12 +5,6 @@ import { strings } from "../locale"
 import { createServices } from "../shared"
 import { bootstrapNotcompelCronJob } from "./cron"
 
-await registerReplica({
-  replica: notcompelReplica,
-  title: strings.bootstrap.registration.title,
-  description: strings.bootstrap.registration.description,
-})
-
 const services = await createServices()
 
 await defineCommonResources({
@@ -28,3 +22,9 @@ await defineCommonResources({
 
 await bootstrapService()
 await bootstrapNotcompelCronJob()
+
+await registerReplica({
+  replica: notcompelReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
+})

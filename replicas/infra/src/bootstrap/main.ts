@@ -19,12 +19,6 @@ import { ensureMathesarBootstrap } from "./mathesar"
 import { ensureMonitoringBootstrap } from "./monitoring"
 import { ensureTemporalBootstrap } from "./temporal"
 
-await registerReplica({
-  replica: infraReplica,
-  title: strings.bootstrap.registration.title,
-  description: strings.bootstrap.registration.description,
-})
-
 const adminConfig = await loadPostgresAdminConfig()
 const { pool: adminPool } = createPostgresPoolFromCredentials(adminConfig)
 const replicaDatabase = buildReplicaDatabaseName(getReplicaNamespace())
@@ -62,6 +56,12 @@ await defineCommonResources({
 
 await bootstrapService({
   longRunning: true,
+})
+
+await registerReplica({
+  replica: infraReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
 })
 
 process.exit(0)

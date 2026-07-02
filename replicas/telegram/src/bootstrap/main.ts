@@ -18,12 +18,6 @@ import {
 import { strings } from "../locale"
 import { createServices } from "../shared"
 
-await registerReplica({
-  replica: telegramReplica,
-  title: strings.bootstrap.registration.title,
-  description: strings.bootstrap.registration.description,
-})
-
 const services = await createServices()
 
 await runPrismaMigrations(services.pool)
@@ -213,6 +207,12 @@ await services.accessDefinitionService.putApprover({
 
 await bootstrapService({
   longRunning: true,
+})
+
+await registerReplica({
+  replica: telegramReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
 })
 
 async function backfillOwnerReplicaNames(): Promise<void> {

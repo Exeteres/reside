@@ -10,12 +10,6 @@ import { createTaskCommand, EngineerNotificationChannels } from "../definitions"
 import { strings } from "../locale"
 import { createServices } from "../shared"
 
-await registerReplica({
-  replica: engineerReplica,
-  title: strings.bootstrap.registration.title,
-  description: strings.bootstrap.registration.description,
-})
-
 const services = await createServices()
 
 await runPrismaMigrations(services.pool)
@@ -65,3 +59,9 @@ if (temporaryDatabasePermission.operation) {
 }
 
 await bootstrapService({ longRunning: true })
+
+await registerReplica({
+  replica: engineerReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
+})

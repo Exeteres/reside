@@ -39,12 +39,6 @@ const INFRA_SUBJECT_ID = "replica:infra"
 const REAPER_SUBJECT_ID = "replica:reaper"
 const TELEGRAM_SUBJECT_ID = "replica:telegram"
 
-await registerReplica({
-  replica: accessReplica,
-  title: strings.bootstrap.registration.title,
-  description: strings.bootstrap.registration.description,
-})
-
 const services = await createServices()
 
 await runPrismaMigrations(services.pool)
@@ -263,6 +257,12 @@ await defineCommonResources({
 })
 
 await bootstrapService({ longRunning: true })
+
+await registerReplica({
+  replica: accessReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
+})
 
 async function backfillApproverOwners(): Promise<void> {
   const { replicas } = await services.replicaService.listReplicas({})

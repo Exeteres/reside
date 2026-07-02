@@ -103,6 +103,11 @@ Runtime wiring in `src/replica/main.ts` must import service factories from `src/
 - Use bootstrap helpers from `@reside/common` for standard bootstrap lifecycle.
 - Bootstrap is responsible for one-time idempotent initialization and seed data.
 - Bootstrap must not duplicate long-running worker/server responsibilities.
+- Call `registerReplica` only after all bootstrap resources and setup have completed,
+  including database migrations, common resource definitions, replica-specific resources,
+  permission setup, and `bootstrapService`.
+  Registration must be the last bootstrap step so Alpha only advertises replicas whose
+  required resources are already in place.
 - All permissions required by `access`, `infra`, and `telegram` replica bootstraps must be created and bound statically in `replicas/access/src/bootstrap/main.ts`, including permissions needed to register reaper handlers.
 - Access bootstrap may pre-create placeholder permission rows for permissions owned by `infra` and `telegram` only so those static bindings can be inserted before the owning replica starts.
 - `infra` and `telegram` bootstraps must manage the titles and descriptions of their own permission definitions through their normal resource definition flow; access bootstrap must not overwrite that metadata for permissions owned by those replicas.

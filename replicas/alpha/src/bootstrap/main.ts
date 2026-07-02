@@ -15,12 +15,6 @@ import {
 import { strings } from "../locale"
 import { createServices } from "../shared"
 
-await registerReplica({
-  replica: alphaReplica,
-  title: strings.bootstrap.registration.title,
-  description: strings.bootstrap.registration.description,
-})
-
 const services = await createServices()
 
 await defineCommonResources({
@@ -63,3 +57,9 @@ await defineCommonResources({
 
 await runPrismaMigrations(services.pool)
 await bootstrapService({ longRunning: true })
+
+await registerReplica({
+  replica: alphaReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
+})

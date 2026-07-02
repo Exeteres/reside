@@ -10,12 +10,6 @@ import { securityReplica, WellKnownPermissions } from "@reside/registry"
 import { strings } from "../locale"
 import { createServices } from "../shared"
 
-await registerReplica({
-  replica: securityReplica,
-  title: strings.bootstrap.registration.title,
-  description: strings.bootstrap.registration.description,
-})
-
 const services = await createServices()
 
 await runPrismaMigrations(services.pool)
@@ -54,3 +48,9 @@ await services.accessDefinitionService.putApprover({
 })
 
 await bootstrapService()
+
+await registerReplica({
+  replica: securityReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
+})

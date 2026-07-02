@@ -9,12 +9,6 @@ import { ExampleNotificationChannels, exampleCommand } from "../definitions"
 import { strings } from "../locale"
 import { createServices } from "../shared"
 
-await registerReplica({
-  replica: exampleReplica,
-  title: strings.bootstrap.registration.title,
-  description: strings.bootstrap.registration.description,
-})
-
 const services = await createServices()
 
 await runPrismaMigrations(services.pool)
@@ -33,3 +27,9 @@ await defineCommonResources({
 })
 
 await bootstrapService()
+
+await registerReplica({
+  replica: exampleReplica,
+  title: strings.bootstrap.registration.title,
+  description: strings.bootstrap.registration.description,
+})
