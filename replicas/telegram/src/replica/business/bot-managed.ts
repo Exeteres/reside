@@ -4,6 +4,7 @@ import type { Bot, Context } from "grammy"
 import type { PrismaClient } from "../../database"
 import { logger, rhid } from "@reside/common"
 import {
+  AVATAR_BOT_CONFIG_VERSION,
   avatarManagedBotCreatedSignal,
   encryptedStringSchema,
   getAvatarProvisionWorkflowId,
@@ -268,6 +269,7 @@ async function handleManagedBotUpdated(
       managedBotId: managedBotUpdated.managedBotId,
       managedBotUsername: managedBotUpdated.managedBotUsername,
       tokenEcid: await args.crypto.encrypt(nextToken),
+      configVersion: AVATAR_BOT_CONFIG_VERSION - 1,
     },
   })
 }

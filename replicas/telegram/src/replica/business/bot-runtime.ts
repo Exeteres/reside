@@ -7,8 +7,31 @@ import type { Update } from "grammy/types"
 import type { Operation, PrismaClient } from "../../database"
 import { createHash } from "node:crypto"
 import { logger } from "@reside/common"
-import { encryptedStringSchema, TELEGRAM_WEBHOOK_PATH } from "../../definitions"
+import {
+  AVATAR_BOT_CONFIG_UPDATE_DELAY_MS,
+  AVATAR_BOT_CONFIG_VERSION,
+  AVATAR_WEBHOOK_ALLOWED_UPDATES,
+  encryptedStringSchema,
+  TELEGRAM_WEBHOOK_PATH,
+} from "../../definitions"
 import { createTelegramBot } from "./bot"
+import { createTelegramBotClient } from "./bot-client"
+
+type AvatarBotConfigClientFactory = (
+  token: string,
+  args: { role?: string },
+) => {
+  api: {
+    setWebhook(
+      url: string,
+      options: {
+        secret_token: string
+        drop_pending_updates: boolean
+        allowed_updates: readonly (typeof AVATAR_WEBHOOK_ALLOWED_UPDATES)[number][]
+      },
+    ): Promise<unknown>
+  }
+}
 
 export function createWebhookUrl(endpoint: string): string {
   const normalizedEndpoint = endpoint.trim()
@@ -87,6 +110,14 @@ export function createBotRuntime(args: {
       crypto: args.services.crypto,
       prisma: args.services.prisma,
     })
+
+    await reconcileAvatarBotConfigurations(
+      args.services.prisma,
+      args.services.crypto,
+      createTelegramBotClient,
+      Bun.sleep,
+      args.webhookUrl,
+    )
   }
 
   const getOrCreateAvatarBot = async (webhookSecret: string): Promise<Bot<Context> | undefined> => {
@@ -147,6 +178,8 @@ export function createBotRuntime(args: {
           )
         }
       }
+
+      await refreshAvatarWebhookTokens()
     },
     handleWebhookUpdate: async (webhookSecret: unknown, update: unknown) => {
       if (typeof webhookSecret !== "string" || webhookSecret.length === 0) {
@@ -233,6 +266,93 @@ async function loadAvatarWebhookTokens(args: {
   )
 
   return new Map(Array.from(nextTokens, token => [getWebhookSecret(token), token] as const))
+}
+
+export async function reconcileAvatarBotConfigurations(
+  prisma: PrismaClient,
+  crypto: ResideCrypto,
+  createBotClient: AvatarBotConfigClientFactory,
+  sleep: (milliseconds: number) => Promise<unknown>,
+  webhookUrl: string,
+): Promise<void> {
+  const staleAvatars = await prisma.avatar.findMany({
+    where: {
+      configVersion: {
+        lt: AVATAR_BOT_CONFIG_VERSION,
+      },
+    },
+    orderBy: {
+      id: "asc",
+    },
+    select: {
+      id: true,
+      replicaName: true,
+      tokenEcid: true,
+    },
+  })
+
+  if (staleAvatars.length === 0) {
+    return
+  }
+
+  logger.info(
+    'reconciling stale avatar bot configurations stale_avatar_count="%s" target_config_version="%s"',
+    String(staleAvatars.length),
+    String(AVATAR_BOT_CONFIG_VERSION),
+  )
+
+  for (const [index, avatar] of staleAvatars.entries()) {
+    if (index > 0) {
+      await sleep(AVATAR_BOT_CONFIG_UPDATE_DELAY_MS)
+    }
+
+    try {
+      const token = (await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)).trim()
+      if (token.length === 0) {
+        logger.warn(
+          'skipping avatar bot configuration because token is empty avatar_id="%s" replica_name="%s"',
+          String(avatar.id),
+          avatar.replicaName,
+        )
+        continue
+      }
+
+      const avatarBot = createBotClient(token, {
+        role: "runtime.avatar-config",
+      })
+
+      await avatarBot.api.setWebhook(webhookUrl, {
+        secret_token: getWebhookSecret(token),
+        drop_pending_updates: false,
+        allowed_updates: [...AVATAR_WEBHOOK_ALLOWED_UPDATES],
+      })
+
+      await prisma.avatar.update({
+        where: {
+          id: avatar.id,
+        },
+        data: {
+          configVersion: AVATAR_BOT_CONFIG_VERSION,
+        },
+      })
+
+      logger.info(
+        'reconciled avatar bot configuration avatar_id="%s" replica_name="%s" config_version="%s"',
+        String(avatar.id),
+        avatar.replicaName,
+        String(AVATAR_BOT_CONFIG_VERSION),
+      )
+    } catch (error) {
+      logger.warn(
+        {
+          error: error instanceof Error ? error : new Error(String(error)),
+        },
+        'failed to reconcile avatar bot configuration avatar_id="%s" replica_name="%s"',
+        String(avatar.id),
+        avatar.replicaName,
+      )
+    }
+  }
 }
 
 function getWebhookSecret(token: string): string {

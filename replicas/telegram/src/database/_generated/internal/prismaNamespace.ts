@@ -1966,6 +1966,7 @@ export const AvatarScalarFieldEnum = {
   managedBotUsername: 'managedBotUsername',
   createdByUserId: 'createdByUserId',
   tokenEcid: 'tokenEcid',
+  configVersion: 'configVersion',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

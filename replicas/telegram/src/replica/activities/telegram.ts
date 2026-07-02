@@ -34,7 +34,12 @@ import {
   logger,
 } from "@reside/common"
 import { alphaReplica, WellKnownPermissions } from "@reside/registry"
-import { encryptedStringSchema, TELEGRAM_GATEWAY_NAME } from "../../definitions"
+import {
+  AVATAR_BOT_CONFIG_VERSION,
+  AVATAR_WEBHOOK_ALLOWED_UPDATES,
+  encryptedStringSchema,
+  TELEGRAM_GATEWAY_NAME,
+} from "../../definitions"
 import { strings } from "../../locale"
 import { updateAvatarVersionTag } from "../business/avatar"
 import { createTelegramBotClient } from "../business/bot-client"
@@ -470,7 +475,7 @@ export function createTelegramActivities({
       await avatarBot.api.setWebhook(await loadWebhookUrl(), {
         secret_token: createWebhookSecret(replacement),
         drop_pending_updates: false,
-        allowed_updates: ["callback_query"],
+        allowed_updates: [...AVATAR_WEBHOOK_ALLOWED_UPDATES],
       })
 
       const tokenEcid = await crypto.encrypt(replacement)
@@ -488,6 +493,7 @@ export function createTelegramActivities({
             managedBotUsername: input.managedBotUsername,
             createdByUserId: request.createdByUserId,
             tokenEcid,
+            configVersion: AVATAR_BOT_CONFIG_VERSION,
           },
           update: {
             replicaTitle: request.replicaTitle,
@@ -495,6 +501,7 @@ export function createTelegramActivities({
             managedBotUsername: input.managedBotUsername,
             createdByUserId: request.createdByUserId,
             tokenEcid,
+            configVersion: AVATAR_BOT_CONFIG_VERSION,
           },
           select: {
             id: true,

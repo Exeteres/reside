@@ -1,4 +1,5 @@
 export * from "./activities"
+export * from "./avatar"
 export * from "./channels"
 export * from "./encryption"
 export * from "./errors"

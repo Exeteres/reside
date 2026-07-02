@@ -30,6 +30,9 @@ model Avatar {
   /// The encrypted current managed bot token.
   token EncryptedContent @relation(name: "AvatarToken", fields: [tokenEcid], references: [ecid])
 
+  /// The applied avatar bot configuration version.
+  configVersion Int @default(0)
+
   /// The timestamp when this avatar was created.
   createdAt DateTime @default(now())
 
