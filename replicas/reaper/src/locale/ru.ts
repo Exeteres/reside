@@ -31,9 +31,9 @@ export const ru = {
       },
     },
     kill: {
-      planningTitle: (replicaName: string) => `План удаления реплики ${replicaName}`,
-      planningMessage: "Выберите действия в списке задач и нажмите кнопку применения.",
-      apply: "Применить",
+      planningTitle: (replicaName: string) => `Запланировано удаление реплики ${replicaName}`,
+      planningMessage: "Выберите нужные действия.",
+      apply: "Выполнить",
       emptyTitle: (replicaName: string) => `Для реплики ${replicaName} не найдено ресурсов`,
       executingTitle: (replicaName: string) => `Удаление реплики ${replicaName}`,
       completedTitle: (replicaName: string) => `Удаление реплики ${replicaName} завершено`,

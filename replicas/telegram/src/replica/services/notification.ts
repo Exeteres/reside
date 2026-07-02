@@ -128,8 +128,11 @@ export function createNotificationService({
               : await operationService.toApiOperation(result.operationId),
         }
       } catch (error) {
-        logger.error({ error }, "failed to send telegram notification")
-        throw new ConnectError("Failed to send telegram notification", Code.Internal)
+        throwNotificationServiceError(
+          error,
+          "failed to send telegram notification",
+          "Failed to send telegram notification",
+        )
       }
     },
 
@@ -173,8 +176,11 @@ export function createNotificationService({
               : await operationService.toApiOperation(result.operationId),
         }
       } catch (error) {
-        logger.error({ error }, "failed to update telegram notification")
-        throw new ConnectError("Failed to update telegram notification", Code.Internal)
+        throwNotificationServiceError(
+          error,
+          "failed to update telegram notification",
+          "Failed to update telegram notification",
+        )
       }
     },
 
@@ -238,11 +244,27 @@ export function createNotificationService({
 
         return {}
       } catch (error) {
-        logger.error({ error }, "failed to delete telegram notification")
-        throw new ConnectError("Failed to delete telegram notification", Code.Internal)
+        throwNotificationServiceError(
+          error,
+          "failed to delete telegram notification",
+          "Failed to delete telegram notification",
+        )
       }
     },
   }
+}
+
+export function throwNotificationServiceError(
+  error: unknown,
+  logMessage: string,
+  publicMessage: string,
+): never {
+  if (error instanceof ConnectError) {
+    throw error
+  }
+
+  logger.error({ error }, logMessage)
+  throw new ConnectError(publicMessage, Code.Internal)
 }
 
 function toApiNotification(notification: NotificationJson): ApiNotification {

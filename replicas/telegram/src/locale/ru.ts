@@ -93,6 +93,9 @@ export const ru = {
       chooseAction: "Выберите действие",
       editTasks: "Изменить задачи",
       editTasksPollTitle: "Какие задачи оставить?",
+      editTasksTextTitle: "Какие задачи оставить?",
+      editTasksTextInstruction:
+        "Ответьте на это сообщение номерами задач, которые нужно оставить. Можно указать отдельные номера или диапазоны через запятую, пробел или перенос строки, например: 1, 3-5.",
       avatarProvisionOperationTitle: "Ожидание создания Telegram-аватара",
       avatarProvisionOperationDescription:
         "Ожидает создание управляемого Telegram-бота для реплики.",
@@ -159,6 +162,8 @@ export const ru = {
         `NLS-контекст для реплики «${replicaName}» очищен.`,
       nlsClearContextFailed: "Не удалось очистить NLS-контекст.",
       unexpectedError: "Что-то пошло не так",
+      notificationTaskSelectionInvalid:
+        "Не удалось разобрать ответ. Укажите номера задач или диапазоны, например: 1, 3-5.",
       parameterRequired: (parameterName: string) =>
         `Обязательный параметр "${parameterName}" не указан`,
       parameterMustBeInteger: (parameterName: string) =>

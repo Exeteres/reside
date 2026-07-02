@@ -29,6 +29,8 @@ type PlannedAction = ReaperPlannedAction & {
 
 type TrackedActionStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "SKIPPED"
 
+type ReaperNotificationTaskStatus = "PLANNED" | TrackedActionStatus
+
 type TrackedAction = PlannedAction & {
   status: TrackedActionStatus
   operation?: StartedReaperExecution["operation"]
@@ -134,9 +136,7 @@ async function requestActionSelection(input: {
       },
     },
     status: NotificationStatus.PLANNING,
-    taskGroups: buildTaskGroups(
-      input.plannedActions.map(action => ({ ...action, status: "PENDING" })),
-    ),
+    taskGroups: buildTaskGroups(input.plannedActions, "PLANNED"),
     protected: true,
     expectImmediateFeedback: true,
   })
@@ -267,7 +267,10 @@ async function updateProgressNotification(input: {
   })
 }
 
-function buildTaskGroups(actions: (PlannedAction | TrackedAction)[]): NotificationTaskGroupInput[] {
+export function buildTaskGroups(
+  actions: (PlannedAction | TrackedAction)[],
+  defaultStatus: ReaperNotificationTaskStatus = "PENDING",
+): NotificationTaskGroupInput[] {
   const groups = new Map<string, NotificationTaskGroupInput>()
   for (const action of actions) {
     const group = groups.get(action.handler.resourceReplicaName) ?? {
@@ -275,7 +278,7 @@ function buildTaskGroups(actions: (PlannedAction | TrackedAction)[]): Notificati
       title: action.handler.title,
       tasks: [],
     }
-    const status = "status" in action ? action.status : "PENDING"
+    const status = "status" in action ? action.status : defaultStatus
 
     group.tasks.push({
       id: action.id,
@@ -318,8 +321,10 @@ function mapOperationStatus(status: string | undefined): TrackedActionStatus {
   }
 }
 
-function toNotificationTaskStatus(status: TrackedActionStatus): NotificationTaskStatus {
+function toNotificationTaskStatus(status: ReaperNotificationTaskStatus): NotificationTaskStatus {
   switch (status) {
+    case "PLANNED":
+      return NotificationTaskStatus.PLANNED
     case "PENDING":
       return NotificationTaskStatus.PENDING
     case "IN_PROGRESS":

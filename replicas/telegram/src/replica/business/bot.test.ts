@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
 import { strings } from "../../locale"
 import {
+  canUseTelegramTaskPlanningPoll,
   parseBindingCommandText,
   parseClearContextCommandText,
+  parseNotificationTaskSelectionText,
   resolveBindingMessageThreadId,
   resolveBindingTopicInfo,
 } from "./bot"
@@ -115,6 +117,35 @@ describe("resolveBindingTopicInfo", () => {
       messageThreadId: 99,
       title: "Updates",
     })
+  })
+})
+
+describe("canUseTelegramTaskPlanningPoll", () => {
+  test("allows only telegram poll option counts", () => {
+    expect(canUseTelegramTaskPlanningPoll(1)).toBe(false)
+    expect(canUseTelegramTaskPlanningPoll(2)).toBe(true)
+    expect(canUseTelegramTaskPlanningPoll(12)).toBe(true)
+    expect(canUseTelegramTaskPlanningPoll(13)).toBe(false)
+  })
+})
+
+describe("parseNotificationTaskSelectionText", () => {
+  test("parses numbers and ranges separated by comma whitespace and newlines", () => {
+    expect(Array.from(parseNotificationTaskSelectionText("1, 3-5\n7", 7) ?? [])).toEqual([
+      0, 2, 3, 4, 6,
+    ])
+  })
+
+  test("deduplicates repeated selections", () => {
+    expect(Array.from(parseNotificationTaskSelectionText("1 1 2-3 3", 3) ?? [])).toEqual([0, 1, 2])
+  })
+
+  test("rejects invalid selections", () => {
+    expect(parseNotificationTaskSelectionText("", 3)).toBeNull()
+    expect(parseNotificationTaskSelectionText("0", 3)).toBeNull()
+    expect(parseNotificationTaskSelectionText("4", 3)).toBeNull()
+    expect(parseNotificationTaskSelectionText("3-2", 3)).toBeNull()
+    expect(parseNotificationTaskSelectionText("one", 3)).toBeNull()
   })
 })
 

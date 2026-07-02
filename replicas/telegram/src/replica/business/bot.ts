@@ -11,7 +11,16 @@ import type { Operation, PrismaClient } from "../../database"
 import type { NotificationStatus, NotificationTaskStatus } from "./notification-types"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import { NaturalLanguageService } from "@reside/api/interaction/nls.v1"
-import { block, bold, createChannel, createClient, italic, logger, rhid } from "@reside/common"
+import {
+  block,
+  bold,
+  createChannel,
+  createClient,
+  html,
+  italic,
+  logger,
+  rhid,
+} from "@reside/common"
 import { type Bot, type BotError, type Context, GrammyError, HttpError } from "grammy"
 import {
   encryptedStringSchema,
@@ -73,8 +82,39 @@ type StoredNotificationTask = {
   status: NotificationTaskStatus
 }
 
+type PlanningPromptRecord = {
+  id: number
+  messageEcid: string
+  launchedByUserId: number
+  notification: {
+    id: number
+    isProtected: boolean
+    channel: {
+      name: string
+    }
+    operationId: number | null
+    operation: {
+      status: string
+      notificationResponse: {
+        operationId: number
+      } | null
+    } | null
+  }
+  options: PlanningPromptOptionRecord[]
+}
+
+type PlanningPromptOptionRecord = {
+  optionId: number
+  taskNotificationId: number
+  taskGroupStableId: string
+  taskStableId: string
+}
+
 type UrlInlineKeyboardButton = { text: string; url: string }
 type UrlInlineKeyboardRow = UrlInlineKeyboardButton[]
+
+const MIN_TELEGRAM_TASK_POLL_OPTIONS = 2
+const MAX_TELEGRAM_TASK_POLL_OPTIONS = 12
 
 /**
  * Creates and initializes the primary Telegram bot instance used by the webhook runtime.
@@ -416,9 +456,34 @@ export async function createTelegramBot(args: {
       return
     }
 
-    logger.debug("received text message event chatId=%s userId=%s", chatId, userId)
+    logger.debug(
+      'received text message event has_reply="%s" has_thread="%s" entities_count="%s"',
+      String(message.reply_to_message !== undefined),
+      String(message.message_thread_id !== undefined),
+      String(message.entities?.length ?? 0),
+    )
 
     await ensureTelegramEntities(args.crypto, args.prisma, context)
+
+    const textResponse = message.text.trim()
+    const repliedMessageId = message.reply_to_message?.message_id
+    if (textResponse.length > 0 && repliedMessageId !== undefined) {
+      const taskSelectionResult = await handleNotificationTaskTextSelection(
+        args,
+        context,
+        userId,
+        repliedMessageId,
+        message.message_id,
+        textResponse,
+      )
+      if (taskSelectionResult.handled) {
+        if (taskSelectionResult.completed) {
+          await setUserMessageAcceptedReaction(bot, chatId, message.message_id)
+        }
+
+        return
+      }
+    }
 
     const interactionContext = await buildInteractionContext(args.crypto, context, {
       messageId: message.message_id,
@@ -446,10 +511,8 @@ export async function createTelegramBot(args: {
       } catch (error) {
         logger.error(
           {
-            error: error instanceof Error ? error.message : String(error),
+            error: error instanceof Error ? error : new Error(String(error)),
             commandName: commandInvocation.name,
-            chatId,
-            userId,
           },
           "failed to start command workflow",
         )
@@ -488,9 +551,7 @@ export async function createTelegramBot(args: {
       } catch (error) {
         logger.error(
           {
-            error: error instanceof Error ? error.message : String(error),
-            chatId,
-            userId,
+            error: error instanceof Error ? error : new Error(String(error)),
           },
           "failed to handle nls mention",
         )
@@ -504,7 +565,6 @@ export async function createTelegramBot(args: {
       return
     }
 
-    const textResponse = message.text.trim()
     if (textResponse.length === 0) {
       return
     }
@@ -534,7 +594,6 @@ export async function createTelegramBot(args: {
       return
     }
 
-    const repliedMessageId = message.reply_to_message?.message_id
     if (!repliedMessageId) {
       return
     }
@@ -566,10 +625,7 @@ export async function createTelegramBot(args: {
     } catch (error) {
       logger.error(
         {
-          error: error instanceof Error ? error.message : String(error),
-          chatId,
-          userId,
-          repliedMessageId,
+          error: error instanceof Error ? error : new Error(String(error)),
         },
         "failed to complete operation from text reply",
       )
@@ -583,10 +639,9 @@ export async function createTelegramBot(args: {
     }
 
     logger.debug(
-      "processed text reply completion for messageId=%s completed=%s unauthorized=%s",
-      message.message_id,
-      result.completed,
-      result.unauthorized,
+      'processed text reply completion completed="%s" unauthorized="%s"',
+      String(result.completed),
+      String(result.unauthorized),
     )
 
     if (result.unauthorized) {
@@ -625,9 +680,7 @@ export async function createTelegramBot(args: {
       } catch (error) {
         logger.error(
           {
-            error: error instanceof Error ? error.message : String(error),
-            chatId,
-            userId,
+            error: error instanceof Error ? error : new Error(String(error)),
           },
           "failed to handle nls continuation",
         )
@@ -653,13 +706,7 @@ export async function createTelegramBot(args: {
       return
     }
 
-    logger.debug(
-      "received callback action chatId=%s userId=%s messageId=%s action=%s",
-      chatId,
-      userId,
-      messageId,
-      actionName,
-    )
+    logger.debug('received callback action action_name="%s"', actionName)
 
     if (actionName === EDIT_NOTIFICATION_TASKS_ACTION) {
       await handleNotificationTaskEditAction(args, context, chatId, userId, messageId)
@@ -697,10 +744,7 @@ export async function createTelegramBot(args: {
     } catch (error) {
       logger.error(
         {
-          error: error instanceof Error ? error.message : String(error),
-          chatId,
-          userId,
-          messageId,
+          error: error instanceof Error ? error : new Error(String(error)),
           actionName,
         },
         "failed to complete operation from callback action",
@@ -715,16 +759,11 @@ export async function createTelegramBot(args: {
     }
 
     logger.info(
-      {
-        chatId,
-        userId,
-        messageId,
-        actionName,
-        accepted: result.accepted,
-        unauthorized: result.unauthorized,
-        reason: result.reason,
-      },
-      "callback action completion result",
+      'callback action completion result action_name="%s" accepted="%s" unauthorized="%s" reason="%s"',
+      actionName,
+      String(result.accepted),
+      String(result.unauthorized),
+      result.reason,
     )
 
     const applyAcceptedMessageUi = async (): Promise<void> => {
@@ -733,20 +772,23 @@ export async function createTelegramBot(args: {
     }
 
     if (result.accepted) {
-      logger.info("callback action accepted for messageId=%s", messageId)
+      logger.info('callback action accepted action_name="%s"', actionName)
       await applyAcceptedMessageUi()
       return
     }
 
     logger.debug(
-      "callback action not accepted for messageId=%s unauthorized=%s reason=%s",
-      messageId,
-      result.unauthorized,
+      'callback action not accepted action_name="%s" unauthorized="%s" reason="%s"',
+      actionName,
+      String(result.unauthorized),
       result.reason,
     )
 
     if (result.reason === "already-responded") {
-      logger.info("reconciling callback message UI for already-responded messageId=%s", messageId)
+      logger.info(
+        'reconciling callback message ui for already-responded action_name="%s"',
+        actionName,
+      )
       await applyAcceptedMessageUi()
       await context.answerCallbackQuery()
       return
@@ -1298,50 +1340,62 @@ async function handleNotificationTaskEditAction(
     return
   }
 
-  const sentPoll = await context.replyWithPoll(
-    strings.server.notification.editTasksPollTitle,
-    tasks.map(task => task.title),
-    {
-      allow_adding_options: false,
-      allows_multiple_answers: true,
-      allows_revoting: false,
-      is_anonymous: false,
-      reply_parameters: {
-        message_id: messageId,
+  if (canUseTelegramTaskPlanningPoll(tasks.length)) {
+    const sentPoll = await context.replyWithPoll(
+      strings.server.notification.editTasksPollTitle,
+      tasks.map(task => task.title),
+      {
+        allow_adding_options: false,
+        allows_multiple_answers: true,
+        allows_revoting: false,
+        is_anonymous: false,
+        reply_parameters: {
+          message_id: messageId,
+        },
       },
-    },
-  )
+    )
 
-  if (!sentPoll.poll?.id) {
-    await context.answerCallbackQuery({
-      text: strings.worker.bot.unexpectedError,
-      show_alert: false,
-    })
+    if (!sentPoll.poll?.id) {
+      await context.answerCallbackQuery({
+        text: strings.worker.bot.unexpectedError,
+        show_alert: false,
+      })
+      return
+    }
+
+    await createNotificationTaskPlanningPrompt(
+      args.crypto,
+      args.prisma,
+      notification.id,
+      rhid(sentPoll.poll.id),
+      sentPoll,
+      user.id,
+      tasks,
+    )
+
+    await context.answerCallbackQuery()
     return
   }
 
-  await args.prisma.notificationTaskPlanningPoll.create({
-    data: {
-      notificationId: notification.id,
-      pollRhid: rhid(sentPoll.poll.id),
-      messageEcid: await args.crypto.encrypt(sentPoll),
-      launchedByUserId: user.id,
-      options: {
-        create: tasks.map((task, optionId) => ({
-          optionId,
-          task: {
-            connect: {
-              notificationId_groupStableId_stableId: {
-                notificationId: task.notificationId,
-                groupStableId: task.groupStableId,
-                stableId: task.stableId,
-              },
-            },
-          },
-        })),
-      },
+  const sentMessage = await context.reply(renderNotificationTaskSelectionFallbackMessage(tasks), {
+    parse_mode: "HTML",
+    link_preview_options: {
+      is_disabled: true,
+    },
+    reply_parameters: {
+      message_id: messageId,
     },
   })
+
+  await createNotificationTaskPlanningPrompt(
+    args.crypto,
+    args.prisma,
+    notification.id,
+    getTaskSelectionFallbackRhid(sentMessage.message_id),
+    sentMessage,
+    user.id,
+    tasks,
+  )
 
   await context.answerCallbackQuery()
 }
@@ -1444,15 +1498,210 @@ async function handleNotificationTaskPollAnswer(
   }
 
   const selectedOptionIds = new Set(pollAnswer.option_ids)
+  const operationIdToComplete = await applyNotificationTaskPlanningSelection(
+    args.prisma,
+    poll,
+    selectedOptionIds,
+  )
+
+  await deletePlanningPollMessage(args.crypto, context, poll.messageEcid)
+  await rerenderStoredNotification(args.crypto, args.prisma, context, poll.notification.id)
+
+  if (operationIdToComplete !== undefined) {
+    await args.operationService.setCompleted(operationIdToComplete)
+  }
+}
+
+async function handleNotificationTaskTextSelection(
+  args: {
+    crypto: ResideCrypto
+    prisma: PrismaClient
+    operationService: GenericOperationService<Operation>
+    authzService: AuthzServiceClient
+    permissionRequestService: PermissionRequestServiceClient
+    superAdminUserId: string | undefined
+  },
+  context: Context,
+  userId: number,
+  repliedMessageId: number,
+  responseMessageId: number,
+  textResponse: string,
+): Promise<{ completed: boolean; handled: boolean }> {
+  const prompt = await findNotificationTaskPlanningPrompt(
+    args.prisma,
+    getTaskSelectionFallbackRhid(repliedMessageId),
+  )
+  if (prompt === null) {
+    return { completed: false, handled: false }
+  }
+
+  const userRecord = await upsertTelegramUser(
+    args.crypto,
+    args.prisma,
+    String(userId),
+    context.from as PrismaJson.UserData,
+  )
+
+  if (prompt.launchedByUserId !== userRecord.id) {
+    await sendSystemMessage(context, {
+      text: strings.common.accessDenied,
+      replyToMessageId: responseMessageId,
+    })
+    return { completed: false, handled: true }
+  }
+
+  const selectedOptionIds = parseNotificationTaskSelectionText(textResponse, prompt.options.length)
+  if (selectedOptionIds === null) {
+    await sendSystemMessage(context, {
+      text: strings.worker.bot.notificationTaskSelectionInvalid,
+      replyToMessageId: responseMessageId,
+    })
+    return { completed: false, handled: true }
+  }
+
+  if (
+    prompt.notification.isProtected &&
+    !canSuperAdminInteract(args, userId) &&
+    !(await canInteractWithNotificationChannel({
+      authzService: args.authzService,
+      userId,
+      channelName: prompt.notification.channel.name,
+    }))
+  ) {
+    await requestNotificationChannelInteractPermission({
+      permissionRequestService: args.permissionRequestService,
+      userId,
+      channelName: prompt.notification.channel.name,
+    })
+    await deletePlanningPollMessage(args.crypto, context, prompt.messageEcid)
+    await args.prisma.notificationTaskPlanningPoll.delete({
+      where: {
+        id: prompt.id,
+      },
+    })
+    await sendSystemMessage(context, {
+      text: strings.common.accessDenied,
+      replyToMessageId: responseMessageId,
+    })
+    return { completed: false, handled: true }
+  }
+
+  const operationIdToComplete = await applyNotificationTaskPlanningSelection(
+    args.prisma,
+    prompt,
+    selectedOptionIds,
+  )
+
+  await deletePlanningPollMessage(args.crypto, context, prompt.messageEcid)
+  await rerenderStoredNotification(args.crypto, args.prisma, context, prompt.notification.id)
+
+  if (operationIdToComplete !== undefined) {
+    await args.operationService.setCompleted(operationIdToComplete)
+  }
+
+  return { completed: true, handled: true }
+}
+
+async function createNotificationTaskPlanningPrompt(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  notificationId: number,
+  promptRhid: string,
+  sentMessage: unknown,
+  launchedByUserId: number,
+  tasks: {
+    notificationId: number
+    groupStableId: string
+    stableId: string
+  }[],
+): Promise<void> {
+  await prisma.notificationTaskPlanningPoll.create({
+    data: {
+      notificationId,
+      pollRhid: promptRhid,
+      messageEcid: await crypto.encrypt(sentMessage),
+      launchedByUserId,
+      options: {
+        create: tasks.map((task, optionId) => ({
+          optionId,
+          task: {
+            connect: {
+              notificationId_groupStableId_stableId: {
+                notificationId: task.notificationId,
+                groupStableId: task.groupStableId,
+                stableId: task.stableId,
+              },
+            },
+          },
+        })),
+      },
+    },
+  })
+}
+
+async function findNotificationTaskPlanningPrompt(
+  prisma: PrismaClient,
+  promptRhid: string,
+): Promise<PlanningPromptRecord | null> {
+  return await prisma.notificationTaskPlanningPoll.findUnique({
+    where: {
+      pollRhid: promptRhid,
+    },
+    select: {
+      id: true,
+      messageEcid: true,
+      launchedByUserId: true,
+      notification: {
+        select: {
+          id: true,
+          isProtected: true,
+          channel: {
+            select: {
+              name: true,
+            },
+          },
+          operationId: true,
+          operation: {
+            select: {
+              status: true,
+              notificationResponse: {
+                select: {
+                  operationId: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      options: {
+        orderBy: {
+          optionId: "asc",
+        },
+        select: {
+          optionId: true,
+          taskNotificationId: true,
+          taskGroupStableId: true,
+          taskStableId: true,
+        },
+      },
+    },
+  })
+}
+
+async function applyNotificationTaskPlanningSelection(
+  prisma: PrismaClient,
+  prompt: PlanningPromptRecord,
+  selectedOptionIds: Set<number>,
+): Promise<number | undefined> {
   const operationIdToComplete =
-    poll.notification.operationId !== null &&
-    poll.notification.operation?.status === "PENDING" &&
-    poll.notification.operation.notificationResponse === null
-      ? poll.notification.operationId
+    prompt.notification.operationId !== null &&
+    prompt.notification.operation?.status === "PENDING" &&
+    prompt.notification.operation.notificationResponse === null
+      ? prompt.notification.operationId
       : undefined
 
-  await args.prisma.$transaction(async tx => {
-    for (const option of poll.options) {
+  await prisma.$transaction(async tx => {
+    for (const option of prompt.options) {
       await tx.notificationTask.update({
         where: {
           notificationId_groupStableId_stableId: {
@@ -1480,17 +1729,57 @@ async function handleNotificationTaskPollAnswer(
 
     await tx.notificationTaskPlanningPoll.delete({
       where: {
-        id: poll.id,
+        id: prompt.id,
       },
     })
   })
 
-  await deletePlanningPollMessage(args.crypto, context, poll.messageEcid)
-  await rerenderStoredNotification(args.crypto, args.prisma, context, poll.notification.id)
+  return operationIdToComplete
+}
 
-  if (operationIdToComplete !== undefined) {
-    await args.operationService.setCompleted(operationIdToComplete)
+function getTaskSelectionFallbackRhid(messageId: number): string {
+  return rhid(`task-selection-fallback:${messageId}`)
+}
+
+export function canUseTelegramTaskPlanningPoll(taskCount: number): boolean {
+  return taskCount >= MIN_TELEGRAM_TASK_POLL_OPTIONS && taskCount <= MAX_TELEGRAM_TASK_POLL_OPTIONS
+}
+
+export function parseNotificationTaskSelectionText(
+  text: string,
+  taskCount: number,
+): Set<number> | null {
+  const tokens = text
+    .trim()
+    .split(/[\s,]+/)
+    .filter(Boolean)
+  if (tokens.length === 0 || taskCount < 1) {
+    return null
   }
+
+  const selectedOptionIds = new Set<number>()
+  for (const token of tokens) {
+    const match = /^(\d+)(?:-(\d+))?$/.exec(token)
+    if (!match) {
+      return null
+    }
+
+    const start = Number(match[1])
+    const end = match[2] === undefined ? start : Number(match[2])
+    if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end)) {
+      return null
+    }
+
+    if (start < 1 || end < 1 || start > taskCount || end > taskCount || start > end) {
+      return null
+    }
+
+    for (let value = start; value <= end; value++) {
+      selectedOptionIds.add(value - 1)
+    }
+  }
+
+  return selectedOptionIds
 }
 
 function canSuperAdminInteract(
@@ -1704,6 +1993,19 @@ function renderStoredNotificationMessage(input: {
   }
 
   return block(bold(title), ...taskRows)
+}
+
+function renderNotificationTaskSelectionFallbackMessage(tasks: { title: string }[]): string {
+  const taskRows = tasks.map((task, index) => ({
+    html: `${index + 1}. ${html(task.title)}`,
+  }))
+
+  return block(
+    bold(strings.server.notification.editTasksTextTitle),
+    strings.server.notification.editTasksTextInstruction,
+    "",
+    ...taskRows,
+  ).html
 }
 
 function renderStoredNotificationTaskRows(taskGroups: StoredNotificationTaskGroup[]): string[] {

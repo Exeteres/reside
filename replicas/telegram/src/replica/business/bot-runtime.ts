@@ -64,7 +64,7 @@ export function createBotRuntime(args: {
     update: unknown
     targetBot: Bot<Context>
     malformedPayloadMessage: string
-    routingMessage: string
+    targetName: string
   }): Promise<void> => {
     if (!isTelegramUpdate(args.update)) {
       logger.warn(args.malformedPayloadMessage)
@@ -72,11 +72,11 @@ export function createBotRuntime(args: {
     }
 
     logger.debug(
-      {
-        updateId: args.update.update_id,
-        updateKinds: getUpdateKinds(args.update),
-      },
-      args.routingMessage,
+      'routing telegram webhook update target="%s" update_id="%s" update_kinds="%s" update_summary="%s"',
+      args.targetName,
+      String(args.update.update_id),
+      getUpdateKinds(args.update).join(","),
+      getUpdateSummary(args.update).join(","),
     )
 
     await args.targetBot.handleUpdate(args.update)
@@ -159,7 +159,7 @@ export function createBotRuntime(args: {
           update,
           targetBot: currentBot,
           malformedPayloadMessage: "received malformed telegram webhook payload",
-          routingMessage: "routing webhook update to main telegram bot",
+          targetName: "main",
         })
         return
       }
@@ -182,7 +182,7 @@ export function createBotRuntime(args: {
           targetBot: avatarBot,
           malformedPayloadMessage:
             "received malformed telegram webhook payload for avatar bot secret",
-          routingMessage: "routing avatar-secret webhook update to avatar telegram bot instance",
+          targetName: "avatar",
         })
         return
       }
@@ -248,28 +248,175 @@ function isTelegramUpdate(value: unknown): value is Update {
   return typeof update.update_id === "number"
 }
 
+const TELEGRAM_UPDATE_KIND_KEYS = [
+  "message",
+  "edited_message",
+  "channel_post",
+  "edited_channel_post",
+  "business_connection",
+  "business_message",
+  "edited_business_message",
+  "deleted_business_messages",
+  "message_reaction",
+  "message_reaction_count",
+  "inline_query",
+  "chosen_inline_result",
+  "callback_query",
+  "shipping_query",
+  "pre_checkout_query",
+  "purchased_paid_media",
+  "poll",
+  "poll_answer",
+  "my_chat_member",
+  "chat_member",
+  "chat_join_request",
+  "chat_boost",
+  "removed_chat_boost",
+] as const
+
+const TELEGRAM_MESSAGE_KIND_KEYS = [
+  "text",
+  "animation",
+  "audio",
+  "document",
+  "paid_media",
+  "photo",
+  "sticker",
+  "story",
+  "video",
+  "video_note",
+  "voice",
+  "caption",
+  "contact",
+  "dice",
+  "game",
+  "poll",
+  "venue",
+  "location",
+  "new_chat_members",
+  "left_chat_member",
+  "new_chat_title",
+  "new_chat_photo",
+  "delete_chat_photo",
+  "group_chat_created",
+  "supergroup_chat_created",
+  "channel_chat_created",
+  "message_auto_delete_timer_changed",
+  "migrate_to_chat_id",
+  "migrate_from_chat_id",
+  "pinned_message",
+  "invoice",
+  "successful_payment",
+  "refunded_payment",
+  "users_shared",
+  "chat_shared",
+  "connected_website",
+  "write_access_allowed",
+  "passport_data",
+  "proximity_alert_triggered",
+  "boost_added",
+  "chat_background_set",
+  "forum_topic_created",
+  "forum_topic_edited",
+  "forum_topic_closed",
+  "forum_topic_reopened",
+  "general_forum_topic_hidden",
+  "general_forum_topic_unhidden",
+  "giveaway_created",
+  "giveaway",
+  "giveaway_winners",
+  "giveaway_completed",
+  "video_chat_scheduled",
+  "video_chat_started",
+  "video_chat_ended",
+  "video_chat_participants_invited",
+  "web_app_data",
+] as const
+
 function getUpdateKinds(update: Update): string[] {
-  const kinds: string[] = []
+  const updateRecord = update as unknown as Record<string, unknown>
+  return TELEGRAM_UPDATE_KIND_KEYS.filter(key => updateRecord[key] !== undefined)
+}
 
-  if (update.message) {
-    kinds.push("message")
+function getUpdateSummary(update: Update): string[] {
+  const updateRecord = update as unknown as Record<string, unknown>
+  const summary: string[] = []
+
+  for (const messageKey of [
+    "message",
+    "edited_message",
+    "channel_post",
+    "edited_channel_post",
+    "business_message",
+    "edited_business_message",
+  ]) {
+    const messageSummary = getMessageSummary(updateRecord[messageKey])
+    if (messageSummary.length > 0) {
+      summary.push(`${messageKey}:${messageSummary.join("+")}`)
+    }
   }
 
-  if (update.callback_query) {
-    kinds.push("callback_query")
+  const callbackQuery = toRecord(updateRecord.callback_query)
+  if (callbackQuery) {
+    summary.push(`callback_has_data:${typeof callbackQuery.data === "string"}`)
+    summary.push(`callback_has_message:${callbackQuery.message !== undefined}`)
   }
 
-  if (update.edited_message) {
-    kinds.push("edited_message")
+  const poll = toRecord(updateRecord.poll)
+  const pollOptions = Array.isArray(poll?.options) ? poll.options : []
+  if (poll) {
+    summary.push(`poll_options:${pollOptions.length}`)
+    summary.push(`poll_allows_multiple_answers:${poll.allows_multiple_answers === true}`)
   }
 
-  if (update.inline_query) {
-    kinds.push("inline_query")
+  const pollAnswer = toRecord(updateRecord.poll_answer)
+  const pollAnswerOptions = Array.isArray(pollAnswer?.option_ids) ? pollAnswer.option_ids : []
+  if (pollAnswer) {
+    summary.push(`poll_answer_options:${pollAnswerOptions.length}`)
   }
 
-  if (update.chosen_inline_result) {
-    kinds.push("chosen_inline_result")
+  const deletedBusinessMessages = toRecord(updateRecord.deleted_business_messages)
+  const deletedMessageIds = Array.isArray(deletedBusinessMessages?.message_ids)
+    ? deletedBusinessMessages.message_ids
+    : []
+  if (deletedBusinessMessages) {
+    summary.push(`deleted_business_messages_count:${deletedMessageIds.length}`)
   }
 
-  return kinds
+  return summary.length === 0 ? ["none"] : summary
+}
+
+function getMessageSummary(value: unknown): string[] {
+  const message = toRecord(value)
+  if (!message) {
+    return []
+  }
+
+  const summary: string[] = TELEGRAM_MESSAGE_KIND_KEYS.filter(key => message[key] !== undefined)
+  if (Array.isArray(message.entities)) {
+    summary.push(`entities:${message.entities.length}`)
+  }
+
+  if (Array.isArray(message.caption_entities)) {
+    summary.push(`caption_entities:${message.caption_entities.length}`)
+  }
+
+  if (Array.isArray(message.photo)) {
+    summary.push(`photo_sizes:${message.photo.length}`)
+  }
+
+  const poll = toRecord(message.poll)
+  if (Array.isArray(poll?.options)) {
+    summary.push(`poll_options:${poll.options.length}`)
+  }
+
+  return summary
+}
+
+function toRecord(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value !== "object" || value === null) {
+    return undefined
+  }
+
+  return value as Record<string, unknown>
 }
