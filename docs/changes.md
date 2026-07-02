@@ -11,7 +11,9 @@ This document defines changelog, versioning, and commit rules for ReSide 4.
 - After each meaningful change in a replica, update its version and changelog using `scripts/update-version.ts`.
 - Use `patch` for bug fixes, small enhancements, and incremental improvements to existing behavior.
 - Use `minor` for new functionality, including new commands, new APIs, new mechanisms, and other new user-visible capabilities.
-- Changelog entries must be written in Russian passive voice and must use the replica title from `src/locale/ru.ts` when naming the replica.
+- Changelog entries must be written in Russian with simple direct phrasing.
+- Avoid complex wording and avoid naming the changed replica unless it is needed for clarity.
+- When a changelog entry names a replica, use the replica title from `src/locale/ru.ts`.
 - Dependency-only changes, including package dependency updates or changes to other replicas, must not cause a replica version bump.
 - Backward-incompatible changes are forbidden.
 - Major version bumps are forbidden.
