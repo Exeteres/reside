@@ -14,7 +14,7 @@ import type * as Prisma from "../internal/prismaNamespace.ts"
 
 /**
  * Model TaskIteration
- * 
+ * Represents one planning or implementation attempt for an engineer task.
  */
 export type TaskIterationModel = runtime.Types.Result.DefaultSelection<Prisma.$TaskIterationPayload>
 
@@ -672,17 +672,47 @@ export type TaskIterationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Type
 export type $TaskIterationPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "TaskIteration"
   objects: {
+    /**
+     * The parent task for this iteration.
+     */
     task: Prisma.$TaskPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
+    /**
+     * The unique numeric identifier of the task iteration.
+     */
     id: number
+    /**
+     * The parent task identifier.
+     */
     taskId: number
+    /**
+     * The monotonically increasing iteration number scoped to the parent task.
+     */
     iteration: number
+    /**
+     * The task workflow phase executed by this iteration.
+     */
     phase: $Enums.TaskPhase
+    /**
+     * The prompt or feedback batch used to start this iteration.
+     */
     prompt: string
+    /**
+     * The final agent summary produced by this iteration, if it completed successfully.
+     */
     resultSummary: string | null
+    /**
+     * The user-facing error message produced by this iteration, if it failed.
+     */
     errorMessage: string | null
+    /**
+     * The replica subject identifier that started this iteration.
+     */
     createdBy: string
+    /**
+     * The timestamp when this iteration was created.
+     */
     createdAt: Date
   }, ExtArgs["result"]["taskIteration"]>
   composites: {}

@@ -43,6 +43,11 @@ export type PrepareTaskWorkflowOutput = {
 
 export type TaskWorkflowInput = PrepareTaskWorkflowInput & PrepareTaskWorkflowOutput
 
+export type DeleteSourceCodeWorkflowInput = {
+  operationId: number
+  replicaName: string
+}
+
 export type TaskFeedbackSignalInput = {
   /**
    * The feedback text provided by the user.

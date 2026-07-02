@@ -3,6 +3,10 @@ enum OperationType {
   PROVISION_TEMPORAL_NAMESPACE
   PROVISION_STORAGE_BUCKET
   ENSURE_GATEWAY
+  DELETE_POSTGRES_DATABASE
+  DELETE_TEMPORAL_NAMESPACE
+  DELETE_GATEWAY
+  DELETE_STORAGE_BUCKET
 }
 
 enum OperationStatus {
@@ -36,6 +40,9 @@ model Operation {
 
   /// Optional custom payload for completion notifications.
   customData Json?
+
+  /// The deterministic Reaper action identifier used as the Temporal workflow id, if applicable.
+  reaperActionId String? @unique
 
   /// The type of operation being performed.
   type OperationType
@@ -74,4 +81,5 @@ model Operation {
   resolvedAt DateTime?
 
   @@index([createdAt])
+  @@index([type, status])
 }

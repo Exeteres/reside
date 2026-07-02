@@ -10,6 +10,12 @@ enum OperationStatus {
   FAILED
 }
 
+/// The type of a long-running operation.
+enum OperationType {
+  /// An approval request is waiting for resolution.
+  APPROVAL_REQUEST
+}
+
 /// Represents a long-running operation.
 model Operation {
   /// The unique numeric identifier of the operation.
@@ -36,6 +42,9 @@ model Operation {
   /// Optional custom payload for completion notifications.
   customData Json?
 
+  /// The type of operation being performed.
+  type OperationType
+
   /// The approval request associated with this operation.
   approvalRequest ApprovalRequest?
 
@@ -49,4 +58,5 @@ model Operation {
   resolvedAt DateTime?
 
   @@index([createdAt])
+  @@index([type, status])
 }

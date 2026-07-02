@@ -1,0 +1,54 @@
+enum OperationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum OperationType {
+  DELETE_SOURCE_CODE
+}
+
+/// Represents a long-running operation exposed by the Engineer Replica.
+model Operation {
+  /// The unique numeric identifier of the operation record.
+  id Int @id @default(autoincrement())
+
+  /// The user-facing operation title.
+  title String
+
+  /// The user-facing operation description.
+  description String?
+
+  /// The operation status.
+  status OperationStatus
+
+  /// The machine-readable failure reason.
+  failureReason String?
+
+  /// The human-readable failure message.
+  failureMessage String?
+
+  /// Optional callback endpoint for completion notifications.
+  callbackEndpoint String?
+
+  /// Optional custom payload for completion notifications.
+  customData Json?
+
+  /// The type of operation being performed.
+  type OperationType
+
+  /// The deterministic Reaper action identifier used as the Temporal workflow id, if applicable.
+  reaperActionId String? @unique
+
+  /// The timestamp when this operation record was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this operation record was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The timestamp when this operation was resolved.
+  resolvedAt DateTime?
+
+  @@index([createdAt])
+  @@index([type, status])
+}

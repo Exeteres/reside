@@ -50,6 +50,7 @@ export type OperationMinAggregateOutputType = {
   failureReason: string | null
   failureMessage: string | null
   callbackEndpoint: string | null
+  reaperActionId: string | null
   type: $Enums.OperationType | null
   temporalNamespaceId: number | null
   postgresDatabaseId: number | null
@@ -68,6 +69,7 @@ export type OperationMaxAggregateOutputType = {
   failureReason: string | null
   failureMessage: string | null
   callbackEndpoint: string | null
+  reaperActionId: string | null
   type: $Enums.OperationType | null
   temporalNamespaceId: number | null
   postgresDatabaseId: number | null
@@ -87,6 +89,7 @@ export type OperationCountAggregateOutputType = {
   failureMessage: number
   callbackEndpoint: number
   customData: number
+  reaperActionId: number
   type: number
   temporalNamespaceId: number
   postgresDatabaseId: number
@@ -123,6 +126,7 @@ export type OperationMinAggregateInputType = {
   failureReason?: true
   failureMessage?: true
   callbackEndpoint?: true
+  reaperActionId?: true
   type?: true
   temporalNamespaceId?: true
   postgresDatabaseId?: true
@@ -141,6 +145,7 @@ export type OperationMaxAggregateInputType = {
   failureReason?: true
   failureMessage?: true
   callbackEndpoint?: true
+  reaperActionId?: true
   type?: true
   temporalNamespaceId?: true
   postgresDatabaseId?: true
@@ -160,6 +165,7 @@ export type OperationCountAggregateInputType = {
   failureMessage?: true
   callbackEndpoint?: true
   customData?: true
+  reaperActionId?: true
   type?: true
   temporalNamespaceId?: true
   postgresDatabaseId?: true
@@ -266,6 +272,7 @@ export type OperationGroupByOutputType = {
   failureMessage: string | null
   callbackEndpoint: string | null
   customData: runtime.JsonValue | null
+  reaperActionId: string | null
   type: $Enums.OperationType
   temporalNamespaceId: number | null
   postgresDatabaseId: number | null
@@ -308,6 +315,7 @@ export type OperationWhereInput = {
   failureMessage?: Prisma.StringNullableFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableFilter<"Operation">
+  reaperActionId?: Prisma.StringNullableFilter<"Operation"> | string | null
   type?: Prisma.EnumOperationTypeFilter<"Operation"> | $Enums.OperationType
   temporalNamespaceId?: Prisma.IntNullableFilter<"Operation"> | number | null
   postgresDatabaseId?: Prisma.IntNullableFilter<"Operation"> | number | null
@@ -331,6 +339,7 @@ export type OperationOrderByWithRelationInput = {
   failureMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   customData?: Prisma.SortOrderInput | Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrderInput | Prisma.SortOrder
   type?: Prisma.SortOrder
   temporalNamespaceId?: Prisma.SortOrderInput | Prisma.SortOrder
   postgresDatabaseId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -347,6 +356,7 @@ export type OperationOrderByWithRelationInput = {
 
 export type OperationWhereUniqueInput = Prisma.AtLeast<{
   id?: number
+  reaperActionId?: string
   AND?: Prisma.OperationWhereInput | Prisma.OperationWhereInput[]
   OR?: Prisma.OperationWhereInput[]
   NOT?: Prisma.OperationWhereInput | Prisma.OperationWhereInput[]
@@ -369,7 +379,7 @@ export type OperationWhereUniqueInput = Prisma.AtLeast<{
   postgresDatabase?: Prisma.XOR<Prisma.PostgresDatabaseNullableScalarRelationFilter, Prisma.PostgresDatabaseWhereInput> | null
   gateway?: Prisma.XOR<Prisma.GatewayNullableScalarRelationFilter, Prisma.GatewayWhereInput> | null
   storageBucket?: Prisma.XOR<Prisma.StorageBucketNullableScalarRelationFilter, Prisma.StorageBucketWhereInput> | null
-}, "id">
+}, "id" | "reaperActionId">
 
 export type OperationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -380,6 +390,7 @@ export type OperationOrderByWithAggregationInput = {
   failureMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   customData?: Prisma.SortOrderInput | Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrderInput | Prisma.SortOrder
   type?: Prisma.SortOrder
   temporalNamespaceId?: Prisma.SortOrderInput | Prisma.SortOrder
   postgresDatabaseId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -407,6 +418,7 @@ export type OperationScalarWhereWithAggregatesInput = {
   failureMessage?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableWithAggregatesFilter<"Operation">
+  reaperActionId?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
   type?: Prisma.EnumOperationTypeWithAggregatesFilter<"Operation"> | $Enums.OperationType
   temporalNamespaceId?: Prisma.IntNullableWithAggregatesFilter<"Operation"> | number | null
   postgresDatabaseId?: Prisma.IntNullableWithAggregatesFilter<"Operation"> | number | null
@@ -425,6 +437,7 @@ export type OperationCreateInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -444,6 +457,7 @@ export type OperationUncheckedCreateInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   temporalNamespaceId?: number | null
   postgresDatabaseId?: number | null
@@ -462,6 +476,7 @@ export type OperationUpdateInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -481,6 +496,7 @@ export type OperationUncheckedUpdateInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   temporalNamespaceId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   postgresDatabaseId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -500,6 +516,7 @@ export type OperationCreateManyInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   temporalNamespaceId?: number | null
   postgresDatabaseId?: number | null
@@ -518,6 +535,7 @@ export type OperationUpdateManyMutationInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -533,6 +551,7 @@ export type OperationUncheckedUpdateManyInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   temporalNamespaceId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   postgresDatabaseId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -562,6 +581,7 @@ export type OperationCountOrderByAggregateInput = {
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
   customData?: Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   temporalNamespaceId?: Prisma.SortOrder
   postgresDatabaseId?: Prisma.SortOrder
@@ -588,6 +608,7 @@ export type OperationMaxOrderByAggregateInput = {
   failureReason?: Prisma.SortOrder
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   temporalNamespaceId?: Prisma.SortOrder
   postgresDatabaseId?: Prisma.SortOrder
@@ -606,6 +627,7 @@ export type OperationMinOrderByAggregateInput = {
   failureReason?: Prisma.SortOrder
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   temporalNamespaceId?: Prisma.SortOrder
   postgresDatabaseId?: Prisma.SortOrder
@@ -820,6 +842,7 @@ export type OperationCreateWithoutGatewayInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -838,6 +861,7 @@ export type OperationUncheckedCreateWithoutGatewayInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   temporalNamespaceId?: number | null
   postgresDatabaseId?: number | null
@@ -885,6 +909,7 @@ export type OperationScalarWhereInput = {
   failureMessage?: Prisma.StringNullableFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableFilter<"Operation">
+  reaperActionId?: Prisma.StringNullableFilter<"Operation"> | string | null
   type?: Prisma.EnumOperationTypeFilter<"Operation"> | $Enums.OperationType
   temporalNamespaceId?: Prisma.IntNullableFilter<"Operation"> | number | null
   postgresDatabaseId?: Prisma.IntNullableFilter<"Operation"> | number | null
@@ -903,6 +928,7 @@ export type OperationCreateWithoutPostgresDatabaseInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -921,6 +947,7 @@ export type OperationUncheckedCreateWithoutPostgresDatabaseInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   temporalNamespaceId?: number | null
   gatewayId?: number | null
@@ -964,6 +991,7 @@ export type OperationCreateWithoutStorageBucketInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -982,6 +1010,7 @@ export type OperationUncheckedCreateWithoutStorageBucketInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   temporalNamespaceId?: number | null
   postgresDatabaseId?: number | null
@@ -1025,6 +1054,7 @@ export type OperationCreateWithoutTemporalNamespaceInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1043,6 +1073,7 @@ export type OperationUncheckedCreateWithoutTemporalNamespaceInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   postgresDatabaseId?: number | null
   gatewayId?: number | null
@@ -1087,6 +1118,7 @@ export type OperationCreateManyGatewayInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   temporalNamespaceId?: number | null
   postgresDatabaseId?: number | null
@@ -1104,6 +1136,7 @@ export type OperationUpdateWithoutGatewayInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1122,6 +1155,7 @@ export type OperationUncheckedUpdateWithoutGatewayInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   temporalNamespaceId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   postgresDatabaseId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1140,6 +1174,7 @@ export type OperationUncheckedUpdateManyWithoutGatewayInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   temporalNamespaceId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   postgresDatabaseId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1158,6 +1193,7 @@ export type OperationCreateManyPostgresDatabaseInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   temporalNamespaceId?: number | null
   gatewayId?: number | null
@@ -1175,6 +1211,7 @@ export type OperationUpdateWithoutPostgresDatabaseInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1193,6 +1230,7 @@ export type OperationUncheckedUpdateWithoutPostgresDatabaseInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   temporalNamespaceId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gatewayId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1211,6 +1249,7 @@ export type OperationUncheckedUpdateManyWithoutPostgresDatabaseInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   temporalNamespaceId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gatewayId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1229,6 +1268,7 @@ export type OperationCreateManyStorageBucketInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   temporalNamespaceId?: number | null
   postgresDatabaseId?: number | null
@@ -1246,6 +1286,7 @@ export type OperationUpdateWithoutStorageBucketInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1264,6 +1305,7 @@ export type OperationUncheckedUpdateWithoutStorageBucketInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   temporalNamespaceId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   postgresDatabaseId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1282,6 +1324,7 @@ export type OperationUncheckedUpdateManyWithoutStorageBucketInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   temporalNamespaceId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   postgresDatabaseId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1300,6 +1343,7 @@ export type OperationCreateManyTemporalNamespaceInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: string | null
   type: $Enums.OperationType
   postgresDatabaseId?: number | null
   gatewayId?: number | null
@@ -1317,6 +1361,7 @@ export type OperationUpdateWithoutTemporalNamespaceInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1335,6 +1380,7 @@ export type OperationUncheckedUpdateWithoutTemporalNamespaceInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   postgresDatabaseId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gatewayId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1353,6 +1399,7 @@ export type OperationUncheckedUpdateManyWithoutTemporalNamespaceInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   postgresDatabaseId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   gatewayId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1373,6 +1420,7 @@ export type OperationSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  reaperActionId?: boolean
   type?: boolean
   temporalNamespaceId?: boolean
   postgresDatabaseId?: boolean
@@ -1396,6 +1444,7 @@ export type OperationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  reaperActionId?: boolean
   type?: boolean
   temporalNamespaceId?: boolean
   postgresDatabaseId?: boolean
@@ -1419,6 +1468,7 @@ export type OperationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  reaperActionId?: boolean
   type?: boolean
   temporalNamespaceId?: boolean
   postgresDatabaseId?: boolean
@@ -1442,6 +1492,7 @@ export type OperationSelectScalar = {
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  reaperActionId?: boolean
   type?: boolean
   temporalNamespaceId?: boolean
   postgresDatabaseId?: boolean
@@ -1452,7 +1503,7 @@ export type OperationSelectScalar = {
   resolvedAt?: boolean
 }
 
-export type OperationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "status" | "failureReason" | "failureMessage" | "callbackEndpoint" | "customData" | "type" | "temporalNamespaceId" | "postgresDatabaseId" | "gatewayId" | "storageBucketId" | "createdAt" | "updatedAt" | "resolvedAt", ExtArgs["result"]["operation"]>
+export type OperationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "status" | "failureReason" | "failureMessage" | "callbackEndpoint" | "customData" | "reaperActionId" | "type" | "temporalNamespaceId" | "postgresDatabaseId" | "gatewayId" | "storageBucketId" | "createdAt" | "updatedAt" | "resolvedAt", ExtArgs["result"]["operation"]>
 export type OperationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   temporalNamespace?: boolean | Prisma.Operation$temporalNamespaceArgs<ExtArgs>
   postgresDatabase?: boolean | Prisma.Operation$postgresDatabaseArgs<ExtArgs>
@@ -1525,6 +1576,10 @@ export type $OperationPayload<ExtArgs extends runtime.Types.Extensions.InternalA
      * Optional custom payload for completion notifications.
      */
     customData: runtime.JsonValue | null
+    /**
+     * The deterministic Reaper action identifier used as the Temporal workflow id, if applicable.
+     */
+    reaperActionId: string | null
     /**
      * The type of operation being performed.
      */
@@ -1992,6 +2047,7 @@ export interface OperationFieldRefs {
   readonly failureMessage: Prisma.FieldRef<"Operation", 'String'>
   readonly callbackEndpoint: Prisma.FieldRef<"Operation", 'String'>
   readonly customData: Prisma.FieldRef<"Operation", 'Json'>
+  readonly reaperActionId: Prisma.FieldRef<"Operation", 'String'>
   readonly type: Prisma.FieldRef<"Operation", 'OperationType'>
   readonly temporalNamespaceId: Prisma.FieldRef<"Operation", 'Int'>
   readonly postgresDatabaseId: Prisma.FieldRef<"Operation", 'Int'>

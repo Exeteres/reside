@@ -66,10 +66,12 @@ export function createDefinitionService(
               name: channel.name,
               title: channel.title,
               description: channel.description ?? null,
+              ownerReplicaName: replicaName,
             },
             update: {
               title: channel.title,
               description: channel.description ?? null,
+              ownerReplicaName: replicaName,
             },
           })
         }),
@@ -144,6 +146,7 @@ export function createDefinitionService(
               description: command.description ?? null,
               parameters: command.parameters as unknown as PrismaJson.CommandParameters,
               isProtected: command.protected === true,
+              ownerReplicaName: replicaName,
               callbackEndpoint: command.callbackEndpoint.trim(),
             },
             update: {
@@ -151,6 +154,7 @@ export function createDefinitionService(
               description: command.description ?? null,
               parameters: command.parameters as unknown as PrismaJson.CommandParameters,
               isProtected: command.protected === true,
+              ownerReplicaName: replicaName,
               callbackEndpoint: command.callbackEndpoint.trim(),
             },
           })

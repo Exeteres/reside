@@ -44,6 +44,9 @@ export type OperationMinAggregateOutputType = {
   failureReason: string | null
   failureMessage: string | null
   callbackEndpoint: string | null
+  reaperActionId: string | null
+  type: $Enums.OperationType | null
+  notificationResponseContextToken: string | null
   createdAt: Date | null
   updatedAt: Date | null
   resolvedAt: Date | null
@@ -57,6 +60,9 @@ export type OperationMaxAggregateOutputType = {
   failureReason: string | null
   failureMessage: string | null
   callbackEndpoint: string | null
+  reaperActionId: string | null
+  type: $Enums.OperationType | null
+  notificationResponseContextToken: string | null
   createdAt: Date | null
   updatedAt: Date | null
   resolvedAt: Date | null
@@ -71,6 +77,9 @@ export type OperationCountAggregateOutputType = {
   failureMessage: number
   callbackEndpoint: number
   customData: number
+  reaperActionId: number
+  type: number
+  notificationResponseContextToken: number
   createdAt: number
   updatedAt: number
   resolvedAt: number
@@ -94,6 +103,9 @@ export type OperationMinAggregateInputType = {
   failureReason?: true
   failureMessage?: true
   callbackEndpoint?: true
+  reaperActionId?: true
+  type?: true
+  notificationResponseContextToken?: true
   createdAt?: true
   updatedAt?: true
   resolvedAt?: true
@@ -107,6 +119,9 @@ export type OperationMaxAggregateInputType = {
   failureReason?: true
   failureMessage?: true
   callbackEndpoint?: true
+  reaperActionId?: true
+  type?: true
+  notificationResponseContextToken?: true
   createdAt?: true
   updatedAt?: true
   resolvedAt?: true
@@ -121,6 +136,9 @@ export type OperationCountAggregateInputType = {
   failureMessage?: true
   callbackEndpoint?: true
   customData?: true
+  reaperActionId?: true
+  type?: true
+  notificationResponseContextToken?: true
   createdAt?: true
   updatedAt?: true
   resolvedAt?: true
@@ -222,6 +240,9 @@ export type OperationGroupByOutputType = {
   failureMessage: string | null
   callbackEndpoint: string | null
   customData:unknown | null
+  reaperActionId: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken: string | null
   createdAt: Date
   updatedAt: Date
   resolvedAt: Date | null
@@ -259,6 +280,9 @@ export type OperationWhereInput = {
   failureMessage?: Prisma.StringNullableFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableFilter<"Operation">
+  reaperActionId?: Prisma.StringNullableFilter<"Operation"> | string | null
+  type?: Prisma.EnumOperationTypeFilter<"Operation"> | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.StringNullableFilter<"Operation"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Operation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Operation"> | Date | string
   resolvedAt?: Prisma.DateTimeNullableFilter<"Operation"> | Date | string | null
@@ -277,6 +301,9 @@ export type OperationOrderByWithRelationInput = {
   failureMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   customData?: Prisma.SortOrderInput | Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrderInput | Prisma.SortOrder
+  type?: Prisma.SortOrder
+  notificationResponseContextToken?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -288,6 +315,7 @@ export type OperationOrderByWithRelationInput = {
 
 export type OperationWhereUniqueInput = Prisma.AtLeast<{
   id?: number
+  reaperActionId?: string
   AND?: Prisma.OperationWhereInput | Prisma.OperationWhereInput[]
   OR?: Prisma.OperationWhereInput[]
   NOT?: Prisma.OperationWhereInput | Prisma.OperationWhereInput[]
@@ -298,6 +326,8 @@ export type OperationWhereUniqueInput = Prisma.AtLeast<{
   failureMessage?: Prisma.StringNullableFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableFilter<"Operation">
+  type?: Prisma.EnumOperationTypeFilter<"Operation"> | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.StringNullableFilter<"Operation"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Operation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Operation"> | Date | string
   resolvedAt?: Prisma.DateTimeNullableFilter<"Operation"> | Date | string | null
@@ -305,7 +335,7 @@ export type OperationWhereUniqueInput = Prisma.AtLeast<{
   notificationResponse?: Prisma.XOR<Prisma.NotificationResponseNullableScalarRelationFilter, Prisma.NotificationResponseWhereInput> | null
   approvalRequest?: Prisma.XOR<Prisma.ApprovalRequestNullableScalarRelationFilter, Prisma.ApprovalRequestWhereInput> | null
   avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
-}, "id">
+}, "id" | "reaperActionId">
 
 export type OperationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -316,6 +346,9 @@ export type OperationOrderByWithAggregationInput = {
   failureMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   customData?: Prisma.SortOrderInput | Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrderInput | Prisma.SortOrder
+  type?: Prisma.SortOrder
+  notificationResponseContextToken?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -338,6 +371,9 @@ export type OperationScalarWhereWithAggregatesInput = {
   failureMessage?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableWithAggregatesFilter<"Operation">
+  reaperActionId?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
+  type?: Prisma.EnumOperationTypeWithAggregatesFilter<"Operation"> | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Operation"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Operation"> | Date | string
   resolvedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Operation"> | Date | string | null
@@ -351,6 +387,9 @@ export type OperationCreateInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -369,6 +408,9 @@ export type OperationUncheckedCreateInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -386,6 +428,9 @@ export type OperationUpdateInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -404,6 +449,9 @@ export type OperationUncheckedUpdateInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -422,6 +470,9 @@ export type OperationCreateManyInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -435,6 +486,9 @@ export type OperationUpdateManyMutationInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -449,6 +503,9 @@ export type OperationUncheckedUpdateManyInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -473,6 +530,9 @@ export type OperationCountOrderByAggregateInput = {
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
   customData?: Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  notificationResponseContextToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrder
@@ -490,6 +550,9 @@ export type OperationMaxOrderByAggregateInput = {
   failureReason?: Prisma.SortOrder
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  notificationResponseContextToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrder
@@ -503,6 +566,9 @@ export type OperationMinOrderByAggregateInput = {
   failureReason?: Prisma.SortOrder
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  reaperActionId?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  notificationResponseContextToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrder
@@ -574,6 +640,10 @@ export type EnumOperationStatusFieldUpdateOperationsInput = {
   set?: $Enums.OperationStatus
 }
 
+export type EnumOperationTypeFieldUpdateOperationsInput = {
+  set?: $Enums.OperationType
+}
+
 export type OperationCreateWithoutApprovalRequestInput = {
   title: string
   description?: string | null
@@ -582,6 +652,9 @@ export type OperationCreateWithoutApprovalRequestInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -599,6 +672,9 @@ export type OperationUncheckedCreateWithoutApprovalRequestInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -631,6 +707,9 @@ export type OperationUpdateWithoutApprovalRequestInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -648,6 +727,9 @@ export type OperationUncheckedUpdateWithoutApprovalRequestInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -664,6 +746,9 @@ export type OperationCreateWithoutAvatarProvisionRequestInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -681,6 +766,9 @@ export type OperationUncheckedCreateWithoutAvatarProvisionRequestInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -713,6 +801,9 @@ export type OperationUpdateWithoutAvatarProvisionRequestInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -730,6 +821,9 @@ export type OperationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -746,6 +840,9 @@ export type OperationCreateWithoutNotificationResponseInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -763,6 +860,9 @@ export type OperationUncheckedCreateWithoutNotificationResponseInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -795,6 +895,9 @@ export type OperationUpdateWithoutNotificationResponseInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -812,6 +915,9 @@ export type OperationUncheckedUpdateWithoutNotificationResponseInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -828,6 +934,9 @@ export type OperationCreateWithoutNotificationInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -845,6 +954,9 @@ export type OperationUncheckedCreateWithoutNotificationInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: string | null
+  type: $Enums.OperationType
+  notificationResponseContextToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -877,6 +989,9 @@ export type OperationUpdateWithoutNotificationInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -894,6 +1009,9 @@ export type OperationUncheckedUpdateWithoutNotificationInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?:unknown | Prisma.NullableJsonNullValueInput
+  reaperActionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+  notificationResponseContextToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -913,6 +1031,9 @@ export type OperationSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  reaperActionId?: boolean
+  type?: boolean
+  notificationResponseContextToken?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   resolvedAt?: boolean
@@ -931,6 +1052,9 @@ export type OperationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  reaperActionId?: boolean
+  type?: boolean
+  notificationResponseContextToken?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   resolvedAt?: boolean
@@ -945,6 +1069,9 @@ export type OperationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  reaperActionId?: boolean
+  type?: boolean
+  notificationResponseContextToken?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   resolvedAt?: boolean
@@ -959,12 +1086,15 @@ export type OperationSelectScalar = {
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  reaperActionId?: boolean
+  type?: boolean
+  notificationResponseContextToken?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   resolvedAt?: boolean
 }
 
-export type OperationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "status" | "failureReason" | "failureMessage" | "callbackEndpoint" | "customData" | "createdAt" | "updatedAt" | "resolvedAt", ExtArgs["result"]["operation"]>
+export type OperationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "status" | "failureReason" | "failureMessage" | "callbackEndpoint" | "customData" | "reaperActionId" | "type" | "notificationResponseContextToken" | "createdAt" | "updatedAt" | "resolvedAt", ExtArgs["result"]["operation"]>
 export type OperationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   notification?: boolean | Prisma.Operation$notificationArgs<ExtArgs>
   notificationResponse?: boolean | Prisma.Operation$notificationResponseArgs<ExtArgs>
@@ -1027,6 +1157,18 @@ export type $OperationPayload<ExtArgs extends runtime.Types.Extensions.InternalA
      * Optional custom payload for completion notifications.
      */
     customData:unknown | null
+    /**
+     * The deterministic Reaper action identifier used as the Temporal workflow id, if applicable.
+     */
+    reaperActionId: string | null
+    /**
+     * The type of operation being performed.
+     */
+    type: $Enums.OperationType
+    /**
+     * The interaction context token for the accepted notification response, if applicable.
+     */
+    notificationResponseContextToken: string | null
     /**
      * The timestamp when this operation was created.
      */
@@ -1474,6 +1616,9 @@ export interface OperationFieldRefs {
   readonly failureMessage: Prisma.FieldRef<"Operation", 'String'>
   readonly callbackEndpoint: Prisma.FieldRef<"Operation", 'String'>
   readonly customData: Prisma.FieldRef<"Operation", 'Json'>
+  readonly reaperActionId: Prisma.FieldRef<"Operation", 'String'>
+  readonly type: Prisma.FieldRef<"Operation", 'OperationType'>
+  readonly notificationResponseContextToken: Prisma.FieldRef<"Operation", 'String'>
   readonly createdAt: Prisma.FieldRef<"Operation", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Operation", 'DateTime'>
   readonly resolvedAt: Prisma.FieldRef<"Operation", 'DateTime'>

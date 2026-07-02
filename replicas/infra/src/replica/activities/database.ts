@@ -16,6 +16,7 @@ import {
 import {
   buildMathesarBaseUrl,
   connectMathesarDatabaseAsAdmin,
+  deleteMinioBucketAccess,
   ensureMinioBucketAccess,
   ensureTemporalNamespace,
   loadInfraGatewayConfig,
@@ -25,6 +26,7 @@ import {
   MINIO_SERVICE_PORT,
   type PostgresAdminConfig,
   provisionPostgresDatabase,
+  quoteIdentifier,
   upsertGatewayResources,
 } from "../../shared"
 
@@ -104,9 +106,52 @@ export function createDatabaseActivities({
       )
     },
 
+    async deleteStorageBucket({ storageBucketId }) {
+      const storageBucket = await prisma.storageBucket.findUnique({
+        where: {
+          id: storageBucketId,
+        },
+      })
+      if (storageBucket === null) {
+        return
+      }
+
+      const minioAdminConfig = await loadMinioAdminConfig(coreApi, namespace)
+
+      await deleteMinioBucketAccess({
+        batchApi,
+        namespace,
+        endpoint: minioAdminConfig.endpoint,
+        adminUser: minioAdminConfig.username,
+        adminPassword: minioAdminConfig.password,
+        bucket: storageBucket.bucket,
+        accessKey: storageBucket.accessKey,
+      })
+
+      await prisma.storageBucket.deleteMany({
+        where: {
+          id: storageBucket.id,
+        },
+      })
+    },
+
     async ensureGateway({ gateway }) {
       const infraGatewayConfig = await loadInfraGatewayConfig(coreApi, namespace)
       await upsertGatewayResources(customObjectsApi, infraGatewayConfig, gateway)
+    },
+
+    async deletePostgresDatabase({ name }) {
+      await adminPool.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(name)} WITH (FORCE)`)
+      await adminPool.query(`DROP USER IF EXISTS ${quoteIdentifier(name)}`)
+      await prisma.postgresDatabase.deleteMany({ where: { database: name } })
+    },
+
+    async deleteTemporalNamespace({ temporalNamespaceId }) {
+      await prisma.temporalNamespace.deleteMany({ where: { id: temporalNamespaceId } })
+    },
+
+    async deleteGateway({ gatewayId }) {
+      await prisma.gateway.deleteMany({ where: { id: gatewayId } })
     },
 
     async pingReplica({ callbackEndpoint }) {

@@ -29,4 +29,5 @@ model NaturalLanguageInteraction {
 
   @@unique([chatId, threadRhid])
   @@index([chatId, userId])
+  @@index([replicaName])
 }

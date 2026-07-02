@@ -2,7 +2,8 @@ import type { PermissionRequestServiceClient } from "@reside/api/access/request.
 import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
-import type { PrismaClient } from "../../database"
+import type { GenericOperationService } from "@reside/common"
+import type { Operation, PrismaClient } from "../../database"
 import type { EngineerTaskActivities } from "../../definitions"
 import type { EngineerAiRuntime } from "../business"
 import { mkdir, rm } from "node:fs/promises"
@@ -140,6 +141,7 @@ type TaskActivityServices = {
   accessOperationService: OperationServiceClient
   loadService: LoadServiceClient
   alphaOperationService: OperationServiceClient
+  operationService: GenericOperationService<Operation>
 }
 
 export function createTaskActivities({
@@ -151,6 +153,7 @@ export function createTaskActivities({
   accessOperationService,
   loadService,
   alphaOperationService,
+  operationService,
 }: TaskActivityServices): EngineerTaskActivities {
   return {
     async generateTaskPreviewTitle({ prompt }) {
@@ -851,6 +854,14 @@ export function createTaskActivities({
         issueUrl: issue.url,
         repositoryUrl,
       }
+    },
+
+    async completeOperation({ operationId }) {
+      await operationService.setCompleted(operationId)
+    },
+
+    async failOperation({ operationId, reason, message }) {
+      await operationService.setFailed(operationId, reason, message)
     },
   }
 }

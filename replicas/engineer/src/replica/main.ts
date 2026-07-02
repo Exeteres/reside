@@ -1,7 +1,8 @@
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
-import { OperationSubscriptionService } from "@reside/api/common/operation.v1"
+import { OperationService, OperationSubscriptionService } from "@reside/api/common/operation.v1"
 import { PingService } from "@reside/api/common/ping.v1"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
+import { ReplicaReaperHandler } from "@reside/api/reaper/handler.v1"
 import {
   createCommandHandlerService,
   createInteractionActivities,
@@ -9,6 +10,7 @@ import {
   createOperationSubscriptionService,
   createPingService,
   createServer,
+  crypto,
   logger,
   registerGracefulShutdown,
   setupEncryption,
@@ -21,6 +23,7 @@ import { createServices } from "../shared"
 import { createTaskActivities } from "./activities"
 import { startEngineerAiRuntime } from "./business"
 import { createCreateTaskTool } from "./nls"
+import { createReaperService } from "./services/reaper"
 
 const services = await createServices()
 const runtime = await startEngineerAiRuntime()
@@ -35,6 +38,8 @@ await setupEncryption({ services, server })
 await server.register(fastifyConnectPlugin, {
   routes(router) {
     router.service(CommandHandlerService, createCommandHandlerService(services.temporalClient))
+    router.service(ReplicaReaperHandler, createReaperService({ ...services, crypto }))
+    router.service(OperationService, services.operationService.implementation)
     router.service(PingService, createPingService())
     router.service(
       OperationSubscriptionService,
@@ -83,11 +88,13 @@ const taskActivities = createTaskActivities({
   accessOperationService: services.accessOperationService,
   loadService: services.alphaLoadService,
   alphaOperationService: services.alphaOperationService,
+  operationService: services.operationService,
 })
 
 await startTemporalWorker({
   services,
   activities: {
+    ...services.operationService.activities,
     ...createInteractionActivities(
       services.notificationService,
       services.interactionOperationService,

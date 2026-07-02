@@ -14,7 +14,7 @@ import type * as Prisma from "../internal/prismaNamespace.ts"
 
 /**
  * Model Task
- * 
+ * Represents a long-lived engineer task bound to a notification topic.
  */
 export type TaskModel = runtime.Types.Result.DefaultSelection<Prisma.$TaskPayload>
 
@@ -512,10 +512,6 @@ export type NullableIntFieldUpdateOperationsInput = {
   divide?: number
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type TaskCreateNestedOneWithoutIterationsInput = {
   create?: Prisma.XOR<Prisma.TaskCreateWithoutIterationsInput, Prisma.TaskUncheckedCreateWithoutIterationsInput>
   connectOrCreate?: Prisma.TaskCreateOrConnectWithoutIterationsInput
@@ -700,19 +696,55 @@ export type TaskIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $TaskPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Task"
   objects: {
+    /**
+     * The planning and implementation iterations executed for this task.
+     */
     iterations: Prisma.$TaskIterationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
+    /**
+     * The unique numeric identifier of the task.
+     */
     id: number
+    /**
+     * The workflow phase currently expected for the next interaction cycle.
+     */
     phase: $Enums.TaskPhase
+    /**
+     * The lifecycle status of the current task phase.
+     */
     status: $Enums.TaskStatus
+    /**
+     * The GitHub issue number associated with this task, if one has been created.
+     */
     issueId: number | null
+    /**
+     * The interaction topic identifier that receives all task progress and feedback messages.
+     */
     topicId: string
+    /**
+     * The short title generated during preparation before the planning agent can refine it.
+     */
     previewTitle: string
+    /**
+     * The notification currently used for progress updates during the active interaction cycle.
+     */
     progressNotificationId: string | null
+    /**
+     * The replica subject identifier that created the task.
+     */
     createdBy: string
+    /**
+     * The replica subject identifier that last changed the task state, if known.
+     */
     updatedBy: string | null
+    /**
+     * The timestamp when this task was created.
+     */
     createdAt: Date
+    /**
+     * The timestamp when this task was last updated.
+     */
     updatedAt: Date
   }, ExtArgs["result"]["task"]>
   composites: {}

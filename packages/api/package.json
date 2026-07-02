@@ -60,7 +60,11 @@
     "./interaction/topic.v1_pb": "./src/_generated/interaction/topic.v1_pb.ts",
     "./interaction/topic.v1": "./src/_generated/interaction/topic.v1.ts",
     "./notcompel/notcompel.v1_pb": "./src/_generated/notcompel/notcompel.v1_pb.ts",
-    "./notcompel/notcompel.v1": "./src/_generated/notcompel/notcompel.v1.ts"
+    "./notcompel/notcompel.v1": "./src/_generated/notcompel/notcompel.v1.ts",
+    "./reaper/definition.v1_pb": "./src/_generated/reaper/definition.v1_pb.ts",
+    "./reaper/definition.v1": "./src/_generated/reaper/definition.v1.ts",
+    "./reaper/handler.v1_pb": "./src/_generated/reaper/handler.v1_pb.ts",
+    "./reaper/handler.v1": "./src/_generated/reaper/handler.v1.ts"
   },
   "dependencies": {
     "@bufbuild/protobuf": "catalog:",

@@ -5,6 +5,48 @@ enum NotificationResponseType {
 
   /// The user submitted free text.
   TEXT
+
+  /// The user updated the notification task list.
+  TASK_UPDATE
+}
+
+/// The high-level notification lifecycle status used by renderers.
+enum NotificationStatus {
+  /// The notification has no special lifecycle state.
+  REGULAR
+
+  /// The notification is collecting or showing a planned task list.
+  PLANNING
+
+  /// The notification is actively in progress.
+  IN_PROGRESS
+
+  /// The notification completed successfully.
+  COMPLETED
+
+  /// The notification failed.
+  FAILED
+}
+
+/// The status of a task attached to a notification.
+enum NotificationTaskStatus {
+  /// The task is planned but has not started yet.
+  PLANNED
+
+  /// The task is waiting to start.
+  PENDING
+
+  /// The task is currently in progress.
+  IN_PROGRESS
+
+  /// The task completed successfully.
+  COMPLETED
+
+  /// The task failed.
+  FAILED
+
+  /// The task was skipped and should not be performed.
+  SKIPPED
 }
 
 /// Represents a user response to a notification.
@@ -80,6 +122,128 @@ model NotificationTopic {
   @@index([chatId])
 }
 
+/// Represents a caller-provided notification task group.
+model NotificationTaskGroup {
+  /// The notification this task group belongs to.
+  notificationId Int
+
+  /// The notification this task group belongs to.
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  /// The caller-provided stable group identifier within the notification.
+  stableId String
+
+  /// The stored group title.
+  title String
+
+  /// The zero-based group position in the rendered task list.
+  position Int
+
+  /// The tasks that belong to this group.
+  tasks NotificationTask[]
+
+  @@id([notificationId, stableId])
+  @@index([notificationId])
+}
+
+/// Represents a caller-provided notification task.
+model NotificationTask {
+  /// The notification this task belongs to.
+  notificationId Int
+
+  /// The caller-provided stable group identifier within the notification.
+  groupStableId String
+
+  /// The task group this task belongs to.
+  group NotificationTaskGroup @relation(fields: [notificationId, groupStableId], references: [notificationId, stableId], onDelete: Cascade)
+
+  /// The caller-provided stable task identifier within the group.
+  stableId String
+
+  /// The stored task title.
+  title String
+
+  /// The current task status.
+  status NotificationTaskStatus
+
+  /// The zero-based task position in the rendered group.
+  position Int
+
+  /// Planning poll options that point to this task.
+  planningPollOptions NotificationTaskPlanningPollOption[]
+
+  @@id([notificationId, groupStableId, stableId])
+  @@index([notificationId, groupStableId])
+  @@index([status])
+}
+
+/// Represents an active Telegram poll used to edit a planning notification task list.
+model NotificationTaskPlanningPoll {
+  /// The unique numeric identifier of the planning poll.
+  id Int @id @default(autoincrement())
+
+  /// The notification this planning poll edits.
+  notificationId Int
+
+  /// The notification this planning poll edits.
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  /// The RHID of the Telegram poll identifier.
+  pollRhid String @unique
+
+  /// The ECID of the raw Telegram poll message payload.
+  messageEcid String @unique
+
+  /// The encrypted raw Telegram poll message payload.
+  message EncryptedContent @relation(name: "NotificationTaskPlanningPollMessage", fields: [messageEcid], references: [ecid])
+
+  /// The internal user identifier that launched the poll.
+  launchedByUserId Int
+
+  /// The Telegram user that launched the poll.
+  launchedByUser User @relation(fields: [launchedByUserId], references: [id], onDelete: Cascade)
+
+  /// The poll options mapped to notification tasks.
+  options NotificationTaskPlanningPollOption[]
+
+  /// The timestamp when this planning poll was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this planning poll was last updated.
+  updatedAt DateTime @updatedAt
+
+  @@index([notificationId])
+  @@index([launchedByUserId])
+}
+
+/// Maps a Telegram poll option to a notification task.
+model NotificationTaskPlanningPollOption {
+  /// The planning poll this option belongs to.
+  pollId Int
+
+  /// The planning poll this option belongs to.
+  poll NotificationTaskPlanningPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  /// The zero-based Telegram poll option identifier.
+  optionId Int
+
+  /// The notification identifier of the task represented by this poll option.
+  taskNotificationId Int
+
+  /// The group identifier of the task represented by this poll option.
+  taskGroupStableId String
+
+  /// The task identifier represented by this poll option.
+  taskStableId String
+
+  /// The notification task represented by this poll option.
+  task NotificationTask @relation(fields: [taskNotificationId, taskGroupStableId, taskStableId], references: [notificationId, groupStableId, stableId], onDelete: Cascade)
+
+  @@id([pollId, optionId])
+  @@unique([pollId, taskNotificationId, taskGroupStableId, taskStableId])
+  @@index([taskNotificationId, taskGroupStableId, taskStableId])
+}
+
 /// Represents a sent notification tracked by the replica.
 model Notification {
   /// The unique numeric identifier of the notification.
@@ -101,7 +265,7 @@ model Notification {
   channelId Int
 
   /// The notification channel associated with this notification.
-  channel NotificationChannel @relation(fields: [channelId], references: [id])
+  channel NotificationChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   /// The optional topic where this notification was sent.
   topicId Int?
@@ -130,9 +294,18 @@ model Notification {
   /// The stored content of this notification.
   content String
 
+  /// The high-level notification lifecycle status used by renderers.
+  status NotificationStatus @default(REGULAR)
+
   /// The serialized list of action rows for rendering and pagination.
   /// [NotificationActionRowsData]
   actionRows Json
+
+  /// The ordered task groups attached to this notification.
+  taskGroups NotificationTaskGroup[]
+
+  /// The active or historical planning polls created for this notification.
+  taskPlanningPolls NotificationTaskPlanningPoll[]
 
   /// Whether this notification requires text response tracking.
   requiresTextResponse Boolean @default(false)
@@ -159,4 +332,5 @@ model Notification {
   @@index([channelId])
   @@index([chatId])
   @@index([topicId])
+  @@index([status])
 }

@@ -108,4 +108,10 @@ export enum WellKnownPermissions {
    * The scope is the name of the gateway.
    */
   INFRA_GATEWAY_MANAGE = "infra:gateway:manage",
+
+  /**
+   * Allows to register a cleanup handler in the Reaper Replica.
+   * The scope is the name of the resource holder replica.
+   */
+  REAPER_HANDLER_REGISTER = "reaper:handler:register",
 }

@@ -4,6 +4,7 @@ import { Code, ConnectError } from "@connectrpc/connect"
 import { status as GrpcStatus } from "@grpc/grpc-js"
 import { DEFAULT_TEMPORAL_TASK_QUEUE, logger } from "@reside/common"
 import { type Client, isGrpcServiceError, WorkflowIdReusePolicy } from "@temporalio/client"
+import { OperationType } from "../../database"
 import { strings } from "../../locale"
 
 type RequestedPermissionItem = {
@@ -273,6 +274,7 @@ export async function requestPermissions(
       data: {
         title: strings.operations.requestPermissionSet.title,
         description: strings.operations.requestPermissionSet.description,
+        type: OperationType.APPROVE_PERMISSION_REQUEST_SET,
         status: "PENDING",
       },
     })

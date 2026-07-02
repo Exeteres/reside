@@ -5,7 +5,7 @@
     "": {
       "name": "reside",
       "dependencies": {
-        "grammy": "^1.42.0",
+        "grammy": "^1.44.0",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
@@ -145,6 +145,7 @@
         "@reside/common": "workspace:*",
         "@reside/registry": "workspace:*",
         "@typescript/native-preview": "catalog:",
+        "zod": "catalog:",
       },
     },
     "replicas/alpha": {
@@ -269,6 +270,7 @@
         "@types/pg": "catalog:",
         "@typescript/native-preview": "catalog:",
         "pg": "catalog:",
+        "zod": "catalog:",
       },
     },
     "replicas/notcompel": {
@@ -314,6 +316,29 @@
         "@reside/api": "workspace:*",
         "@reside/common": "workspace:*",
         "@reside/registry": "workspace:*",
+        "@typescript/native-preview": "catalog:",
+        "zod": "catalog:",
+      },
+    },
+    "replicas/reaper": {
+      "name": "@replicas/reaper",
+      "dependencies": {
+        "@bufbuild/protobuf": "catalog:",
+        "@connectrpc/connect": "catalog:",
+        "@connectrpc/connect-fastify": "catalog:",
+        "@temporalio/client": "catalog:",
+        "@temporalio/worker": "catalog:",
+        "@temporalio/workflow": "catalog:",
+        "fastify": "catalog:",
+        "pg": "catalog:",
+        "prisma": "catalog:",
+      },
+      "devDependencies": {
+        "@prisma/client": "catalog:",
+        "@reside/api": "workspace:*",
+        "@reside/common": "workspace:*",
+        "@reside/registry": "workspace:*",
+        "@types/pg": "catalog:",
         "@typescript/native-preview": "catalog:",
         "zod": "catalog:",
       },
@@ -639,7 +664,7 @@
 
     "@github/copilot-win32-x64": ["@github/copilot-win32-x64@1.0.11", "", { "os": "win32", "cpu": "x64", "bin": { "copilot-win32-x64": "copilot.exe" } }, "sha512-fKGkSNamzs3h9AbmswNvPYJBORCb2Y8CbusijU3C7fT3ohvqnHJwKo5iHhJXLOKZNOpFZgq9YKha410u9sIs6Q=="],
 
-    "@grammyjs/types": ["@grammyjs/types@3.26.0", "", {}, "sha512-jlnyfxfev/2o68HlvAGRocAXgdPPX5QabG7jZlbqC2r9DZyWBfzTlg+nu3O3Fy4EhgLWu28hZ/8wr7DsNamP9A=="],
+    "@grammyjs/types": ["@grammyjs/types@3.28.0", "", {}, "sha512-4JvXCdxRZHCje0M4gHzLwtB4bLno3WD28xd8CNfk4POWIu73BFnSvGeW6OQ5gPem4eYTEwkD9yDaXssixl6tMQ=="],
 
     "@grpc/grpc-js": ["@grpc/grpc-js@1.14.3", "", { "dependencies": { "@grpc/proto-loader": "^0.8.0", "@js-sdsl/ordered-map": "^4.4.2" } }, "sha512-Iq8QQQ/7X3Sac15oB6p0FmUg/klxQvXLeileoqrTRGJYLV+/9tubbr9ipz0GKHjmXVsgFPo/+W+2cA8eNcR+XA=="],
 
@@ -1040,6 +1065,8 @@
     "@replicas/notcompel": ["@replicas/notcompel@workspace:replicas/notcompel"],
 
     "@replicas/rate": ["@replicas/rate@workspace:replicas/rate"],
+
+    "@replicas/reaper": ["@replicas/reaper@workspace:replicas/reaper"],
 
     "@replicas/security": ["@replicas/security@workspace:replicas/security"],
 
@@ -1531,7 +1558,7 @@
 
     "grammex": ["grammex@3.1.12", "", {}, "sha512-6ufJOsSA7LcQehIJNCO7HIBykfM7DXQual0Ny780/DEcJIpBlHRvcqEBWGPYd7hrXL2GJ3oJI1MIhaXjWmLQOQ=="],
 
-    "grammy": ["grammy@1.42.0", "", { "dependencies": { "@grammyjs/types": "3.26.0", "abort-controller": "^3.0.0", "debug": "^4.4.3", "node-fetch": "^2.7.0" } }, "sha512-1AdCge+AkjSdp2FwfICSFnVbl8Mq3KVHJDy+DgTI9+D6keJ0zWALPRKas5jv/8psiCzL4N2cEOcGW7O45Kn39g=="],
+    "grammy": ["grammy@1.44.0", "", { "dependencies": { "@grammyjs/types": "3.28.0", "abort-controller": "^3.0.0", "debug": "^4.4.3", "node-fetch": "^2.7.0" } }, "sha512-gGVykS5+c5f1tPV97LuU6IDRMawE2NzpwM9pNz58HQ35IZXDnYL3VOLvNzYognPSeBIOSzQXRu5w96V0aY8y8A=="],
 
     "graphmatch": ["graphmatch@1.1.1", "", {}, "sha512-5ykVn/EXM1hF0XCaWh05VbYvEiOL2lY1kBxZtaYsyvjp7cmWOU1XsAdfQBwClraEofXDT197lFbXOEVMHpvQOg=="],
 

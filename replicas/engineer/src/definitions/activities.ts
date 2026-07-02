@@ -297,4 +297,14 @@ export type EngineerTaskActivities = {
    * Returns the latest task snapshot.
    */
   getTaskSnapshot: (input: GetTaskSnapshotInput) => Promise<GetTaskSnapshotOutput>
+
+  /**
+   * Marks an operation as completed.
+   */
+  completeOperation: (input: { operationId: number }) => Promise<void>
+
+  /**
+   * Marks an operation as failed.
+   */
+  failOperation: (input: { operationId: number; reason: string; message: string }) => Promise<void>
 }

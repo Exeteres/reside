@@ -8,11 +8,16 @@ import type { GenericOperationService, MessageElement } from "@reside/common"
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../../database"
+import type { NotificationStatus, NotificationTaskStatus } from "./notification-types"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import { NaturalLanguageService } from "@reside/api/interaction/nls.v1"
 import { block, bold, createChannel, createClient, italic, logger, rhid } from "@reside/common"
 import { type Bot, type BotError, type Context, GrammyError, HttpError } from "grammy"
-import { encryptedStringSchema } from "../../definitions"
+import {
+  encryptedStringSchema,
+  getTelegramMessageChatId,
+  telegramSentMessageSchema,
+} from "../../definitions"
 import { strings } from "../../locale"
 import { createInteractionContextToken } from "../../shared"
 import {
@@ -22,7 +27,7 @@ import {
 } from "./authorization"
 import { createTelegramBotClient } from "./bot-client"
 import { parseCommandInvocation, parseLeadingMention } from "./bot-command"
-import { handleCommandInvocation } from "./bot-command-invocation"
+import { handleCommandInvocation, type TelegramMessageEntity } from "./bot-command-invocation"
 import { handleManagedBotLifecycleUpdate } from "./bot-managed"
 import { handleNlsMessage } from "./bot-nls"
 import { ensureTargetChatExists } from "./notification-access"
@@ -31,6 +36,7 @@ import {
   deleteNotificationChannelBinding,
 } from "./notification-channel-binding"
 import { renderRepliedNotificationInfo, resolveRepliedNotificationInfo } from "./notification-info"
+import { EDIT_NOTIFICATION_TASKS_ACTION, getStatusIcon } from "./notification-message"
 import {
   buildNotificationInlineKeyboard,
   isNotificationPaginationActionName,
@@ -48,6 +54,27 @@ export {
   parseCommandParameters,
   parseStoredCommandParameters,
 } from "./bot-command"
+
+type InteractionContextType = "SYSTEM" | "CHAT" | "USER_PRIVATE" | "USER_IN_CHAT"
+type ClearContextTargetKind = "replica" | "mention"
+
+type ClearContextTarget = {
+  kind: ClearContextTargetKind
+  value: string
+}
+
+type StoredNotificationTaskGroup = {
+  title: string
+  tasks: StoredNotificationTask[]
+}
+
+type StoredNotificationTask = {
+  title: string
+  status: NotificationTaskStatus
+}
+
+type UrlInlineKeyboardButton = { text: string; url: string }
+type UrlInlineKeyboardRow = UrlInlineKeyboardButton[]
 
 /**
  * Creates and initializes the primary Telegram bot instance used by the webhook runtime.
@@ -358,6 +385,10 @@ export async function createTelegramBot(args: {
     }
   })
 
+  bot.on("poll_answer", async context => {
+    await handleNotificationTaskPollAnswer(args, context)
+  })
+
   bot.use(async (context, next) => {
     try {
       await handleManagedBotLifecycleUpdate(args, context, bot)
@@ -406,9 +437,7 @@ export async function createTelegramBot(args: {
           userId,
           messageId: message.message_id,
           text: message.text,
-          entities: message.entities as
-            | Array<{ type: string; offset: number; length: number; user?: { id?: number } }>
-            | undefined,
+          entities: message.entities as TelegramMessageEntity[] | undefined,
           interactionContext,
           sendSystemMessage: async input => {
             await sendSystemMessage(context, input)
@@ -631,6 +660,11 @@ export async function createTelegramBot(args: {
       messageId,
       actionName,
     )
+
+    if (actionName === EDIT_NOTIFICATION_TASKS_ACTION) {
+      await handleNotificationTaskEditAction(args, context, chatId, userId, messageId)
+      return
+    }
 
     if (isNotificationPaginationActionName(actionName)) {
       await handleNotificationPaginationAction(context, args.prisma, chatId, messageId, actionName)
@@ -948,10 +982,7 @@ export function parseBindingCommandText(
 }
 
 export function parseClearContextCommandText(text: string): {
-  target: {
-    kind: "replica" | "mention"
-    value: string
-  }
+  target: ClearContextTarget
 } | null {
   const [rawCommand, ...rawArgs] = text.trim().split(/\s+/)
   const normalizedCommand = rawCommand?.split("@")[0]
@@ -992,10 +1023,7 @@ export function parseClearContextCommandText(text: string): {
 
 async function resolveClearContextTargetReplicaName(
   prisma: PrismaClient,
-  target: {
-    kind: "replica" | "mention"
-    value: string
-  },
+  target: ClearContextTarget,
 ): Promise<string | null> {
   if (target.kind === "replica") {
     return target.value
@@ -1076,7 +1104,7 @@ async function buildInteractionContext(
     message_id: options?.messageId,
   })
 
-  const type: "SYSTEM" | "CHAT" | "USER_PRIVATE" | "USER_IN_CHAT" =
+  const type: InteractionContextType =
     chat.type === "private" ? "USER_PRIVATE" : user?.id ? "USER_IN_CHAT" : "CHAT"
 
   const title =
@@ -1115,7 +1143,25 @@ async function appendAcceptedStamp(
     select: {
       title: true,
       content: true,
+      status: true,
       expectImmediateFeedback: true,
+      taskGroups: {
+        orderBy: {
+          position: "asc",
+        },
+        select: {
+          title: true,
+          tasks: {
+            orderBy: {
+              position: "asc",
+            },
+            select: {
+              title: true,
+              status: true,
+            },
+          },
+        },
+      },
     },
     orderBy: {
       id: "desc",
@@ -1162,6 +1208,383 @@ async function appendAcceptedStamp(
   }
 }
 
+async function handleNotificationTaskEditAction(
+  args: {
+    crypto: ResideCrypto
+    prisma: PrismaClient
+    authzService: AuthzServiceClient
+    permissionRequestService: PermissionRequestServiceClient
+    superAdminUserId: string | undefined
+  },
+  context: Context,
+  chatId: number,
+  userId: number,
+  messageId: number,
+): Promise<void> {
+  await ensureTelegramEntities(args.crypto, args.prisma, context)
+
+  const user = await upsertTelegramUser(
+    args.crypto,
+    args.prisma,
+    String(userId),
+    context.from as PrismaJson.UserData,
+  )
+
+  const notification = await args.prisma.notification.findFirst({
+    where: {
+      messageRhid: rhid(messageId),
+      chat: {
+        telegramRhid: rhid(String(chatId)),
+      },
+      status: "PLANNING",
+    },
+    select: {
+      id: true,
+      isProtected: true,
+      channel: {
+        select: {
+          name: true,
+        },
+      },
+      taskGroups: {
+        orderBy: {
+          position: "asc",
+        },
+        select: {
+          stableId: true,
+          tasks: {
+            orderBy: {
+              position: "asc",
+            },
+            select: {
+              notificationId: true,
+              groupStableId: true,
+              stableId: true,
+              title: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      id: "desc",
+    },
+  })
+
+  const tasks = notification?.taskGroups.flatMap(group => group.tasks) ?? []
+  if (notification === null || tasks.length === 0) {
+    await context.answerCallbackQuery()
+    return
+  }
+
+  if (
+    notification.isProtected &&
+    !canSuperAdminInteract(args, userId) &&
+    !(await canInteractWithNotificationChannel({
+      authzService: args.authzService,
+      userId,
+      channelName: notification.channel.name,
+    }))
+  ) {
+    await requestNotificationChannelInteractPermission({
+      permissionRequestService: args.permissionRequestService,
+      userId,
+      channelName: notification.channel.name,
+    })
+    await context.answerCallbackQuery({
+      text: strings.common.accessDenied,
+      show_alert: false,
+    })
+    return
+  }
+
+  const sentPoll = await context.replyWithPoll(
+    strings.server.notification.editTasksPollTitle,
+    tasks.map(task => task.title),
+    {
+      allow_adding_options: false,
+      allows_multiple_answers: true,
+      allows_revoting: false,
+      is_anonymous: false,
+      reply_parameters: {
+        message_id: messageId,
+      },
+    },
+  )
+
+  if (!sentPoll.poll?.id) {
+    await context.answerCallbackQuery({
+      text: strings.worker.bot.unexpectedError,
+      show_alert: false,
+    })
+    return
+  }
+
+  await args.prisma.notificationTaskPlanningPoll.create({
+    data: {
+      notificationId: notification.id,
+      pollRhid: rhid(sentPoll.poll.id),
+      messageEcid: await args.crypto.encrypt(sentPoll),
+      launchedByUserId: user.id,
+      options: {
+        create: tasks.map((task, optionId) => ({
+          optionId,
+          task: {
+            connect: {
+              notificationId_groupStableId_stableId: {
+                notificationId: task.notificationId,
+                groupStableId: task.groupStableId,
+                stableId: task.stableId,
+              },
+            },
+          },
+        })),
+      },
+    },
+  })
+
+  await context.answerCallbackQuery()
+}
+
+async function handleNotificationTaskPollAnswer(
+  args: {
+    crypto: ResideCrypto
+    prisma: PrismaClient
+    operationService: GenericOperationService<Operation>
+    authzService: AuthzServiceClient
+    permissionRequestService: PermissionRequestServiceClient
+    superAdminUserId: string | undefined
+  },
+  context: Context,
+): Promise<void> {
+  const pollAnswer = context.pollAnswer
+  if (pollAnswer === undefined) {
+    return
+  }
+
+  const user = pollAnswer.user
+  if (!user) {
+    return
+  }
+
+  const userRecord = await upsertTelegramUser(
+    args.crypto,
+    args.prisma,
+    String(user.id),
+    user as PrismaJson.UserData,
+  )
+
+  const poll = await args.prisma.notificationTaskPlanningPoll.findUnique({
+    where: {
+      pollRhid: rhid(pollAnswer.poll_id),
+    },
+    select: {
+      id: true,
+      messageEcid: true,
+      launchedByUserId: true,
+      notification: {
+        select: {
+          id: true,
+          isProtected: true,
+          channel: {
+            select: {
+              name: true,
+            },
+          },
+          operationId: true,
+          messageEcid: true,
+          operation: {
+            select: {
+              status: true,
+              notificationResponse: {
+                select: {
+                  operationId: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      options: {
+        select: {
+          optionId: true,
+          taskNotificationId: true,
+          taskGroupStableId: true,
+          taskStableId: true,
+        },
+      },
+    },
+  })
+
+  if (poll === null || poll.launchedByUserId !== userRecord.id) {
+    return
+  }
+
+  if (
+    poll.notification.isProtected &&
+    !canSuperAdminInteract(args, user.id) &&
+    !(await canInteractWithNotificationChannel({
+      authzService: args.authzService,
+      userId: user.id,
+      channelName: poll.notification.channel.name,
+    }))
+  ) {
+    await requestNotificationChannelInteractPermission({
+      permissionRequestService: args.permissionRequestService,
+      userId: user.id,
+      channelName: poll.notification.channel.name,
+    })
+    await deletePlanningPollMessage(args.crypto, context, poll.messageEcid)
+    await args.prisma.notificationTaskPlanningPoll.delete({
+      where: {
+        id: poll.id,
+      },
+    })
+    return
+  }
+
+  const selectedOptionIds = new Set(pollAnswer.option_ids)
+  const operationIdToComplete =
+    poll.notification.operationId !== null &&
+    poll.notification.operation?.status === "PENDING" &&
+    poll.notification.operation.notificationResponse === null
+      ? poll.notification.operationId
+      : undefined
+
+  await args.prisma.$transaction(async tx => {
+    for (const option of poll.options) {
+      await tx.notificationTask.update({
+        where: {
+          notificationId_groupStableId_stableId: {
+            notificationId: option.taskNotificationId,
+            groupStableId: option.taskGroupStableId,
+            stableId: option.taskStableId,
+          },
+        },
+        data: {
+          status: selectedOptionIds.has(option.optionId) ? "PLANNED" : "SKIPPED",
+        },
+      })
+    }
+
+    if (operationIdToComplete !== undefined) {
+      await tx.notificationResponse.create({
+        data: {
+          operationId: operationIdToComplete,
+          type: "TASK_UPDATE",
+          actionName: null,
+          textResponseEcid: null,
+        },
+      })
+    }
+
+    await tx.notificationTaskPlanningPoll.delete({
+      where: {
+        id: poll.id,
+      },
+    })
+  })
+
+  await deletePlanningPollMessage(args.crypto, context, poll.messageEcid)
+  await rerenderStoredNotification(args.crypto, args.prisma, context, poll.notification.id)
+
+  if (operationIdToComplete !== undefined) {
+    await args.operationService.setCompleted(operationIdToComplete)
+  }
+}
+
+function canSuperAdminInteract(
+  args: { superAdminUserId: string | undefined },
+  userId: number,
+): boolean {
+  return args.superAdminUserId !== undefined && String(userId) === args.superAdminUserId
+}
+
+async function deletePlanningPollMessage(
+  crypto: ResideCrypto,
+  context: Context,
+  messageEcid: string,
+): Promise<void> {
+  const pollMessage = await crypto.decrypt(telegramSentMessageSchema, messageEcid)
+
+  try {
+    await context.api.deleteMessage(getTelegramMessageChatId(pollMessage), pollMessage.message_id)
+  } catch (error) {
+    logger.warn(
+      {
+        error: error instanceof Error ? error : new Error(String(error)),
+      },
+      "failed to delete notification task planning poll",
+    )
+  }
+}
+
+async function rerenderStoredNotification(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  context: Context,
+  notificationId: number,
+): Promise<void> {
+  const notification = await prisma.notification.findUnique({
+    where: {
+      id: notificationId,
+    },
+    select: {
+      title: true,
+      content: true,
+      status: true,
+      actionRows: true,
+      messageEcid: true,
+      taskGroups: {
+        orderBy: {
+          position: "asc",
+        },
+        select: {
+          title: true,
+          tasks: {
+            orderBy: {
+              position: "asc",
+            },
+            select: {
+              title: true,
+              status: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  if (notification === null) {
+    return
+  }
+
+  const telegramMessage = await crypto.decrypt(telegramSentMessageSchema, notification.messageEcid)
+  const chatId = getTelegramMessageChatId(telegramMessage)
+  const messageId = telegramMessage.message_id
+  const renderedNotification = renderStoredNotificationMessage(notification).html
+  const replyMarkup = buildNotificationInlineKeyboard(notification.actionRows, 0, {
+    status: notification.status,
+  })
+
+  try {
+    await context.api.editMessageText(chatId, messageId, renderedNotification, {
+      parse_mode: "HTML",
+      link_preview_options: {
+        is_disabled: true,
+      },
+      reply_markup: replyMarkup,
+    })
+  } catch (error) {
+    logger.warn(
+      {
+        error: error instanceof Error ? error : new Error(String(error)),
+      },
+      "failed to rerender notification after task planning poll",
+    )
+  }
+}
+
 async function handleNotificationPaginationAction(
   context: Context,
   prisma: PrismaClient,
@@ -1184,6 +1607,7 @@ async function handleNotificationPaginationAction(
     },
     select: {
       actionRows: true,
+      status: true,
     },
     orderBy: {
       id: "desc",
@@ -1195,7 +1619,9 @@ async function handleNotificationPaginationAction(
     return
   }
 
-  const replyMarkup = buildNotificationInlineKeyboard(notification.actionRows, page)
+  const replyMarkup = buildNotificationInlineKeyboard(notification.actionRows, page, {
+    status: notification.status,
+  })
 
   try {
     await context.api.editMessageReplyMarkup(chatId, messageId, {
@@ -1267,13 +1693,59 @@ function formatMskDateTime(date: Date): { date: string; time: string } {
 function renderStoredNotificationMessage(input: {
   title: string
   content: string
+  status: NotificationStatus
+  taskGroups: StoredNotificationTaskGroup[]
 }): MessageElement {
   const content = input.content.trim()
+  const title = `${getStatusIcon(input.status)} ${input.title}`
+  const taskRows = renderStoredNotificationTaskRows(input.taskGroups)
   if (content.length > 0) {
-    return block(bold(input.title), "", { html: content })
+    return block(bold(title), "", { html: content }, ...taskRows)
   }
 
-  return block(bold(input.title))
+  return block(bold(title), ...taskRows)
+}
+
+function renderStoredNotificationTaskRows(taskGroups: StoredNotificationTaskGroup[]): string[] {
+  if (taskGroups.length === 0) {
+    return []
+  }
+
+  const rows: string[] = [""]
+
+  for (const group of taskGroups) {
+    rows.push(bold(`${getStatusIcon(getStoredTaskGroupStatus(group.tasks))} ${group.title}`).html)
+
+    for (const task of group.tasks) {
+      rows.push(`- ${getStatusIcon(task.status)} ${task.title}`)
+    }
+  }
+
+  return rows
+}
+
+function getStoredTaskGroupStatus(tasks: StoredNotificationTask[]): NotificationTaskStatus {
+  if (tasks.length === 0) {
+    return "SKIPPED"
+  }
+
+  if (tasks.some(task => task.status === "FAILED")) {
+    return "FAILED"
+  }
+
+  if (tasks.some(task => task.status === "IN_PROGRESS")) {
+    return "IN_PROGRESS"
+  }
+
+  if (tasks.some(task => task.status === "PENDING")) {
+    return "PENDING"
+  }
+
+  if (tasks.every(task => task.status === "COMPLETED" || task.status === "SKIPPED")) {
+    return "COMPLETED"
+  }
+
+  return "PLANNED"
 }
 
 async function sendSystemMessage(
@@ -1456,7 +1928,7 @@ async function setUserMessageAcceptedReaction(
 
 function resolveUrlOnlyReplyMarkup(context: Context, messageId: number) {
   const keyboard = resolveInlineKeyboardForMessage(context, messageId)
-  const inlineKeyboard: Array<Array<{ text: string; url: string }>> = []
+  const inlineKeyboard: UrlInlineKeyboardRow[] = []
 
   if (!Array.isArray(keyboard)) {
     return {
@@ -1469,7 +1941,7 @@ function resolveUrlOnlyReplyMarkup(context: Context, messageId: number) {
       continue
     }
 
-    const urlButtons: Array<{ text: string; url: string }> = []
+    const urlButtons: UrlInlineKeyboardButton[] = []
 
     for (const button of row) {
       if (!button || typeof button !== "object") {

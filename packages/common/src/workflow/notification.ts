@@ -3,7 +3,10 @@ import type {
   NotificationAction,
   NotificationActionIcon,
   NotificationActionRow,
+  NotificationJson,
   NotificationResponseJson,
+  NotificationStatus,
+  NotificationTaskStatus,
 } from "@reside/api/interaction/notification.v1"
 import type { MessageContent } from "../telegram"
 import type { InteractionActivities } from "../temporal"
@@ -29,6 +32,18 @@ import { waitForOperationResult } from "./operation"
 
 type NotificationResponseResult = NotificationResponseJson & {
   contextToken?: string
+}
+
+export type NotificationTaskInput = {
+  id: string
+  title: string
+  status: NotificationTaskStatus
+}
+
+export type NotificationTaskGroupInput = {
+  id: string
+  title: string
+  tasks: NotificationTaskInput[]
 }
 
 export type AcceptNotificationResponseInput<
@@ -92,15 +107,41 @@ type CallbackActionNames<TActions extends NotificationActionsInput> =
 type NotificationResponsePayload<
   TActions extends NotificationActionsInput,
   TRequiresTextResponse extends boolean,
+> = NotificationTaskUpdatePayload | NotificationUserResponsePayload<TActions, TRequiresTextResponse>
+
+type NotificationTaskUpdatePayload = {
+  type: "task_update"
+  contextToken?: string
+  notification?: NotificationJson
+}
+
+type NotificationUserResponsePayload<
+  TActions extends NotificationActionsInput,
+  TRequiresTextResponse extends boolean,
 > = [CallbackActionNames<TActions>] extends [never]
   ? TRequiresTextResponse extends true
-    ? { type: "text"; text: string; contextToken?: string }
+    ? { type: "text"; text: string; contextToken?: string; notification?: NotificationJson }
     : Record<never, never>
   : TRequiresTextResponse extends true
     ?
-        | { type: "action"; actionName: CallbackActionNames<TActions>; contextToken?: string }
-        | { type: "text"; text: string; contextToken?: string }
-    : { type: "action"; actionName: CallbackActionNames<TActions>; contextToken?: string }
+        | {
+            type: "action"
+            actionName: CallbackActionNames<TActions>
+            contextToken?: string
+            notification?: NotificationJson
+          }
+        | {
+            type: "text"
+            text: string
+            contextToken?: string
+            notification?: NotificationJson
+          }
+    : {
+        type: "action"
+        actionName: CallbackActionNames<TActions>
+        contextToken?: string
+        notification?: NotificationJson
+      }
 
 type NotificationCancelledPayload = {
   type: "cancelled"
@@ -121,6 +162,7 @@ type NotificationCancelableOutput<
 type NotificationMetadataOutput = {
   notificationId: string
   messageLink?: string
+  notification?: NotificationJson
 }
 
 export type NotificationInput<
@@ -207,6 +249,16 @@ export type NotificationInput<
   acquireTopic?: boolean
 
   /**
+   * The notification lifecycle status used by renderers.
+   */
+  status?: NotificationStatus
+
+  /**
+   * The ordered task groups attached to the notification.
+   */
+  taskGroups?: NotificationTaskGroupInput[]
+
+  /**
    * Optional cancellation predicate checked while waiting for notification response.
    * If it becomes true first, helper returns `type: "cancelled"`.
    */
@@ -291,6 +343,16 @@ export type UpdateNotificationInput<
   expectImmediateFeedback?: boolean
 
   /**
+   * The updated notification lifecycle status used by renderers.
+   */
+  status?: NotificationStatus
+
+  /**
+   * The updated ordered task groups attached to the notification.
+   */
+  taskGroups?: NotificationTaskGroupInput[]
+
+  /**
    * Optional cancellation predicate checked while waiting for notification response.
    * If it becomes true first, helper returns `type: "cancelled"`.
    */
@@ -362,6 +424,8 @@ export async function sendNotification<
     expectImmediateFeedback: input.expectImmediateFeedback,
     topicId: input.topicId,
     acquireTopic: input.acquireTopic,
+    status: input.status,
+    taskGroups: toApiTaskGroups(input.taskGroups),
     attachments: input.attachments ?? [],
     images: input.images ?? [],
   })
@@ -378,6 +442,7 @@ export async function sendNotification<
     return {
       notificationId,
       messageLink,
+      notification: response.notification,
     } as TWaitForResponse extends false
       ? NotificationMetadataOutput
       : NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
@@ -387,6 +452,7 @@ export async function sendNotification<
     return {
       notificationId,
       messageLink,
+      notification: response.notification,
     } as TWaitForResponse extends false
       ? NotificationMetadataOutput
       : NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
@@ -478,6 +544,8 @@ export async function updateNotification<
     actionRows,
     requiresTextResponse: input.requiresTextResponse,
     expectImmediateFeedback: input.expectImmediateFeedback,
+    status: input.status,
+    taskGroups: toApiTaskGroups(input.taskGroups),
   })
 
   const response = await updateNotification(request)
@@ -485,7 +553,8 @@ export async function updateNotification<
   if (!response.operation) {
     return {
       notificationId: input.notificationId,
-    } as NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
+      notification: response.notification,
+    } as unknown as NotificationCancelableOutput<TActions, TRequiresTextResponse, TCancelWhen>
   }
 
   if (response.operation.id === undefined) {
@@ -745,6 +814,7 @@ async function waitNotificationOutput<
       type: "action",
       actionName: operation.actionName as keyof TActions,
       contextToken: operation.contextToken,
+      notification: operation.notification,
     } as unknown as NotificationOutput<TActions, TRequiresTextResponse>
   }
 
@@ -755,10 +825,43 @@ async function waitNotificationOutput<
       type: "text",
       text: operation.textResponse,
       contextToken: operation.contextToken,
+      notification: operation.notification,
+    } as unknown as NotificationOutput<TActions, TRequiresTextResponse>
+  }
+
+  if (operation.taskUpdate) {
+    return {
+      notificationId,
+      messageLink,
+      type: "task_update",
+      contextToken: operation.contextToken,
+      notification: operation.notification,
     } as unknown as NotificationOutput<TActions, TRequiresTextResponse>
   }
 
   throw new Error(`Unexpected operation response for notification: ${JSON.stringify(operation)}`)
+}
+
+function toApiTaskGroups(taskGroups: NotificationTaskGroupInput[] | undefined):
+  | {
+      id: string
+      title: string
+      tasks: { id: string; title: string; status: NotificationTaskStatus }[]
+    }[]
+  | undefined {
+  if (taskGroups === undefined) {
+    return undefined
+  }
+
+  return taskGroups.map(group => ({
+    id: group.id,
+    title: group.title,
+    tasks: group.tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      status: task.status,
+    })),
+  }))
 }
 
 function toApiActionRows(actions: NotificationActionsInput | undefined): NotificationActionRow[] {

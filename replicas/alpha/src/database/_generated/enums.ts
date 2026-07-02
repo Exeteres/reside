@@ -16,3 +16,12 @@ export const OperationStatus = {
 } as const
 
 export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationStatus]
+
+
+export const OperationType = {
+  WAIT_REPLICA_READY: 'WAIT_REPLICA_READY',
+  UNREGISTER_REPLICA: 'UNREGISTER_REPLICA',
+  DELETE_REPLICA_FROM_CLUSTER: 'DELETE_REPLICA_FROM_CLUSTER'
+} as const
+
+export type OperationType = (typeof OperationType)[keyof typeof OperationType]

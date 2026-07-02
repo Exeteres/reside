@@ -38,6 +38,12 @@ export type GatewayDefinition = {
   description?: string
 }
 
+export type ReaperHandlerDefinition = {
+  resourceReplicaName: string
+  title: string
+  callbackEndpoint?: string
+}
+
 export type DefinedGateway = {
   name: string
   endpoint: string
@@ -83,13 +89,25 @@ type InteractionDefineResourcesOptions<TApiGroups extends string> = "interaction
       notificationsChannels?: never
     }
 
+type ReaperDefineResourcesOptions<TApiGroups extends string> = "reaper" extends TApiGroups
+  ? {
+      /**
+       * The optional reaper handlers to register.
+       */
+      reaperHandlers?: ReaperHandlerDefinition[]
+    }
+  : {
+      reaperHandlers?: never
+    }
+
 export type DefineCommonResourcesOptions<TApiGroups extends string = string> = {
   /**
    * The services to use for defining permissions.
    */
   services: Partial<CommonServices<TApiGroups>>
 } & AccessDefineResourcesOptions<TApiGroups> &
-  InteractionDefineResourcesOptions<TApiGroups>
+  InteractionDefineResourcesOptions<TApiGroups> &
+  ReaperDefineResourcesOptions<TApiGroups>
 
 export type EnsureReplicaAvatarOptions = {
   /**
@@ -158,9 +176,11 @@ export async function defineCommonResources<TApiGroups extends string = string>(
   avatarTitle,
   commands = [],
   notificationsChannels = [],
+  reaperHandlers = [],
 }: DefineCommonResourcesOptions<TApiGroups>): Promise<void> {
   const accessServices = services as Partial<CommonServices<"access">>
   const interactionServices = services as Partial<CommonServices<"interaction">>
+  const reaperServices = services as Partial<CommonServices<"reaper">>
 
   const shouldCreateAvatar = typeof avatarTitle === "string" && avatarTitle.trim().length > 0
 
@@ -181,6 +201,10 @@ export async function defineCommonResources<TApiGroups extends string = string>(
       permissionName: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_MANAGE,
       scope: channel.name,
     })),
+    ...reaperHandlers.map(handler => ({
+      permissionName: WellKnownPermissions.REAPER_HANDLER_REGISTER,
+      scope: handler.resourceReplicaName,
+    })),
     ...(shouldCreateAvatar
       ? [
           {
@@ -196,11 +220,12 @@ export async function defineCommonResources<TApiGroups extends string = string>(
   )
 
   logger.info(
-    "defining common resources: permissions=%d, realms=%d, commands=%d, notificationChannels=%d, permissionRequestItems=%d",
+    "defining common resources: permissions=%d, realms=%d, commands=%d, notificationChannels=%d, reaperHandlers=%d, permissionRequestItems=%d",
     permissions.length,
     realms.length,
     commands.length,
     notificationsChannels.length,
+    reaperHandlers.length,
     uniqueRequestItems.length,
   )
 
@@ -303,6 +328,31 @@ export async function defineCommonResources<TApiGroups extends string = string>(
     logger.info("defined %d interaction notification channels", notificationsChannels.length)
   }
 
+  if (reaperHandlers.length > 0) {
+    const reaperDefinitionService = requireService(
+      reaperServices.reaperDefinitionService,
+      "reaperDefinitionService",
+    )
+
+    try {
+      await reaperDefinitionService.putHandlers({
+        handlers: reaperHandlers.map(handler => ({
+          resourceReplicaName: handler.resourceReplicaName,
+          title: handler.title,
+          callbackEndpoint: handler.callbackEndpoint?.trim() || `${getReplicaEndpoint()}:80`,
+        })),
+      })
+
+      logger.info("defined %d reaper handlers", reaperHandlers.length)
+    } catch (error) {
+      logger.warn(
+        { error: normalizeError(error) },
+        'failed to define reaper handlers reaper_handler_count="%d"',
+        reaperHandlers.length,
+      )
+    }
+  }
+
   if (shouldCreateAvatar) {
     const avatarService = requireService(interactionServices.avatarService, "avatarService")
     const interactionOperationService = requireService(
@@ -326,6 +376,14 @@ function requireService<TService>(service: TService | undefined, serviceName: st
   }
 
   throw new Error(`Missing required service "${serviceName}" in defineCommonResources`)
+}
+
+function normalizeError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error
+  }
+
+  return new Error(String(error))
 }
 
 export async function defineGateway({

@@ -6,12 +6,22 @@ import { isRecord } from "@reside/utils"
 import { createInteractionContextToken } from "../../shared"
 import { getNotificationCallbackActionNames } from "./notification-pagination"
 
+export type CallbackCompletionReason =
+  | "accepted"
+  | "not-found"
+  | "chat-not-authorized"
+  | "already-responded"
+  | "action-not-allowed"
+
+type RejectedCallbackCompletionReason = Exclude<CallbackCompletionReason, "accepted">
+type AcceptedCallbackCompletionReason = Extract<CallbackCompletionReason, "accepted">
+
 export type CallbackCompletionResult =
-  | { accepted: true; unauthorized: false; reason: "accepted" }
+  | { accepted: true; unauthorized: false; reason: AcceptedCallbackCompletionReason }
   | {
       accepted: false
       unauthorized: boolean
-      reason: "not-found" | "chat-not-authorized" | "already-responded" | "action-not-allowed"
+      reason: RejectedCallbackCompletionReason
       unauthorizedChannelName?: string | null
     }
 
@@ -71,27 +81,12 @@ export async function completeOperationFromTextReply(args: {
       },
     })
 
-    const operationRecord = await args.prisma.operation.findUnique({
-      where: {
-        id: operation.id,
-      },
-      select: {
-        customData: true,
-      },
-    })
-
-    const existingCustomData =
-      operationRecord && isRecord(operationRecord.customData) ? operationRecord.customData : {}
-
     await args.prisma.operation.update({
       where: {
         id: operation.id,
       },
       data: {
-        customData: {
-          ...existingCustomData,
-          notificationResponseContextToken: responseContextToken,
-        },
+        notificationResponseContextToken: responseContextToken,
       },
     })
   } catch (error) {
@@ -170,27 +165,12 @@ export async function completeOperationFromTopicMessage(args: {
       },
     })
 
-    const operationRecord = await args.prisma.operation.findUnique({
-      where: {
-        id: operation.id,
-      },
-      select: {
-        customData: true,
-      },
-    })
-
-    const existingCustomData =
-      operationRecord && isRecord(operationRecord.customData) ? operationRecord.customData : {}
-
     await args.prisma.operation.update({
       where: {
         id: operation.id,
       },
       data: {
-        customData: {
-          ...existingCustomData,
-          notificationResponseContextToken: responseContextToken,
-        },
+        notificationResponseContextToken: responseContextToken,
       },
     })
   } catch (error) {
@@ -440,14 +420,14 @@ async function getPendingOperationsByMessage(
   prisma: PrismaClient,
   args: { messageId: number },
 ): Promise<
-  Array<{
+  {
     id: number
     callbackActionNames: string[]
     channelName: string | null
     isProtected: boolean
     targetChatRhid: string
     response: { operationId: number } | null
-  }>
+  }[]
 > {
   const records = await prisma.notification.findMany({
     where: {

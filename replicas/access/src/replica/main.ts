@@ -6,11 +6,13 @@ import { PermissionRequestService } from "@reside/api/access/request.v1"
 import { OperationService, OperationSubscriptionService } from "@reside/api/common/operation.v1"
 import { PingService } from "@reside/api/common/ping.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
+import { ReplicaReaperHandler } from "@reside/api/reaper/handler.v1"
 import {
   createInteractionActivities,
   createOperationSubscriptionService,
   createPingService,
   createServer,
+  crypto,
   logger,
   setupEncryption,
   setupLanguageSubsystem,
@@ -23,6 +25,7 @@ import { createAccessActivities } from "./activities"
 import { createAuthzService } from "./services/authz"
 import { createBindingService } from "./services/binding"
 import { createDefinitionService } from "./services/definition"
+import { createReaperService } from "./services/reaper"
 import { createPermissionRequestService } from "./services/request"
 import { createSubjectService } from "./services/subject"
 
@@ -39,6 +42,7 @@ await server.register(fastifyConnectPlugin, {
     router.service(DefinitionService, createDefinitionService(services))
     router.service(PermissionRequestService, createPermissionRequestService(services))
     router.service(SubjectService, createSubjectService(services))
+    router.service(ReplicaReaperHandler, createReaperService({ ...services, crypto }))
     router.service(PingService, createPingService())
     router.service(OperationService, services.operationService.implementation)
     router.service(

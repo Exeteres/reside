@@ -3,6 +3,7 @@ import { condition, isCancellation, log, proxyActivities, setHandler } from "@te
 import {
   approvalCancelSignal,
   avatarManagedBotCreatedSignal,
+  type DeleteAvatarWorkflowInput,
   type EnsureReplicaAvatarWorkflowInput,
   type HandleApprovalRequestWorkflowInput,
   type TelegramActivities,
@@ -16,6 +17,7 @@ const {
   getAvatarProvisionRequest,
   getAvatarProvisioningPromptLink,
   completeAvatarProvisionOperation,
+  deleteAvatar,
   failAvatarProvisionOperation,
 } = proxyActivities<TelegramActivities>({
   scheduleToCloseTimeout: "5 minutes",
@@ -79,6 +81,10 @@ export async function handleApprovalRequestWorkflow({
 
       log.info("approval operation cancelled", { operationId })
       return
+    }
+
+    if (notification.type !== "action") {
+      throw new Error(`Unexpected approval notification response type: ${notification.type}`)
     }
 
     log.info("received notification output", {
@@ -186,6 +192,38 @@ export async function ensureReplicaAvatarWorkflow({
       reason: "AVATAR_CREATION_FAILED",
       message,
     })
+  }
+}
+
+export async function deleteAvatarWorkflow({
+  operationId,
+  avatarId,
+  replicaName,
+  avatarProvisionRequestIds,
+}: DeleteAvatarWorkflowInput): Promise<void> {
+  log.info("starting deleteAvatarWorkflow", { operationId })
+
+  try {
+    await deleteAvatar({
+      operationId,
+      avatarId,
+      replicaName,
+      avatarProvisionRequestIds,
+    })
+  } catch (error) {
+    if (isCancellation(error)) {
+      return
+    }
+
+    const message = error instanceof Error ? error.message : String(error)
+
+    await failAvatarProvisionOperation({
+      operationId,
+      reason: "REAPER_ACTION_FAILED",
+      message,
+    })
+
+    throw error
   }
 }
 

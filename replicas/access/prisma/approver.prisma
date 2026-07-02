@@ -22,9 +22,14 @@ model Approver {
   /// The callback endpoint implementing common.approval.v1.ApprovalService.
   callbackEndpoint String
 
+  /// The replica that owns this approver.
+  ownerReplicaName String?
+
   /// The timestamp when the approver was created.
   createdAt DateTime @default(now())
 
   /// The timestamp when the approver was last updated.
   updatedAt DateTime @updatedAt
+
+  @@index([ownerReplicaName])
 }

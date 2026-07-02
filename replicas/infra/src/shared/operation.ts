@@ -98,6 +98,14 @@ export async function resolveOperationResult(
     }
   }
 
+  if (
+    operation.type === OperationType.DELETE_POSTGRES_DATABASE ||
+    operation.type === OperationType.DELETE_TEMPORAL_NAMESPACE ||
+    operation.type === OperationType.DELETE_GATEWAY
+  ) {
+    return {}
+  }
+
   throw new ConnectError(
     `Unsupported operation type for result resolution: "${operation.type}"`,
     Code.Internal,

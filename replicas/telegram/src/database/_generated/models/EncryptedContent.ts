@@ -168,6 +168,7 @@ export type EncryptedContentWhereInput = {
   notificationResponseText?: Prisma.XOR<Prisma.NotificationResponseNullableScalarRelationFilter, Prisma.NotificationResponseWhereInput> | null
   notificationMessage?: Prisma.XOR<Prisma.NotificationNullableScalarRelationFilter, Prisma.NotificationWhereInput> | null
   notificationTopicThread?: Prisma.XOR<Prisma.NotificationTopicNullableScalarRelationFilter, Prisma.NotificationTopicWhereInput> | null
+  notificationTaskPlanningPollMessage?: Prisma.XOR<Prisma.NotificationTaskPlanningPollNullableScalarRelationFilter, Prisma.NotificationTaskPlanningPollWhereInput> | null
   avatarToken?: Prisma.XOR<Prisma.AvatarNullableScalarRelationFilter, Prisma.AvatarWhereInput> | null
 }
 
@@ -182,6 +183,7 @@ export type EncryptedContentOrderByWithRelationInput = {
   notificationResponseText?: Prisma.NotificationResponseOrderByWithRelationInput
   notificationMessage?: Prisma.NotificationOrderByWithRelationInput
   notificationTopicThread?: Prisma.NotificationTopicOrderByWithRelationInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollOrderByWithRelationInput
   avatarToken?: Prisma.AvatarOrderByWithRelationInput
 }
 
@@ -199,6 +201,7 @@ export type EncryptedContentWhereUniqueInput = Prisma.AtLeast<{
   notificationResponseText?: Prisma.XOR<Prisma.NotificationResponseNullableScalarRelationFilter, Prisma.NotificationResponseWhereInput> | null
   notificationMessage?: Prisma.XOR<Prisma.NotificationNullableScalarRelationFilter, Prisma.NotificationWhereInput> | null
   notificationTopicThread?: Prisma.XOR<Prisma.NotificationTopicNullableScalarRelationFilter, Prisma.NotificationTopicWhereInput> | null
+  notificationTaskPlanningPollMessage?: Prisma.XOR<Prisma.NotificationTaskPlanningPollNullableScalarRelationFilter, Prisma.NotificationTaskPlanningPollWhereInput> | null
   avatarToken?: Prisma.XOR<Prisma.AvatarNullableScalarRelationFilter, Prisma.AvatarWhereInput> | null
 }, "ecid">
 
@@ -229,6 +232,7 @@ export type EncryptedContentCreateInput = {
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -243,6 +247,7 @@ export type EncryptedContentUncheckedCreateInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -257,6 +262,7 @@ export type EncryptedContentUpdateInput = {
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -271,6 +277,7 @@ export type EncryptedContentUncheckedUpdateInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -372,6 +379,20 @@ export type EncryptedContentUpdateOneRequiredWithoutNotificationTopicThreadNeste
   update?: Prisma.XOR<Prisma.XOR<Prisma.EncryptedContentUpdateToOneWithWhereWithoutNotificationTopicThreadInput, Prisma.EncryptedContentUpdateWithoutNotificationTopicThreadInput>, Prisma.EncryptedContentUncheckedUpdateWithoutNotificationTopicThreadInput>
 }
 
+export type EncryptedContentCreateNestedOneWithoutNotificationTaskPlanningPollMessageInput = {
+  create?: Prisma.XOR<Prisma.EncryptedContentCreateWithoutNotificationTaskPlanningPollMessageInput, Prisma.EncryptedContentUncheckedCreateWithoutNotificationTaskPlanningPollMessageInput>
+  connectOrCreate?: Prisma.EncryptedContentCreateOrConnectWithoutNotificationTaskPlanningPollMessageInput
+  connect?: Prisma.EncryptedContentWhereUniqueInput
+}
+
+export type EncryptedContentUpdateOneRequiredWithoutNotificationTaskPlanningPollMessageNestedInput = {
+  create?: Prisma.XOR<Prisma.EncryptedContentCreateWithoutNotificationTaskPlanningPollMessageInput, Prisma.EncryptedContentUncheckedCreateWithoutNotificationTaskPlanningPollMessageInput>
+  connectOrCreate?: Prisma.EncryptedContentCreateOrConnectWithoutNotificationTaskPlanningPollMessageInput
+  upsert?: Prisma.EncryptedContentUpsertWithoutNotificationTaskPlanningPollMessageInput
+  connect?: Prisma.EncryptedContentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EncryptedContentUpdateToOneWithWhereWithoutNotificationTaskPlanningPollMessageInput, Prisma.EncryptedContentUpdateWithoutNotificationTaskPlanningPollMessageInput>, Prisma.EncryptedContentUncheckedUpdateWithoutNotificationTaskPlanningPollMessageInput>
+}
+
 export type EncryptedContentCreateNestedOneWithoutNotificationMessageInput = {
   create?: Prisma.XOR<Prisma.EncryptedContentCreateWithoutNotificationMessageInput, Prisma.EncryptedContentUncheckedCreateWithoutNotificationMessageInput>
   connectOrCreate?: Prisma.EncryptedContentCreateOrConnectWithoutNotificationMessageInput
@@ -459,6 +480,7 @@ export type EncryptedContentCreateWithoutAvatarTokenInput = {
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
 }
 
 export type EncryptedContentUncheckedCreateWithoutAvatarTokenInput = {
@@ -472,6 +494,7 @@ export type EncryptedContentUncheckedCreateWithoutAvatarTokenInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
 }
 
 export type EncryptedContentCreateOrConnectWithoutAvatarTokenInput = {
@@ -501,6 +524,7 @@ export type EncryptedContentUpdateWithoutAvatarTokenInput = {
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
 }
 
 export type EncryptedContentUncheckedUpdateWithoutAvatarTokenInput = {
@@ -514,6 +538,7 @@ export type EncryptedContentUncheckedUpdateWithoutAvatarTokenInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
 }
 
 export type EncryptedContentCreateWithoutChatDataInput = {
@@ -526,6 +551,7 @@ export type EncryptedContentCreateWithoutChatDataInput = {
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -539,6 +565,7 @@ export type EncryptedContentUncheckedCreateWithoutChatDataInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -568,6 +595,7 @@ export type EncryptedContentUpdateWithoutChatDataInput = {
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -581,6 +609,7 @@ export type EncryptedContentUncheckedUpdateWithoutChatDataInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -594,6 +623,7 @@ export type EncryptedContentCreateWithoutNotificationResponseTextInput = {
   chatData?: Prisma.ChatCreateNestedOneWithoutDataInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -607,6 +637,7 @@ export type EncryptedContentUncheckedCreateWithoutNotificationResponseTextInput 
   chatData?: Prisma.ChatUncheckedCreateNestedOneWithoutDataInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -636,6 +667,7 @@ export type EncryptedContentUpdateWithoutNotificationResponseTextInput = {
   chatData?: Prisma.ChatUpdateOneWithoutDataNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -649,6 +681,7 @@ export type EncryptedContentUncheckedUpdateWithoutNotificationResponseTextInput 
   chatData?: Prisma.ChatUncheckedUpdateOneWithoutDataNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -662,6 +695,7 @@ export type EncryptedContentCreateWithoutNotificationTopicThreadInput = {
   chatData?: Prisma.ChatCreateNestedOneWithoutDataInput
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -675,6 +709,7 @@ export type EncryptedContentUncheckedCreateWithoutNotificationTopicThreadInput =
   chatData?: Prisma.ChatUncheckedCreateNestedOneWithoutDataInput
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -704,6 +739,7 @@ export type EncryptedContentUpdateWithoutNotificationTopicThreadInput = {
   chatData?: Prisma.ChatUpdateOneWithoutDataNestedInput
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -717,6 +753,79 @@ export type EncryptedContentUncheckedUpdateWithoutNotificationTopicThreadInput =
   chatData?: Prisma.ChatUncheckedUpdateOneWithoutDataNestedInput
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
+  avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
+}
+
+export type EncryptedContentCreateWithoutNotificationTaskPlanningPollMessageInput = {
+  ecid: string
+  data: string
+  userTelegramUserId?: Prisma.UserCreateNestedOneWithoutTelegramUserIdInput
+  userUsername?: Prisma.UserCreateNestedOneWithoutUsernameInput
+  userFirstName?: Prisma.UserCreateNestedOneWithoutFirstNameInput
+  userLastName?: Prisma.UserCreateNestedOneWithoutLastNameInput
+  chatData?: Prisma.ChatCreateNestedOneWithoutDataInput
+  notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
+  notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
+  notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
+}
+
+export type EncryptedContentUncheckedCreateWithoutNotificationTaskPlanningPollMessageInput = {
+  ecid: string
+  data: string
+  userTelegramUserId?: Prisma.UserUncheckedCreateNestedOneWithoutTelegramUserIdInput
+  userUsername?: Prisma.UserUncheckedCreateNestedOneWithoutUsernameInput
+  userFirstName?: Prisma.UserUncheckedCreateNestedOneWithoutFirstNameInput
+  userLastName?: Prisma.UserUncheckedCreateNestedOneWithoutLastNameInput
+  chatData?: Prisma.ChatUncheckedCreateNestedOneWithoutDataInput
+  notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
+  notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
+  notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
+}
+
+export type EncryptedContentCreateOrConnectWithoutNotificationTaskPlanningPollMessageInput = {
+  where: Prisma.EncryptedContentWhereUniqueInput
+  create: Prisma.XOR<Prisma.EncryptedContentCreateWithoutNotificationTaskPlanningPollMessageInput, Prisma.EncryptedContentUncheckedCreateWithoutNotificationTaskPlanningPollMessageInput>
+}
+
+export type EncryptedContentUpsertWithoutNotificationTaskPlanningPollMessageInput = {
+  update: Prisma.XOR<Prisma.EncryptedContentUpdateWithoutNotificationTaskPlanningPollMessageInput, Prisma.EncryptedContentUncheckedUpdateWithoutNotificationTaskPlanningPollMessageInput>
+  create: Prisma.XOR<Prisma.EncryptedContentCreateWithoutNotificationTaskPlanningPollMessageInput, Prisma.EncryptedContentUncheckedCreateWithoutNotificationTaskPlanningPollMessageInput>
+  where?: Prisma.EncryptedContentWhereInput
+}
+
+export type EncryptedContentUpdateToOneWithWhereWithoutNotificationTaskPlanningPollMessageInput = {
+  where?: Prisma.EncryptedContentWhereInput
+  data: Prisma.XOR<Prisma.EncryptedContentUpdateWithoutNotificationTaskPlanningPollMessageInput, Prisma.EncryptedContentUncheckedUpdateWithoutNotificationTaskPlanningPollMessageInput>
+}
+
+export type EncryptedContentUpdateWithoutNotificationTaskPlanningPollMessageInput = {
+  ecid?: Prisma.StringFieldUpdateOperationsInput | string
+  data?: Prisma.StringFieldUpdateOperationsInput | string
+  userTelegramUserId?: Prisma.UserUpdateOneWithoutTelegramUserIdNestedInput
+  userUsername?: Prisma.UserUpdateOneWithoutUsernameNestedInput
+  userFirstName?: Prisma.UserUpdateOneWithoutFirstNameNestedInput
+  userLastName?: Prisma.UserUpdateOneWithoutLastNameNestedInput
+  chatData?: Prisma.ChatUpdateOneWithoutDataNestedInput
+  notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
+  notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
+  notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
+}
+
+export type EncryptedContentUncheckedUpdateWithoutNotificationTaskPlanningPollMessageInput = {
+  ecid?: Prisma.StringFieldUpdateOperationsInput | string
+  data?: Prisma.StringFieldUpdateOperationsInput | string
+  userTelegramUserId?: Prisma.UserUncheckedUpdateOneWithoutTelegramUserIdNestedInput
+  userUsername?: Prisma.UserUncheckedUpdateOneWithoutUsernameNestedInput
+  userFirstName?: Prisma.UserUncheckedUpdateOneWithoutFirstNameNestedInput
+  userLastName?: Prisma.UserUncheckedUpdateOneWithoutLastNameNestedInput
+  chatData?: Prisma.ChatUncheckedUpdateOneWithoutDataNestedInput
+  notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
+  notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
+  notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -730,6 +839,7 @@ export type EncryptedContentCreateWithoutNotificationMessageInput = {
   chatData?: Prisma.ChatCreateNestedOneWithoutDataInput
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -743,6 +853,7 @@ export type EncryptedContentUncheckedCreateWithoutNotificationMessageInput = {
   chatData?: Prisma.ChatUncheckedCreateNestedOneWithoutDataInput
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -772,6 +883,7 @@ export type EncryptedContentUpdateWithoutNotificationMessageInput = {
   chatData?: Prisma.ChatUpdateOneWithoutDataNestedInput
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -785,6 +897,7 @@ export type EncryptedContentUncheckedUpdateWithoutNotificationMessageInput = {
   chatData?: Prisma.ChatUncheckedUpdateOneWithoutDataNestedInput
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -798,6 +911,7 @@ export type EncryptedContentCreateWithoutUserTelegramUserIdInput = {
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -811,6 +925,7 @@ export type EncryptedContentUncheckedCreateWithoutUserTelegramUserIdInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -829,6 +944,7 @@ export type EncryptedContentCreateWithoutUserUsernameInput = {
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -842,6 +958,7 @@ export type EncryptedContentUncheckedCreateWithoutUserUsernameInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -860,6 +977,7 @@ export type EncryptedContentCreateWithoutUserFirstNameInput = {
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -873,6 +991,7 @@ export type EncryptedContentUncheckedCreateWithoutUserFirstNameInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -891,6 +1010,7 @@ export type EncryptedContentCreateWithoutUserLastNameInput = {
   notificationResponseText?: Prisma.NotificationResponseCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarCreateNestedOneWithoutTokenInput
 }
 
@@ -904,6 +1024,7 @@ export type EncryptedContentUncheckedCreateWithoutUserLastNameInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedCreateNestedOneWithoutTextResponseInput
   notificationMessage?: Prisma.NotificationUncheckedCreateNestedOneWithoutMessageInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedCreateNestedOneWithoutThreadInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedOneWithoutMessageInput
   avatarToken?: Prisma.AvatarUncheckedCreateNestedOneWithoutTokenInput
 }
 
@@ -933,6 +1054,7 @@ export type EncryptedContentUpdateWithoutUserTelegramUserIdInput = {
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -946,6 +1068,7 @@ export type EncryptedContentUncheckedUpdateWithoutUserTelegramUserIdInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -970,6 +1093,7 @@ export type EncryptedContentUpdateWithoutUserUsernameInput = {
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -983,6 +1107,7 @@ export type EncryptedContentUncheckedUpdateWithoutUserUsernameInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -1007,6 +1132,7 @@ export type EncryptedContentUpdateWithoutUserFirstNameInput = {
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -1020,6 +1146,7 @@ export type EncryptedContentUncheckedUpdateWithoutUserFirstNameInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -1044,6 +1171,7 @@ export type EncryptedContentUpdateWithoutUserLastNameInput = {
   notificationResponseText?: Prisma.NotificationResponseUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUpdateOneWithoutTokenNestedInput
 }
 
@@ -1057,6 +1185,7 @@ export type EncryptedContentUncheckedUpdateWithoutUserLastNameInput = {
   notificationResponseText?: Prisma.NotificationResponseUncheckedUpdateOneWithoutTextResponseNestedInput
   notificationMessage?: Prisma.NotificationUncheckedUpdateOneWithoutMessageNestedInput
   notificationTopicThread?: Prisma.NotificationTopicUncheckedUpdateOneWithoutThreadNestedInput
+  notificationTaskPlanningPollMessage?: Prisma.NotificationTaskPlanningPollUncheckedUpdateOneWithoutMessageNestedInput
   avatarToken?: Prisma.AvatarUncheckedUpdateOneWithoutTokenNestedInput
 }
 
@@ -1073,6 +1202,7 @@ export type EncryptedContentSelect<ExtArgs extends runtime.Types.Extensions.Inte
   notificationResponseText?: boolean | Prisma.EncryptedContent$notificationResponseTextArgs<ExtArgs>
   notificationMessage?: boolean | Prisma.EncryptedContent$notificationMessageArgs<ExtArgs>
   notificationTopicThread?: boolean | Prisma.EncryptedContent$notificationTopicThreadArgs<ExtArgs>
+  notificationTaskPlanningPollMessage?: boolean | Prisma.EncryptedContent$notificationTaskPlanningPollMessageArgs<ExtArgs>
   avatarToken?: boolean | Prisma.EncryptedContent$avatarTokenArgs<ExtArgs>
 }, ExtArgs["result"]["encryptedContent"]>
 
@@ -1101,6 +1231,7 @@ export type EncryptedContentInclude<ExtArgs extends runtime.Types.Extensions.Int
   notificationResponseText?: boolean | Prisma.EncryptedContent$notificationResponseTextArgs<ExtArgs>
   notificationMessage?: boolean | Prisma.EncryptedContent$notificationMessageArgs<ExtArgs>
   notificationTopicThread?: boolean | Prisma.EncryptedContent$notificationTopicThreadArgs<ExtArgs>
+  notificationTaskPlanningPollMessage?: boolean | Prisma.EncryptedContent$notificationTaskPlanningPollMessageArgs<ExtArgs>
   avatarToken?: boolean | Prisma.EncryptedContent$avatarTokenArgs<ExtArgs>
 }
 export type EncryptedContentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1117,6 +1248,7 @@ export type $EncryptedContentPayload<ExtArgs extends runtime.Types.Extensions.In
     notificationResponseText: Prisma.$NotificationResponsePayload<ExtArgs> | null
     notificationMessage: Prisma.$NotificationPayload<ExtArgs> | null
     notificationTopicThread: Prisma.$NotificationTopicPayload<ExtArgs> | null
+    notificationTaskPlanningPollMessage: Prisma.$NotificationTaskPlanningPollPayload<ExtArgs> | null
     avatarToken: Prisma.$AvatarPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1530,6 +1662,7 @@ export interface Prisma__EncryptedContentClient<T, Null = never, ExtArgs extends
   notificationResponseText<T extends Prisma.EncryptedContent$notificationResponseTextArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$notificationResponseTextArgs<ExtArgs>>): Prisma.Prisma__NotificationResponseClient<runtime.Types.Result.GetResult<Prisma.$NotificationResponsePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   notificationMessage<T extends Prisma.EncryptedContent$notificationMessageArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$notificationMessageArgs<ExtArgs>>): Prisma.Prisma__NotificationClient<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   notificationTopicThread<T extends Prisma.EncryptedContent$notificationTopicThreadArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$notificationTopicThreadArgs<ExtArgs>>): Prisma.Prisma__NotificationTopicClient<runtime.Types.Result.GetResult<Prisma.$NotificationTopicPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  notificationTaskPlanningPollMessage<T extends Prisma.EncryptedContent$notificationTaskPlanningPollMessageArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$notificationTaskPlanningPollMessageArgs<ExtArgs>>): Prisma.Prisma__NotificationTaskPlanningPollClient<runtime.Types.Result.GetResult<Prisma.$NotificationTaskPlanningPollPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   avatarToken<T extends Prisma.EncryptedContent$avatarTokenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$avatarTokenArgs<ExtArgs>>): Prisma.Prisma__AvatarClient<runtime.Types.Result.GetResult<Prisma.$AvatarPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2099,6 +2232,25 @@ export type EncryptedContent$notificationTopicThreadArgs<ExtArgs extends runtime
    */
   include?: Prisma.NotificationTopicInclude<ExtArgs> | null
   where?: Prisma.NotificationTopicWhereInput
+}
+
+/**
+ * EncryptedContent.notificationTaskPlanningPollMessage
+ */
+export type EncryptedContent$notificationTaskPlanningPollMessageArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationTaskPlanningPoll
+   */
+  select?: Prisma.NotificationTaskPlanningPollSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationTaskPlanningPoll
+   */
+  omit?: Prisma.NotificationTaskPlanningPollOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationTaskPlanningPollInclude<ExtArgs> | null
+  where?: Prisma.NotificationTaskPlanningPollWhereInput
 }
 
 /**

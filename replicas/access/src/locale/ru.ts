@@ -52,6 +52,14 @@ export const ru = {
       description: "Ожидание подтверждения разрешений",
     },
   },
+  reaper: {
+    title: "Авторизационная Реплика",
+    actions: {
+      deleteBindings: (count: number) => `Удаление ${count} биндингов`,
+      deleteRestrictions: (count: number) => `Удаление ${count} ограничений`,
+      deleteApprover: (name: string) => `Удаление подтверждающего ${name}`,
+    },
+  },
   approvalMessage: {
     requestNumberLabel: "Номер запроса:",
     subjectLabel: "Субъект:",

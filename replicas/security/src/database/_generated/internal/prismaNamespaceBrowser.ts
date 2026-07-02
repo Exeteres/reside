@@ -118,6 +118,7 @@ export const OperationScalarFieldEnum = {
   failureMessage: 'failureMessage',
   callbackEndpoint: 'callbackEndpoint',
   customData: 'customData',
+  type: 'type',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   resolvedAt: 'resolvedAt'

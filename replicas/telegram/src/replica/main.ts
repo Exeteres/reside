@@ -9,6 +9,7 @@ import { AvatarService } from "@reside/api/interaction/avatar.v1"
 import { DefinitionService } from "@reside/api/interaction/definition.v1"
 import { NotificationService } from "@reside/api/interaction/notification.v1"
 import { TopicService } from "@reside/api/interaction/topic.v1"
+import { ReplicaReaperHandler } from "@reside/api/reaper/handler.v1"
 import {
   createInteractionActivities,
   createOperationSubscriptionService,
@@ -35,6 +36,7 @@ import { createApprovalService } from "./services/approval"
 import { createAvatarService } from "./services/avatar"
 import { createDefinitionService } from "./services/definition"
 import { createNotificationService } from "./services/notification"
+import { createReaperService } from "./services/reaper"
 import { createSubjectService } from "./services/subject"
 import { createTopicService } from "./services/topic"
 
@@ -53,6 +55,7 @@ await server.register(fastifyConnectPlugin, {
     router.service(ApprovalService, createApprovalService(services))
     router.service(AvatarService, createAvatarService({ ...services, crypto }))
     router.service(SubjectService, createSubjectService({ ...services, crypto }))
+    router.service(ReplicaReaperHandler, createReaperService({ ...services, crypto }))
     router.service(PingService, createPingService())
     router.service(OperationService, services.operationService.implementation)
     router.service(

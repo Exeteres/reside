@@ -6,9 +6,11 @@ import { ObservabilityService } from "@reside/api/infra/observability.v1"
 import { ProvisionService } from "@reside/api/infra/provision.v1"
 import { TimerService } from "@reside/api/infra/timer.v1"
 import { VaultService } from "@reside/api/infra/vault.v1"
+import { ReplicaReaperHandler } from "@reside/api/reaper/handler.v1"
 import {
   createPingService,
   createServer,
+  crypto,
   getReplicaNamespace,
   logger,
   setupEncryption,
@@ -26,6 +28,7 @@ import { createDatabaseActivities } from "./activities"
 import { createGatewayService } from "./services/gateway"
 import { createObservabilityService } from "./services/observability"
 import { createProvisionService } from "./services/provision"
+import { createReaperService } from "./services/reaper"
 import { createTimerService } from "./services/timer"
 import { createVaultService } from "./services/vault"
 
@@ -44,6 +47,7 @@ await server.register(fastifyConnectPlugin, {
     router.service(ObservabilityService, observabilityService)
     router.service(TimerService, createTimerService(services))
     router.service(VaultService, createVaultService(services))
+    router.service(ReplicaReaperHandler, createReaperService({ ...services, crypto }))
     router.service(PingService, createPingService())
     router.service(OperationService, services.operationService.implementation)
   },

@@ -12,6 +12,16 @@ export type EnsureMinioBucketAccessInput = {
   secretKey: string
 }
 
+export type DeleteMinioBucketAccessInput = {
+  batchApi: BatchV1Api
+  namespace: string
+  endpoint: string
+  adminUser: string
+  adminPassword: string
+  bucket: string
+  accessKey: string
+}
+
 export async function ensureMinioBucketAccess({
   batchApi,
   namespace,
@@ -68,6 +78,36 @@ export async function ensureMinioBucketAccess({
       "EOF",
       `mc admin policy create local "${policyName}" /tmp/policy.json >/dev/null 2>&1 || true`,
       `mc admin policy attach local "${policyName}" --user "${accessKey}"`,
+    ].join("\n"),
+  })
+}
+
+export async function deleteMinioBucketAccess({
+  batchApi,
+  namespace,
+  endpoint,
+  adminUser,
+  adminPassword,
+  bucket,
+  accessKey,
+}: DeleteMinioBucketAccessInput): Promise<void> {
+  const normalizedBucket = normalizeBucketName(bucket)
+  const policyName = `bucket-${normalizedBucket}`
+
+  await runMinioAdminJob({
+    batchApi,
+    namespace,
+    endpoint,
+    adminUser,
+    adminPassword,
+    script: [
+      "set -e",
+      'mc alias set local "$MINIO_ENDPOINT" "$MINIO_ADMIN_USER" "$MINIO_ADMIN_PASSWORD"',
+      `mc rm --recursive --force "local/${normalizedBucket}" >/dev/null 2>&1 || true`,
+      `mc rb --force "local/${normalizedBucket}" >/dev/null 2>&1 || true`,
+      `mc admin policy detach local "${policyName}" --user "${accessKey}" >/dev/null 2>&1 || true`,
+      `mc admin user remove local "${accessKey}" >/dev/null 2>&1 || true`,
+      `mc admin policy remove local "${policyName}" >/dev/null 2>&1 || true`,
     ].join("\n"),
   })
 }

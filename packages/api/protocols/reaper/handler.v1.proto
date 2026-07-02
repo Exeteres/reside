@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package reside.reaper.handler.v1;
+
+import "common/operation.v1.proto";
+import "google/protobuf/empty.proto";
+
+// A planned destructive action prepared by a resource holder replica.
+message ReaperAction {
+  // The deterministic opaque action identifier calculated from the action payload.
+  // Async resource holder replicas must use this value as the Temporal workflow ID for execution idempotency.
+  string id = 3;
+
+  // The human-readable title displayed to users before execution.
+  string title = 1;
+
+  // The encrypted opaque payload owned by the resource holder replica.
+  // Clients must not inspect, decrypt, log, or modify this value.
+  string payload = 2;
+}
+
+// The request message for previewing actions required to kill a replica.
+message PreviewActionsRequest {
+  // The technical name of the replica being killed.
+  string replica_name = 1;
+}
+
+// The response message containing the planned destructive actions.
+message PreviewActionsResponse {
+  // The actions that can be executed for the target replica.
+  repeated ReaperAction actions = 1;
+}
+
+// The request message for executing previously previewed actions.
+message ExecuteActionsRequest {
+  // The encrypted opaque payloads returned by PreviewActions.
+  // The serving replica must ignore payloads it cannot decrypt or validate.
+  repeated string payloads = 1;
+}
+
+// The execution result for one accepted action.
+message ReaperActionExecution {
+  // The encrypted opaque payload this execution result belongs to.
+  string payload = 1;
+
+  // The action execution state.
+  // When operation is set, clients should poll or subscribe to it on the serving replica.
+  // When completed is set, the action was synchronous and has already completed.
+  oneof result {
+    reside.common.operation.v1.Operation operation = 2;
+    google.protobuf.Empty completed = 3;
+  }
+}
+
+// The response message containing execution results for requested actions.
+message ExecuteActionsResponse {
+  // The execution results for accepted payloads.
+  repeated ReaperActionExecution executions = 1;
+}
+
+// The service implemented by resource holder replicas to remove resources owned by a target replica.
+service ReplicaReaperHandler {
+  // Previews destructive actions that would be performed for the target replica.
+  rpc PreviewActions(PreviewActionsRequest) returns (PreviewActionsResponse);
+
+  // Executes selected actions from a previous preview.
+  // This method must be idempotent for the same payload list.
+  rpc ExecuteActions(ExecuteActionsRequest) returns (ExecuteActionsResponse);
+}

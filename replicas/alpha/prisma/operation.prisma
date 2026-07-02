@@ -4,6 +4,12 @@ enum OperationStatus {
   FAILED
 }
 
+enum OperationType {
+  WAIT_REPLICA_READY
+  UNREGISTER_REPLICA
+  DELETE_REPLICA_FROM_CLUSTER
+}
+
 /// Represents an operation for registration reconciliation in Alpha Replica.
 model Operation {
   /// The unique numeric identifier of the operation record.
@@ -30,6 +36,12 @@ model Operation {
   /// Optional custom payload for completion notifications.
   customData Json?
 
+  /// The type of operation being performed.
+  type OperationType
+
+  /// The deterministic Reaper action identifier used as the Temporal workflow id, if applicable.
+  reaperActionId String? @unique
+
   /// The replica name associated with this registration operation.
   replicaName String?
 
@@ -46,5 +58,6 @@ model Operation {
   resolvedAt DateTime?
 
   @@index([createdAt])
+  @@index([type, status])
   @@index([replicaName, status])
 }

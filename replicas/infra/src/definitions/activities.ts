@@ -61,11 +61,23 @@ export type ProvisionStorageBucketInput = {
   storageBucket: StorageBucket
 }
 
+export type DeleteStorageBucketInput = {
+  /**
+   * The storage bucket record identifier.
+   */
+  storageBucketId: number
+}
+
 export type EnsureGatewayInput = {
   /**
    * The gateway resource to reconcile.
    */
   gateway: {
+    /**
+     * The gateway numeric identifier.
+     */
+    id: number
+
     /**
      * The gateway unique name.
      */
@@ -86,6 +98,27 @@ export type EnsureGatewayInput = {
      */
     description: string | null
   }
+}
+
+export type DeletePostgresDatabaseInput = {
+  /**
+   * The database name to delete.
+   */
+  name: string
+}
+
+export type DeleteTemporalNamespaceInput = {
+  /**
+   * The Temporal namespace record identifier.
+   */
+  temporalNamespaceId: number
+}
+
+export type DeleteGatewayInput = {
+  /**
+   * The gateway record identifier.
+   */
+  gatewayId: number
 }
 
 export type PingReplicaInput = {
@@ -133,9 +166,29 @@ export type InfraActivities = {
   provisionStorageBucket: (input: ProvisionStorageBucketInput) => Promise<void>
 
   /**
+   * Deletes a storage bucket resource and its credentials.
+   */
+  deleteStorageBucket: (input: DeleteStorageBucketInput) => Promise<void>
+
+  /**
    * Ensures gateway resources are up to date.
    */
   ensureGateway: (input: EnsureGatewayInput) => Promise<void>
+
+  /**
+   * Deletes a PostgreSQL database and role.
+   */
+  deletePostgresDatabase: (input: DeletePostgresDatabaseInput) => Promise<void>
+
+  /**
+   * Deletes a Temporal namespace registration.
+   */
+  deleteTemporalNamespace: (input: DeleteTemporalNamespaceInput) => Promise<void>
+
+  /**
+   * Deletes a gateway registration.
+   */
+  deleteGateway: (input: DeleteGatewayInput) => Promise<void>
 
   /**
    * Sends a wake-up ping to a replica endpoint.

@@ -42,6 +42,7 @@ export type OperationMinAggregateOutputType = {
   failureReason: string | null
   failureMessage: string | null
   callbackEndpoint: string | null
+  type: $Enums.OperationType | null
   createdAt: Date | null
   updatedAt: Date | null
   resolvedAt: Date | null
@@ -55,6 +56,7 @@ export type OperationMaxAggregateOutputType = {
   failureReason: string | null
   failureMessage: string | null
   callbackEndpoint: string | null
+  type: $Enums.OperationType | null
   createdAt: Date | null
   updatedAt: Date | null
   resolvedAt: Date | null
@@ -69,6 +71,7 @@ export type OperationCountAggregateOutputType = {
   failureMessage: number
   callbackEndpoint: number
   customData: number
+  type: number
   createdAt: number
   updatedAt: number
   resolvedAt: number
@@ -92,6 +95,7 @@ export type OperationMinAggregateInputType = {
   failureReason?: true
   failureMessage?: true
   callbackEndpoint?: true
+  type?: true
   createdAt?: true
   updatedAt?: true
   resolvedAt?: true
@@ -105,6 +109,7 @@ export type OperationMaxAggregateInputType = {
   failureReason?: true
   failureMessage?: true
   callbackEndpoint?: true
+  type?: true
   createdAt?: true
   updatedAt?: true
   resolvedAt?: true
@@ -119,6 +124,7 @@ export type OperationCountAggregateInputType = {
   failureMessage?: true
   callbackEndpoint?: true
   customData?: true
+  type?: true
   createdAt?: true
   updatedAt?: true
   resolvedAt?: true
@@ -220,6 +226,7 @@ export type OperationGroupByOutputType = {
   failureMessage: string | null
   callbackEndpoint: string | null
   customData: runtime.JsonValue | null
+  type: $Enums.OperationType
   createdAt: Date
   updatedAt: Date
   resolvedAt: Date | null
@@ -257,6 +264,7 @@ export type OperationWhereInput = {
   failureMessage?: Prisma.StringNullableFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableFilter<"Operation">
+  type?: Prisma.EnumOperationTypeFilter<"Operation"> | $Enums.OperationType
   createdAt?: Prisma.DateTimeFilter<"Operation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Operation"> | Date | string
   resolvedAt?: Prisma.DateTimeNullableFilter<"Operation"> | Date | string | null
@@ -272,6 +280,7 @@ export type OperationOrderByWithRelationInput = {
   failureMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   customData?: Prisma.SortOrderInput | Prisma.SortOrder
+  type?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -290,6 +299,7 @@ export type OperationWhereUniqueInput = Prisma.AtLeast<{
   failureMessage?: Prisma.StringNullableFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableFilter<"Operation">
+  type?: Prisma.EnumOperationTypeFilter<"Operation"> | $Enums.OperationType
   createdAt?: Prisma.DateTimeFilter<"Operation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Operation"> | Date | string
   resolvedAt?: Prisma.DateTimeNullableFilter<"Operation"> | Date | string | null
@@ -305,6 +315,7 @@ export type OperationOrderByWithAggregationInput = {
   failureMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   customData?: Prisma.SortOrderInput | Prisma.SortOrder
+  type?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -327,6 +338,7 @@ export type OperationScalarWhereWithAggregatesInput = {
   failureMessage?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
   callbackEndpoint?: Prisma.StringNullableWithAggregatesFilter<"Operation"> | string | null
   customData?: Prisma.JsonNullableWithAggregatesFilter<"Operation">
+  type?: Prisma.EnumOperationTypeWithAggregatesFilter<"Operation"> | $Enums.OperationType
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Operation"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Operation"> | Date | string
   resolvedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Operation"> | Date | string | null
@@ -340,6 +352,7 @@ export type OperationCreateInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -355,6 +368,7 @@ export type OperationUncheckedCreateInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -369,6 +383,7 @@ export type OperationUpdateInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -384,6 +399,7 @@ export type OperationUncheckedUpdateInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -399,6 +415,7 @@ export type OperationCreateManyInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -412,6 +429,7 @@ export type OperationUpdateManyMutationInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -426,6 +444,7 @@ export type OperationUncheckedUpdateManyInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -445,6 +464,7 @@ export type OperationCountOrderByAggregateInput = {
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
   customData?: Prisma.SortOrder
+  type?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrder
@@ -462,6 +482,7 @@ export type OperationMaxOrderByAggregateInput = {
   failureReason?: Prisma.SortOrder
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  type?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrder
@@ -475,6 +496,7 @@ export type OperationMinOrderByAggregateInput = {
   failureReason?: Prisma.SortOrder
   failureMessage?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  type?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   resolvedAt?: Prisma.SortOrder
@@ -502,6 +524,10 @@ export type EnumOperationStatusFieldUpdateOperationsInput = {
   set?: $Enums.OperationStatus
 }
 
+export type EnumOperationTypeFieldUpdateOperationsInput = {
+  set?: $Enums.OperationType
+}
+
 export type OperationCreateWithoutApprovalRequestInput = {
   title: string
   description?: string | null
@@ -510,6 +536,7 @@ export type OperationCreateWithoutApprovalRequestInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -524,6 +551,7 @@ export type OperationUncheckedCreateWithoutApprovalRequestInput = {
   failureMessage?: string | null
   callbackEndpoint?: string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type: $Enums.OperationType
   createdAt?: Date | string
   updatedAt?: Date | string
   resolvedAt?: Date | string | null
@@ -553,6 +581,7 @@ export type OperationUpdateWithoutApprovalRequestInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -567,6 +596,7 @@ export type OperationUncheckedUpdateWithoutApprovalRequestInput = {
   failureMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  type?: Prisma.EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -583,6 +613,7 @@ export type OperationSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  type?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   resolvedAt?: boolean
@@ -598,6 +629,7 @@ export type OperationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  type?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   resolvedAt?: boolean
@@ -612,6 +644,7 @@ export type OperationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  type?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   resolvedAt?: boolean
@@ -626,12 +659,13 @@ export type OperationSelectScalar = {
   failureMessage?: boolean
   callbackEndpoint?: boolean
   customData?: boolean
+  type?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   resolvedAt?: boolean
 }
 
-export type OperationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "status" | "failureReason" | "failureMessage" | "callbackEndpoint" | "customData" | "createdAt" | "updatedAt" | "resolvedAt", ExtArgs["result"]["operation"]>
+export type OperationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "status" | "failureReason" | "failureMessage" | "callbackEndpoint" | "customData" | "type" | "createdAt" | "updatedAt" | "resolvedAt", ExtArgs["result"]["operation"]>
 export type OperationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   approvalRequest?: boolean | Prisma.Operation$approvalRequestArgs<ExtArgs>
 }
@@ -679,6 +713,10 @@ export type $OperationPayload<ExtArgs extends runtime.Types.Extensions.InternalA
      * Optional custom payload for completion notifications.
      */
     customData: runtime.JsonValue | null
+    /**
+     * The type of operation being performed.
+     */
+    type: $Enums.OperationType
     /**
      * The timestamp when this operation was created.
      */
@@ -1123,6 +1161,7 @@ export interface OperationFieldRefs {
   readonly failureMessage: Prisma.FieldRef<"Operation", 'String'>
   readonly callbackEndpoint: Prisma.FieldRef<"Operation", 'String'>
   readonly customData: Prisma.FieldRef<"Operation", 'Json'>
+  readonly type: Prisma.FieldRef<"Operation", 'OperationType'>
   readonly createdAt: Prisma.FieldRef<"Operation", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Operation", 'DateTime'>
   readonly resolvedAt: Prisma.FieldRef<"Operation", 'DateTime'>

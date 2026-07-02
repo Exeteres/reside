@@ -1,5 +1,8 @@
 import type { NotificationActionRowJson } from "@reside/api/interaction/notification.v1"
 import type { InlineKeyboardMarkup } from "grammy/types"
+import type { NotificationKeyboardOptions } from "./notification-types"
+import { strings } from "../../locale"
+import { EDIT_NOTIFICATION_TASKS_ACTION } from "./notification-message"
 
 const MAX_ROWS_PER_PAGE = 5
 const PAGINATION_ACTION_PREFIX = "__reside_page__"
@@ -29,9 +32,21 @@ export function getNotificationCallbackActionNames(
 export function buildNotificationInlineKeyboard(
   actionRows: NotificationActionRowJson[],
   pageIndex: number,
+  options?: NotificationKeyboardOptions,
 ): InlineKeyboardMarkup | undefined {
   if (actionRows.length === 0) {
-    return undefined
+    return options?.status === "PLANNING"
+      ? {
+          inline_keyboard: [
+            [
+              {
+                text: strings.server.notification.editTasks,
+                callback_data: EDIT_NOTIFICATION_TASKS_ACTION,
+              },
+            ],
+          ],
+        }
+      : undefined
   }
 
   const pages = splitRowsIntoPages(actionRows)
@@ -76,7 +91,7 @@ export function buildNotificationInlineKeyboard(
   }
 
   if (pages.length > 1) {
-    const navigationRow: Array<{ text: string; callback_data: string }> = []
+    const navigationRow: { text: string; callback_data: string }[] = []
 
     if (clampedPageIndex > 0) {
       navigationRow.push({
@@ -95,6 +110,15 @@ export function buildNotificationInlineKeyboard(
     if (navigationRow.length > 0) {
       keyboardRows.push(navigationRow)
     }
+  }
+
+  if (options?.status === "PLANNING") {
+    keyboardRows.push([
+      {
+        text: strings.server.notification.editTasks,
+        callback_data: EDIT_NOTIFICATION_TASKS_ACTION,
+      },
+    ])
   }
 
   return {

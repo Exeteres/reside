@@ -105,6 +105,8 @@ export const OperationScalarFieldEnum = {
   failureMessage: 'failureMessage',
   callbackEndpoint: 'callbackEndpoint',
   customData: 'customData',
+  type: 'type',
+  reaperActionId: 'reaperActionId',
   replicaName: 'replicaName',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',

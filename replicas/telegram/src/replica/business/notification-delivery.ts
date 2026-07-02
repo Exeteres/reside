@@ -9,12 +9,14 @@ import { TelegramNotificationChannels } from "../../definitions"
 import { strings } from "../../locale"
 import { isReplyTargetMessageMissingError, toReplyParameters } from "./notification-message"
 
+type NotificationMediaFile = { content: Uint8Array; name: string }
+
 export async function sendNotificationPayload(
   bot: TelegramBotLike,
   chatId: string,
   request: {
-    images: Array<{ content: Uint8Array; name: string }>
-    attachments: Array<{ content: Uint8Array; name: string }>
+    images: NotificationMediaFile[]
+    attachments: NotificationMediaFile[]
   },
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,
@@ -80,7 +82,7 @@ export async function sendNotificationPayload(
 async function sendImageGroup(
   bot: TelegramBotLike,
   chatId: string,
-  images: Array<{ content: Uint8Array; name: string }>,
+  images: NotificationMediaFile[],
   caption?: string,
   replyToMessageId?: number,
   messageThreadId?: number,
@@ -120,7 +122,7 @@ async function sendImageGroup(
 async function sendAttachmentGroup(
   bot: TelegramBotLike,
   chatId: string,
-  attachments: Array<{ content: Uint8Array; name: string }>,
+  attachments: NotificationMediaFile[],
   replyToMessageId?: number,
   messageThreadId?: number,
 ): Promise<void> {
@@ -154,8 +156,8 @@ export async function sendNotificationWithReplyFallback(
   targetChatId: string,
   senderSubjectId: string,
   request: {
-    images: Array<{ content: Uint8Array; name: string }>
-    attachments: Array<{ content: Uint8Array; name: string }>
+    images: NotificationMediaFile[]
+    attachments: NotificationMediaFile[]
   },
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,

@@ -4,7 +4,7 @@ import type { DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { GatewayServiceClient } from "@reside/api/infra/gateway.v1"
 import type { ResideCrypto } from "@reside/common/encryption"
-import type { Operation, PrismaClient } from "../../database"
+import type { ApprovalResult, Operation, PrismaClient } from "../../database"
 import type { ApprovalActionName, TelegramActivities } from "../../definitions"
 import { createHash } from "node:crypto"
 import { fromJson } from "@bufbuild/protobuf"
@@ -538,6 +538,94 @@ export function createTelegramActivities({
       await operationService.setCompleted(input.operationId)
     },
 
+    async deleteAvatar(input) {
+      const avatar =
+        input.avatarId === null
+          ? null
+          : await prisma.avatar.findUnique({
+              where: {
+                id: input.avatarId,
+              },
+              select: {
+                id: true,
+                replicaName: true,
+                tokenEcid: true,
+              },
+            })
+
+      if (avatar !== null && avatar.replicaName !== input.replicaName) {
+        throw new Error(
+          `Avatar "${input.avatarId}" does not belong to replica "${input.replicaName}"`,
+        )
+      }
+
+      if (avatar !== null) {
+        const avatarToken = await crypto.decrypt(encryptedStringSchema, avatar.tokenEcid)
+        const avatarBot = createTelegramBotClient(avatarToken, {
+          role: "activity.avatar-delete",
+        })
+
+        await avatarBot.api.deleteWebhook({
+          drop_pending_updates: true,
+        })
+      }
+
+      const provisionRequests =
+        input.avatarProvisionRequestIds.length === 0
+          ? []
+          : await prisma.avatarProvisionRequest.findMany({
+              where: {
+                id: {
+                  in: input.avatarProvisionRequestIds,
+                },
+                replicaName: input.replicaName,
+              },
+              select: {
+                id: true,
+                operationId: true,
+              },
+            })
+
+      await prisma.$transaction(async tx => {
+        if (provisionRequests.length > 0) {
+          await tx.operation.deleteMany({
+            where: {
+              id: {
+                in: provisionRequests.map(request => request.operationId),
+              },
+            },
+          })
+        }
+
+        if (input.avatarProvisionRequestIds.length > 0) {
+          await tx.avatarProvisionRequest.deleteMany({
+            where: {
+              id: {
+                in: input.avatarProvisionRequestIds,
+              },
+              replicaName: input.replicaName,
+            },
+          })
+        }
+
+        if (avatar !== null) {
+          await tx.avatar.deleteMany({
+            where: {
+              id: avatar.id,
+            },
+          })
+
+          await tx.encryptedContent.deleteMany({
+            where: {
+              ecid: avatar.tokenEcid,
+            },
+          })
+        }
+      })
+
+      await operationService.setCompleted(input.operationId)
+    },
+
     async failAvatarProvisionOperation(input) {
       await prisma.operation.update({
         where: {
@@ -757,7 +845,7 @@ function createManagedBotLink(
 }
 
 function mapActionToResult(actionName: ApprovalActionName): {
-  result: "ESCALATED" | "APPROVED" | "REJECTED"
+  result: ApprovalResult
   resolution: string
 } {
   switch (actionName) {

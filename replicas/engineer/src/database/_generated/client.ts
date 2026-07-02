@@ -43,7 +43,7 @@ export { Prisma }
 
 /**
  * Model EncryptedContent
- * 
+ * Represents encrypted content stored through the common ECID encryption model.
  */
 export type EncryptedContent = Prisma.EncryptedContentModel
 /**
@@ -52,12 +52,17 @@ export type EncryptedContent = Prisma.EncryptedContentModel
  */
 export type MemoryNote = Prisma.MemoryNoteModel
 /**
+ * Model Operation
+ * Represents a long-running operation exposed by the Engineer Replica.
+ */
+export type Operation = Prisma.OperationModel
+/**
  * Model Task
- * 
+ * Represents a long-lived engineer task bound to a notification topic.
  */
 export type Task = Prisma.TaskModel
 /**
  * Model TaskIteration
- * 
+ * Represents one planning or implementation attempt for an engineer task.
  */
 export type TaskIteration = Prisma.TaskIterationModel

@@ -2,9 +2,9 @@ import type { PermissionRequestServiceClient } from "@reside/api/access/request.
 import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
-import type { LanguageEngine } from "@reside/common"
+import type { GenericOperationService, LanguageEngine } from "@reside/common"
 import type { DeepMockProxy } from "@reside/common/testing"
-import type { PrismaClient } from "../../database"
+import type { Operation, PrismaClient } from "../../database"
 import type { EngineerAiRuntime } from "../business"
 import { describe, expect, test } from "bun:test"
 import { mockDeepFn } from "@reside/common/testing"
@@ -153,6 +153,7 @@ function createFixture(): {
   const accessOperationService = mockDeepFn<OperationServiceClient>()
   const loadService = mockDeepFn<LoadServiceClient>()
   const alphaOperationService = mockDeepFn<OperationServiceClient>()
+  const operationService = mockDeepFn<GenericOperationService<Operation>>()
   const octokit = mockDeepFn<MockOctokit>()
 
   runtime.getOctokit.mockReturnValue(octokit as never)
@@ -172,6 +173,7 @@ function createFixture(): {
       accessOperationService,
       loadService,
       alphaOperationService,
+      operationService,
     }),
     prisma,
     octokit,

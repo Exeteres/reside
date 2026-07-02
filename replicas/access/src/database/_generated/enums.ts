@@ -18,6 +18,13 @@ export const OperationStatus = {
 export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationStatus]
 
 
+export const OperationType = {
+  APPROVE_PERMISSION_REQUEST_SET: 'APPROVE_PERMISSION_REQUEST_SET'
+} as const
+
+export type OperationType = (typeof OperationType)[keyof typeof OperationType]
+
+
 export const PermissionRequestSetStatus = {
   PENDING: 'PENDING',
   APPROVED: 'APPROVED',

@@ -42,6 +42,7 @@ export type CommandMinAggregateOutputType = {
   title: string | null
   description: string | null
   isProtected: boolean | null
+  ownerReplicaName: string | null
   callbackEndpoint: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -53,6 +54,7 @@ export type CommandMaxAggregateOutputType = {
   title: string | null
   description: string | null
   isProtected: boolean | null
+  ownerReplicaName: string | null
   callbackEndpoint: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -65,6 +67,7 @@ export type CommandCountAggregateOutputType = {
   description: number
   parameters:PrismaJson.CommandParameters
   isProtected: number
+  ownerReplicaName: number
   callbackEndpoint: number
   createdAt: number
   updatedAt: number
@@ -86,6 +89,7 @@ export type CommandMinAggregateInputType = {
   title?: true
   description?: true
   isProtected?: true
+  ownerReplicaName?: true
   callbackEndpoint?: true
   createdAt?: true
   updatedAt?: true
@@ -97,6 +101,7 @@ export type CommandMaxAggregateInputType = {
   title?: true
   description?: true
   isProtected?: true
+  ownerReplicaName?: true
   callbackEndpoint?: true
   createdAt?: true
   updatedAt?: true
@@ -109,6 +114,7 @@ export type CommandCountAggregateInputType = {
   description?: true
   parameters?: true
   isProtected?: true
+  ownerReplicaName?: true
   callbackEndpoint?: true
   createdAt?: true
   updatedAt?: true
@@ -208,6 +214,7 @@ export type CommandGroupByOutputType = {
   description: string | null
   parameters:PrismaJson.CommandParameters
   isProtected: boolean
+  ownerReplicaName: string | null
   callbackEndpoint: string
   createdAt: Date
   updatedAt: Date
@@ -243,6 +250,7 @@ export type CommandWhereInput = {
   description?: Prisma.StringNullableFilter<"Command"> | string | null
   parameters?: Prisma.JsonFilter<"Command">
   isProtected?: Prisma.BoolFilter<"Command"> | boolean
+  ownerReplicaName?: Prisma.StringNullableFilter<"Command"> | string | null
   callbackEndpoint?: Prisma.StringFilter<"Command"> | string
   createdAt?: Prisma.DateTimeFilter<"Command"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Command"> | Date | string
@@ -255,6 +263,7 @@ export type CommandOrderByWithRelationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   parameters?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -270,6 +279,7 @@ export type CommandWhereUniqueInput = Prisma.AtLeast<{
   description?: Prisma.StringNullableFilter<"Command"> | string | null
   parameters?: Prisma.JsonFilter<"Command">
   isProtected?: Prisma.BoolFilter<"Command"> | boolean
+  ownerReplicaName?: Prisma.StringNullableFilter<"Command"> | string | null
   callbackEndpoint?: Prisma.StringFilter<"Command"> | string
   createdAt?: Prisma.DateTimeFilter<"Command"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Command"> | Date | string
@@ -282,6 +292,7 @@ export type CommandOrderByWithAggregationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   parameters?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -302,6 +313,7 @@ export type CommandScalarWhereWithAggregatesInput = {
   description?: Prisma.StringNullableWithAggregatesFilter<"Command"> | string | null
   parameters?: Prisma.JsonWithAggregatesFilter<"Command">
   isProtected?: Prisma.BoolWithAggregatesFilter<"Command"> | boolean
+  ownerReplicaName?: Prisma.StringNullableWithAggregatesFilter<"Command"> | string | null
   callbackEndpoint?: Prisma.StringWithAggregatesFilter<"Command"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Command"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Command"> | Date | string
@@ -313,6 +325,7 @@ export type CommandCreateInput = {
   description?: string | null
   parameters:PrismaJson.CommandParameters
   isProtected?: boolean
+  ownerReplicaName?: string | null
   callbackEndpoint: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -325,6 +338,7 @@ export type CommandUncheckedCreateInput = {
   description?: string | null
   parameters:PrismaJson.CommandParameters
   isProtected?: boolean
+  ownerReplicaName?: string | null
   callbackEndpoint: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -336,6 +350,7 @@ export type CommandUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parameters?:PrismaJson.CommandParameters
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -348,6 +363,7 @@ export type CommandUncheckedUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parameters?:PrismaJson.CommandParameters
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -360,6 +376,7 @@ export type CommandCreateManyInput = {
   description?: string | null
   parameters:PrismaJson.CommandParameters
   isProtected?: boolean
+  ownerReplicaName?: string | null
   callbackEndpoint: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -371,6 +388,7 @@ export type CommandUpdateManyMutationInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parameters?:PrismaJson.CommandParameters
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -383,6 +401,7 @@ export type CommandUncheckedUpdateManyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parameters?:PrismaJson.CommandParameters
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -395,6 +414,7 @@ export type CommandCountOrderByAggregateInput = {
   description?: Prisma.SortOrder
   parameters?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -410,6 +430,7 @@ export type CommandMaxOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -421,6 +442,7 @@ export type CommandMinOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -443,6 +465,7 @@ export type CommandSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   description?: boolean
   parameters?: boolean
   isProtected?: boolean
+  ownerReplicaName?: boolean
   callbackEndpoint?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -455,6 +478,7 @@ export type CommandSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   description?: boolean
   parameters?: boolean
   isProtected?: boolean
+  ownerReplicaName?: boolean
   callbackEndpoint?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -467,6 +491,7 @@ export type CommandSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   description?: boolean
   parameters?: boolean
   isProtected?: boolean
+  ownerReplicaName?: boolean
   callbackEndpoint?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -479,12 +504,13 @@ export type CommandSelectScalar = {
   description?: boolean
   parameters?: boolean
   isProtected?: boolean
+  ownerReplicaName?: boolean
   callbackEndpoint?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type CommandOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "title" | "description" | "parameters" | "isProtected" | "callbackEndpoint" | "createdAt" | "updatedAt", ExtArgs["result"]["command"]>
+export type CommandOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "title" | "description" | "parameters" | "isProtected" | "ownerReplicaName" | "callbackEndpoint" | "createdAt" | "updatedAt", ExtArgs["result"]["command"]>
 
 export type $CommandPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Command"
@@ -516,6 +542,10 @@ export type $CommandPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
      * Whether invocation of this command requires permission checks.
      */
     isProtected: boolean
+    /**
+     * The replica that owns this command definition.
+     */
+    ownerReplicaName: string | null
     /**
      * The gRPC endpoint of the command handler service for this command.
      */
@@ -957,6 +987,7 @@ export interface CommandFieldRefs {
   readonly description: Prisma.FieldRef<"Command", 'String'>
   readonly parameters: Prisma.FieldRef<"Command", 'Json'>
   readonly isProtected: Prisma.FieldRef<"Command", 'Boolean'>
+  readonly ownerReplicaName: Prisma.FieldRef<"Command", 'String'>
   readonly callbackEndpoint: Prisma.FieldRef<"Command", 'String'>
   readonly createdAt: Prisma.FieldRef<"Command", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Command", 'DateTime'>

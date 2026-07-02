@@ -1,4 +1,8 @@
 import type {
+  DeleteGatewayWorkflowInput,
+  DeletePostgresDatabaseWorkflowInput,
+  DeleteStorageBucketWorkflowInput,
+  DeleteTemporalNamespaceWorkflowInput,
   EnsureGatewayWorkflowInput,
   InfraActivities,
   ProvisionPostgresDatabaseWorkflowInput,
@@ -16,6 +20,10 @@ const {
   provisionTemporalNamespace,
   provisionStorageBucket,
   ensureGateway,
+  deletePostgresDatabase,
+  deleteStorageBucket,
+  deleteTemporalNamespace,
+  deleteGateway,
   pingReplica,
   setOperationCompleted,
   setOperationFailed,
@@ -140,6 +148,110 @@ export async function ensureGatewayWorkflow({
     await setOperationFailed({
       operationId: operation.id,
       failureReason: "PROVISIONING_FAILED",
+      failureMessage: errorToString(error),
+    })
+    throw error
+  }
+}
+
+export async function deletePostgresDatabaseWorkflow({
+  operationId,
+}: DeletePostgresDatabaseWorkflowInput): Promise<void> {
+  const operation = await getProvisionOperationById({ operationId })
+
+  if (operation.type !== "DELETE_POSTGRES_DATABASE") {
+    throw new Error(`Operation "${operationId}" is not a PostgreSQL deletion operation`)
+  }
+
+  if (operation.postgresDatabase === null) {
+    throw new Error(`Operation "${operationId}" is missing PostgreSQL database relation`)
+  }
+
+  try {
+    await deletePostgresDatabase({ name: operation.postgresDatabase.database })
+    await setOperationCompleted({ operationId: operation.id })
+  } catch (error) {
+    await setOperationFailed({
+      operationId: operation.id,
+      failureReason: "REAPER_ACTION_FAILED",
+      failureMessage: errorToString(error),
+    })
+    throw error
+  }
+}
+
+export async function deleteTemporalNamespaceWorkflow({
+  operationId,
+}: DeleteTemporalNamespaceWorkflowInput): Promise<void> {
+  const operation = await getProvisionOperationById({ operationId })
+
+  if (operation.type !== "DELETE_TEMPORAL_NAMESPACE") {
+    throw new Error(`Operation "${operationId}" is not a Temporal namespace deletion operation`)
+  }
+
+  if (operation.temporalNamespace === null) {
+    throw new Error(`Operation "${operationId}" is missing Temporal namespace relation`)
+  }
+
+  try {
+    await deleteTemporalNamespace({ temporalNamespaceId: operation.temporalNamespace.id })
+    await setOperationCompleted({ operationId: operation.id })
+  } catch (error) {
+    await setOperationFailed({
+      operationId: operation.id,
+      failureReason: "REAPER_ACTION_FAILED",
+      failureMessage: errorToString(error),
+    })
+    throw error
+  }
+}
+
+export async function deleteGatewayWorkflow({
+  operationId,
+}: DeleteGatewayWorkflowInput): Promise<void> {
+  const operation = await getProvisionOperationById({ operationId })
+
+  if (operation.type !== "DELETE_GATEWAY") {
+    throw new Error(`Operation "${operationId}" is not a gateway deletion operation`)
+  }
+
+  if (operation.gateway === null) {
+    throw new Error(`Operation "${operationId}" is missing gateway relation`)
+  }
+
+  try {
+    await deleteGateway({ gatewayId: operation.gateway.id })
+    await setOperationCompleted({ operationId: operation.id })
+  } catch (error) {
+    await setOperationFailed({
+      operationId: operation.id,
+      failureReason: "REAPER_ACTION_FAILED",
+      failureMessage: errorToString(error),
+    })
+    throw error
+  }
+}
+
+export async function deleteStorageBucketWorkflow({
+  operationId,
+}: DeleteStorageBucketWorkflowInput): Promise<void> {
+  const operation = await getProvisionOperationById({ operationId })
+
+  if (operation.type !== "DELETE_STORAGE_BUCKET") {
+    throw new Error(`Operation "${operationId}" is not a storage bucket deletion operation`)
+  }
+
+  if (operation.storageBucket === null) {
+    throw new Error(`Operation "${operationId}" is missing storage bucket relation`)
+  }
+
+  try {
+    await deleteStorageBucket({ storageBucketId: operation.storageBucket.id })
+    await setOperationCompleted({ operationId: operation.id })
+  } catch (error) {
+    await setOperationFailed({
+      operationId: operation.id,
+      failureReason: "REAPER_ACTION_FAILED",
       failureMessage: errorToString(error),
     })
     throw error

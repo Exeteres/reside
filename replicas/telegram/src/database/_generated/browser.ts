@@ -83,6 +83,26 @@ export type NotificationResponse = Prisma.NotificationResponseModel
  */
 export type NotificationTopic = Prisma.NotificationTopicModel
 /**
+ * Model NotificationTaskGroup
+ * Represents a caller-provided notification task group.
+ */
+export type NotificationTaskGroup = Prisma.NotificationTaskGroupModel
+/**
+ * Model NotificationTask
+ * Represents a caller-provided notification task.
+ */
+export type NotificationTask = Prisma.NotificationTaskModel
+/**
+ * Model NotificationTaskPlanningPoll
+ * Represents an active Telegram poll used to edit a planning notification task list.
+ */
+export type NotificationTaskPlanningPoll = Prisma.NotificationTaskPlanningPollModel
+/**
+ * Model NotificationTaskPlanningPollOption
+ * Maps a Telegram poll option to a notification task.
+ */
+export type NotificationTaskPlanningPollOption = Prisma.NotificationTaskPlanningPollOptionModel
+/**
  * Model Notification
  * Represents a sent notification tracked by the replica.
  */

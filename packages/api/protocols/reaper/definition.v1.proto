@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package reside.reaper.definition.v1;
+
+// A reaper handler definition registered by a resource holder replica.
+message ReaperHandlerInput {
+  // The technical name of the resource holder replica.
+  string resource_replica_name = 1;
+
+  // The human-readable title used for grouping planned actions.
+  string title = 2;
+
+  // The callback endpoint implementing reside.reaper.handler.v1.ReplicaReaperHandler.
+  string callback_endpoint = 3;
+}
+
+// A stored reaper handler definition.
+message ReaperHandler {
+  // The unique numeric identifier of the handler.
+  int32 id = 1;
+
+  // The technical name of the resource holder replica.
+  string resource_replica_name = 2;
+
+  // The human-readable title used for grouping planned actions.
+  string title = 3;
+
+  // The callback endpoint implementing reside.reaper.handler.v1.ReplicaReaperHandler.
+  string callback_endpoint = 4;
+}
+
+// The request message for registering reaper handlers.
+message PutHandlersRequest {
+  // The handlers to create or update.
+  repeated ReaperHandlerInput handlers = 1;
+}
+
+// The response message containing stored handler definitions.
+message PutHandlersResponse {
+  // The stored handlers.
+  repeated ReaperHandler handlers = 1;
+}
+
+// The service for registering resource holder replicas that can clean up resources for reaper.
+service DefinitionService {
+  // Creates or updates handler definitions.
+  // This method is idempotent and authorization-sensitive.
+  rpc PutHandlers(PutHandlersRequest) returns (PutHandlersResponse);
+}

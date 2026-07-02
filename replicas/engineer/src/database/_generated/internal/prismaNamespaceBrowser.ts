@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
+  Operation: 'Operation',
   Task: 'Task',
   TaskIteration: 'TaskIteration'
 } as const
@@ -92,6 +93,25 @@ export const MemoryNoteScalarFieldEnum = {
 } as const
 
 export type MemoryNoteScalarFieldEnum = (typeof MemoryNoteScalarFieldEnum)[keyof typeof MemoryNoteScalarFieldEnum]
+
+
+export const OperationScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  status: 'status',
+  failureReason: 'failureReason',
+  failureMessage: 'failureMessage',
+  callbackEndpoint: 'callbackEndpoint',
+  customData: 'customData',
+  type: 'type',
+  reaperActionId: 'reaperActionId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  resolvedAt: 'resolvedAt'
+} as const
+
+export type OperationScalarFieldEnum = (typeof OperationScalarFieldEnum)[keyof typeof OperationScalarFieldEnum]
 
 
 export const TaskScalarFieldEnum = {
@@ -134,12 +154,29 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 export const NullsOrder = {

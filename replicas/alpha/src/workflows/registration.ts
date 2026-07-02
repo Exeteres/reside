@@ -1,6 +1,8 @@
 import type {
+  DeleteReplicaFromClusterWorkflowInput,
   NotifyReplicaReleaseNotesWorkflowInput,
   RegistrationActivities,
+  UnregisterReplicaWorkflowInput,
   WaitForReplicaRegistrationWorkflowInput,
 } from "../definitions"
 import { block, bold, inline, SPACE, safeSleep, sendNotification } from "@reside/common/workflow"
@@ -31,6 +33,16 @@ const { updateReplicaAvatarVersionTag } = proxyActivities<
     maximumInterval: "60 seconds",
   },
 })
+
+const { unregisterReplica, deleteReplicaFromCluster, completeOperation, failOperation } =
+  proxyActivities<
+    Pick<
+      RegistrationActivities,
+      "unregisterReplica" | "deleteReplicaFromCluster" | "completeOperation" | "failOperation"
+    >
+  >({
+    scheduleToCloseTimeout: "5 minutes",
+  })
 
 export async function waitForReplicaRegistrationWorkflow({
   operationId,
@@ -75,4 +87,38 @@ export async function notifyReplicaReleaseNotesWorkflow({
         : []),
     ),
   })
+}
+
+export async function unregisterReplicaWorkflow({
+  operationId,
+  replicaName,
+}: UnregisterReplicaWorkflowInput): Promise<void> {
+  try {
+    await unregisterReplica({ replicaName })
+    await completeOperation({ operationId })
+  } catch (error) {
+    await failOperation({
+      operationId,
+      reason: "REAPER_ACTION_FAILED",
+      message: error instanceof Error ? error.message : String(error),
+    })
+    throw error
+  }
+}
+
+export async function deleteReplicaFromClusterWorkflow({
+  operationId,
+  replicaName,
+}: DeleteReplicaFromClusterWorkflowInput): Promise<void> {
+  try {
+    await deleteReplicaFromCluster({ replicaName })
+    await completeOperation({ operationId })
+  } catch (error) {
+    await failOperation({
+      operationId,
+      reason: "REAPER_ACTION_FAILED",
+      message: error instanceof Error ? error.message : String(error),
+    })
+    throw error
+  }
 }

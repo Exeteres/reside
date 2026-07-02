@@ -1349,6 +1349,7 @@ export const ApproverScalarFieldEnum = {
   title: 'title',
   description: 'description',
   callbackEndpoint: 'callbackEndpoint',
+  ownerReplicaName: 'ownerReplicaName',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1409,6 +1410,7 @@ export const OperationScalarFieldEnum = {
   failureMessage: 'failureMessage',
   callbackEndpoint: 'callbackEndpoint',
   customData: 'customData',
+  type: 'type',
   permissionRequestSetId: 'permissionRequestSetId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -1623,6 +1625,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'OperationType'
+ */
+export type EnumOperationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OperationType'>
+    
+
+
+/**
+ * Reference to a field of type 'OperationType[]'
+ */
+export type ListEnumOperationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OperationType[]'>
     
 
 

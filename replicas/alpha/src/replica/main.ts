@@ -7,6 +7,7 @@ import { OperationService, OperationSubscriptionService } from "@reside/api/comm
 import { PingService } from "@reside/api/common/ping.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
+import { ReplicaReaperHandler } from "@reside/api/reaper/handler.v1"
 import {
   createCommandHandlerService,
   createInteractionActivities,
@@ -14,6 +15,7 @@ import {
   createPingService,
   createServer,
   createSleepActivities,
+  crypto,
   logger,
   setupEncryption,
   setupLanguageSubsystem,
@@ -27,6 +29,7 @@ import { setupReplicaCrdReconciliation } from "./business/replica-crd"
 import { createAlphaNlsTools } from "./nls"
 import { createDiscoveryService } from "./services/discovery"
 import { createLoadService } from "./services/load"
+import { createReaperService } from "./services/reaper"
 import { createRegistrationService } from "./services/registration"
 import { createReplicaService } from "./services/replica"
 import { createSubjectService } from "./services/subject"
@@ -51,6 +54,7 @@ await server.register(fastifyConnectPlugin, {
     router.service(PingService, createPingService())
     router.service(SubjectService, createSubjectService(services))
     router.service(CommandHandlerService, createCommandHandlerService(services.temporalClient))
+    router.service(ReplicaReaperHandler, createReaperService({ ...services, crypto }))
   },
 })
 

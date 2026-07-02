@@ -14,6 +14,45 @@ enum NotificationActionIcon {
   CONFIRMATION_ACTION_ICON_CROSS = 2;
 }
 
+// The high-level notification lifecycle status used by renderers.
+enum NotificationStatus {
+  // The notification has no special lifecycle state.
+  NOTIFICATION_STATUS_REGULAR = 0;
+
+  // The notification is collecting or showing a planned task list.
+  NOTIFICATION_STATUS_PLANNING = 1;
+
+  // The notification is actively in progress.
+  NOTIFICATION_STATUS_IN_PROGRESS = 2;
+
+  // The notification completed successfully.
+  NOTIFICATION_STATUS_COMPLETED = 3;
+
+  // The notification failed.
+  NOTIFICATION_STATUS_FAILED = 4;
+}
+
+// The status of a task attached to a notification.
+enum NotificationTaskStatus {
+  // The task is planned but has not started yet.
+  NOTIFICATION_TASK_STATUS_PLANNED = 0;
+
+  // The task is waiting to start.
+  NOTIFICATION_TASK_STATUS_PENDING = 1;
+
+  // The task is currently in progress.
+  NOTIFICATION_TASK_STATUS_IN_PROGRESS = 2;
+
+  // The task completed successfully.
+  NOTIFICATION_TASK_STATUS_COMPLETED = 3;
+
+  // The task failed.
+  NOTIFICATION_TASK_STATUS_FAILED = 4;
+
+  // The task was skipped and should not be performed.
+  NOTIFICATION_TASK_STATUS_SKIPPED = 5;
+}
+
 // The action that a user can take in response to a notification, represented by a button in the UI.
 message NotificationAction {
   // The unique name of the action within the notification, used to identify which action was taken by the user in the response.
@@ -34,6 +73,64 @@ message NotificationAction {
 message NotificationActionRow {
   // The list of actions to be displayed in the same row in the UI.
   repeated NotificationAction actions = 1;
+}
+
+// A task attached to a notification task group.
+message NotificationTask {
+  // The caller-provided stable task identifier within its group.
+  string id = 1;
+
+  // The human-readable task title.
+  string title = 2;
+
+  // The current task status.
+  NotificationTaskStatus status = 3;
+}
+
+// A single-level group of tasks attached to a notification.
+message NotificationTaskGroup {
+  // The caller-provided stable group identifier within the notification.
+  string id = 1;
+
+  // The human-readable group title.
+  string title = 2;
+
+  // The ordered list of tasks in this group.
+  repeated NotificationTask tasks = 3;
+}
+
+// The read model of a notification as currently stored by the interaction implementation.
+message Notification {
+  // The identifier of the notification.
+  // This ID is opaque and must not be parsed.
+  string notification_id = 1;
+
+  // The stored notification title.
+  string title = 2;
+
+  // The stored notification content.
+  string content = 3;
+
+  // The current notification lifecycle status.
+  NotificationStatus status = 4;
+
+  // The current action rows available to the user.
+  repeated NotificationActionRow action_rows = 5;
+
+  // The current ordered task groups attached to the notification.
+  repeated NotificationTaskGroup task_groups = 6;
+
+  // Whether the notification currently accepts text responses.
+  bool requires_text_response = 7;
+
+  // Whether response interaction with this notification is protected by permissions.
+  bool protected = 8;
+
+  // Whether callback interactions should avoid delayed "chosen" suffix rendering.
+  bool expect_immediate_feedback = 9;
+
+  // Whether messages sent into the target topic are treated as text responses to this notification.
+  bool acquire_topic = 10;
 }
 
 // The request message for sending a notification to a channel.
@@ -98,6 +195,14 @@ message SendNotificationRequest {
   // Whether messages sent into the target topic should be treated as text responses to this notification.
   // Implementations must authorize topic messages before resolving the notification response.
   google.protobuf.BoolValue acquire_topic = 14;
+
+  // The notification lifecycle status used by renderers.
+  // If omitted, implementations must treat the notification as regular.
+  NotificationStatus status = 15;
+
+  // The ordered task groups attached to the notification.
+  // Planning notifications must include at least one group with at least one task, and all tasks must be planned or skipped.
+  repeated NotificationTaskGroup task_groups = 16;
 }
 
 // The response message for a notification sent to a channel.
@@ -114,6 +219,9 @@ message SendNotificationResponse {
   // The optional external link to the created notification message.
   // This link is intended for display to the caller and must not be parsed.
   google.protobuf.StringValue message_link = 3;
+
+  // The created notification read model.
+  Notification notification = 4;
 }
 
 // The request message for updating an existing notification.
@@ -138,6 +246,15 @@ message UpdateNotificationRequest {
   // Whether callback interactions should avoid delayed "chosen" suffix rendering.
   // If not provided, the current behavior is preserved.
   google.protobuf.BoolValue expect_immediate_feedback = 6;
+
+  // The updated notification lifecycle status used by renderers.
+  // If omitted, implementations must treat the notification as regular.
+  NotificationStatus status = 7;
+
+  // The updated ordered task groups attached to the notification.
+  // This field replaces the full task list.
+  // Planning notifications must include at least one group with at least one task, and all tasks must be planned or skipped.
+  repeated NotificationTaskGroup task_groups = 8;
 }
 
 // The response message for a notification update operation.
@@ -145,6 +262,9 @@ message UpdateNotificationResponse {
   // The optional operation representing the pending response to the updated notification.
   // If no response tracking is required after update, this will be null.
   reside.common.operation.v1.Operation operation = 1;
+
+  // The updated notification read model.
+  Notification notification = 2;
 }
 
 // The request message for accepting more responses for an existing notification.
@@ -159,6 +279,9 @@ message AcceptNotificationResponseResponse {
   // The pending operation representing the next response to the notification.
   // If a pending response operation already exists for the notification, that operation is returned.
   reside.common.operation.v1.Operation operation = 1;
+
+  // The notification read model at the time response acceptance was requested.
+  Notification notification = 2;
 }
 
 // The request message for deleting an existing notification.
@@ -176,7 +299,13 @@ message NotificationResponse {
 
     // The text response provided by the user, if `requires_text_response` was set to true and the user responded by providing a text response instead of taking one of the provided actions.
     string text_response = 2;
+
+    // Indicates that the user updated the notification task list through an implementation-specific task editing interaction.
+    google.protobuf.Empty task_update = 4;
   }
+
+  // The notification read model at the moment the response operation was resolved.
+  Notification notification = 3;
 }
 
 // The notification service, which allows sending notifications to users and receiving their responses.

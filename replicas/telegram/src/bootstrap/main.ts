@@ -102,6 +102,12 @@ await defineCommonResources({
       scoped: true,
     },
   ],
+  reaperHandlers: [
+    {
+      resourceReplicaName: "telegram",
+      title: strings.reaper.title,
+    },
+  ],
 })
 
 const { endpoint } = await defineGateway({
@@ -129,10 +135,12 @@ await Promise.all([
       name: TelegramNotificationChannels.APPROVAL,
       title: strings.bootstrap.channels.approvals.title,
       description: strings.bootstrap.channels.approvals.description,
+      ownerReplicaName: "telegram",
     },
     update: {
       title: strings.bootstrap.channels.approvals.title,
       description: strings.bootstrap.channels.approvals.description,
+      ownerReplicaName: "telegram",
     },
   }),
   services.prisma.notificationChannel.upsert({
@@ -143,10 +151,12 @@ await Promise.all([
       name: TelegramNotificationChannels.AVATAR_PROVISIONING,
       title: strings.bootstrap.channels.avatarProvisioning.title,
       description: strings.bootstrap.channels.avatarProvisioning.description,
+      ownerReplicaName: "telegram",
     },
     update: {
       title: strings.bootstrap.channels.avatarProvisioning.title,
       description: strings.bootstrap.channels.avatarProvisioning.description,
+      ownerReplicaName: "telegram",
     },
   }),
   services.prisma.notificationChannel.upsert({
@@ -157,13 +167,17 @@ await Promise.all([
       name: TelegramNotificationChannels.AVATAR_PRIVACY_MODE,
       title: strings.bootstrap.channels.avatarPrivacyMode.title,
       description: strings.bootstrap.channels.avatarPrivacyMode.description,
+      ownerReplicaName: "telegram",
     },
     update: {
       title: strings.bootstrap.channels.avatarPrivacyMode.title,
       description: strings.bootstrap.channels.avatarPrivacyMode.description,
+      ownerReplicaName: "telegram",
     },
   }),
 ])
+
+await backfillOwnerReplicaNames()
 
 await services.accessDefinitionService.putApprover({
   name: "telegram",
@@ -200,3 +214,50 @@ await services.accessDefinitionService.putApprover({
 await bootstrapService({
   longRunning: true,
 })
+
+async function backfillOwnerReplicaNames(): Promise<void> {
+  const { replicas } = await services.replicaService.listReplicas({})
+  const replicaNameByEndpoint = new Map<string, string>(
+    replicas.map(replica => [`${replica.internalEndpoint}:80`, replica.name] as const),
+  )
+
+  const commands = await services.prisma.command.findMany({
+    where: {
+      ownerReplicaName: null,
+    },
+    select: {
+      id: true,
+      callbackEndpoint: true,
+    },
+  })
+
+  await Promise.all(
+    commands.map(async command => {
+      const ownerReplicaName = replicaNameByEndpoint.get(command.callbackEndpoint)
+      if (!ownerReplicaName) {
+        return
+      }
+
+      await services.prisma.command.update({
+        where: {
+          id: command.id,
+        },
+        data: {
+          ownerReplicaName,
+        },
+      })
+    }),
+  )
+
+  await services.prisma.notificationChannel.updateMany({
+    where: {
+      ownerReplicaName: null,
+      name: {
+        startsWith: "telegram:",
+      },
+    },
+    data: {
+      ownerReplicaName: "telegram",
+    },
+  })
+}

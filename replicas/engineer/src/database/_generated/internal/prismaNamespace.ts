@@ -386,6 +386,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
+  Operation: 'Operation',
   Task: 'Task',
   TaskIteration: 'TaskIteration'
 } as const
@@ -403,7 +404,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "encryptedContent" | "memoryNote" | "task" | "taskIteration"
+    modelProps: "encryptedContent" | "memoryNote" | "operation" | "task" | "taskIteration"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -552,6 +553,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.MemoryNoteCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.MemoryNoteCountAggregateOutputType> | number
+        }
+      }
+    }
+    Operation: {
+      payload: Prisma.$OperationPayload<ExtArgs>
+      fields: Prisma.OperationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.OperationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.OperationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>
+        }
+        findFirst: {
+          args: Prisma.OperationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.OperationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>
+        }
+        findMany: {
+          args: Prisma.OperationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>[]
+        }
+        create: {
+          args: Prisma.OperationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>
+        }
+        createMany: {
+          args: Prisma.OperationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.OperationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>[]
+        }
+        delete: {
+          args: Prisma.OperationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>
+        }
+        update: {
+          args: Prisma.OperationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>
+        }
+        deleteMany: {
+          args: Prisma.OperationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.OperationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.OperationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>[]
+        }
+        upsert: {
+          args: Prisma.OperationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationPayload>
+        }
+        aggregate: {
+          args: Prisma.OperationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOperation>
+        }
+        groupBy: {
+          args: Prisma.OperationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OperationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.OperationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OperationCountAggregateOutputType> | number
         }
       }
     }
@@ -763,6 +838,25 @@ export const MemoryNoteScalarFieldEnum = {
 export type MemoryNoteScalarFieldEnum = (typeof MemoryNoteScalarFieldEnum)[keyof typeof MemoryNoteScalarFieldEnum]
 
 
+export const OperationScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  status: 'status',
+  failureReason: 'failureReason',
+  failureMessage: 'failureMessage',
+  callbackEndpoint: 'callbackEndpoint',
+  customData: 'customData',
+  type: 'type',
+  reaperActionId: 'reaperActionId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  resolvedAt: 'resolvedAt'
+} as const
+
+export type OperationScalarFieldEnum = (typeof OperationScalarFieldEnum)[keyof typeof OperationScalarFieldEnum]
+
+
 export const TaskScalarFieldEnum = {
   id: 'id',
   phase: 'phase',
@@ -803,12 +897,29 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 export const NullsOrder = {
@@ -864,6 +975,48 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'OperationStatus'
+ */
+export type EnumOperationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OperationStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'OperationStatus[]'
+ */
+export type ListEnumOperationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OperationStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'OperationType'
+ */
+export type EnumOperationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OperationType'>
+    
+
+
+/**
+ * Reference to a field of type 'OperationType[]'
+ */
+export type ListEnumOperationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OperationType[]'>
     
 
 
@@ -1005,6 +1158,7 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   encryptedContent?: Prisma.EncryptedContentOmit
   memoryNote?: Prisma.MemoryNoteOmit
+  operation?: Prisma.OperationOmit
   task?: Prisma.TaskOmit
   taskIteration?: Prisma.TaskIterationOmit
 }

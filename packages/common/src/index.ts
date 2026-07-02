@@ -46,6 +46,20 @@ export {
 } from "./operation"
 export { createPingService } from "./ping"
 export {
+  type CreateReaperHandlerOptions,
+  completeReaperAction,
+  createReaperHandler,
+  operationReaperAction,
+  type ReaperActionDefinition,
+  type ReaperActionDefinitions,
+  type ReaperActionExecutionResult,
+  type ReaperAsyncActionExecutionResult,
+  type ReaperCompletedActionExecutionResult,
+  type ReaperExecuteAction,
+  type ReaperExecuteResult,
+  type ReaperPreviewAction,
+} from "./reaper"
+export {
   type DefineCommonResourcesOptions,
   type DefinedGateway,
   defineCommonResources,
@@ -56,6 +70,7 @@ export {
   type NotificationChannelDefinition,
   type PermissionDefinition,
   type RealmDefinition,
+  type ReaperHandlerDefinition,
 } from "./resources"
 export { rhid } from "./rhid"
 export * from "./server"

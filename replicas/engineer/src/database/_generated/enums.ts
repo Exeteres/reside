@@ -9,6 +9,22 @@
 * 🟢 You can import this file directly.
 */
 
+export const OperationStatus = {
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationStatus]
+
+
+export const OperationType = {
+  DELETE_SOURCE_CODE: 'DELETE_SOURCE_CODE'
+} as const
+
+export type OperationType = (typeof OperationType)[keyof typeof OperationType]
+
+
 export const TaskStatus = {
   PLANNING: 'PLANNING',
   PLAN_READY: 'PLAN_READY',

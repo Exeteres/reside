@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test"
 import { DEFAULT_TEMPORAL_TASK_QUEUE } from "@reside/common"
 import { mockDeepFn } from "@reside/common/testing"
 import { WorkflowIdReusePolicy } from "@temporalio/client"
+import { OperationType } from "../../database"
 import { APPROVAL_WORKFLOW_TYPE } from "../../definitions"
 import { strings } from "../../locale"
 import { createApprovalRequest } from "./approval"
@@ -30,6 +31,7 @@ describe("createApprovalRequest", () => {
     })
     expect(tx.operation.create.spy()).toHaveBeenCalledWith({
       data: {
+        type: OperationType.APPROVAL_REQUEST,
         title: "Need Access",
         description: null,
       },

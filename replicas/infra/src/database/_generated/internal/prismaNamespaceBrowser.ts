@@ -119,6 +119,7 @@ export const OperationScalarFieldEnum = {
   failureMessage: 'failureMessage',
   callbackEndpoint: 'callbackEndpoint',
   customData: 'customData',
+  reaperActionId: 'reaperActionId',
   type: 'type',
   temporalNamespaceId: 'temporalNamespaceId',
   postgresDatabaseId: 'postgresDatabaseId',

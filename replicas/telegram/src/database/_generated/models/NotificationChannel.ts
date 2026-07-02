@@ -41,6 +41,7 @@ export type NotificationChannelMinAggregateOutputType = {
   name: string | null
   title: string | null
   description: string | null
+  ownerReplicaName: string | null
 }
 
 export type NotificationChannelMaxAggregateOutputType = {
@@ -48,6 +49,7 @@ export type NotificationChannelMaxAggregateOutputType = {
   name: string | null
   title: string | null
   description: string | null
+  ownerReplicaName: string | null
 }
 
 export type NotificationChannelCountAggregateOutputType = {
@@ -55,6 +57,7 @@ export type NotificationChannelCountAggregateOutputType = {
   name: number
   title: number
   description: number
+  ownerReplicaName: number
   _all: number
 }
 
@@ -72,6 +75,7 @@ export type NotificationChannelMinAggregateInputType = {
   name?: true
   title?: true
   description?: true
+  ownerReplicaName?: true
 }
 
 export type NotificationChannelMaxAggregateInputType = {
@@ -79,6 +83,7 @@ export type NotificationChannelMaxAggregateInputType = {
   name?: true
   title?: true
   description?: true
+  ownerReplicaName?: true
 }
 
 export type NotificationChannelCountAggregateInputType = {
@@ -86,6 +91,7 @@ export type NotificationChannelCountAggregateInputType = {
   name?: true
   title?: true
   description?: true
+  ownerReplicaName?: true
   _all?: true
 }
 
@@ -180,6 +186,7 @@ export type NotificationChannelGroupByOutputType = {
   name: string
   title: string
   description: string | null
+  ownerReplicaName: string | null
   _count: NotificationChannelCountAggregateOutputType | null
   _avg: NotificationChannelAvgAggregateOutputType | null
   _sum: NotificationChannelSumAggregateOutputType | null
@@ -210,6 +217,7 @@ export type NotificationChannelWhereInput = {
   name?: Prisma.StringFilter<"NotificationChannel"> | string
   title?: Prisma.StringFilter<"NotificationChannel"> | string
   description?: Prisma.StringNullableFilter<"NotificationChannel"> | string | null
+  ownerReplicaName?: Prisma.StringNullableFilter<"NotificationChannel"> | string | null
   notifications?: Prisma.NotificationListRelationFilter
   bindings?: Prisma.NotificationChannelBindingListRelationFilter
   topics?: Prisma.NotificationTopicListRelationFilter
@@ -220,6 +228,7 @@ export type NotificationChannelOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrderInput | Prisma.SortOrder
   notifications?: Prisma.NotificationOrderByRelationAggregateInput
   bindings?: Prisma.NotificationChannelBindingOrderByRelationAggregateInput
   topics?: Prisma.NotificationTopicOrderByRelationAggregateInput
@@ -233,6 +242,7 @@ export type NotificationChannelWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.NotificationChannelWhereInput | Prisma.NotificationChannelWhereInput[]
   title?: Prisma.StringFilter<"NotificationChannel"> | string
   description?: Prisma.StringNullableFilter<"NotificationChannel"> | string | null
+  ownerReplicaName?: Prisma.StringNullableFilter<"NotificationChannel"> | string | null
   notifications?: Prisma.NotificationListRelationFilter
   bindings?: Prisma.NotificationChannelBindingListRelationFilter
   topics?: Prisma.NotificationTopicListRelationFilter
@@ -243,6 +253,7 @@ export type NotificationChannelOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.NotificationChannelCountOrderByAggregateInput
   _avg?: Prisma.NotificationChannelAvgOrderByAggregateInput
   _max?: Prisma.NotificationChannelMaxOrderByAggregateInput
@@ -258,12 +269,14 @@ export type NotificationChannelScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"NotificationChannel"> | string
   title?: Prisma.StringWithAggregatesFilter<"NotificationChannel"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"NotificationChannel"> | string | null
+  ownerReplicaName?: Prisma.StringNullableWithAggregatesFilter<"NotificationChannel"> | string | null
 }
 
 export type NotificationChannelCreateInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
   notifications?: Prisma.NotificationCreateNestedManyWithoutChannelInput
   bindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChannelInput
   topics?: Prisma.NotificationTopicCreateNestedManyWithoutChannelInput
@@ -274,6 +287,7 @@ export type NotificationChannelUncheckedCreateInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChannelInput
   bindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChannelInput
   topics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChannelInput
@@ -283,6 +297,7 @@ export type NotificationChannelUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notifications?: Prisma.NotificationUpdateManyWithoutChannelNestedInput
   bindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChannelNestedInput
   topics?: Prisma.NotificationTopicUpdateManyWithoutChannelNestedInput
@@ -293,6 +308,7 @@ export type NotificationChannelUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChannelNestedInput
   bindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChannelNestedInput
   topics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChannelNestedInput
@@ -303,12 +319,14 @@ export type NotificationChannelCreateManyInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
 }
 
 export type NotificationChannelUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type NotificationChannelUncheckedUpdateManyInput = {
@@ -316,6 +334,7 @@ export type NotificationChannelUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type NotificationChannelCountOrderByAggregateInput = {
@@ -323,6 +342,7 @@ export type NotificationChannelCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
 }
 
 export type NotificationChannelAvgOrderByAggregateInput = {
@@ -334,6 +354,7 @@ export type NotificationChannelMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
 }
 
 export type NotificationChannelMinOrderByAggregateInput = {
@@ -341,6 +362,7 @@ export type NotificationChannelMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
 }
 
 export type NotificationChannelSumOrderByAggregateInput = {
@@ -398,6 +420,7 @@ export type NotificationChannelCreateWithoutBindingsInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
   notifications?: Prisma.NotificationCreateNestedManyWithoutChannelInput
   topics?: Prisma.NotificationTopicCreateNestedManyWithoutChannelInput
 }
@@ -407,6 +430,7 @@ export type NotificationChannelUncheckedCreateWithoutBindingsInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChannelInput
   topics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChannelInput
 }
@@ -431,6 +455,7 @@ export type NotificationChannelUpdateWithoutBindingsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notifications?: Prisma.NotificationUpdateManyWithoutChannelNestedInput
   topics?: Prisma.NotificationTopicUpdateManyWithoutChannelNestedInput
 }
@@ -440,6 +465,7 @@ export type NotificationChannelUncheckedUpdateWithoutBindingsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChannelNestedInput
   topics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChannelNestedInput
 }
@@ -448,6 +474,7 @@ export type NotificationChannelCreateWithoutTopicsInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
   notifications?: Prisma.NotificationCreateNestedManyWithoutChannelInput
   bindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChannelInput
 }
@@ -457,6 +484,7 @@ export type NotificationChannelUncheckedCreateWithoutTopicsInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChannelInput
   bindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChannelInput
 }
@@ -481,6 +509,7 @@ export type NotificationChannelUpdateWithoutTopicsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notifications?: Prisma.NotificationUpdateManyWithoutChannelNestedInput
   bindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChannelNestedInput
 }
@@ -490,6 +519,7 @@ export type NotificationChannelUncheckedUpdateWithoutTopicsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChannelNestedInput
   bindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChannelNestedInput
 }
@@ -498,6 +528,7 @@ export type NotificationChannelCreateWithoutNotificationsInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
   bindings?: Prisma.NotificationChannelBindingCreateNestedManyWithoutChannelInput
   topics?: Prisma.NotificationTopicCreateNestedManyWithoutChannelInput
 }
@@ -507,6 +538,7 @@ export type NotificationChannelUncheckedCreateWithoutNotificationsInput = {
   name: string
   title: string
   description?: string | null
+  ownerReplicaName?: string | null
   bindings?: Prisma.NotificationChannelBindingUncheckedCreateNestedManyWithoutChannelInput
   topics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChannelInput
 }
@@ -531,6 +563,7 @@ export type NotificationChannelUpdateWithoutNotificationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bindings?: Prisma.NotificationChannelBindingUpdateManyWithoutChannelNestedInput
   topics?: Prisma.NotificationTopicUpdateManyWithoutChannelNestedInput
 }
@@ -540,6 +573,7 @@ export type NotificationChannelUncheckedUpdateWithoutNotificationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bindings?: Prisma.NotificationChannelBindingUncheckedUpdateManyWithoutChannelNestedInput
   topics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChannelNestedInput
 }
@@ -598,6 +632,7 @@ export type NotificationChannelSelect<ExtArgs extends runtime.Types.Extensions.I
   name?: boolean
   title?: boolean
   description?: boolean
+  ownerReplicaName?: boolean
   notifications?: boolean | Prisma.NotificationChannel$notificationsArgs<ExtArgs>
   bindings?: boolean | Prisma.NotificationChannel$bindingsArgs<ExtArgs>
   topics?: boolean | Prisma.NotificationChannel$topicsArgs<ExtArgs>
@@ -609,6 +644,7 @@ export type NotificationChannelSelectCreateManyAndReturn<ExtArgs extends runtime
   name?: boolean
   title?: boolean
   description?: boolean
+  ownerReplicaName?: boolean
 }, ExtArgs["result"]["notificationChannel"]>
 
 export type NotificationChannelSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -616,6 +652,7 @@ export type NotificationChannelSelectUpdateManyAndReturn<ExtArgs extends runtime
   name?: boolean
   title?: boolean
   description?: boolean
+  ownerReplicaName?: boolean
 }, ExtArgs["result"]["notificationChannel"]>
 
 export type NotificationChannelSelectScalar = {
@@ -623,9 +660,10 @@ export type NotificationChannelSelectScalar = {
   name?: boolean
   title?: boolean
   description?: boolean
+  ownerReplicaName?: boolean
 }
 
-export type NotificationChannelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "title" | "description", ExtArgs["result"]["notificationChannel"]>
+export type NotificationChannelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "title" | "description" | "ownerReplicaName", ExtArgs["result"]["notificationChannel"]>
 export type NotificationChannelInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   notifications?: boolean | Prisma.NotificationChannel$notificationsArgs<ExtArgs>
   bindings?: boolean | Prisma.NotificationChannel$bindingsArgs<ExtArgs>
@@ -668,6 +706,10 @@ export type $NotificationChannelPayload<ExtArgs extends runtime.Types.Extensions
      * The optional detailed channel description.
      */
     description: string | null
+    /**
+     * The replica that owns this notification channel.
+     */
+    ownerReplicaName: string | null
   }, ExtArgs["result"]["notificationChannel"]>
   composites: {}
 }
@@ -1098,6 +1140,7 @@ export interface NotificationChannelFieldRefs {
   readonly name: Prisma.FieldRef<"NotificationChannel", 'String'>
   readonly title: Prisma.FieldRef<"NotificationChannel", 'String'>
   readonly description: Prisma.FieldRef<"NotificationChannel", 'String'>
+  readonly ownerReplicaName: Prisma.FieldRef<"NotificationChannel", 'String'>
 }
     
 

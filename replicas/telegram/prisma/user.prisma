@@ -42,6 +42,9 @@ model User {
   /// NLS interactions started by this user.
   naturalLanguageInteractions NaturalLanguageInteraction[]
 
+  /// Planning polls launched by this user.
+  notificationTaskPlanningPolls NotificationTaskPlanningPoll[]
+
   /// The timestamp when this user was created.
   createdAt DateTime @default(now())
 

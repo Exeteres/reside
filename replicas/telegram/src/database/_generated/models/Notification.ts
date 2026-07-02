@@ -56,6 +56,7 @@ export type NotificationMinAggregateOutputType = {
   sendAsSubjectId: string | null
   title: string | null
   content: string | null
+  status: $Enums.NotificationStatus | null
   requiresTextResponse: boolean | null
   isProtected: boolean | null
   expectImmediateFeedback: boolean | null
@@ -76,6 +77,7 @@ export type NotificationMaxAggregateOutputType = {
   sendAsSubjectId: string | null
   title: string | null
   content: string | null
+  status: $Enums.NotificationStatus | null
   requiresTextResponse: boolean | null
   isProtected: boolean | null
   expectImmediateFeedback: boolean | null
@@ -96,6 +98,7 @@ export type NotificationCountAggregateOutputType = {
   sendAsSubjectId: number
   title: number
   content: number
+  status: number
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse: number
   isProtected: number
@@ -135,6 +138,7 @@ export type NotificationMinAggregateInputType = {
   sendAsSubjectId?: true
   title?: true
   content?: true
+  status?: true
   requiresTextResponse?: true
   isProtected?: true
   expectImmediateFeedback?: true
@@ -155,6 +159,7 @@ export type NotificationMaxAggregateInputType = {
   sendAsSubjectId?: true
   title?: true
   content?: true
+  status?: true
   requiresTextResponse?: true
   isProtected?: true
   expectImmediateFeedback?: true
@@ -175,6 +180,7 @@ export type NotificationCountAggregateInputType = {
   sendAsSubjectId?: true
   title?: true
   content?: true
+  status?: true
   actionRows?: true
   requiresTextResponse?: true
   isProtected?: true
@@ -283,6 +289,7 @@ export type NotificationGroupByOutputType = {
   sendAsSubjectId: string | null
   title: string
   content: string
+  status: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse: boolean
   isProtected: boolean
@@ -327,6 +334,7 @@ export type NotificationWhereInput = {
   sendAsSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
   title?: Prisma.StringFilter<"Notification"> | string
   content?: Prisma.StringFilter<"Notification"> | string
+  status?: Prisma.EnumNotificationStatusFilter<"Notification"> | $Enums.NotificationStatus
   actionRows?: Prisma.JsonFilter<"Notification">
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
@@ -339,6 +347,8 @@ export type NotificationWhereInput = {
   channel?: Prisma.XOR<Prisma.NotificationChannelScalarRelationFilter, Prisma.NotificationChannelWhereInput>
   topic?: Prisma.XOR<Prisma.NotificationTopicNullableScalarRelationFilter, Prisma.NotificationTopicWhereInput> | null
   message?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
+  taskGroups?: Prisma.NotificationTaskGroupListRelationFilter
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollListRelationFilter
   avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
 }
 
@@ -354,6 +364,7 @@ export type NotificationOrderByWithRelationInput = {
   sendAsSubjectId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   actionRows?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
@@ -366,6 +377,8 @@ export type NotificationOrderByWithRelationInput = {
   channel?: Prisma.NotificationChannelOrderByWithRelationInput
   topic?: Prisma.NotificationTopicOrderByWithRelationInput
   message?: Prisma.EncryptedContentOrderByWithRelationInput
+  taskGroups?: Prisma.NotificationTaskGroupOrderByRelationAggregateInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollOrderByRelationAggregateInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestOrderByWithRelationInput
 }
 
@@ -385,6 +398,7 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   sendAsSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
   title?: Prisma.StringFilter<"Notification"> | string
   content?: Prisma.StringFilter<"Notification"> | string
+  status?: Prisma.EnumNotificationStatusFilter<"Notification"> | $Enums.NotificationStatus
   actionRows?: Prisma.JsonFilter<"Notification">
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
@@ -397,6 +411,8 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   channel?: Prisma.XOR<Prisma.NotificationChannelScalarRelationFilter, Prisma.NotificationChannelWhereInput>
   topic?: Prisma.XOR<Prisma.NotificationTopicNullableScalarRelationFilter, Prisma.NotificationTopicWhereInput> | null
   message?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
+  taskGroups?: Prisma.NotificationTaskGroupListRelationFilter
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollListRelationFilter
   avatarProvisionRequest?: Prisma.XOR<Prisma.AvatarProvisionRequestNullableScalarRelationFilter, Prisma.AvatarProvisionRequestWhereInput> | null
 }, "id" | "operationId" | "messageEcid" | "chatId_messageRhid">
 
@@ -412,6 +428,7 @@ export type NotificationOrderByWithAggregationInput = {
   sendAsSubjectId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   actionRows?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
@@ -441,6 +458,7 @@ export type NotificationScalarWhereWithAggregatesInput = {
   sendAsSubjectId?: Prisma.StringNullableWithAggregatesFilter<"Notification"> | string | null
   title?: Prisma.StringWithAggregatesFilter<"Notification"> | string
   content?: Prisma.StringWithAggregatesFilter<"Notification"> | string
+  status?: Prisma.EnumNotificationStatusWithAggregatesFilter<"Notification"> | $Enums.NotificationStatus
   actionRows?: Prisma.JsonWithAggregatesFilter<"Notification">
   requiresTextResponse?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
@@ -456,6 +474,7 @@ export type NotificationCreateInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -468,6 +487,8 @@ export type NotificationCreateInput = {
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
   topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  taskGroups?: Prisma.NotificationTaskGroupCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
@@ -483,6 +504,7 @@ export type NotificationUncheckedCreateInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -490,6 +512,8 @@ export type NotificationUncheckedCreateInput = {
   acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
@@ -499,6 +523,7 @@ export type NotificationUpdateInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -511,6 +536,8 @@ export type NotificationUpdateInput = {
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
   topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  taskGroups?: Prisma.NotificationTaskGroupUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
@@ -526,6 +553,7 @@ export type NotificationUncheckedUpdateInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -533,6 +561,8 @@ export type NotificationUncheckedUpdateInput = {
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
@@ -548,6 +578,7 @@ export type NotificationCreateManyInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -563,6 +594,7 @@ export type NotificationUpdateManyMutationInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -584,6 +616,7 @@ export type NotificationUncheckedUpdateManyInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -608,6 +641,11 @@ export type NotificationOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type NotificationScalarRelationFilter = {
+  is?: Prisma.NotificationWhereInput
+  isNot?: Prisma.NotificationWhereInput
+}
+
 export type NotificationChatIdMessageRhidCompoundUniqueInput = {
   chatId: number
   messageRhid: string
@@ -625,6 +663,7 @@ export type NotificationCountOrderByAggregateInput = {
   sendAsSubjectId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   actionRows?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
@@ -654,6 +693,7 @@ export type NotificationMaxOrderByAggregateInput = {
   sendAsSubjectId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
@@ -674,6 +714,7 @@ export type NotificationMinOrderByAggregateInput = {
   sendAsSubjectId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
@@ -864,6 +905,38 @@ export type NotificationUncheckedUpdateManyWithoutTopicNestedInput = {
   deleteMany?: Prisma.NotificationScalarWhereInput | Prisma.NotificationScalarWhereInput[]
 }
 
+export type NotificationCreateNestedOneWithoutTaskGroupsInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutTaskGroupsInput, Prisma.NotificationUncheckedCreateWithoutTaskGroupsInput>
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutTaskGroupsInput
+  connect?: Prisma.NotificationWhereUniqueInput
+}
+
+export type NotificationUpdateOneRequiredWithoutTaskGroupsNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutTaskGroupsInput, Prisma.NotificationUncheckedCreateWithoutTaskGroupsInput>
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutTaskGroupsInput
+  upsert?: Prisma.NotificationUpsertWithoutTaskGroupsInput
+  connect?: Prisma.NotificationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationUpdateToOneWithWhereWithoutTaskGroupsInput, Prisma.NotificationUpdateWithoutTaskGroupsInput>, Prisma.NotificationUncheckedUpdateWithoutTaskGroupsInput>
+}
+
+export type NotificationCreateNestedOneWithoutTaskPlanningPollsInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutTaskPlanningPollsInput, Prisma.NotificationUncheckedCreateWithoutTaskPlanningPollsInput>
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutTaskPlanningPollsInput
+  connect?: Prisma.NotificationWhereUniqueInput
+}
+
+export type NotificationUpdateOneRequiredWithoutTaskPlanningPollsNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutTaskPlanningPollsInput, Prisma.NotificationUncheckedCreateWithoutTaskPlanningPollsInput>
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutTaskPlanningPollsInput
+  upsert?: Prisma.NotificationUpsertWithoutTaskPlanningPollsInput
+  connect?: Prisma.NotificationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationUpdateToOneWithWhereWithoutTaskPlanningPollsInput, Prisma.NotificationUpdateWithoutTaskPlanningPollsInput>, Prisma.NotificationUncheckedUpdateWithoutTaskPlanningPollsInput>
+}
+
+export type EnumNotificationStatusFieldUpdateOperationsInput = {
+  set?: $Enums.NotificationStatus
+}
+
 export type NotificationCreateNestedOneWithoutOperationInput = {
   create?: Prisma.XOR<Prisma.NotificationCreateWithoutOperationInput, Prisma.NotificationUncheckedCreateWithoutOperationInput>
   connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutOperationInput
@@ -902,6 +975,7 @@ export type NotificationCreateWithoutAvatarProvisionRequestInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -914,6 +988,8 @@ export type NotificationCreateWithoutAvatarProvisionRequestInput = {
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
   topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  taskGroups?: Prisma.NotificationTaskGroupCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutNotificationInput
 }
 
 export type NotificationUncheckedCreateWithoutAvatarProvisionRequestInput = {
@@ -928,6 +1004,7 @@ export type NotificationUncheckedCreateWithoutAvatarProvisionRequestInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -935,6 +1012,8 @@ export type NotificationUncheckedCreateWithoutAvatarProvisionRequestInput = {
   acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
 }
 
 export type NotificationCreateOrConnectWithoutAvatarProvisionRequestInput = {
@@ -959,6 +1038,7 @@ export type NotificationUpdateWithoutAvatarProvisionRequestInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -971,6 +1051,8 @@ export type NotificationUpdateWithoutAvatarProvisionRequestInput = {
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
   topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  taskGroups?: Prisma.NotificationTaskGroupUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutNotificationNestedInput
 }
 
 export type NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
@@ -985,6 +1067,7 @@ export type NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -992,6 +1075,8 @@ export type NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
 }
 
 export type NotificationCreateWithoutChannelInput = {
@@ -1000,6 +1085,7 @@ export type NotificationCreateWithoutChannelInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1011,6 +1097,8 @@ export type NotificationCreateWithoutChannelInput = {
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  taskGroups?: Prisma.NotificationTaskGroupCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
@@ -1025,6 +1113,7 @@ export type NotificationUncheckedCreateWithoutChannelInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1032,6 +1121,8 @@ export type NotificationUncheckedCreateWithoutChannelInput = {
   acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
@@ -1076,6 +1167,7 @@ export type NotificationScalarWhereInput = {
   sendAsSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
   title?: Prisma.StringFilter<"Notification"> | string
   content?: Prisma.StringFilter<"Notification"> | string
+  status?: Prisma.EnumNotificationStatusFilter<"Notification"> | $Enums.NotificationStatus
   actionRows?: Prisma.JsonFilter<"Notification">
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
@@ -1091,6 +1183,7 @@ export type NotificationCreateWithoutChatInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1102,6 +1195,8 @@ export type NotificationCreateWithoutChatInput = {
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
   topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  taskGroups?: Prisma.NotificationTaskGroupCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
@@ -1116,6 +1211,7 @@ export type NotificationUncheckedCreateWithoutChatInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1123,6 +1219,8 @@ export type NotificationUncheckedCreateWithoutChatInput = {
   acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
@@ -1158,6 +1256,7 @@ export type NotificationCreateWithoutMessageInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1169,6 +1268,8 @@ export type NotificationCreateWithoutMessageInput = {
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
   topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
+  taskGroups?: Prisma.NotificationTaskGroupCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
@@ -1183,6 +1284,7 @@ export type NotificationUncheckedCreateWithoutMessageInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1190,6 +1292,8 @@ export type NotificationUncheckedCreateWithoutMessageInput = {
   acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
@@ -1215,6 +1319,7 @@ export type NotificationUpdateWithoutMessageInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1226,6 +1331,8 @@ export type NotificationUpdateWithoutMessageInput = {
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
   topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
+  taskGroups?: Prisma.NotificationTaskGroupUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1240,6 +1347,7 @@ export type NotificationUncheckedUpdateWithoutMessageInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1247,6 +1355,8 @@ export type NotificationUncheckedUpdateWithoutMessageInput = {
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1256,6 +1366,7 @@ export type NotificationCreateWithoutTopicInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1267,6 +1378,8 @@ export type NotificationCreateWithoutTopicInput = {
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  taskGroups?: Prisma.NotificationTaskGroupCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
@@ -1281,6 +1394,7 @@ export type NotificationUncheckedCreateWithoutTopicInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1288,6 +1402,8 @@ export type NotificationUncheckedCreateWithoutTopicInput = {
   acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
@@ -1317,12 +1433,233 @@ export type NotificationUpdateManyWithWhereWithoutTopicInput = {
   data: Prisma.XOR<Prisma.NotificationUpdateManyMutationInput, Prisma.NotificationUncheckedUpdateManyWithoutTopicInput>
 }
 
+export type NotificationCreateWithoutTaskGroupsInput = {
+  messageRhid: string
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  status?: $Enums.NotificationStatus
+  actionRows:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
+  chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
+  channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
+  message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutNotificationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
+}
+
+export type NotificationUncheckedCreateWithoutTaskGroupsInput = {
+  id?: number
+  operationId?: number | null
+  chatId: number
+  channelId: number
+  topicId?: number | null
+  messageRhid: string
+  messageEcid: string
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  status?: $Enums.NotificationStatus
+  actionRows:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
+}
+
+export type NotificationCreateOrConnectWithoutTaskGroupsInput = {
+  where: Prisma.NotificationWhereUniqueInput
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutTaskGroupsInput, Prisma.NotificationUncheckedCreateWithoutTaskGroupsInput>
+}
+
+export type NotificationUpsertWithoutTaskGroupsInput = {
+  update: Prisma.XOR<Prisma.NotificationUpdateWithoutTaskGroupsInput, Prisma.NotificationUncheckedUpdateWithoutTaskGroupsInput>
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutTaskGroupsInput, Prisma.NotificationUncheckedCreateWithoutTaskGroupsInput>
+  where?: Prisma.NotificationWhereInput
+}
+
+export type NotificationUpdateToOneWithWhereWithoutTaskGroupsInput = {
+  where?: Prisma.NotificationWhereInput
+  data: Prisma.XOR<Prisma.NotificationUpdateWithoutTaskGroupsInput, Prisma.NotificationUncheckedUpdateWithoutTaskGroupsInput>
+}
+
+export type NotificationUpdateWithoutTaskGroupsInput = {
+  messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
+  actionRows?:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
+  channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
+  message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutNotificationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
+}
+
+export type NotificationUncheckedUpdateWithoutTaskGroupsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
+  actionRows?:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
+}
+
+export type NotificationCreateWithoutTaskPlanningPollsInput = {
+  messageRhid: string
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  status?: $Enums.NotificationStatus
+  actionRows:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
+  chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
+  channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
+  topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
+  message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  taskGroups?: Prisma.NotificationTaskGroupCreateNestedManyWithoutNotificationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
+}
+
+export type NotificationUncheckedCreateWithoutTaskPlanningPollsInput = {
+  id?: number
+  operationId?: number | null
+  chatId: number
+  channelId: number
+  topicId?: number | null
+  messageRhid: string
+  messageEcid: string
+  callingSubjectId?: string | null
+  sendAsSubjectId?: string | null
+  title: string
+  content: string
+  status?: $Enums.NotificationStatus
+  actionRows:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: boolean
+  isProtected?: boolean
+  expectImmediateFeedback?: boolean
+  acquireTopic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
+}
+
+export type NotificationCreateOrConnectWithoutTaskPlanningPollsInput = {
+  where: Prisma.NotificationWhereUniqueInput
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutTaskPlanningPollsInput, Prisma.NotificationUncheckedCreateWithoutTaskPlanningPollsInput>
+}
+
+export type NotificationUpsertWithoutTaskPlanningPollsInput = {
+  update: Prisma.XOR<Prisma.NotificationUpdateWithoutTaskPlanningPollsInput, Prisma.NotificationUncheckedUpdateWithoutTaskPlanningPollsInput>
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutTaskPlanningPollsInput, Prisma.NotificationUncheckedCreateWithoutTaskPlanningPollsInput>
+  where?: Prisma.NotificationWhereInput
+}
+
+export type NotificationUpdateToOneWithWhereWithoutTaskPlanningPollsInput = {
+  where?: Prisma.NotificationWhereInput
+  data: Prisma.XOR<Prisma.NotificationUpdateWithoutTaskPlanningPollsInput, Prisma.NotificationUncheckedUpdateWithoutTaskPlanningPollsInput>
+}
+
+export type NotificationUpdateWithoutTaskPlanningPollsInput = {
+  messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
+  actionRows?:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
+  channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
+  topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
+  message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  taskGroups?: Prisma.NotificationTaskGroupUpdateManyWithoutNotificationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
+}
+
+export type NotificationUncheckedUpdateWithoutTaskPlanningPollsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  operationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  channelId?: Prisma.IntFieldUpdateOperationsInput | number
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  messageRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  messageEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  callingSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
+  actionRows?:PrismaJson.NotificationActionRowsData
+  requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
+  avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
+}
+
 export type NotificationCreateWithoutOperationInput = {
   messageRhid: string
   callingSubjectId?: string | null
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1334,6 +1671,8 @@ export type NotificationCreateWithoutOperationInput = {
   channel: Prisma.NotificationChannelCreateNestedOneWithoutNotificationsInput
   topic?: Prisma.NotificationTopicCreateNestedOneWithoutNotificationsInput
   message: Prisma.EncryptedContentCreateNestedOneWithoutNotificationMessageInput
+  taskGroups?: Prisma.NotificationTaskGroupCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestCreateNestedOneWithoutNotificationInput
 }
 
@@ -1348,6 +1687,7 @@ export type NotificationUncheckedCreateWithoutOperationInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1355,6 +1695,8 @@ export type NotificationUncheckedCreateWithoutOperationInput = {
   acquireTopic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedCreateNestedOneWithoutNotificationInput
 }
 
@@ -1380,6 +1722,7 @@ export type NotificationUpdateWithoutOperationInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1391,6 +1734,8 @@ export type NotificationUpdateWithoutOperationInput = {
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
   topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  taskGroups?: Prisma.NotificationTaskGroupUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1405,6 +1750,7 @@ export type NotificationUncheckedUpdateWithoutOperationInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1412,6 +1758,8 @@ export type NotificationUncheckedUpdateWithoutOperationInput = {
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1426,6 +1774,7 @@ export type NotificationCreateManyChannelInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1441,6 +1790,7 @@ export type NotificationUpdateWithoutChannelInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1452,6 +1802,8 @@ export type NotificationUpdateWithoutChannelInput = {
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  taskGroups?: Prisma.NotificationTaskGroupUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1466,6 +1818,7 @@ export type NotificationUncheckedUpdateWithoutChannelInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1473,6 +1826,8 @@ export type NotificationUncheckedUpdateWithoutChannelInput = {
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1487,6 +1842,7 @@ export type NotificationUncheckedUpdateManyWithoutChannelInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1507,6 +1863,7 @@ export type NotificationCreateManyChatInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1522,6 +1879,7 @@ export type NotificationUpdateWithoutChatInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1533,6 +1891,8 @@ export type NotificationUpdateWithoutChatInput = {
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
   topic?: Prisma.NotificationTopicUpdateOneWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  taskGroups?: Prisma.NotificationTaskGroupUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1547,6 +1907,7 @@ export type NotificationUncheckedUpdateWithoutChatInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1554,6 +1915,8 @@ export type NotificationUncheckedUpdateWithoutChatInput = {
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1568,6 +1931,7 @@ export type NotificationUncheckedUpdateManyWithoutChatInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1588,6 +1952,7 @@ export type NotificationCreateManyTopicInput = {
   sendAsSubjectId?: string | null
   title: string
   content: string
+  status?: $Enums.NotificationStatus
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1603,6 +1968,7 @@ export type NotificationUpdateWithoutTopicInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1614,6 +1980,8 @@ export type NotificationUpdateWithoutTopicInput = {
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
   channel?: Prisma.NotificationChannelUpdateOneRequiredWithoutNotificationsNestedInput
   message?: Prisma.EncryptedContentUpdateOneRequiredWithoutNotificationMessageNestedInput
+  taskGroups?: Prisma.NotificationTaskGroupUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1628,6 +1996,7 @@ export type NotificationUncheckedUpdateWithoutTopicInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1635,6 +2004,8 @@ export type NotificationUncheckedUpdateWithoutTopicInput = {
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
+  taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestUncheckedUpdateOneWithoutNotificationNestedInput
 }
 
@@ -1649,6 +2020,7 @@ export type NotificationUncheckedUpdateManyWithoutTopicInput = {
   sendAsSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumNotificationStatusFieldUpdateOperationsInput | $Enums.NotificationStatus
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1658,6 +2030,44 @@ export type NotificationUncheckedUpdateManyWithoutTopicInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+
+/**
+ * Count Type NotificationCountOutputType
+ */
+
+export type NotificationCountOutputType = {
+  taskGroups: number
+  taskPlanningPolls: number
+}
+
+export type NotificationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  taskGroups?: boolean | NotificationCountOutputTypeCountTaskGroupsArgs
+  taskPlanningPolls?: boolean | NotificationCountOutputTypeCountTaskPlanningPollsArgs
+}
+
+/**
+ * NotificationCountOutputType without action
+ */
+export type NotificationCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationCountOutputType
+   */
+  select?: Prisma.NotificationCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * NotificationCountOutputType without action
+ */
+export type NotificationCountOutputTypeCountTaskGroupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationTaskGroupWhereInput
+}
+
+/**
+ * NotificationCountOutputType without action
+ */
+export type NotificationCountOutputTypeCountTaskPlanningPollsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationTaskPlanningPollWhereInput
+}
 
 
 export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1672,6 +2082,7 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   sendAsSubjectId?: boolean
   title?: boolean
   content?: boolean
+  status?: boolean
   actionRows?: boolean
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1684,7 +2095,10 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
   topic?: boolean | Prisma.Notification$topicArgs<ExtArgs>
   message?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  taskGroups?: boolean | Prisma.Notification$taskGroupsArgs<ExtArgs>
+  taskPlanningPolls?: boolean | Prisma.Notification$taskPlanningPollsArgs<ExtArgs>
   avatarProvisionRequest?: boolean | Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>
+  _count?: boolean | Prisma.NotificationCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["notification"]>
 
 export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1699,6 +2113,7 @@ export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   sendAsSubjectId?: boolean
   title?: boolean
   content?: boolean
+  status?: boolean
   actionRows?: boolean
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1725,6 +2140,7 @@ export type NotificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   sendAsSubjectId?: boolean
   title?: boolean
   content?: boolean
+  status?: boolean
   actionRows?: boolean
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1751,6 +2167,7 @@ export type NotificationSelectScalar = {
   sendAsSubjectId?: boolean
   title?: boolean
   content?: boolean
+  status?: boolean
   actionRows?: boolean
   requiresTextResponse?: boolean
   isProtected?: boolean
@@ -1760,14 +2177,17 @@ export type NotificationSelectScalar = {
   updatedAt?: boolean
 }
 
-export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "chatId" | "channelId" | "topicId" | "messageRhid" | "messageEcid" | "callingSubjectId" | "sendAsSubjectId" | "title" | "content" | "actionRows" | "requiresTextResponse" | "isProtected" | "expectImmediateFeedback" | "acquireTopic" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
+export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "chatId" | "channelId" | "topicId" | "messageRhid" | "messageEcid" | "callingSubjectId" | "sendAsSubjectId" | "title" | "content" | "status" | "actionRows" | "requiresTextResponse" | "isProtected" | "expectImmediateFeedback" | "acquireTopic" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
 export type NotificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.NotificationChannelDefaultArgs<ExtArgs>
   topic?: boolean | Prisma.Notification$topicArgs<ExtArgs>
   message?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  taskGroups?: boolean | Prisma.Notification$taskGroupsArgs<ExtArgs>
+  taskPlanningPolls?: boolean | Prisma.Notification$taskPlanningPollsArgs<ExtArgs>
   avatarProvisionRequest?: boolean | Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>
+  _count?: boolean | Prisma.NotificationCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type NotificationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
@@ -1807,6 +2227,14 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      * The encrypted raw Telegram message payload returned by Telegram.
      */
     message: Prisma.$EncryptedContentPayload<ExtArgs>
+    /**
+     * The ordered task groups attached to this notification.
+     */
+    taskGroups: Prisma.$NotificationTaskGroupPayload<ExtArgs>[]
+    /**
+     * The active or historical planning polls created for this notification.
+     */
+    taskPlanningPolls: Prisma.$NotificationTaskPlanningPollPayload<ExtArgs>[]
     /**
      * The avatar provisioning request that references this notification.
      */
@@ -1857,6 +2285,10 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      * The stored content of this notification.
      */
     content: string
+    /**
+     * The high-level notification lifecycle status used by renderers.
+     */
+    status: $Enums.NotificationStatus
     /**
      * The serialized list of action rows for rendering and pagination.
      * [NotificationActionRowsData]
@@ -2285,6 +2717,8 @@ export interface Prisma__NotificationClient<T, Null = never, ExtArgs extends run
   channel<T extends Prisma.NotificationChannelDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.NotificationChannelDefaultArgs<ExtArgs>>): Prisma.Prisma__NotificationChannelClient<runtime.Types.Result.GetResult<Prisma.$NotificationChannelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   topic<T extends Prisma.Notification$topicArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$topicArgs<ExtArgs>>): Prisma.Prisma__NotificationTopicClient<runtime.Types.Result.GetResult<Prisma.$NotificationTopicPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   message<T extends Prisma.EncryptedContentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContentDefaultArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  taskGroups<T extends Prisma.Notification$taskGroupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$taskGroupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationTaskGroupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskPlanningPolls<T extends Prisma.Notification$taskPlanningPollsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$taskPlanningPollsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationTaskPlanningPollPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   avatarProvisionRequest<T extends Prisma.Notification$avatarProvisionRequestArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$avatarProvisionRequestArgs<ExtArgs>>): Prisma.Prisma__AvatarProvisionRequestClient<runtime.Types.Result.GetResult<Prisma.$AvatarProvisionRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2326,6 +2760,7 @@ export interface NotificationFieldRefs {
   readonly sendAsSubjectId: Prisma.FieldRef<"Notification", 'String'>
   readonly title: Prisma.FieldRef<"Notification", 'String'>
   readonly content: Prisma.FieldRef<"Notification", 'String'>
+  readonly status: Prisma.FieldRef<"Notification", 'NotificationStatus'>
   readonly actionRows: Prisma.FieldRef<"Notification", 'Json'>
   readonly requiresTextResponse: Prisma.FieldRef<"Notification", 'Boolean'>
   readonly isProtected: Prisma.FieldRef<"Notification", 'Boolean'>
@@ -2764,6 +3199,54 @@ export type Notification$topicArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   include?: Prisma.NotificationTopicInclude<ExtArgs> | null
   where?: Prisma.NotificationTopicWhereInput
+}
+
+/**
+ * Notification.taskGroups
+ */
+export type Notification$taskGroupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationTaskGroup
+   */
+  select?: Prisma.NotificationTaskGroupSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationTaskGroup
+   */
+  omit?: Prisma.NotificationTaskGroupOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationTaskGroupInclude<ExtArgs> | null
+  where?: Prisma.NotificationTaskGroupWhereInput
+  orderBy?: Prisma.NotificationTaskGroupOrderByWithRelationInput | Prisma.NotificationTaskGroupOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationTaskGroupWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationTaskGroupScalarFieldEnum | Prisma.NotificationTaskGroupScalarFieldEnum[]
+}
+
+/**
+ * Notification.taskPlanningPolls
+ */
+export type Notification$taskPlanningPollsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationTaskPlanningPoll
+   */
+  select?: Prisma.NotificationTaskPlanningPollSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationTaskPlanningPoll
+   */
+  omit?: Prisma.NotificationTaskPlanningPollOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationTaskPlanningPollInclude<ExtArgs> | null
+  where?: Prisma.NotificationTaskPlanningPollWhereInput
+  orderBy?: Prisma.NotificationTaskPlanningPollOrderByWithRelationInput | Prisma.NotificationTaskPlanningPollOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationTaskPlanningPollWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationTaskPlanningPollScalarFieldEnum | Prisma.NotificationTaskPlanningPollScalarFieldEnum[]
 }
 
 /**

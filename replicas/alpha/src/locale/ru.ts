@@ -72,6 +72,13 @@ export const ru = {
       },
     },
   },
+  reaper: {
+    title: "Альфа-Реплика",
+    actions: {
+      unregister: "Снятие регистрации",
+      deleteFromCluster: "Удаление из кластера",
+    },
+  },
   workflows: {
     replicas: {
       empty: {

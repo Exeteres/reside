@@ -1,6 +1,8 @@
 import {
   bootstrapService,
+  createCommonServices,
   createPostgresPoolFromCredentials,
+  defineCommonResources,
   getReplicaNamespace,
   registerReplica,
   runPrismaMigrations,
@@ -39,6 +41,16 @@ await runPrismaMigrations(replicaPool)
 await ensureTemporalBootstrap(prisma)
 await ensureMonitoringBootstrap(adminPool, prisma)
 await ensureMathesarBootstrap(adminPool, prisma)
+
+await defineCommonResources({
+  services: await createCommonServices(infraReplica.endpoints),
+  reaperHandlers: [
+    {
+      resourceReplicaName: "infra",
+      title: strings.reaper.title,
+    },
+  ],
+})
 
 await bootstrapService({
   longRunning: true,

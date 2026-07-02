@@ -250,6 +250,7 @@ export type UserWhereInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestListRelationFilter
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarListRelationFilter
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionListRelationFilter
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -269,6 +270,7 @@ export type UserOrderByWithRelationInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestOrderByRelationAggregateInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarOrderByRelationAggregateInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionOrderByRelationAggregateInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -291,6 +293,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestListRelationFilter
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarListRelationFilter
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionListRelationFilter
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollListRelationFilter
 }, "id" | "telegramRhid" | "telegramUserIdEcid" | "usernameEcid" | "firstNameEcid" | "lastNameEcid">
 
 export type UserOrderByWithAggregationInput = {
@@ -335,6 +338,7 @@ export type UserCreateInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -350,6 +354,7 @@ export type UserUncheckedCreateInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUpdateInput = {
@@ -364,6 +369,7 @@ export type UserUpdateInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -379,6 +385,7 @@ export type UserUncheckedUpdateInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -650,6 +657,20 @@ export type UserUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput =
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNaturalLanguageInteractionsInput, Prisma.UserUpdateWithoutNaturalLanguageInteractionsInput>, Prisma.UserUncheckedUpdateWithoutNaturalLanguageInteractionsInput>
 }
 
+export type UserCreateNestedOneWithoutNotificationTaskPlanningPollsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationTaskPlanningPollsInput, Prisma.UserUncheckedCreateWithoutNotificationTaskPlanningPollsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationTaskPlanningPollsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutNotificationTaskPlanningPollsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationTaskPlanningPollsInput, Prisma.UserUncheckedCreateWithoutNotificationTaskPlanningPollsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationTaskPlanningPollsInput
+  upsert?: Prisma.UserUpsertWithoutNotificationTaskPlanningPollsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationTaskPlanningPollsInput, Prisma.UserUpdateWithoutNotificationTaskPlanningPollsInput>, Prisma.UserUncheckedUpdateWithoutNotificationTaskPlanningPollsInput>
+}
+
 export type UserCreateWithoutCreatedAvatarsInput = {
   telegramRhid: string
   createdAt?: Date | string
@@ -661,6 +682,7 @@ export type UserCreateWithoutCreatedAvatarsInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateWithoutCreatedAvatarsInput = {
@@ -675,6 +697,7 @@ export type UserUncheckedCreateWithoutCreatedAvatarsInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserCreateOrConnectWithoutCreatedAvatarsInput = {
@@ -704,6 +727,7 @@ export type UserUpdateWithoutCreatedAvatarsInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedAvatarsInput = {
@@ -718,6 +742,7 @@ export type UserUncheckedUpdateWithoutCreatedAvatarsInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserCreateWithoutAvatarProvisionRequestsInput = {
@@ -731,6 +756,7 @@ export type UserCreateWithoutAvatarProvisionRequestsInput = {
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateWithoutAvatarProvisionRequestsInput = {
@@ -745,6 +771,7 @@ export type UserUncheckedCreateWithoutAvatarProvisionRequestsInput = {
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserCreateOrConnectWithoutAvatarProvisionRequestsInput = {
@@ -774,6 +801,7 @@ export type UserUpdateWithoutAvatarProvisionRequestsInput = {
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAvatarProvisionRequestsInput = {
@@ -788,6 +816,7 @@ export type UserUncheckedUpdateWithoutAvatarProvisionRequestsInput = {
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserCreateWithoutUnauthorizedAvatarsInput = {
@@ -801,6 +830,7 @@ export type UserCreateWithoutUnauthorizedAvatarsInput = {
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateWithoutUnauthorizedAvatarsInput = {
@@ -815,6 +845,7 @@ export type UserUncheckedCreateWithoutUnauthorizedAvatarsInput = {
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserCreateOrConnectWithoutUnauthorizedAvatarsInput = {
@@ -844,6 +875,7 @@ export type UserUpdateWithoutUnauthorizedAvatarsInput = {
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUnauthorizedAvatarsInput = {
@@ -858,6 +890,7 @@ export type UserUncheckedUpdateWithoutUnauthorizedAvatarsInput = {
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserCreateWithoutTelegramUserIdInput = {
@@ -871,6 +904,7 @@ export type UserCreateWithoutTelegramUserIdInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateWithoutTelegramUserIdInput = {
@@ -885,6 +919,7 @@ export type UserUncheckedCreateWithoutTelegramUserIdInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserCreateOrConnectWithoutTelegramUserIdInput = {
@@ -903,6 +938,7 @@ export type UserCreateWithoutUsernameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateWithoutUsernameInput = {
@@ -917,6 +953,7 @@ export type UserUncheckedCreateWithoutUsernameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserCreateOrConnectWithoutUsernameInput = {
@@ -935,6 +972,7 @@ export type UserCreateWithoutFirstNameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateWithoutFirstNameInput = {
@@ -949,6 +987,7 @@ export type UserUncheckedCreateWithoutFirstNameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserCreateOrConnectWithoutFirstNameInput = {
@@ -967,6 +1006,7 @@ export type UserCreateWithoutLastNameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateWithoutLastNameInput = {
@@ -981,6 +1021,7 @@ export type UserUncheckedCreateWithoutLastNameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserCreateOrConnectWithoutLastNameInput = {
@@ -1010,6 +1051,7 @@ export type UserUpdateWithoutTelegramUserIdInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTelegramUserIdInput = {
@@ -1024,6 +1066,7 @@ export type UserUncheckedUpdateWithoutTelegramUserIdInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUpsertWithoutUsernameInput = {
@@ -1048,6 +1091,7 @@ export type UserUpdateWithoutUsernameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUsernameInput = {
@@ -1062,6 +1106,7 @@ export type UserUncheckedUpdateWithoutUsernameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUpsertWithoutFirstNameInput = {
@@ -1086,6 +1131,7 @@ export type UserUpdateWithoutFirstNameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFirstNameInput = {
@@ -1100,6 +1146,7 @@ export type UserUncheckedUpdateWithoutFirstNameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUpsertWithoutLastNameInput = {
@@ -1124,6 +1171,7 @@ export type UserUpdateWithoutLastNameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLastNameInput = {
@@ -1138,6 +1186,7 @@ export type UserUncheckedUpdateWithoutLastNameInput = {
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserCreateWithoutNaturalLanguageInteractionsInput = {
@@ -1151,6 +1200,7 @@ export type UserCreateWithoutNaturalLanguageInteractionsInput = {
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserUncheckedCreateWithoutNaturalLanguageInteractionsInput = {
@@ -1165,6 +1215,7 @@ export type UserUncheckedCreateWithoutNaturalLanguageInteractionsInput = {
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutLaunchedByUserInput
 }
 
 export type UserCreateOrConnectWithoutNaturalLanguageInteractionsInput = {
@@ -1194,6 +1245,7 @@ export type UserUpdateWithoutNaturalLanguageInteractionsInput = {
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUpdateManyWithoutLaunchedByUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
@@ -1208,6 +1260,81 @@ export type UserUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  notificationTaskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutLaunchedByUserNestedInput
+}
+
+export type UserCreateWithoutNotificationTaskPlanningPollsInput = {
+  telegramRhid: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  telegramUserId: Prisma.EncryptedContentCreateNestedOneWithoutUserTelegramUserIdInput
+  username?: Prisma.EncryptedContentCreateNestedOneWithoutUserUsernameInput
+  firstName?: Prisma.EncryptedContentCreateNestedOneWithoutUserFirstNameInput
+  lastName?: Prisma.EncryptedContentCreateNestedOneWithoutUserLastNameInput
+  createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutNotificationTaskPlanningPollsInput = {
+  id?: number
+  telegramRhid: string
+  telegramUserIdEcid: string
+  usernameEcid?: string | null
+  firstNameEcid?: string | null
+  lastNameEcid?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutNotificationTaskPlanningPollsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationTaskPlanningPollsInput, Prisma.UserUncheckedCreateWithoutNotificationTaskPlanningPollsInput>
+}
+
+export type UserUpsertWithoutNotificationTaskPlanningPollsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutNotificationTaskPlanningPollsInput, Prisma.UserUncheckedUpdateWithoutNotificationTaskPlanningPollsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationTaskPlanningPollsInput, Prisma.UserUncheckedCreateWithoutNotificationTaskPlanningPollsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutNotificationTaskPlanningPollsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutNotificationTaskPlanningPollsInput, Prisma.UserUncheckedUpdateWithoutNotificationTaskPlanningPollsInput>
+}
+
+export type UserUpdateWithoutNotificationTaskPlanningPollsInput = {
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  telegramUserId?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserTelegramUserIdNestedInput
+  username?: Prisma.EncryptedContentUpdateOneWithoutUserUsernameNestedInput
+  firstName?: Prisma.EncryptedContentUpdateOneWithoutUserFirstNameNestedInput
+  lastName?: Prisma.EncryptedContentUpdateOneWithoutUserLastNameNestedInput
+  createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutNotificationTaskPlanningPollsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramUserIdEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastNameEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  unauthorizedAvatars?: Prisma.UnauthorizedAvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
+  naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -1220,6 +1347,7 @@ export type UserCountOutputType = {
   avatarProvisionRequests: number
   unauthorizedAvatars: number
   naturalLanguageInteractions: number
+  notificationTaskPlanningPolls: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1227,6 +1355,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   avatarProvisionRequests?: boolean | UserCountOutputTypeCountAvatarProvisionRequestsArgs
   unauthorizedAvatars?: boolean | UserCountOutputTypeCountUnauthorizedAvatarsArgs
   naturalLanguageInteractions?: boolean | UserCountOutputTypeCountNaturalLanguageInteractionsArgs
+  notificationTaskPlanningPolls?: boolean | UserCountOutputTypeCountNotificationTaskPlanningPollsArgs
 }
 
 /**
@@ -1267,6 +1396,13 @@ export type UserCountOutputTypeCountNaturalLanguageInteractionsArgs<ExtArgs exte
   where?: Prisma.NaturalLanguageInteractionWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountNotificationTaskPlanningPollsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationTaskPlanningPollWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1285,6 +1421,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   avatarProvisionRequests?: boolean | Prisma.User$avatarProvisionRequestsArgs<ExtArgs>
   unauthorizedAvatars?: boolean | Prisma.User$unauthorizedAvatarsArgs<ExtArgs>
   naturalLanguageInteractions?: boolean | Prisma.User$naturalLanguageInteractionsArgs<ExtArgs>
+  notificationTaskPlanningPolls?: boolean | Prisma.User$notificationTaskPlanningPollsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1339,6 +1476,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   avatarProvisionRequests?: boolean | Prisma.User$avatarProvisionRequestsArgs<ExtArgs>
   unauthorizedAvatars?: boolean | Prisma.User$unauthorizedAvatarsArgs<ExtArgs>
   naturalLanguageInteractions?: boolean | Prisma.User$naturalLanguageInteractionsArgs<ExtArgs>
+  notificationTaskPlanningPolls?: boolean | Prisma.User$notificationTaskPlanningPollsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1389,6 +1527,10 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
      * NLS interactions started by this user.
      */
     naturalLanguageInteractions: Prisma.$NaturalLanguageInteractionPayload<ExtArgs>[]
+    /**
+     * Planning polls launched by this user.
+     */
+    notificationTaskPlanningPolls: Prisma.$NotificationTaskPlanningPollPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     /**
@@ -1825,6 +1967,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   avatarProvisionRequests<T extends Prisma.User$avatarProvisionRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$avatarProvisionRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvatarProvisionRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   unauthorizedAvatars<T extends Prisma.User$unauthorizedAvatarsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$unauthorizedAvatarsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UnauthorizedAvatarPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   naturalLanguageInteractions<T extends Prisma.User$naturalLanguageInteractionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$naturalLanguageInteractionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NaturalLanguageInteractionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notificationTaskPlanningPolls<T extends Prisma.User$notificationTaskPlanningPollsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationTaskPlanningPollsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationTaskPlanningPollPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2408,6 +2551,30 @@ export type User$naturalLanguageInteractionsArgs<ExtArgs extends runtime.Types.E
   take?: number
   skip?: number
   distinct?: Prisma.NaturalLanguageInteractionScalarFieldEnum | Prisma.NaturalLanguageInteractionScalarFieldEnum[]
+}
+
+/**
+ * User.notificationTaskPlanningPolls
+ */
+export type User$notificationTaskPlanningPollsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationTaskPlanningPoll
+   */
+  select?: Prisma.NotificationTaskPlanningPollSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationTaskPlanningPoll
+   */
+  omit?: Prisma.NotificationTaskPlanningPollOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationTaskPlanningPollInclude<ExtArgs> | null
+  where?: Prisma.NotificationTaskPlanningPollWhereInput
+  orderBy?: Prisma.NotificationTaskPlanningPollOrderByWithRelationInput | Prisma.NotificationTaskPlanningPollOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationTaskPlanningPollWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationTaskPlanningPollScalarFieldEnum | Prisma.NotificationTaskPlanningPollScalarFieldEnum[]
 }
 
 /**

@@ -25,6 +25,7 @@
     "@reside/common": "workspace:*",
     "@reside/registry": "workspace:*",
     "@reside/api": "workspace:*",
-    "@prisma/client": "catalog:"
+    "@prisma/client": "catalog:",
+    "zod": "catalog:"
   }
 }

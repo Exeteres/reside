@@ -53,6 +53,12 @@ await defineCommonResources({
       title: strings.bootstrap.channels.releaseNotes.title,
     },
   ],
+  reaperHandlers: [
+    {
+      resourceReplicaName: "alpha",
+      title: strings.reaper.title,
+    },
+  ],
 })
 
 await runPrismaMigrations(services.pool)

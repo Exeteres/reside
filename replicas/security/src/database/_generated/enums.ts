@@ -25,3 +25,10 @@ export const OperationStatus = {
 } as const
 
 export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationStatus]
+
+
+export const OperationType = {
+  APPROVAL_REQUEST: 'APPROVAL_REQUEST'
+} as const
+
+export type OperationType = (typeof OperationType)[keyof typeof OperationType]

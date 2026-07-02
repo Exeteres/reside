@@ -88,6 +88,7 @@ export const ApproverScalarFieldEnum = {
   title: 'title',
   description: 'description',
   callbackEndpoint: 'callbackEndpoint',
+  ownerReplicaName: 'ownerReplicaName',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -148,6 +149,7 @@ export const OperationScalarFieldEnum = {
   failureMessage: 'failureMessage',
   callbackEndpoint: 'callbackEndpoint',
   customData: 'customData',
+  type: 'type',
   permissionRequestSetId: 'permissionRequestSetId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',

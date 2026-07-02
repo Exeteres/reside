@@ -2,6 +2,7 @@ import type { Client } from "@temporalio/client"
 import type { PrismaClient } from "../../database"
 import { DEFAULT_TEMPORAL_TASK_QUEUE } from "@reside/common"
 import { WorkflowIdReusePolicy } from "@temporalio/client"
+import { OperationType } from "../../database"
 import { APPROVAL_WORKFLOW_TYPE, getApprovalWorkflowId } from "../../definitions"
 import { strings } from "../../locale"
 
@@ -21,6 +22,7 @@ export async function createApprovalRequest(
       data: {
         title: normalizedTitle,
         description: null,
+        type: OperationType.APPROVAL_REQUEST,
       },
       select: {
         id: true,

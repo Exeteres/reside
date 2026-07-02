@@ -91,6 +91,8 @@ export const ru = {
     notification: {
       responseOperationTitle: "Ожидание ответа на уведомление",
       chooseAction: "Выберите действие",
+      editTasks: "Изменить задачи",
+      editTasksPollTitle: "Какие задачи оставить?",
       avatarProvisionOperationTitle: "Ожидание создания Telegram-аватара",
       avatarProvisionOperationDescription:
         "Ожидает создание управляемого Telegram-бота для реплики.",
@@ -100,6 +102,15 @@ export const ru = {
     },
     subject: {
       userById: (telegramId: string | number) => `Пользователь ${telegramId}`,
+    },
+  },
+  reaper: {
+    title: "Телеграмная Реплика",
+    actions: {
+      deleteCommands: (count: number) => `Удаление ${count} команд`,
+      deleteChannels: (count: number) => `Удаление ${count} каналов`,
+      deleteAvatar: (name: string) => `Удаление аватара ${name}`,
+      deleteNlsInteractions: (count: number) => `Удаление ${count} NLS-сессий`,
     },
   },
   worker: {

@@ -286,6 +286,28 @@ export type CompleteAvatarProvisionOperationInput = {
   managedBotUsername: string
 }
 
+export type DeleteAvatarInput = {
+  /**
+   * Avatar deletion operation identifier.
+   */
+  operationId: number
+
+  /**
+   * The avatar record identifier, if an avatar exists.
+   */
+  avatarId: number | null
+
+  /**
+   * Replica name whose avatar resources are deleted.
+   */
+  replicaName: string
+
+  /**
+   * Provisioning request identifiers deleted with the avatar.
+   */
+  avatarProvisionRequestIds: number[]
+}
+
 export type FailOperationInput = {
   /**
    * Operation identifier.
@@ -374,6 +396,11 @@ export type TelegramActivities = {
    * Finalizes avatar provisioning and completes the operation.
    */
   completeAvatarProvisionOperation: (input: CompleteAvatarProvisionOperationInput) => Promise<void>
+
+  /**
+   * Deletes a replica avatar and related provisioning requests.
+   */
+  deleteAvatar: (input: DeleteAvatarInput) => Promise<void>
 
   /**
    * Marks avatar provisioning operation as failed.

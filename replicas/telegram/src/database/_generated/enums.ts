@@ -20,10 +20,34 @@ export type ApprovalResult = (typeof ApprovalResult)[keyof typeof ApprovalResult
 
 export const NotificationResponseType = {
   ACTION: 'ACTION',
-  TEXT: 'TEXT'
+  TEXT: 'TEXT',
+  TASK_UPDATE: 'TASK_UPDATE'
 } as const
 
 export type NotificationResponseType = (typeof NotificationResponseType)[keyof typeof NotificationResponseType]
+
+
+export const NotificationStatus = {
+  REGULAR: 'REGULAR',
+  PLANNING: 'PLANNING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type NotificationStatus = (typeof NotificationStatus)[keyof typeof NotificationStatus]
+
+
+export const NotificationTaskStatus = {
+  PLANNED: 'PLANNED',
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED'
+} as const
+
+export type NotificationTaskStatus = (typeof NotificationTaskStatus)[keyof typeof NotificationTaskStatus]
 
 
 export const OperationStatus = {
@@ -33,3 +57,13 @@ export const OperationStatus = {
 } as const
 
 export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationStatus]
+
+
+export const OperationType = {
+  NOTIFICATION_RESPONSE: 'NOTIFICATION_RESPONSE',
+  APPROVAL_REQUEST: 'APPROVAL_REQUEST',
+  AVATAR_PROVISION: 'AVATAR_PROVISION',
+  DELETE_AVATAR: 'DELETE_AVATAR'
+} as const
+
+export type OperationType = (typeof OperationType)[keyof typeof OperationType]

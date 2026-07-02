@@ -64,6 +64,10 @@ export const ModelName = {
   NaturalLanguageInteraction: 'NaturalLanguageInteraction',
   NotificationResponse: 'NotificationResponse',
   NotificationTopic: 'NotificationTopic',
+  NotificationTaskGroup: 'NotificationTaskGroup',
+  NotificationTask: 'NotificationTask',
+  NotificationTaskPlanningPoll: 'NotificationTaskPlanningPoll',
+  NotificationTaskPlanningPollOption: 'NotificationTaskPlanningPollOption',
   Notification: 'Notification',
   Operation: 'Operation',
   User: 'User'
@@ -149,7 +153,8 @@ export const NotificationChannelScalarFieldEnum = {
   id: 'id',
   name: 'name',
   title: 'title',
-  description: 'description'
+  description: 'description',
+  ownerReplicaName: 'ownerReplicaName'
 } as const
 
 export type NotificationChannelScalarFieldEnum = (typeof NotificationChannelScalarFieldEnum)[keyof typeof NotificationChannelScalarFieldEnum]
@@ -185,6 +190,7 @@ export const CommandScalarFieldEnum = {
   description: 'description',
   parameters: 'parameters',
   isProtected: 'isProtected',
+  ownerReplicaName: 'ownerReplicaName',
   callbackEndpoint: 'callbackEndpoint',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -253,6 +259,52 @@ export const NotificationTopicScalarFieldEnum = {
 export type NotificationTopicScalarFieldEnum = (typeof NotificationTopicScalarFieldEnum)[keyof typeof NotificationTopicScalarFieldEnum]
 
 
+export const NotificationTaskGroupScalarFieldEnum = {
+  notificationId: 'notificationId',
+  stableId: 'stableId',
+  title: 'title',
+  position: 'position'
+} as const
+
+export type NotificationTaskGroupScalarFieldEnum = (typeof NotificationTaskGroupScalarFieldEnum)[keyof typeof NotificationTaskGroupScalarFieldEnum]
+
+
+export const NotificationTaskScalarFieldEnum = {
+  notificationId: 'notificationId',
+  groupStableId: 'groupStableId',
+  stableId: 'stableId',
+  title: 'title',
+  status: 'status',
+  position: 'position'
+} as const
+
+export type NotificationTaskScalarFieldEnum = (typeof NotificationTaskScalarFieldEnum)[keyof typeof NotificationTaskScalarFieldEnum]
+
+
+export const NotificationTaskPlanningPollScalarFieldEnum = {
+  id: 'id',
+  notificationId: 'notificationId',
+  pollRhid: 'pollRhid',
+  messageEcid: 'messageEcid',
+  launchedByUserId: 'launchedByUserId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationTaskPlanningPollScalarFieldEnum = (typeof NotificationTaskPlanningPollScalarFieldEnum)[keyof typeof NotificationTaskPlanningPollScalarFieldEnum]
+
+
+export const NotificationTaskPlanningPollOptionScalarFieldEnum = {
+  pollId: 'pollId',
+  optionId: 'optionId',
+  taskNotificationId: 'taskNotificationId',
+  taskGroupStableId: 'taskGroupStableId',
+  taskStableId: 'taskStableId'
+} as const
+
+export type NotificationTaskPlanningPollOptionScalarFieldEnum = (typeof NotificationTaskPlanningPollOptionScalarFieldEnum)[keyof typeof NotificationTaskPlanningPollOptionScalarFieldEnum]
+
+
 export const NotificationScalarFieldEnum = {
   id: 'id',
   operationId: 'operationId',
@@ -265,6 +317,7 @@ export const NotificationScalarFieldEnum = {
   sendAsSubjectId: 'sendAsSubjectId',
   title: 'title',
   content: 'content',
+  status: 'status',
   actionRows: 'actionRows',
   requiresTextResponse: 'requiresTextResponse',
   isProtected: 'isProtected',
@@ -286,6 +339,9 @@ export const OperationScalarFieldEnum = {
   failureMessage: 'failureMessage',
   callbackEndpoint: 'callbackEndpoint',
   customData: 'customData',
+  reaperActionId: 'reaperActionId',
+  type: 'type',
+  notificationResponseContextToken: 'notificationResponseContextToken',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   resolvedAt: 'resolvedAt'

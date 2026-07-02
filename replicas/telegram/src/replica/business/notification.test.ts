@@ -76,6 +76,106 @@ describe("assertActionRows", () => {
 })
 
 describe("sendNotificationForReplica", () => {
+  test("throws when planning notification has no tasks", () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<{
+      checkPermission: (args: {
+        permissionName: string
+        subjectId: string
+        scope: string
+      }) => Promise<{ authorized: boolean }>
+    }>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    expect(
+      sendNotificationForReplica(
+        testCrypto,
+        prisma,
+        authzService,
+        subjectService,
+        () => bot,
+        async () => ({
+          botToken: "token",
+          systemChatId: "-1001",
+        }),
+        "demo",
+        {
+          channel: "alerts",
+          title: "Title",
+          content: "Body",
+          actionRows: [],
+          images: [],
+          attachments: [],
+          requiresTextResponse: false,
+          status: "PLANNING",
+          taskGroups: [
+            {
+              id: "group-1",
+              title: "Group",
+              tasks: [],
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow("Planning notification must include at least one task")
+  })
+
+  test("throws when planning notification contains non-planning task status", () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<{
+      checkPermission: (args: {
+        permissionName: string
+        subjectId: string
+        scope: string
+      }) => Promise<{ authorized: boolean }>
+    }>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    expect(
+      sendNotificationForReplica(
+        testCrypto,
+        prisma,
+        authzService,
+        subjectService,
+        () => bot,
+        async () => ({
+          botToken: "token",
+          systemChatId: "-1001",
+        }),
+        "demo",
+        {
+          channel: "alerts",
+          title: "Title",
+          content: "Body",
+          actionRows: [],
+          images: [],
+          attachments: [],
+          requiresTextResponse: false,
+          status: "PLANNING",
+          taskGroups: [
+            {
+              id: "group-1",
+              title: "Group",
+              tasks: [
+                {
+                  id: "task-1",
+                  title: "Task",
+                  status: "PENDING",
+                },
+              ],
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow("Planning notification tasks must be planned or skipped")
+  })
+
   test("throws when target channel does not exist", () => {
     const prisma = mockDeepFn<PrismaClient>()
     const authzService = mockDeepFn<{

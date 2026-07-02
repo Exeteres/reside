@@ -20,6 +20,7 @@ export const infraReplica = defineReplica({
       alpha: (): Replica => alphaReplica,
       access: (): Replica => accessReplica,
       interaction: (): Replica => telegramReplica,
+      reaper: (): Replica => reaperReplica,
     },
   },
   configMaps: {
@@ -73,6 +74,7 @@ export const accessReplica = defineReplica({
     replicas: {
       alpha: (): Replica => alphaReplica,
       interaction: (): Replica => telegramReplica,
+      reaper: (): Replica => reaperReplica,
     },
   },
 })
@@ -88,6 +90,7 @@ export const telegramReplica = defineReplica({
   optionalDependencies: {
     replicas: {
       alpha: (): Replica => alphaReplica,
+      reaper: (): Replica => reaperReplica,
     },
   },
   configMaps: {
@@ -105,6 +108,11 @@ export const alphaReplica = defineReplica({
       access: accessReplica,
       infra: infraReplica,
       interaction: telegramReplica,
+    },
+  },
+  optionalDependencies: {
+    replicas: {
+      reaper: (): Replica => reaperReplica,
     },
   },
 
@@ -154,6 +162,22 @@ export const engineerReplica = defineReplica({
     "github-repository": {
       owner: "$ENGINEER_GITHUB_REPOSITORY_OWNER",
       name: "$ENGINEER_GITHUB_REPOSITORY_NAME",
+    },
+  },
+  optionalDependencies: {
+    replicas: {
+      reaper: (): Replica => reaperReplica,
+    },
+  },
+})
+
+export const reaperReplica = defineReplica({
+  name: "reaper",
+  dependencies: {
+    replicas: {
+      access: accessReplica,
+      infra: infraReplica,
+      interaction: telegramReplica,
     },
   },
 })
@@ -222,6 +246,7 @@ export const topology = sortReplicasByDependencies([
   infraReplica,
   telegramReplica,
   engineerReplica,
+  reaperReplica,
   securityReplica,
   alphaReplica,
   rateReplica,

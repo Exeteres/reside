@@ -98,7 +98,9 @@ describe("completeOperationFromTextReply", () => {
       },
     ] as never)
     prisma.notificationResponse.create.mockResolvedValue({} as never)
-    prisma.operation.findUnique.mockResolvedValue({ customData: { existing: true } } as never)
+    prisma.operation.findUnique.mockResolvedValue({
+      notificationResponseContextToken: null,
+    } as never)
     prisma.operation.update.mockResolvedValue({ id: 77 } as never)
 
     const result = await completeOperationFromTextReply({

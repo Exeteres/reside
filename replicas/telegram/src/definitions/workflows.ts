@@ -2,6 +2,7 @@ import { defineSignal } from "@temporalio/workflow"
 
 export const TELEGRAM_APPROVAL_WORKFLOW_TYPE = "handleApprovalRequestWorkflow"
 export const TELEGRAM_AVATAR_PROVISION_WORKFLOW_TYPE = "ensureReplicaAvatarWorkflow"
+export const TELEGRAM_DELETE_AVATAR_WORKFLOW_TYPE = "deleteAvatarWorkflow"
 
 export type AvatarManagedBotCreatedSignalInput = {
   managedBotId: string
@@ -17,6 +18,13 @@ export type HandleApprovalRequestWorkflowInput = {
 
 export type EnsureReplicaAvatarWorkflowInput = {
   operationId: number
+}
+
+export type DeleteAvatarWorkflowInput = {
+  operationId: number
+  avatarId: number | null
+  replicaName: string
+  avatarProvisionRequestIds: number[]
 }
 
 export const approvalCancelSignal = defineSignal("cancelApprovalRequest")

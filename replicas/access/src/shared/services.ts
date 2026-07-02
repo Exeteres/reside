@@ -44,8 +44,12 @@ export async function createServices() {
         },
       })
 
-      if (operation === null || operation.permissionRequestSet === null) {
+      if (operation === null) {
         throw new Error(`Operation "${operationId}" has no permission request set result`)
+      }
+
+      if (operation.permissionRequestSet === null) {
+        return {}
       }
 
       return operation.permissionRequestSet

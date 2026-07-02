@@ -3,6 +3,7 @@ import type { Client } from "@temporalio/client"
 import type { PrismaClient } from "../../database"
 import { DEFAULT_TEMPORAL_TASK_QUEUE, logger } from "@reside/common"
 import { WorkflowIdReusePolicy } from "@temporalio/client"
+import { OperationType } from "../../database"
 import {
   encryptedStringSchema,
   getAvatarProvisionWorkflowId,
@@ -101,6 +102,7 @@ export async function ensureAvatarProvision(
       data: {
         title: strings.server.notification.avatarProvisionOperationTitle,
         description: strings.server.notification.avatarProvisionOperationDescription,
+        type: OperationType.AVATAR_PROVISION,
       },
       select: {
         id: true,

@@ -80,6 +80,6 @@
     "giget": "3.1.2"
   },
   "dependencies": {
-    "grammy": "^1.42.0"
+    "grammy": "^1.44.0"
   }
 }

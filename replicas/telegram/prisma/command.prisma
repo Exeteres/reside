@@ -20,6 +20,9 @@ model Command {
   /// Whether invocation of this command requires permission checks.
   isProtected Boolean @default(false)
 
+  /// The replica that owns this command definition.
+  ownerReplicaName String?
+
   /// The gRPC endpoint of the command handler service for this command.
   callbackEndpoint String
 
@@ -28,4 +31,6 @@ model Command {
 
   /// The timestamp when this command definition was last updated.
   updatedAt DateTime @updatedAt
+
+  @@index([ownerReplicaName])
 }

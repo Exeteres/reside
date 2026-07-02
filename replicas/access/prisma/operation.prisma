@@ -4,6 +4,10 @@ enum OperationStatus {
   FAILED
 }
 
+enum OperationType {
+  APPROVE_PERMISSION_REQUEST_SET
+}
+
 /// Represents a long-running operation in the access replica.
 model Operation {
   /// The unique numeric identifier of the operation record.
@@ -30,6 +34,9 @@ model Operation {
   /// Optional custom payload for completion notifications.
   customData Json?
 
+  /// The type of operation being performed.
+  type OperationType
+
   /// The created permission request set associated with this operation.
   permissionRequestSetId Int? @unique
 
@@ -46,4 +53,5 @@ model Operation {
   resolvedAt DateTime?
 
   @@index([createdAt])
+  @@index([type, status])
 }

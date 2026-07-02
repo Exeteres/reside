@@ -1,4 +1,13 @@
 import type { ApprovalResponseJson } from "@reside/api/common/approval.v1"
+import type {
+  NotificationJson,
+  NotificationStatusJson,
+  NotificationTaskStatusJson,
+} from "@reside/api/interaction/notification.v1"
+import type {
+  NotificationStatus as StoredNotificationStatus,
+  NotificationTaskStatus as StoredNotificationTaskStatus,
+} from "../database"
 import { status as GrpcStatus } from "@grpc/grpc-js"
 import { OperationService } from "@reside/api/common/operation.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
@@ -68,8 +77,11 @@ export async function createServices() {
           id: operationId,
         },
         select: {
-          customData: true,
+          notificationResponseContextToken: true,
           notificationResponse: true,
+          notification: {
+            select: notificationReadModelSelect,
+          },
         },
       })
 
@@ -79,10 +91,12 @@ export async function createServices() {
 
       const response = operation.notificationResponse
       if (response === null) {
-        throw new Error(`Operation "${operationId}" has no notification response result`)
+        return {}
       }
 
-      const contextToken = readNotificationResponseContextToken(operation.customData)
+      const contextToken = operation.notificationResponseContextToken ?? undefined
+      const notification =
+        operation.notification === null ? undefined : toNotificationJson(operation.notification)
 
       if (response.type === "ACTION") {
         if (!response.actionName) {
@@ -92,6 +106,15 @@ export async function createServices() {
         return {
           actionName: response.actionName,
           contextToken,
+          notification,
+        }
+      }
+
+      if (response.type === "TASK_UPDATE") {
+        return {
+          taskUpdate: {},
+          contextToken,
+          notification,
         }
       }
 
@@ -102,6 +125,7 @@ export async function createServices() {
       return {
         textResponse: await crypto.decrypt(encryptedStringSchema, response.textResponseEcid),
         contextToken,
+        notification,
       }
     },
 
@@ -147,16 +171,109 @@ export async function createServices() {
   }
 }
 
-function readNotificationResponseContextToken(customData: unknown): string | undefined {
-  if (typeof customData !== "object" || customData === null) {
-    return undefined
-  }
+const notificationReadModelSelect = {
+  id: true,
+  title: true,
+  content: true,
+  status: true,
+  actionRows: true,
+  requiresTextResponse: true,
+  isProtected: true,
+  expectImmediateFeedback: true,
+  acquireTopic: true,
+  taskGroups: {
+    orderBy: {
+      position: "asc" as const,
+    },
+    select: {
+      stableId: true,
+      title: true,
+      tasks: {
+        orderBy: {
+          position: "asc" as const,
+        },
+        select: {
+          stableId: true,
+          title: true,
+          status: true,
+        },
+      },
+    },
+  },
+}
 
-  if (!("notificationResponseContextToken" in customData)) {
-    return undefined
+function toNotificationJson(notification: {
+  id: number
+  title: string
+  content: string
+  status: StoredNotificationStatus
+  actionRows: NotificationJson["actionRows"]
+  requiresTextResponse: boolean
+  isProtected: boolean
+  expectImmediateFeedback: boolean
+  acquireTopic: boolean
+  taskGroups: {
+    stableId: string
+    title: string
+    tasks: {
+      stableId: string
+      title: string
+      status: StoredNotificationTaskStatus
+    }[]
+  }[]
+}): NotificationJson {
+  return {
+    notificationId: String(notification.id),
+    title: notification.title,
+    content: notification.content,
+    status: toNotificationStatusJson(notification.status),
+    actionRows: notification.actionRows,
+    taskGroups: notification.taskGroups.map(group => ({
+      id: group.stableId,
+      title: group.title,
+      tasks: group.tasks.map(task => ({
+        id: task.stableId,
+        title: task.title,
+        status: toNotificationTaskStatusJson(task.status),
+      })),
+    })),
+    requiresTextResponse: notification.requiresTextResponse,
+    protected: notification.isProtected,
+    expectImmediateFeedback: notification.expectImmediateFeedback,
+    acquireTopic: notification.acquireTopic,
   }
+}
 
-  const value = (customData as { notificationResponseContextToken?: unknown })
-    .notificationResponseContextToken
-  return typeof value === "string" && value.length > 0 ? value : undefined
+function toNotificationStatusJson(status: StoredNotificationStatus): NotificationStatusJson {
+  switch (status) {
+    case "PLANNING":
+      return "NOTIFICATION_STATUS_PLANNING"
+    case "IN_PROGRESS":
+      return "NOTIFICATION_STATUS_IN_PROGRESS"
+    case "COMPLETED":
+      return "NOTIFICATION_STATUS_COMPLETED"
+    case "FAILED":
+      return "NOTIFICATION_STATUS_FAILED"
+    case "REGULAR":
+      return "NOTIFICATION_STATUS_REGULAR"
+  }
+}
+
+function toNotificationTaskStatusJson(
+  status: StoredNotificationTaskStatus,
+): NotificationTaskStatusJson {
+  switch (status) {
+    case "PENDING":
+      return "NOTIFICATION_TASK_STATUS_PENDING"
+    case "IN_PROGRESS":
+      return "NOTIFICATION_TASK_STATUS_IN_PROGRESS"
+    case "COMPLETED":
+      return "NOTIFICATION_TASK_STATUS_COMPLETED"
+    case "FAILED":
+      return "NOTIFICATION_TASK_STATUS_FAILED"
+    case "SKIPPED":
+      return "NOTIFICATION_TASK_STATUS_SKIPPED"
+    case "PLANNED":
+      return "NOTIFICATION_TASK_STATUS_PLANNED"
+  }
 }

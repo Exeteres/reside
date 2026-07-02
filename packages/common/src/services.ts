@@ -14,6 +14,7 @@ import {
   RegistrationService,
   type RegistrationServiceClient,
 } from "@reside/api/alpha/registration.v1"
+import { ReplicaService, type ReplicaServiceClient } from "@reside/api/alpha/replica.v1"
 import { OperationService, type OperationServiceClient } from "@reside/api/common/operation.v1"
 import { GatewayService, type GatewayServiceClient } from "@reside/api/infra/gateway.v1"
 import {
@@ -32,6 +33,10 @@ import {
   NotificationService,
   type NotificationServiceClient,
 } from "@reside/api/interaction/notification.v1"
+import {
+  DefinitionService as ReaperDefinitionService,
+  type DefinitionServiceClient as ReaperDefinitionServiceClient,
+} from "@reside/api/reaper/definition.v1"
 import { createChannels, createClient } from "./api"
 import { setupTelemetry } from "./telemetry"
 
@@ -76,7 +81,13 @@ type CommonServiceMap<TEndpoints extends Record<string, string>> = Record<never,
     ? {
         registrationService: RegistrationServiceClient
         discoveryService: DiscoveryServiceClient
+        replicaService: ReplicaServiceClient
         alphaOperationService: OperationServiceClient
+      }
+    : Record<never, never>) &
+  (TEndpoints extends Record<"reaper", string>
+    ? {
+        reaperDefinitionService: ReaperDefinitionServiceClient
       }
     : Record<never, never>)
 
@@ -84,7 +95,7 @@ export type CommonServices<TApiGroups extends string = string> = CommonServiceMa
   Record<TApiGroups, string>
 >
 
-type AllServices = CommonServices<"infra" | "access" | "interaction" | "alpha">
+type AllServices = CommonServices<"infra" | "access" | "interaction" | "alpha" | "reaper">
 
 export type CommonServicesOptions<TEndpoints extends Record<string, string>> = {
   endpoints: TEndpoints
@@ -135,7 +146,12 @@ export async function createCommonServices<TEndpoints extends Record<string, str
   if (channels.alpha) {
     services.registrationService = createClient(RegistrationService, channels.alpha)
     services.discoveryService = createClient(DiscoveryService, channels.alpha)
+    services.replicaService = createClient(ReplicaService, channels.alpha)
     services.alphaOperationService = createClient(OperationService, channels.alpha)
+  }
+
+  if (channels.reaper) {
+    services.reaperDefinitionService = createClient(ReaperDefinitionService, channels.reaper)
   }
 
   return {

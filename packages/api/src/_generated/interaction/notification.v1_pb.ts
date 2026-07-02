@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { BoolValueJson, EmptySchema, StringValueJson } from "@bufbuild/protobuf/wkt";
+import type { BoolValueJson, Empty, EmptyJson, EmptySchema, StringValueJson } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_empty, file_google_protobuf_wrappers } from "@bufbuild/protobuf/wkt";
 import type { InlineFile, InlineFileJson } from "../common/file.v1_pb";
 import { file_common_file_v1 } from "../common/file.v1_pb";
@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/notification.v1.proto.
  */
 export const file_interaction_notification_v1: GenFile = /*@__PURE__*/
-  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24iyQUKF1NlbmROb3RpZmljYXRpb25SZXF1ZXN0EhoKDWNvbnRleHRfdG9rZW4YASABKAlIAIgBARIPCgdjaGFubmVsGAIgASgJEi8KCXBhcnRpdGlvbhgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRINCgV0aXRsZRgEIAEoCRItCgdjb250ZW50GAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKBmltYWdlcxgGIAMoCzIhLnJlc2lkZS5jb21tb24uZmlsZS52MS5JbmxpbmVGaWxlEjYKC2F0dGFjaG1lbnRzGAcgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSTgoLYWN0aW9uX3Jvd3MYCCADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxI6ChZyZXF1aXJlc190ZXh0X3Jlc3BvbnNlGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRItCglwcm90ZWN0ZWQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEjgKEnNlbmRfYXNfc3ViamVjdF9pZBgLIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRI9ChlleHBlY3RfaW1tZWRpYXRlX2ZlZWRiYWNrGAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRIuCgh0b3BpY19pZBgNIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIxCg1hY3F1aXJlX3RvcGljGA4gASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZUIQCg5fY29udGV4dF90b2tlbiKhAQoYU2VuZE5vdGlmaWNhdGlvblJlc3BvbnNlEhcKD25vdGlmaWNhdGlvbl9pZBgCIAEoCRI4CglvcGVyYXRpb24YASABKAsyJS5yZXNpZGUuY29tbW9uLm9wZXJhdGlvbi52MS5PcGVyYXRpb24SMgoMbWVzc2FnZV9saW5rGAMgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIp8CChlVcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIPCgdjb250ZW50GAMgASgJEk4KC2FjdGlvbl9yb3dzGAQgAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb25Sb3cSOgoWcmVxdWlyZXNfdGV4dF9yZXNwb25zZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSPQoZZXhwZWN0X2ltbWVkaWF0ZV9mZWVkYmFjaxgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUiVgoaVXBkYXRlTm90aWZpY2F0aW9uUmVzcG9uc2USOAoJb3BlcmF0aW9uGAEgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uIjwKIUFjY2VwdE5vdGlmaWNhdGlvblJlc3BvbnNlUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkiXgoiQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXNwb25zZRI4CglvcGVyYXRpb24YASABKAsyJS5yZXNpZGUuY29tbW9uLm9wZXJhdGlvbi52MS5PcGVyYXRpb24iNAoZRGVsZXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkiUgoUTm90aWZpY2F0aW9uUmVzcG9uc2USFQoLYWN0aW9uX25hbWUYASABKAlIABIXCg10ZXh0X3Jlc3BvbnNlGAIgASgJSABCCgoIcmVzcG9uc2UqgwEKFk5vdGlmaWNhdGlvbkFjdGlvbkljb24SIQodQ09ORklSTUFUSU9OX0FDVElPTl9JQ09OX05PTkUQABIiCh5DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fQ0hFQ0sQARIiCh5DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fQ1JPU1MQAjLWBAoTTm90aWZpY2F0aW9uU2VydmljZRKNAQoQU2VuZE5vdGlmaWNhdGlvbhI7LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuU2VuZE5vdGlmaWNhdGlvblJlcXVlc3QaPC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlNlbmROb3RpZmljYXRpb25SZXNwb25zZRKTAQoSVXBkYXRlTm90aWZpY2F0aW9uEj0ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5VcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0Gj4ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5VcGRhdGVOb3RpZmljYXRpb25SZXNwb25zZRKrAQoaQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2USRS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLkFjY2VwdE5vdGlmaWNhdGlvblJlc3BvbnNlUmVxdWVzdBpGLnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXNwb25zZRJrChJEZWxldGVOb3RpZmljYXRpb24SPS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLkRlbGV0ZU5vdGlmaWNhdGlvblJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHliBnByb3RvMw", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
+  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24ieQoQTm90aWZpY2F0aW9uVGFzaxIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRJKCgZzdGF0dXMYAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvblRhc2tTdGF0dXMidwoVTm90aWZpY2F0aW9uVGFza0dyb3VwEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEkMKBXRhc2tzGAMgAygLMjQucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25UYXNrIpwDCgxOb3RpZmljYXRpb24SFwoPbm90aWZpY2F0aW9uX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2NvbnRlbnQYAyABKAkSRgoGc3RhdHVzGAQgASgOMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25TdGF0dXMSTgoLYWN0aW9uX3Jvd3MYBSADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxJOCgt0YXNrX2dyb3VwcxgGIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uVGFza0dyb3VwEh4KFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYByABKAgSEQoJcHJvdGVjdGVkGAggASgIEiEKGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYCSABKAgSFQoNYWNxdWlyZV90b3BpYxgKIAEoCCLhBgoXU2VuZE5vdGlmaWNhdGlvblJlcXVlc3QSGgoNY29udGV4dF90b2tlbhgBIAEoCUgAiAEBEg8KB2NoYW5uZWwYAiABKAkSLwoJcGFydGl0aW9uGAMgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEg0KBXRpdGxlGAQgASgJEi0KB2NvbnRlbnQYBSABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSMQoGaW1hZ2VzGAYgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSNgoLYXR0YWNobWVudHMYByADKAsyIS5yZXNpZGUuY29tbW9uLmZpbGUudjEuSW5saW5lRmlsZRJOCgthY3Rpb25fcm93cxgIIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uQWN0aW9uUm93EjoKFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYCSABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEi0KCXByb3RlY3RlZBgKIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSOAoSc2VuZF9hc19zdWJqZWN0X2lkGAsgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEj0KGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYDCABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEi4KCHRvcGljX2lkGA0gASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKDWFjcXVpcmVfdG9waWMYDiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEkYKBnN0YXR1cxgPIAEoDjI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uU3RhdHVzEk4KC3Rhc2tfZ3JvdXBzGBAgAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25UYXNrR3JvdXBCEAoOX2NvbnRleHRfdG9rZW4i6QEKGFNlbmROb3RpZmljYXRpb25SZXNwb25zZRIXCg9ub3RpZmljYXRpb25faWQYAiABKAkSOAoJb3BlcmF0aW9uGAEgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uEjIKDG1lc3NhZ2VfbGluaxgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRJGCgxub3RpZmljYXRpb24YBCABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbiK3AwoZVXBkYXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkSDQoFdGl0bGUYAiABKAkSDwoHY29udGVudBgDIAEoCRJOCgthY3Rpb25fcm93cxgEIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uQWN0aW9uUm93EjoKFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYBSABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEj0KGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYBiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEkYKBnN0YXR1cxgHIAEoDjI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uU3RhdHVzEk4KC3Rhc2tfZ3JvdXBzGAggAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25UYXNrR3JvdXAingEKGlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbhJGCgxub3RpZmljYXRpb24YAiABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbiI8CiFBY2NlcHROb3RpZmljYXRpb25SZXNwb25zZVJlcXVlc3QSFwoPbm90aWZpY2F0aW9uX2lkGAEgASgJIqYBCiJBY2NlcHROb3RpZmljYXRpb25SZXNwb25zZVJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbhJGCgxub3RpZmljYXRpb24YAiABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbiI0ChlEZWxldGVOb3RpZmljYXRpb25SZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCSLJAQoUTm90aWZpY2F0aW9uUmVzcG9uc2USFQoLYWN0aW9uX25hbWUYASABKAlIABIXCg10ZXh0X3Jlc3BvbnNlGAIgASgJSAASLQoLdGFza191cGRhdGUYBCABKAsyFi5nb29nbGUucHJvdG9idWYuRW1wdHlIABJGCgxub3RpZmljYXRpb24YAyABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkIKCghyZXNwb25zZSqDAQoWTm90aWZpY2F0aW9uQWN0aW9uSWNvbhIhCh1DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fTk9ORRAAEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DSEVDSxABEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DUk9TUxACKr8BChJOb3RpZmljYXRpb25TdGF0dXMSHwobTk9USUZJQ0FUSU9OX1NUQVRVU19SRUdVTEFSEAASIAocTk9USUZJQ0FUSU9OX1NUQVRVU19QTEFOTklORxABEiMKH05PVElGSUNBVElPTl9TVEFUVVNfSU5fUFJPR1JFU1MQAhIhCh1OT1RJRklDQVRJT05fU1RBVFVTX0NPTVBMRVRFRBADEh4KGk5PVElGSUNBVElPTl9TVEFUVVNfRkFJTEVEEAQqgQIKFk5vdGlmaWNhdGlvblRhc2tTdGF0dXMSJAogTk9USUZJQ0FUSU9OX1RBU0tfU1RBVFVTX1BMQU5ORUQQABIkCiBOT1RJRklDQVRJT05fVEFTS19TVEFUVVNfUEVORElORxABEigKJE5PVElGSUNBVElPTl9UQVNLX1NUQVRVU19JTl9QUk9HUkVTUxACEiYKIk5PVElGSUNBVElPTl9UQVNLX1NUQVRVU19DT01QTEVURUQQAxIjCh9OT1RJRklDQVRJT05fVEFTS19TVEFUVVNfRkFJTEVEEAQSJAogTk9USUZJQ0FUSU9OX1RBU0tfU1RBVFVTX1NLSVBQRUQQBTLWBAoTTm90aWZpY2F0aW9uU2VydmljZRKNAQoQU2VuZE5vdGlmaWNhdGlvbhI7LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuU2VuZE5vdGlmaWNhdGlvblJlcXVlc3QaPC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlNlbmROb3RpZmljYXRpb25SZXNwb25zZRKTAQoSVXBkYXRlTm90aWZpY2F0aW9uEj0ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5VcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0Gj4ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5VcGRhdGVOb3RpZmljYXRpb25SZXNwb25zZRKrAQoaQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2USRS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLkFjY2VwdE5vdGlmaWNhdGlvblJlc3BvbnNlUmVxdWVzdBpGLnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXNwb25zZRJrChJEZWxldGVOb3RpZmljYXRpb24SPS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLkRlbGV0ZU5vdGlmaWNhdGlvblJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHliBnByb3RvMw", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
 
 /**
  * The action that a user can take in response to a notification, represented by a button in the UI.
@@ -131,6 +131,295 @@ export type NotificationActionRowJson = {
  */
 export const NotificationActionRowSchema: GenMessage<NotificationActionRow, {jsonType: NotificationActionRowJson}> = /*@__PURE__*/
   messageDesc(file_interaction_notification_v1, 1);
+
+/**
+ * A task attached to a notification task group.
+ *
+ * @generated from message reside.interaction.notification.v1.NotificationTask
+ */
+export type NotificationTask = Message<"reside.interaction.notification.v1.NotificationTask"> & {
+  /**
+   * The caller-provided stable task identifier within its group.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * The human-readable task title.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * The current task status.
+   *
+   * @generated from field: reside.interaction.notification.v1.NotificationTaskStatus status = 3;
+   */
+  status: NotificationTaskStatus;
+};
+
+/**
+ * A task attached to a notification task group.
+ *
+ * @generated from message reside.interaction.notification.v1.NotificationTask
+ */
+export type NotificationTaskJson = {
+  /**
+   * The caller-provided stable task identifier within its group.
+   *
+   * @generated from field: string id = 1;
+   */
+  id?: string;
+
+  /**
+   * The human-readable task title.
+   *
+   * @generated from field: string title = 2;
+   */
+  title?: string;
+
+  /**
+   * The current task status.
+   *
+   * @generated from field: reside.interaction.notification.v1.NotificationTaskStatus status = 3;
+   */
+  status?: NotificationTaskStatusJson;
+};
+
+/**
+ * Describes the message reside.interaction.notification.v1.NotificationTask.
+ * Use `create(NotificationTaskSchema)` to create a new message.
+ */
+export const NotificationTaskSchema: GenMessage<NotificationTask, {jsonType: NotificationTaskJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_notification_v1, 2);
+
+/**
+ * A single-level group of tasks attached to a notification.
+ *
+ * @generated from message reside.interaction.notification.v1.NotificationTaskGroup
+ */
+export type NotificationTaskGroup = Message<"reside.interaction.notification.v1.NotificationTaskGroup"> & {
+  /**
+   * The caller-provided stable group identifier within the notification.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * The human-readable group title.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * The ordered list of tasks in this group.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationTask tasks = 3;
+   */
+  tasks: NotificationTask[];
+};
+
+/**
+ * A single-level group of tasks attached to a notification.
+ *
+ * @generated from message reside.interaction.notification.v1.NotificationTaskGroup
+ */
+export type NotificationTaskGroupJson = {
+  /**
+   * The caller-provided stable group identifier within the notification.
+   *
+   * @generated from field: string id = 1;
+   */
+  id?: string;
+
+  /**
+   * The human-readable group title.
+   *
+   * @generated from field: string title = 2;
+   */
+  title?: string;
+
+  /**
+   * The ordered list of tasks in this group.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationTask tasks = 3;
+   */
+  tasks?: NotificationTaskJson[];
+};
+
+/**
+ * Describes the message reside.interaction.notification.v1.NotificationTaskGroup.
+ * Use `create(NotificationTaskGroupSchema)` to create a new message.
+ */
+export const NotificationTaskGroupSchema: GenMessage<NotificationTaskGroup, {jsonType: NotificationTaskGroupJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_notification_v1, 3);
+
+/**
+ * The read model of a notification as currently stored by the interaction implementation.
+ *
+ * @generated from message reside.interaction.notification.v1.Notification
+ */
+export type Notification = Message<"reside.interaction.notification.v1.Notification"> & {
+  /**
+   * The identifier of the notification.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string notification_id = 1;
+   */
+  notificationId: string;
+
+  /**
+   * The stored notification title.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * The stored notification content.
+   *
+   * @generated from field: string content = 3;
+   */
+  content: string;
+
+  /**
+   * The current notification lifecycle status.
+   *
+   * @generated from field: reside.interaction.notification.v1.NotificationStatus status = 4;
+   */
+  status: NotificationStatus;
+
+  /**
+   * The current action rows available to the user.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationActionRow action_rows = 5;
+   */
+  actionRows: NotificationActionRow[];
+
+  /**
+   * The current ordered task groups attached to the notification.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 6;
+   */
+  taskGroups: NotificationTaskGroup[];
+
+  /**
+   * Whether the notification currently accepts text responses.
+   *
+   * @generated from field: bool requires_text_response = 7;
+   */
+  requiresTextResponse: boolean;
+
+  /**
+   * Whether response interaction with this notification is protected by permissions.
+   *
+   * @generated from field: bool protected = 8;
+   */
+  protected: boolean;
+
+  /**
+   * Whether callback interactions should avoid delayed "chosen" suffix rendering.
+   *
+   * @generated from field: bool expect_immediate_feedback = 9;
+   */
+  expectImmediateFeedback: boolean;
+
+  /**
+   * Whether messages sent into the target topic are treated as text responses to this notification.
+   *
+   * @generated from field: bool acquire_topic = 10;
+   */
+  acquireTopic: boolean;
+};
+
+/**
+ * The read model of a notification as currently stored by the interaction implementation.
+ *
+ * @generated from message reside.interaction.notification.v1.Notification
+ */
+export type NotificationJson = {
+  /**
+   * The identifier of the notification.
+   * This ID is opaque and must not be parsed.
+   *
+   * @generated from field: string notification_id = 1;
+   */
+  notificationId?: string;
+
+  /**
+   * The stored notification title.
+   *
+   * @generated from field: string title = 2;
+   */
+  title?: string;
+
+  /**
+   * The stored notification content.
+   *
+   * @generated from field: string content = 3;
+   */
+  content?: string;
+
+  /**
+   * The current notification lifecycle status.
+   *
+   * @generated from field: reside.interaction.notification.v1.NotificationStatus status = 4;
+   */
+  status?: NotificationStatusJson;
+
+  /**
+   * The current action rows available to the user.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationActionRow action_rows = 5;
+   */
+  actionRows?: NotificationActionRowJson[];
+
+  /**
+   * The current ordered task groups attached to the notification.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 6;
+   */
+  taskGroups?: NotificationTaskGroupJson[];
+
+  /**
+   * Whether the notification currently accepts text responses.
+   *
+   * @generated from field: bool requires_text_response = 7;
+   */
+  requiresTextResponse?: boolean;
+
+  /**
+   * Whether response interaction with this notification is protected by permissions.
+   *
+   * @generated from field: bool protected = 8;
+   */
+  protected?: boolean;
+
+  /**
+   * Whether callback interactions should avoid delayed "chosen" suffix rendering.
+   *
+   * @generated from field: bool expect_immediate_feedback = 9;
+   */
+  expectImmediateFeedback?: boolean;
+
+  /**
+   * Whether messages sent into the target topic are treated as text responses to this notification.
+   *
+   * @generated from field: bool acquire_topic = 10;
+   */
+  acquireTopic?: boolean;
+};
+
+/**
+ * Describes the message reside.interaction.notification.v1.Notification.
+ * Use `create(NotificationSchema)` to create a new message.
+ */
+export const NotificationSchema: GenMessage<Notification, {jsonType: NotificationJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_notification_v1, 4);
 
 /**
  * The request message for sending a notification to a channel.
@@ -254,6 +543,22 @@ export type SendNotificationRequest = Message<"reside.interaction.notification.v
    * @generated from field: google.protobuf.BoolValue acquire_topic = 14;
    */
   acquireTopic?: boolean;
+
+  /**
+   * The notification lifecycle status used by renderers.
+   * If omitted, implementations must treat the notification as regular.
+   *
+   * @generated from field: reside.interaction.notification.v1.NotificationStatus status = 15;
+   */
+  status: NotificationStatus;
+
+  /**
+   * The ordered task groups attached to the notification.
+   * Planning notifications must include at least one group with at least one task, and all tasks must be planned or skipped.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 16;
+   */
+  taskGroups: NotificationTaskGroup[];
 };
 
 /**
@@ -378,6 +683,22 @@ export type SendNotificationRequestJson = {
    * @generated from field: google.protobuf.BoolValue acquire_topic = 14;
    */
   acquireTopic?: BoolValueJson;
+
+  /**
+   * The notification lifecycle status used by renderers.
+   * If omitted, implementations must treat the notification as regular.
+   *
+   * @generated from field: reside.interaction.notification.v1.NotificationStatus status = 15;
+   */
+  status?: NotificationStatusJson;
+
+  /**
+   * The ordered task groups attached to the notification.
+   * Planning notifications must include at least one group with at least one task, and all tasks must be planned or skipped.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 16;
+   */
+  taskGroups?: NotificationTaskGroupJson[];
 };
 
 /**
@@ -385,7 +706,7 @@ export type SendNotificationRequestJson = {
  * Use `create(SendNotificationRequestSchema)` to create a new message.
  */
 export const SendNotificationRequestSchema: GenMessage<SendNotificationRequest, {jsonType: SendNotificationRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 2);
+  messageDesc(file_interaction_notification_v1, 5);
 
 /**
  * The response message for a notification sent to a channel.
@@ -417,6 +738,13 @@ export type SendNotificationResponse = Message<"reside.interaction.notification.
    * @generated from field: google.protobuf.StringValue message_link = 3;
    */
   messageLink?: string;
+
+  /**
+   * The created notification read model.
+   *
+   * @generated from field: reside.interaction.notification.v1.Notification notification = 4;
+   */
+  notification?: Notification;
 };
 
 /**
@@ -449,6 +777,13 @@ export type SendNotificationResponseJson = {
    * @generated from field: google.protobuf.StringValue message_link = 3;
    */
   messageLink?: StringValueJson;
+
+  /**
+   * The created notification read model.
+   *
+   * @generated from field: reside.interaction.notification.v1.Notification notification = 4;
+   */
+  notification?: NotificationJson;
 };
 
 /**
@@ -456,7 +791,7 @@ export type SendNotificationResponseJson = {
  * Use `create(SendNotificationResponseSchema)` to create a new message.
  */
 export const SendNotificationResponseSchema: GenMessage<SendNotificationResponse, {jsonType: SendNotificationResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 3);
+  messageDesc(file_interaction_notification_v1, 6);
 
 /**
  * The request message for updating an existing notification.
@@ -508,6 +843,23 @@ export type UpdateNotificationRequest = Message<"reside.interaction.notification
    * @generated from field: google.protobuf.BoolValue expect_immediate_feedback = 6;
    */
   expectImmediateFeedback?: boolean;
+
+  /**
+   * The updated notification lifecycle status used by renderers.
+   * If omitted, implementations must treat the notification as regular.
+   *
+   * @generated from field: reside.interaction.notification.v1.NotificationStatus status = 7;
+   */
+  status: NotificationStatus;
+
+  /**
+   * The updated ordered task groups attached to the notification.
+   * This field replaces the full task list.
+   * Planning notifications must include at least one group with at least one task, and all tasks must be planned or skipped.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 8;
+   */
+  taskGroups: NotificationTaskGroup[];
 };
 
 /**
@@ -560,6 +912,23 @@ export type UpdateNotificationRequestJson = {
    * @generated from field: google.protobuf.BoolValue expect_immediate_feedback = 6;
    */
   expectImmediateFeedback?: BoolValueJson;
+
+  /**
+   * The updated notification lifecycle status used by renderers.
+   * If omitted, implementations must treat the notification as regular.
+   *
+   * @generated from field: reside.interaction.notification.v1.NotificationStatus status = 7;
+   */
+  status?: NotificationStatusJson;
+
+  /**
+   * The updated ordered task groups attached to the notification.
+   * This field replaces the full task list.
+   * Planning notifications must include at least one group with at least one task, and all tasks must be planned or skipped.
+   *
+   * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 8;
+   */
+  taskGroups?: NotificationTaskGroupJson[];
 };
 
 /**
@@ -567,7 +936,7 @@ export type UpdateNotificationRequestJson = {
  * Use `create(UpdateNotificationRequestSchema)` to create a new message.
  */
 export const UpdateNotificationRequestSchema: GenMessage<UpdateNotificationRequest, {jsonType: UpdateNotificationRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 4);
+  messageDesc(file_interaction_notification_v1, 7);
 
 /**
  * The response message for a notification update operation.
@@ -582,6 +951,13 @@ export type UpdateNotificationResponse = Message<"reside.interaction.notificatio
    * @generated from field: reside.common.operation.v1.Operation operation = 1;
    */
   operation?: Operation;
+
+  /**
+   * The updated notification read model.
+   *
+   * @generated from field: reside.interaction.notification.v1.Notification notification = 2;
+   */
+  notification?: Notification;
 };
 
 /**
@@ -597,6 +973,13 @@ export type UpdateNotificationResponseJson = {
    * @generated from field: reside.common.operation.v1.Operation operation = 1;
    */
   operation?: OperationJson;
+
+  /**
+   * The updated notification read model.
+   *
+   * @generated from field: reside.interaction.notification.v1.Notification notification = 2;
+   */
+  notification?: NotificationJson;
 };
 
 /**
@@ -604,7 +987,7 @@ export type UpdateNotificationResponseJson = {
  * Use `create(UpdateNotificationResponseSchema)` to create a new message.
  */
 export const UpdateNotificationResponseSchema: GenMessage<UpdateNotificationResponse, {jsonType: UpdateNotificationResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 5);
+  messageDesc(file_interaction_notification_v1, 8);
 
 /**
  * The request message for accepting more responses for an existing notification.
@@ -641,7 +1024,7 @@ export type AcceptNotificationResponseRequestJson = {
  * Use `create(AcceptNotificationResponseRequestSchema)` to create a new message.
  */
 export const AcceptNotificationResponseRequestSchema: GenMessage<AcceptNotificationResponseRequest, {jsonType: AcceptNotificationResponseRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 6);
+  messageDesc(file_interaction_notification_v1, 9);
 
 /**
  * The response message for accepting more responses for an existing notification.
@@ -656,6 +1039,13 @@ export type AcceptNotificationResponseResponse = Message<"reside.interaction.not
    * @generated from field: reside.common.operation.v1.Operation operation = 1;
    */
   operation?: Operation;
+
+  /**
+   * The notification read model at the time response acceptance was requested.
+   *
+   * @generated from field: reside.interaction.notification.v1.Notification notification = 2;
+   */
+  notification?: Notification;
 };
 
 /**
@@ -671,6 +1061,13 @@ export type AcceptNotificationResponseResponseJson = {
    * @generated from field: reside.common.operation.v1.Operation operation = 1;
    */
   operation?: OperationJson;
+
+  /**
+   * The notification read model at the time response acceptance was requested.
+   *
+   * @generated from field: reside.interaction.notification.v1.Notification notification = 2;
+   */
+  notification?: NotificationJson;
 };
 
 /**
@@ -678,7 +1075,7 @@ export type AcceptNotificationResponseResponseJson = {
  * Use `create(AcceptNotificationResponseResponseSchema)` to create a new message.
  */
 export const AcceptNotificationResponseResponseSchema: GenMessage<AcceptNotificationResponseResponse, {jsonType: AcceptNotificationResponseResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 7);
+  messageDesc(file_interaction_notification_v1, 10);
 
 /**
  * The request message for deleting an existing notification.
@@ -715,7 +1112,7 @@ export type DeleteNotificationRequestJson = {
  * Use `create(DeleteNotificationRequestSchema)` to create a new message.
  */
 export const DeleteNotificationRequestSchema: GenMessage<DeleteNotificationRequest, {jsonType: DeleteNotificationRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 8);
+  messageDesc(file_interaction_notification_v1, 11);
 
 /**
  * The message representing the user's response to a notification, either by taking one of the provided actions or by providing a text response.
@@ -742,7 +1139,22 @@ export type NotificationResponse = Message<"reside.interaction.notification.v1.N
      */
     value: string;
     case: "textResponse";
+  } | {
+    /**
+     * Indicates that the user updated the notification task list through an implementation-specific task editing interaction.
+     *
+     * @generated from field: google.protobuf.Empty task_update = 4;
+     */
+    value: Empty;
+    case: "taskUpdate";
   } | { case: undefined; value?: undefined };
+
+  /**
+   * The notification read model at the moment the response operation was resolved.
+   *
+   * @generated from field: reside.interaction.notification.v1.Notification notification = 3;
+   */
+  notification?: Notification;
 };
 
 /**
@@ -764,6 +1176,20 @@ export type NotificationResponseJson = {
    * @generated from field: string text_response = 2;
    */
   textResponse?: string;
+
+  /**
+   * Indicates that the user updated the notification task list through an implementation-specific task editing interaction.
+   *
+   * @generated from field: google.protobuf.Empty task_update = 4;
+   */
+  taskUpdate?: EmptyJson;
+
+  /**
+   * The notification read model at the moment the response operation was resolved.
+   *
+   * @generated from field: reside.interaction.notification.v1.Notification notification = 3;
+   */
+  notification?: NotificationJson;
 };
 
 /**
@@ -771,7 +1197,7 @@ export type NotificationResponseJson = {
  * Use `create(NotificationResponseSchema)` to create a new message.
  */
 export const NotificationResponseSchema: GenMessage<NotificationResponse, {jsonType: NotificationResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 9);
+  messageDesc(file_interaction_notification_v1, 12);
 
 /**
  * The well-known icon to be displayed alongside a notification action.
@@ -807,6 +1233,123 @@ export type NotificationActionIconJson = "CONFIRMATION_ACTION_ICON_NONE" | "CONF
  */
 export const NotificationActionIconSchema: GenEnum<NotificationActionIcon, NotificationActionIconJson> = /*@__PURE__*/
   enumDesc(file_interaction_notification_v1, 0);
+
+/**
+ * The high-level notification lifecycle status used by renderers.
+ *
+ * @generated from enum reside.interaction.notification.v1.NotificationStatus
+ */
+export enum NotificationStatus {
+  /**
+   * The notification has no special lifecycle state.
+   *
+   * @generated from enum value: NOTIFICATION_STATUS_REGULAR = 0;
+   */
+  REGULAR = 0,
+
+  /**
+   * The notification is collecting or showing a planned task list.
+   *
+   * @generated from enum value: NOTIFICATION_STATUS_PLANNING = 1;
+   */
+  PLANNING = 1,
+
+  /**
+   * The notification is actively in progress.
+   *
+   * @generated from enum value: NOTIFICATION_STATUS_IN_PROGRESS = 2;
+   */
+  IN_PROGRESS = 2,
+
+  /**
+   * The notification completed successfully.
+   *
+   * @generated from enum value: NOTIFICATION_STATUS_COMPLETED = 3;
+   */
+  COMPLETED = 3,
+
+  /**
+   * The notification failed.
+   *
+   * @generated from enum value: NOTIFICATION_STATUS_FAILED = 4;
+   */
+  FAILED = 4,
+}
+
+/**
+ * The high-level notification lifecycle status used by renderers.
+ *
+ * @generated from enum reside.interaction.notification.v1.NotificationStatus
+ */
+export type NotificationStatusJson = "NOTIFICATION_STATUS_REGULAR" | "NOTIFICATION_STATUS_PLANNING" | "NOTIFICATION_STATUS_IN_PROGRESS" | "NOTIFICATION_STATUS_COMPLETED" | "NOTIFICATION_STATUS_FAILED";
+
+/**
+ * Describes the enum reside.interaction.notification.v1.NotificationStatus.
+ */
+export const NotificationStatusSchema: GenEnum<NotificationStatus, NotificationStatusJson> = /*@__PURE__*/
+  enumDesc(file_interaction_notification_v1, 1);
+
+/**
+ * The status of a task attached to a notification.
+ *
+ * @generated from enum reside.interaction.notification.v1.NotificationTaskStatus
+ */
+export enum NotificationTaskStatus {
+  /**
+   * The task is planned but has not started yet.
+   *
+   * @generated from enum value: NOTIFICATION_TASK_STATUS_PLANNED = 0;
+   */
+  PLANNED = 0,
+
+  /**
+   * The task is waiting to start.
+   *
+   * @generated from enum value: NOTIFICATION_TASK_STATUS_PENDING = 1;
+   */
+  PENDING = 1,
+
+  /**
+   * The task is currently in progress.
+   *
+   * @generated from enum value: NOTIFICATION_TASK_STATUS_IN_PROGRESS = 2;
+   */
+  IN_PROGRESS = 2,
+
+  /**
+   * The task completed successfully.
+   *
+   * @generated from enum value: NOTIFICATION_TASK_STATUS_COMPLETED = 3;
+   */
+  COMPLETED = 3,
+
+  /**
+   * The task failed.
+   *
+   * @generated from enum value: NOTIFICATION_TASK_STATUS_FAILED = 4;
+   */
+  FAILED = 4,
+
+  /**
+   * The task was skipped and should not be performed.
+   *
+   * @generated from enum value: NOTIFICATION_TASK_STATUS_SKIPPED = 5;
+   */
+  SKIPPED = 5,
+}
+
+/**
+ * The status of a task attached to a notification.
+ *
+ * @generated from enum reside.interaction.notification.v1.NotificationTaskStatus
+ */
+export type NotificationTaskStatusJson = "NOTIFICATION_TASK_STATUS_PLANNED" | "NOTIFICATION_TASK_STATUS_PENDING" | "NOTIFICATION_TASK_STATUS_IN_PROGRESS" | "NOTIFICATION_TASK_STATUS_COMPLETED" | "NOTIFICATION_TASK_STATUS_FAILED" | "NOTIFICATION_TASK_STATUS_SKIPPED";
+
+/**
+ * Describes the enum reside.interaction.notification.v1.NotificationTaskStatus.
+ */
+export const NotificationTaskStatusSchema: GenEnum<NotificationTaskStatus, NotificationTaskStatusJson> = /*@__PURE__*/
+  enumDesc(file_interaction_notification_v1, 2);
 
 /**
  * The notification service, which allows sending notifications to users and receiving their responses.

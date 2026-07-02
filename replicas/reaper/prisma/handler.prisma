@@ -1,0 +1,20 @@
+/// Represents a resource holder cleanup handler registered in the Reaper Replica.
+model ReaperHandler {
+  /// The unique numeric identifier of the handler.
+  id Int @id @default(autoincrement())
+
+  /// The technical name of the resource holder replica.
+  resourceReplicaName String @unique
+
+  /// The human-readable title used for grouping planned actions.
+  title String
+
+  /// The gRPC endpoint implementing ReplicaReaperHandler.
+  callbackEndpoint String
+
+  /// The timestamp when this handler was registered.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this handler was last updated.
+  updatedAt DateTime @updatedAt
+}

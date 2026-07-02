@@ -1,5 +1,6 @@
 import {
   bootstrapService,
+  defineCommonResources,
   ensureReplicaAvatar,
   registerReplica,
   runPrismaMigrations,
@@ -32,6 +33,7 @@ const [
   interactionNlsImpersonatePermission,
   ,
   interactionNlsClearSubjectContextPermission,
+  reaperHandlerRegisterPermission,
 ] = await Promise.all([
   ensureRealm("replica"),
   ensurePermission(
@@ -79,6 +81,7 @@ const [
   ensurePermission(WellKnownPermissions.TELEGRAM_COMMAND_INVOKE, "", "", true),
   ensurePermission(WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_MANAGE, "", "", true),
   ensurePermission(WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_INTERACT, "", "", true),
+  ensurePermission(WellKnownPermissions.REAPER_HANDLER_REGISTER, "", "", true),
 ])
 
 await Promise.all([
@@ -131,6 +134,12 @@ await Promise.all([
 
   ensureBinding(
     permissionManagePermission.id,
+    "replica:reaper",
+    WellKnownPermissions.REAPER_HANDLER_REGISTER,
+  ),
+
+  ensureBinding(
+    permissionManagePermission.id,
     "replica:telegram",
     WellKnownPermissions.INTERACTION_NLS_ASK,
   ),
@@ -163,6 +172,9 @@ await Promise.all([
   // to allow telegram replica create gateway for itself
   ensureBinding(infraGatewayManagePermission.id, "replica:telegram", "telegram"),
 
+  // to allow reaper replica to register cleanup handlers for itself if needed
+  ensureBinding(reaperHandlerRegisterPermission.id, "replica:reaper", "reaper"),
+
   // to allow users query NLS of other replicas via telegram replica
   ensureBinding(interactionNlsImpersonatePermission.id, "replica:telegram", "telegram"),
 
@@ -176,7 +188,54 @@ await ensureReplicaAvatar({
   avatarTitle: strings.bootstrap.registration.title,
 })
 
+await backfillApproverOwners()
+
+await defineCommonResources({
+  services,
+  reaperHandlers: [
+    {
+      resourceReplicaName: "access",
+      title: strings.reaper.title,
+    },
+  ],
+})
+
 await bootstrapService({ longRunning: true })
+
+async function backfillApproverOwners(): Promise<void> {
+  const { replicas } = await services.replicaService.listReplicas({})
+  const replicaNameByEndpoint = new Map<string, string>(
+    replicas.map(replica => [`${replica.internalEndpoint}:80`, replica.name] as const),
+  )
+
+  const approvers = await services.prisma.approver.findMany({
+    where: {
+      ownerReplicaName: null,
+    },
+    select: {
+      id: true,
+      callbackEndpoint: true,
+    },
+  })
+
+  await Promise.all(
+    approvers.map(async approver => {
+      const ownerReplicaName = replicaNameByEndpoint.get(approver.callbackEndpoint)
+      if (!ownerReplicaName) {
+        return
+      }
+
+      await services.prisma.approver.update({
+        where: {
+          id: approver.id,
+        },
+        data: {
+          ownerReplicaName,
+        },
+      })
+    }),
+  )
+}
 
 function ensurePermission(name: string, title: string, description: string, scoped: boolean) {
   return services.prisma.permission.upsert({

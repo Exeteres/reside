@@ -179,6 +179,7 @@ export async function putApprover(
       title: approverRequest.title,
       description: approverRequest.description ?? null,
       callbackEndpoint: approverRequest.callbackEndpoint,
+      ownerReplicaName: replicaName,
     },
     update: {
       priority: approverRequest.priority,
@@ -188,6 +189,7 @@ export async function putApprover(
       title: approverRequest.title,
       description: approverRequest.description ?? null,
       callbackEndpoint: approverRequest.callbackEndpoint,
+      ownerReplicaName: replicaName,
     },
     include: {
       realms: true,

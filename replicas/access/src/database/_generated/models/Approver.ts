@@ -43,6 +43,7 @@ export type ApproverMinAggregateOutputType = {
   title: string | null
   description: string | null
   callbackEndpoint: string | null
+  ownerReplicaName: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -54,6 +55,7 @@ export type ApproverMaxAggregateOutputType = {
   title: string | null
   description: string | null
   callbackEndpoint: string | null
+  ownerReplicaName: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -65,6 +67,7 @@ export type ApproverCountAggregateOutputType = {
   title: number
   description: number
   callbackEndpoint: number
+  ownerReplicaName: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -88,6 +91,7 @@ export type ApproverMinAggregateInputType = {
   title?: true
   description?: true
   callbackEndpoint?: true
+  ownerReplicaName?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -99,6 +103,7 @@ export type ApproverMaxAggregateInputType = {
   title?: true
   description?: true
   callbackEndpoint?: true
+  ownerReplicaName?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -110,6 +115,7 @@ export type ApproverCountAggregateInputType = {
   title?: true
   description?: true
   callbackEndpoint?: true
+  ownerReplicaName?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -208,6 +214,7 @@ export type ApproverGroupByOutputType = {
   title: string
   description: string | null
   callbackEndpoint: string
+  ownerReplicaName: string | null
   createdAt: Date
   updatedAt: Date
   _count: ApproverCountAggregateOutputType | null
@@ -242,6 +249,7 @@ export type ApproverWhereInput = {
   title?: Prisma.StringFilter<"Approver"> | string
   description?: Prisma.StringNullableFilter<"Approver"> | string | null
   callbackEndpoint?: Prisma.StringFilter<"Approver"> | string
+  ownerReplicaName?: Prisma.StringNullableFilter<"Approver"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Approver"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Approver"> | Date | string
   realms?: Prisma.RealmListRelationFilter
@@ -254,6 +262,7 @@ export type ApproverOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   realms?: Prisma.RealmOrderByRelationAggregateInput
@@ -269,6 +278,7 @@ export type ApproverWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"Approver"> | string
   description?: Prisma.StringNullableFilter<"Approver"> | string | null
   callbackEndpoint?: Prisma.StringFilter<"Approver"> | string
+  ownerReplicaName?: Prisma.StringNullableFilter<"Approver"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Approver"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Approver"> | Date | string
   realms?: Prisma.RealmListRelationFilter
@@ -281,6 +291,7 @@ export type ApproverOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ApproverCountOrderByAggregateInput
@@ -300,6 +311,7 @@ export type ApproverScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"Approver"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Approver"> | string | null
   callbackEndpoint?: Prisma.StringWithAggregatesFilter<"Approver"> | string
+  ownerReplicaName?: Prisma.StringNullableWithAggregatesFilter<"Approver"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Approver"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Approver"> | Date | string
 }
@@ -310,6 +322,7 @@ export type ApproverCreateInput = {
   title: string
   description?: string | null
   callbackEndpoint: string
+  ownerReplicaName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   realms?: Prisma.RealmCreateNestedManyWithoutApproversInput
@@ -322,6 +335,7 @@ export type ApproverUncheckedCreateInput = {
   title: string
   description?: string | null
   callbackEndpoint: string
+  ownerReplicaName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   realms?: Prisma.RealmUncheckedCreateNestedManyWithoutApproversInput
@@ -333,6 +347,7 @@ export type ApproverUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   realms?: Prisma.RealmUpdateManyWithoutApproversNestedInput
@@ -345,6 +360,7 @@ export type ApproverUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   realms?: Prisma.RealmUncheckedUpdateManyWithoutApproversNestedInput
@@ -357,6 +373,7 @@ export type ApproverCreateManyInput = {
   title: string
   description?: string | null
   callbackEndpoint: string
+  ownerReplicaName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -367,6 +384,7 @@ export type ApproverUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -378,6 +396,7 @@ export type ApproverUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -389,6 +408,7 @@ export type ApproverCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -405,6 +425,7 @@ export type ApproverMaxOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -416,6 +437,7 @@ export type ApproverMinOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   callbackEndpoint?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -499,6 +521,7 @@ export type ApproverCreateWithoutRealmsInput = {
   title: string
   description?: string | null
   callbackEndpoint: string
+  ownerReplicaName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -510,6 +533,7 @@ export type ApproverUncheckedCreateWithoutRealmsInput = {
   title: string
   description?: string | null
   callbackEndpoint: string
+  ownerReplicaName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -545,6 +569,7 @@ export type ApproverScalarWhereInput = {
   title?: Prisma.StringFilter<"Approver"> | string
   description?: Prisma.StringNullableFilter<"Approver"> | string | null
   callbackEndpoint?: Prisma.StringFilter<"Approver"> | string
+  ownerReplicaName?: Prisma.StringNullableFilter<"Approver"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Approver"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Approver"> | Date | string
 }
@@ -555,6 +580,7 @@ export type ApproverUpdateWithoutRealmsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -566,6 +592,7 @@ export type ApproverUncheckedUpdateWithoutRealmsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -577,6 +604,7 @@ export type ApproverUncheckedUpdateManyWithoutRealmsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   callbackEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -619,6 +647,7 @@ export type ApproverSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   title?: boolean
   description?: boolean
   callbackEndpoint?: boolean
+  ownerReplicaName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   realms?: boolean | Prisma.Approver$realmsArgs<ExtArgs>
@@ -632,6 +661,7 @@ export type ApproverSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   title?: boolean
   description?: boolean
   callbackEndpoint?: boolean
+  ownerReplicaName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["approver"]>
@@ -643,6 +673,7 @@ export type ApproverSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   title?: boolean
   description?: boolean
   callbackEndpoint?: boolean
+  ownerReplicaName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["approver"]>
@@ -654,11 +685,12 @@ export type ApproverSelectScalar = {
   title?: boolean
   description?: boolean
   callbackEndpoint?: boolean
+  ownerReplicaName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ApproverOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "priority" | "title" | "description" | "callbackEndpoint" | "createdAt" | "updatedAt", ExtArgs["result"]["approver"]>
+export type ApproverOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "priority" | "title" | "description" | "callbackEndpoint" | "ownerReplicaName" | "createdAt" | "updatedAt", ExtArgs["result"]["approver"]>
 export type ApproverInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   realms?: boolean | Prisma.Approver$realmsArgs<ExtArgs>
   _count?: boolean | Prisma.ApproverCountOutputTypeDefaultArgs<ExtArgs>
@@ -700,6 +732,10 @@ export type $ApproverPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
      * The callback endpoint implementing common.approval.v1.ApprovalService.
      */
     callbackEndpoint: string
+    /**
+     * The replica that owns this approver.
+     */
+    ownerReplicaName: string | null
     /**
      * The timestamp when the approver was created.
      */
@@ -1138,6 +1174,7 @@ export interface ApproverFieldRefs {
   readonly title: Prisma.FieldRef<"Approver", 'String'>
   readonly description: Prisma.FieldRef<"Approver", 'String'>
   readonly callbackEndpoint: Prisma.FieldRef<"Approver", 'String'>
+  readonly ownerReplicaName: Prisma.FieldRef<"Approver", 'String'>
   readonly createdAt: Prisma.FieldRef<"Approver", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Approver", 'DateTime'>
 }

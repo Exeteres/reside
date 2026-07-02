@@ -9,3 +9,13 @@ export type NotifyReplicaReleaseNotesWorkflowInput = {
   newVersion: string
   changes: string | null
 }
+
+export type UnregisterReplicaWorkflowInput = {
+  operationId: number
+  replicaName: string
+}
+
+export type DeleteReplicaFromClusterWorkflowInput = {
+  operationId: number
+  replicaName: string
+}

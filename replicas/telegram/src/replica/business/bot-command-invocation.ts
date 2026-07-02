@@ -22,6 +22,13 @@ import {
 } from "./bot-command"
 import { mapReplicaCallErrorMessage } from "./bot-replica-call"
 
+export type TelegramMessageEntity = {
+  type: string
+  offset: number
+  length: number
+  user?: { id?: number }
+}
+
 export async function handleCommandInvocation(args: {
   prisma: PrismaClient
   crypto: ResideCrypto
@@ -32,7 +39,7 @@ export async function handleCommandInvocation(args: {
   userId: number
   messageId: number
   text: string
-  entities?: Array<{ type: string; offset: number; length: number; user?: { id?: number } }>
+  entities?: TelegramMessageEntity[]
   interactionContext: {
     token: string
     title: string
@@ -167,7 +174,7 @@ async function enrichInvocationParameters(
     prisma: PrismaClient
     crypto: ResideCrypto
     text: string
-    entities?: Array<{ type: string; offset: number; length: number; user?: { id?: number } }>
+    entities?: TelegramMessageEntity[]
   },
   parameters: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
@@ -182,7 +189,7 @@ async function resolveRecipientSubjectRhid(
     prisma: PrismaClient
     crypto: ResideCrypto
     text: string
-    entities?: Array<{ type: string; offset: number; length: number; user?: { id?: number } }>
+    entities?: TelegramMessageEntity[]
   },
   user: string,
 ): Promise<string | undefined> {

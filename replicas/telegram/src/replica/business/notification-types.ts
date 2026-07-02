@@ -1,12 +1,50 @@
 import type { InputFile } from "grammy"
 import type { InlineKeyboardMarkup, InputMediaDocument, InputMediaPhoto } from "grammy/types"
 
+export type Action = {
+  name: string
+  title: string
+  url?: string
+}
+
 export type ActionRow = {
-  actions: Array<{
-    name: string
-    title: string
-    url?: string
-  }>
+  actions: Action[]
+}
+
+export type NotificationStatus = "REGULAR" | "PLANNING" | "IN_PROGRESS" | "COMPLETED" | "FAILED"
+
+export type NotificationTaskStatus =
+  | "PLANNED"
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "FAILED"
+  | "SKIPPED"
+
+export type NotificationTaskInput = {
+  id: string
+  title: string
+  status: NotificationTaskStatus
+}
+
+export type NotificationTaskGroupInput = {
+  id: string
+  title: string
+  tasks: NotificationTaskInput[]
+}
+
+export type NotificationFileInput = {
+  content: Uint8Array
+  name: string
+}
+
+export type NotificationKeyboardOptions = {
+  status?: NotificationStatus
+}
+
+type TelegramSeenReaction = {
+  type: "emoji"
+  emoji: "👀"
 }
 
 export type SendNotificationInput = {
@@ -14,14 +52,17 @@ export type SendNotificationInput = {
   title: string
   content?: string
   actionRows: ActionRow[]
-  images: Array<{ content: Uint8Array; name: string }>
-  attachments: Array<{ content: Uint8Array; name: string }>
+  images: NotificationFileInput[]
+  attachments: NotificationFileInput[]
   contextToken?: string
   sendAsSubjectId?: string
   requiresTextResponse?: boolean
   protected?: boolean
+  expectImmediateFeedback?: boolean
   topicId?: string
   acquireTopic?: boolean
+  status?: NotificationStatus
+  taskGroups?: NotificationTaskGroupInput[]
 }
 
 export type UpdateNotificationInput = {
@@ -30,6 +71,9 @@ export type UpdateNotificationInput = {
   content: string
   actionRows: ActionRow[]
   requiresTextResponse?: boolean
+  expectImmediateFeedback?: boolean
+  status?: NotificationStatus
+  taskGroups?: NotificationTaskGroupInput[]
 }
 
 export type AuthzServiceClientLike = {
@@ -77,7 +121,7 @@ export type TelegramBotLike = {
     setMessageReaction?(
       chatId: string,
       messageId: number,
-      reaction: Array<{ type: "emoji"; emoji: "👀" }>,
+      reaction: TelegramSeenReaction[],
     ): Promise<true>
     sendPhoto(
       chatId: string,
@@ -104,7 +148,7 @@ export type TelegramBotLike = {
     ): Promise<{ message_id: number }>
     sendMediaGroup(
       chatId: string,
-      media: Array<InputMediaPhoto | InputMediaDocument>,
+      media: (InputMediaPhoto | InputMediaDocument)[],
       options?: {
         reply_parameters?: {
           message_id: number

@@ -38,6 +38,12 @@ await defineCommonResources({
       description: strings.notifications.channels.tasks.description,
     },
   ],
+  reaperHandlers: [
+    {
+      resourceReplicaName: "engineer",
+      title: strings.reaper.title,
+    },
+  ],
 })
 
 await bootstrapService({ longRunning: true })

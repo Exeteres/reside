@@ -1,8 +1,23 @@
-import type { NotificationServiceImplementation } from "@reside/api/interaction/notification.v1"
+import type {
+  Notification as ApiNotification,
+  NotificationJson,
+  NotificationServiceImplementation,
+} from "@reside/api/interaction/notification.v1"
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { Operation, PrismaClient } from "../../database"
+import type {
+  NotificationStatus,
+  NotificationTaskGroupInput,
+  NotificationTaskStatus,
+} from "../business/notification-types"
+import { fromJson } from "@bufbuild/protobuf"
 import { Code, ConnectError } from "@connectrpc/connect"
 import { CoreV1Api } from "@kubernetes/client-node"
+import {
+  NotificationStatus as ApiNotificationStatus,
+  NotificationTaskStatus as ApiNotificationTaskStatus,
+  NotificationSchema,
+} from "@reside/api/interaction/notification.v1"
 import {
   authenticateReplica,
   type CommonServices,
@@ -95,14 +110,18 @@ export function createNotificationService({
             sendAsSubjectId: request.sendAsSubjectId,
             requiresTextResponse: request.requiresTextResponse,
             protected: request.protected,
+            expectImmediateFeedback: request.expectImmediateFeedback,
             topicId: request.topicId,
             acquireTopic: request.acquireTopic,
+            status: toBusinessNotificationStatus(request.status),
+            taskGroups: request.taskGroups.map(toBusinessTaskGroup),
           },
         )
 
         return {
           notificationId: result.notificationId,
           messageLink: result.messageLink,
+          notification: toApiNotification(requireNotificationReadModel(result.notification)),
           operation:
             result.operationId === undefined
               ? undefined
@@ -140,10 +159,14 @@ export function createNotificationService({
             content: request.content,
             actionRows: request.actionRows,
             requiresTextResponse: request.requiresTextResponse,
+            expectImmediateFeedback: request.expectImmediateFeedback,
+            status: toBusinessNotificationStatus(request.status),
+            taskGroups: request.taskGroups.map(toBusinessTaskGroup),
           },
         )
 
         return {
+          notification: toApiNotification(requireNotificationReadModel(result.notification)),
           operation:
             result.operationId === undefined
               ? undefined
@@ -178,6 +201,7 @@ export function createNotificationService({
         )
 
         return {
+          notification: toApiNotification(requireNotificationReadModel(result.notification)),
           operation: await operationService.toApiOperation(result.operationId),
         }
       } catch (error) {
@@ -218,5 +242,69 @@ export function createNotificationService({
         throw new ConnectError("Failed to delete telegram notification", Code.Internal)
       }
     },
+  }
+}
+
+function toApiNotification(notification: NotificationJson): ApiNotification {
+  return fromJson(NotificationSchema, notification)
+}
+
+function requireNotificationReadModel(
+  notification: NotificationJson | undefined,
+): NotificationJson {
+  if (notification === undefined) {
+    throw new ConnectError("Notification read model is missing", Code.Internal)
+  }
+
+  return notification
+}
+
+function toBusinessTaskGroup(input: {
+  id: string
+  title: string
+  tasks: { id: string; title: string; status: ApiNotificationTaskStatus }[]
+}): NotificationTaskGroupInput {
+  return {
+    id: input.id,
+    title: input.title,
+    tasks: input.tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      status: toBusinessNotificationTaskStatus(task.status),
+    })),
+  }
+}
+
+function toBusinessNotificationStatus(status: ApiNotificationStatus): NotificationStatus {
+  switch (status) {
+    case ApiNotificationStatus.PLANNING:
+      return "PLANNING"
+    case ApiNotificationStatus.IN_PROGRESS:
+      return "IN_PROGRESS"
+    case ApiNotificationStatus.COMPLETED:
+      return "COMPLETED"
+    case ApiNotificationStatus.FAILED:
+      return "FAILED"
+    case ApiNotificationStatus.REGULAR:
+      return "REGULAR"
+  }
+}
+
+function toBusinessNotificationTaskStatus(
+  status: ApiNotificationTaskStatus,
+): NotificationTaskStatus {
+  switch (status) {
+    case ApiNotificationTaskStatus.PENDING:
+      return "PENDING"
+    case ApiNotificationTaskStatus.IN_PROGRESS:
+      return "IN_PROGRESS"
+    case ApiNotificationTaskStatus.COMPLETED:
+      return "COMPLETED"
+    case ApiNotificationTaskStatus.FAILED:
+      return "FAILED"
+    case ApiNotificationTaskStatus.SKIPPED:
+      return "SKIPPED"
+    case ApiNotificationTaskStatus.PLANNED:
+      return "PLANNED"
   }
 }

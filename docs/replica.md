@@ -108,9 +108,14 @@ Runtime wiring in `src/replica/main.ts` must import service factories from `src/
 
 - Replica operations must use `createGenericOperationService` from `@reside/common`.
 - Replica DB must contain exactly one `Operation` entity compatible with the generic helper.
-- `Operation` may contain only fields required by the helper and result references.
-- Additional business fields on `Operation` are not allowed.
+- `Operation` must include a replica-local `OperationType` enum and a required `type` column.
+- Every operation creation site must set `type` to a specific enum value for the producing flow.
+- `Operation` may contain fields required by the helper, result references, and named operation identity columns.
+- Store identifiers for external operation-related entities, such as deterministic idempotency keys or response context tokens, in dedicated columns instead of `customData`.
+- `customData` is reserved for opaque OperationService subscription payloads that must be passed through to completion callbacks, including callback workflow ids embedded in that payload.
+- Operation migrations must be deployable on non-empty tables. When adding `Operation.type` or any other required field to an existing table, add it nullable, backfill a deterministic value for all existing rows, and then mark it required; alternatively use a database default when that is the correct long-term model.
 - Expose operation subscription API via `createOperationSubscriptionService` when server supports operation callbacks.
+- Reaper action payloads must include surrogate identifiers for replica-related resources, such as numeric database ids or sorted binding ids. Do not derive action ids only from stable names like replica names, command names, or resource names, because the same replica name can be recreated with different underlying resources.
 
 ## API and schema generation rules
 
@@ -123,6 +128,7 @@ Runtime wiring in `src/replica/main.ts` must import service factories from `src/
 - Use `devenv up -d` before creating migrations to spin up the development database.
 - Create migrations with `bun prisma migrate dev`.
 - If another migration was already created in the current session, run `bun prisma migrate reset` before creating the next migration.
+- Generate migrations with Prisma before editing migration SQL. Manual SQL edits are allowed only for deployability, data backfills, or Prisma limitations, and must be verified with `bun prisma migrate reset --force` followed by `bun prisma migrate dev` against the devenv Postgres database.
 - The development database is used only for generating migrations, so database data is not important.
 - The first migration must always be named `init`.
 - Every migration after `init` must use a short descriptive name that explains what changed in a few words.

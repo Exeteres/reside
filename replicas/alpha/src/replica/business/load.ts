@@ -7,6 +7,7 @@ import {
   WorkflowExecutionAlreadyStartedError,
   WorkflowIdReusePolicy,
 } from "@temporalio/client"
+import { OperationType } from "../../database"
 import { strings } from "../../locale"
 
 export async function upsertLoadedReplicaAndCreateOperation({
@@ -42,6 +43,7 @@ export async function upsertLoadedReplicaAndCreateOperation({
     data: {
       title: strings.server.load.operations.reconcileReplica.title,
       description: strings.server.load.operations.reconcileReplica.description,
+      type: OperationType.WAIT_REPLICA_READY,
       status: "PENDING",
       replicaName: name,
     },

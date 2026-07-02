@@ -12,6 +12,9 @@ model NotificationChannel {
   /// The optional detailed channel description.
   description String?
 
+  /// The replica that owns this notification channel.
+  ownerReplicaName String?
+
   /// The notifications linked to this channel.
   notifications Notification[]
 
@@ -20,6 +23,8 @@ model NotificationChannel {
 
   /// The topics linked to this channel.
   topics NotificationTopic[]
+
+  @@index([ownerReplicaName])
 }
 
 /// Routes a notification channel to a Telegram chat and optional topic.

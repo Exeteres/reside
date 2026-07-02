@@ -108,8 +108,14 @@ Many replicas use a workflow/operation pattern.
 
 - Keep one `Operation` model per replica.
 - Keep generic operation fields compatible with common helpers.
+- Define a replica-local `OperationType` enum for every operation-producing flow.
+- Require `Operation.type OperationType` on the operation model and set it at every operation creation site.
 - Attach feature-specific entities via optional foreign keys and explicit relations.
+- Store identifiers for external operation-related entities in named columns, not in `customData`.
+  Examples include Temporal workflow ids, deterministic idempotency keys, external request ids, and callback context tokens.
+- Reserve `customData` for opaque OperationService subscription payloads that are passed through to operation completion callbacks.
 - Index operation lifecycle queries (`@@index([createdAt])`, status-specific indexes where needed).
+- Add lookup constraints for operation identifiers, for example `reaperActionId String? @unique`, when idempotency or polling depends on them.
 
 ## Migration workflow and naming
 
@@ -119,7 +125,14 @@ Many replicas use a workflow/operation pattern.
   - `bun prisma migrate reset --force`
 - Create migration:
   - `bun prisma migrate dev --name <name>`
-- Never create or edit Prisma migration SQL files manually.
+- Do not author migrations from scratch by hand. Generate the migration with Prisma first.
+- Manual SQL edits are allowed only when Prisma's generated SQL is not deployable or cannot express the required migration safely, for example nullable-add/backfill/set-not-null sequences, data backfills, or provider-specific DDL.
+- New migrations must be safe to apply to non-empty tables. Do not add a required column without either a database default or an explicit backfill step that adds it nullable, fills all existing rows, and only then marks it `NOT NULL`.
+- Warnings for unique indexes on nullable columns created in the same migration are acceptable when existing rows cannot contain duplicates for that new column.
+- After any manual migration SQL edit, verify it against the devenv Postgres database before submitting:
+  - `bun prisma migrate reset --force`
+  - `bun prisma migrate dev`
+  - The final `migrate dev` must report the schema is already in sync.
 - Migration naming:
   - first migration must be `init`
   - later migrations must be short descriptive names of what changed

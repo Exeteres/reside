@@ -6,6 +6,12 @@ import { CustomObjectsApi } from "@kubernetes/client-node"
 import { kubeConfig } from "@reside/common"
 import { strings } from "../../locale"
 import {
+  isNotFoundError,
+  REPLICA_API_GROUP,
+  REPLICA_API_VERSION,
+  REPLICA_PLURAL,
+} from "../../shared"
+import {
   evaluateRegistrationReadiness,
   loadReplicaForRegistrationReadiness,
 } from "../../shared/registration-readiness"
@@ -81,6 +87,39 @@ export function createRegistrationActivities({
         replicaName,
         newVersion,
       })
+    },
+
+    async unregisterReplica({ replicaName }) {
+      await prisma.replica.deleteMany({
+        where: {
+          name: replicaName,
+        },
+      })
+    },
+
+    async deleteReplicaFromCluster({ replicaName }) {
+      try {
+        await customObjectsApi.deleteClusterCustomObject({
+          group: REPLICA_API_GROUP,
+          version: REPLICA_API_VERSION,
+          plural: REPLICA_PLURAL,
+          name: replicaName,
+        })
+      } catch (error) {
+        if (isNotFoundError(error)) {
+          return
+        }
+
+        throw error
+      }
+    },
+
+    async completeOperation({ operationId }) {
+      await operationService.setCompleted(operationId)
+    },
+
+    async failOperation({ operationId, reason, message }) {
+      await operationService.setFailed(operationId, reason, message)
     },
   }
 }

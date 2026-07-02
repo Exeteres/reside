@@ -48,6 +48,13 @@ export type UpdateReplicaAvatarVersionTagInput = {
   newVersion: string
 }
 
+export type DeleteReplicaInput = {
+  /**
+   * The replica technical name.
+   */
+  replicaName: string
+}
+
 export type ReconcileRegistrationOperationStatus = "completed" | "pending"
 
 export type ListRegisteredReplicasOutput = {
@@ -93,4 +100,24 @@ export type RegistrationActivities = {
    * Updates managed avatar version tag for a replica in Telegram system chat.
    */
   updateReplicaAvatarVersionTag: (input: UpdateReplicaAvatarVersionTagInput) => Promise<void>
+
+  /**
+   * Deletes a replica registration from Alpha.
+   */
+  unregisterReplica: (input: DeleteReplicaInput) => Promise<void>
+
+  /**
+   * Deletes the replica custom resource from the cluster.
+   */
+  deleteReplicaFromCluster: (input: DeleteReplicaInput) => Promise<void>
+
+  /**
+   * Marks an operation as completed.
+   */
+  completeOperation: (input: { operationId: number }) => Promise<void>
+
+  /**
+   * Marks an operation as failed.
+   */
+  failOperation: (input: { operationId: number; reason: string; message: string }) => Promise<void>
 }

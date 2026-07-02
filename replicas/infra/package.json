@@ -30,6 +30,7 @@
     "@reside/common": "workspace:*",
     "@reside/registry": "workspace:*",
     "@reside/utils": "workspace:*",
-    "pg": "catalog:"
+    "pg": "catalog:",
+    "zod": "catalog:"
   }
 }

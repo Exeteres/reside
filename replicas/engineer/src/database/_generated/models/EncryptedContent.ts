@@ -14,7 +14,7 @@ import type * as Prisma from "../internal/prismaNamespace.ts"
 
 /**
  * Model EncryptedContent
- * 
+ * Represents encrypted content stored through the common ECID encryption model.
  */
 export type EncryptedContentModel = runtime.Types.Result.DefaultSelection<Prisma.$EncryptedContentPayload>
 

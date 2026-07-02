@@ -13,5 +13,6 @@ model EncryptedContent {
   notificationResponseText NotificationResponse? @relation(name: "NotificationResponseText")
   notificationMessage      Notification?         @relation(name: "NotificationMessage")
   notificationTopicThread  NotificationTopic?    @relation(name: "NotificationTopicThread")
+  notificationTaskPlanningPollMessage NotificationTaskPlanningPoll? @relation(name: "NotificationTaskPlanningPollMessage")
   avatarToken              Avatar?               @relation(name: "AvatarToken")
 }

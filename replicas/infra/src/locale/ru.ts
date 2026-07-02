@@ -26,4 +26,13 @@ export const ru = {
       description: (gatewayName: string) => `Подготовка HTTP-шлюза для "${gatewayName}"`,
     },
   },
+  reaper: {
+    title: "Инфраструктурная Реплика",
+    actions: {
+      deleteDatabase: (name: string) => `Удаление базы данных ${name}`,
+      deleteTemporalNamespace: (name: string) => `Удаление temporal-неймспейса ${name}`,
+      deleteGateway: (name: string) => `Удаление шлюза ${name}`,
+      deleteStorageBucket: (name: string) => `Удаление хранилища ${name}`,
+    },
+  },
 }

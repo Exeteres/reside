@@ -20,6 +20,7 @@ import {
 } from "@temporalio/workflow"
 import {
   createTaskCommand,
+  type DeleteSourceCodeWorkflowInput,
   EngineerNotificationChannels,
   type EngineerTaskActivities,
   type PrepareTaskWorkflowInput,
@@ -42,6 +43,8 @@ const {
   requestCancellation,
   runImplementationInteraction,
   retryTask,
+  completeOperation,
+  failOperation,
 } = proxyActivities<EngineerTaskActivities>({
   scheduleToCloseTimeout: "30 minutes",
   retry: {
@@ -293,6 +296,38 @@ export async function taskWorkflow(input: TaskWorkflowInput): Promise<void> {
     })
 
     return
+  }
+}
+
+export async function deleteSourceCodeWorkflow({
+  operationId,
+  replicaName,
+}: DeleteSourceCodeWorkflowInput): Promise<void> {
+  const subjectId = "replica:reaper"
+  const prompt = strings.reaper.prompts.deleteSourceCode(replicaName)
+
+  try {
+    const preparation = await startTaskPreparationChild({
+      subjectId,
+      prompt,
+      mode: "plan",
+    })
+
+    await startTaskWorkflowChild({
+      subjectId,
+      prompt,
+      mode: "plan",
+      ...preparation,
+    })
+
+    await completeOperation({ operationId })
+  } catch (error) {
+    await failOperation({
+      operationId,
+      reason: "REAPER_ACTION_FAILED",
+      message: error instanceof Error ? error.message : String(error),
+    })
+    throw error
   }
 }
 

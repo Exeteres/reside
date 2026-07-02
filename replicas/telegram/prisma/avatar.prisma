@@ -79,7 +79,7 @@ model AvatarProvisionRequest {
   avatarId Int?
 
   /// The optional linked avatar created for this provisioning flow.
-  avatar Avatar? @relation(fields: [avatarId], references: [id], onDelete: SetNull)
+  avatar Avatar? @relation(fields: [avatarId], references: [id], onDelete: Cascade)
 
   /// The timestamp when this request was created.
   createdAt DateTime @default(now())
@@ -88,6 +88,7 @@ model AvatarProvisionRequest {
   updatedAt DateTime @updatedAt
 
   @@index([expectedPrefix])
+  @@index([replicaName])
   @@index([subjectId])
   @@index([avatarId])
 }
