@@ -1,6 +1,7 @@
 import type { GenericOperationService, ResideCrypto } from "@reside/common"
 import type { Client as TemporalClient } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../../database"
+import { ReaperActionHint } from "@reside/api/reaper/handler.v1"
 import {
   completeReaperAction,
   createReaperHandler,
@@ -196,6 +197,7 @@ export function createReaperService({
               {
                 name: "deleteCommands" as const,
                 title: strings.reaper.actions.deleteCommands(commands.length),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   commandIds: commands.map(command => command.id),
                 },
@@ -207,6 +209,7 @@ export function createReaperService({
               {
                 name: "deleteChannels" as const,
                 title: strings.reaper.actions.deleteChannels(channels.length),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   channelIds: channels.map(channel => channel.id),
                 },
@@ -220,6 +223,7 @@ export function createReaperService({
                 title: strings.reaper.actions.deleteAvatar(
                   avatar?.managedBotUsername ?? replicaName,
                 ),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   avatarId: avatar?.id ?? null,
                   replicaName,
@@ -233,6 +237,7 @@ export function createReaperService({
               {
                 name: "deleteNlsInteractions" as const,
                 title: strings.reaper.actions.deleteNlsInteractions(nlsInteractions.length),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   interactionIds: nlsInteractions.map(interaction => interaction.id),
                 },

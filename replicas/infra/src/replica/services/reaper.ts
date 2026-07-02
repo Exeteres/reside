@@ -1,6 +1,7 @@
 import type { GenericOperationService } from "@reside/common"
 import type { Client as TemporalClient } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../../database"
+import { ReaperActionHint } from "@reside/api/reaper/handler.v1"
 import {
   createReaperHandler,
   DEFAULT_TEMPORAL_TASK_QUEUE,
@@ -135,6 +136,7 @@ export function createReaperService({
               {
                 name: "deleteDatabase" as const,
                 title: strings.reaper.actions.deleteDatabase(database.database),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   databaseId: database.id,
                   name: database.database,
@@ -147,6 +149,7 @@ export function createReaperService({
               {
                 name: "deleteTemporalNamespace" as const,
                 title: strings.reaper.actions.deleteTemporalNamespace(temporalNamespace.namespace),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   temporalNamespaceId: temporalNamespace.id,
                   name: temporalNamespace.namespace,
@@ -159,6 +162,7 @@ export function createReaperService({
               {
                 name: "deleteStorageBucket" as const,
                 title: strings.reaper.actions.deleteStorageBucket(storageBucket.bucket),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   storageBucketId: storageBucket.id,
                   name: storageBucket.bucket,
@@ -169,6 +173,7 @@ export function createReaperService({
         ...gateways.map(gateway => ({
           name: "deleteGateway" as const,
           title: strings.reaper.actions.deleteGateway(gateway.name),
+          hints: [ReaperActionHint.CRITICAL],
           payload: {
             gatewayId: gateway.id,
             name: gateway.name,

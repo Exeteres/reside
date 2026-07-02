@@ -9,6 +9,7 @@ import {
   ExecuteActionsResponseSchema,
   PreviewActionsResponseSchema,
   ReaperActionExecutionSchema,
+  type ReaperActionHint,
   ReaperActionSchema,
   type ReplicaReaperHandler,
 } from "@reside/api/reaper/handler.v1"
@@ -44,6 +45,7 @@ export type ReaperPreviewAction<TSchemas extends ReaperActionSchemas> = {
     name: TName
     title: string
     payload: z.infer<TSchemas[TName]>
+    hints?: ReaperActionHint[]
   }
 }[keyof TSchemas & string]
 
@@ -105,6 +107,7 @@ export function createReaperHandler<const TSchemas extends ReaperActionSchemas>(
                 name: action.name,
                 payload: action.payload,
               } satisfies StoredReaperAction),
+              hints: action.hints ?? [],
             })
           }),
         ),

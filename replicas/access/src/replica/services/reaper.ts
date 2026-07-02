@@ -1,5 +1,6 @@
 import type { ResideCrypto } from "@reside/common"
 import type { PrismaClient } from "../../database"
+import { ReaperActionHint } from "@reside/api/reaper/handler.v1"
 import { completeReaperAction, createReaperHandler } from "@reside/common"
 import { z } from "zod"
 import { strings } from "../../locale"
@@ -102,6 +103,7 @@ export function createReaperService({
               {
                 name: "deleteBindings" as const,
                 title: strings.reaper.actions.deleteBindings(bindings.length),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   replicaName,
                   bindingIds: bindings.map(binding => binding.id.toString()),
@@ -114,6 +116,7 @@ export function createReaperService({
               {
                 name: "deleteRestrictions" as const,
                 title: strings.reaper.actions.deleteRestrictions(restrictions.length),
+                hints: [ReaperActionHint.CRITICAL],
                 payload: {
                   replicaName,
                   restrictionIds: restrictions.map(restriction => restriction.id.toString()),
@@ -124,6 +127,7 @@ export function createReaperService({
         ...approvers.map(approver => ({
           name: "deleteApprover" as const,
           title: strings.reaper.actions.deleteApprover(approver.name),
+          hints: [ReaperActionHint.CRITICAL],
           payload: {
             approverId: approver.id,
             name: approver.name,

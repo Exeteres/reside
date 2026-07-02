@@ -5,6 +5,18 @@ package reside.reaper.handler.v1;
 import "common/operation.v1.proto";
 import "google/protobuf/empty.proto";
 
+// A machine-readable hint describing special execution semantics for a reaper action.
+enum ReaperActionHint {
+  // The default value when no special execution semantics are required.
+  REAPER_ACTION_HINT_UNSPECIFIED = 0;
+
+  // The action affects the target replica existence and must only execute after critical actions are confirmed.
+  REAPER_ACTION_HINT_EXISTENCE = 1;
+
+  // The action must complete before existence actions can execute.
+  REAPER_ACTION_HINT_CRITICAL = 2;
+}
+
 // A planned destructive action prepared by a resource holder replica.
 message ReaperAction {
   // The deterministic opaque action identifier calculated from the action payload.
@@ -17,6 +29,9 @@ message ReaperAction {
   // The encrypted opaque payload owned by the resource holder replica.
   // Clients must not inspect, decrypt, log, or modify this value.
   string payload = 2;
+
+  // Optional machine-readable hints that modify how clients should execute this action.
+  repeated ReaperActionHint hints = 4;
 }
 
 // The request message for previewing actions required to kill a replica.

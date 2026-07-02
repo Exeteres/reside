@@ -1,6 +1,7 @@
 import type { GenericOperationService } from "@reside/common"
 import type { Client as TemporalClient } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../../database"
+import { ReaperActionHint } from "@reside/api/reaper/handler.v1"
 import {
   createReaperHandler,
   DEFAULT_TEMPORAL_TASK_QUEUE,
@@ -85,6 +86,7 @@ export function createReaperService({
         {
           name: "unregisterReplica" as const,
           title: strings.reaper.actions.unregister,
+          hints: [ReaperActionHint.EXISTENCE, ReaperActionHint.CRITICAL],
           payload: {
             replicaId: replica.id,
             replicaName,
@@ -93,6 +95,7 @@ export function createReaperService({
         {
           name: "deleteReplicaCrd" as const,
           title: strings.reaper.actions.deleteFromCluster,
+          hints: [ReaperActionHint.CRITICAL],
           payload: {
             replicaId: replica.id,
             replicaName,

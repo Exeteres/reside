@@ -22,6 +22,8 @@ import { killCommand, ReaperNotificationChannels } from "../definitions"
 import { strings } from "../locale"
 
 const OPERATION_POLL_DELAY_MS = 2_000
+const EXISTENCE_ACTION_HINT = "REAPER_ACTION_HINT_EXISTENCE"
+const CRITICAL_ACTION_HINT = "REAPER_ACTION_HINT_CRITICAL"
 
 type PlannedAction = ReaperPlannedAction & {
   handler: RegisteredReaperHandler
@@ -34,6 +36,11 @@ type ReaperNotificationTaskStatus = "PLANNED" | TrackedActionStatus
 type TrackedAction = PlannedAction & {
   status: TrackedActionStatus
   operation?: StartedReaperExecution["operation"]
+}
+
+type ReaperActionPlan = {
+  notificationId: string
+  trackedActions: TrackedAction[]
 }
 
 const { listReaperHandlers, previewHandlerActions, executeHandlerActions, getResourceOperation } =
@@ -51,9 +58,43 @@ export const killCommandHandler = defineCommandHandler({
   async handler({ params, invocation }) {
     const targetReplicaName = normalizeReplicaName(params.replicaName)
     const { handlers } = await listReaperHandlers()
-    const plannedActions = await previewAllHandlers(handlers, targetReplicaName)
+    const targetHandlers = handlers.filter(
+      handler => handler.resourceReplicaName === targetReplicaName,
+    )
+    const otherHandlers = handlers.filter(
+      handler => handler.resourceReplicaName !== targetReplicaName,
+    )
+    const plans: ReaperActionPlan[] = []
 
-    if (plannedActions.length === 0) {
+    const targetPlan = await requestHandlerActionPlan({
+      handlers: targetHandlers,
+      targetReplicaName,
+      contextToken: invocation.context?.token,
+    })
+    if (targetPlan) {
+      plans.push(targetPlan)
+      applyActionHintSelectionRules(targetPlan.trackedActions)
+      await executeActionPhase({
+        targetReplicaName,
+        notificationId: targetPlan.notificationId,
+        trackedActions: targetPlan.trackedActions,
+        actions: targetPlan.trackedActions.filter(action => isPendingRegularAction(action)),
+      })
+    }
+
+    const otherPlan = await requestHandlerActionPlan({
+      handlers: otherHandlers,
+      targetReplicaName,
+      contextToken: invocation.context?.token,
+    })
+    if (otherPlan) {
+      plans.push(otherPlan)
+    }
+
+    const trackedActions = plans.flatMap(plan => plan.trackedActions)
+    applyActionHintSelectionRules(trackedActions)
+
+    if (trackedActions.length === 0) {
       await sendNotification({
         contextToken: invocation.context?.token,
         system: invocation.context?.token === undefined,
@@ -63,34 +104,126 @@ export const killCommandHandler = defineCommandHandler({
       return
     }
 
-    const selectedTaskIds = await requestActionSelection({
+    if (otherPlan) {
+      await executeActionPhase({
+        targetReplicaName,
+        notificationId: otherPlan.notificationId,
+        trackedActions: otherPlan.trackedActions,
+        actions: otherPlan.trackedActions.filter(action => isPendingRegularAction(action)),
+      })
+    }
+
+    await executeExistenceActions({
       targetReplicaName,
-      plannedActions,
-      contextToken: invocation.context?.token,
-    })
-
-    const trackedActions = plannedActions.map(action => ({
-      ...action,
-      status: selectedTaskIds.has(action.id) ? "PENDING" : "SKIPPED",
-    })) satisfies TrackedAction[]
-
-    const notification = await updateNotification({
-      notificationId: selectedTaskIds.notificationId,
-      title: strings.notifications.kill.executingTitle(targetReplicaName),
-      content: block(strings.notifications.kill.planningMessage),
-      status: NotificationStatus.IN_PROGRESS,
-      taskGroups: buildTaskGroups(trackedActions),
-      expectImmediateFeedback: true,
-    })
-
-    await executeSelectedActions(trackedActions)
-    await pollOperations({
-      targetReplicaName,
-      notificationId: notification.notificationId,
+      plans,
       trackedActions,
     })
   },
 })
+
+async function requestHandlerActionPlan(input: {
+  handlers: RegisteredReaperHandler[]
+  targetReplicaName: string
+  contextToken: string | undefined
+}): Promise<ReaperActionPlan | undefined> {
+  const plannedActions = await previewAllHandlers(input.handlers, input.targetReplicaName)
+  if (plannedActions.length === 0) {
+    return undefined
+  }
+
+  const selectedTaskIds = await requestActionSelection({
+    targetReplicaName: input.targetReplicaName,
+    plannedActions,
+    contextToken: input.contextToken,
+  })
+
+  const trackedActions = plannedActions.map(action => ({
+    ...action,
+    status: selectedTaskIds.has(action.id) ? "PENDING" : "SKIPPED",
+  })) satisfies TrackedAction[]
+
+  return {
+    notificationId: selectedTaskIds.notificationId,
+    trackedActions,
+  }
+}
+
+async function executeActionPhase(input: {
+  targetReplicaName: string
+  notificationId: string
+  trackedActions: TrackedAction[]
+  actions: TrackedAction[]
+}): Promise<void> {
+  if (input.actions.length === 0) {
+    return
+  }
+
+  const notification = await updateNotification({
+    notificationId: input.notificationId,
+    title: strings.notifications.kill.executingTitle(input.targetReplicaName),
+    content: block(strings.notifications.kill.planningMessage),
+    status: NotificationStatus.IN_PROGRESS,
+    taskGroups: buildTaskGroups(input.trackedActions),
+    expectImmediateFeedback: true,
+  })
+
+  await executeActions(input.actions)
+  await pollOperations({
+    targetReplicaName: input.targetReplicaName,
+    notificationId: notification.notificationId,
+    trackedActions: input.trackedActions,
+    pollActions: input.actions,
+  })
+}
+
+async function executeExistenceActions(input: {
+  targetReplicaName: string
+  plans: ReaperActionPlan[]
+  trackedActions: TrackedAction[]
+}): Promise<void> {
+  const existenceActions = input.trackedActions.filter(action => isPendingExistenceAction(action))
+  if (existenceActions.length === 0) {
+    return
+  }
+
+  if (canExecuteExistenceActions(input.trackedActions)) {
+    await executeActions(existenceActions)
+    for (const plan of input.plans) {
+      const planExistenceActions = plan.trackedActions.filter(action =>
+        isSelectedExistenceAction(action),
+      )
+      if (planExistenceActions.length === 0) {
+        continue
+      }
+
+      const notification = await updateNotification({
+        notificationId: plan.notificationId,
+        title: strings.notifications.kill.executingTitle(input.targetReplicaName),
+        content: block(strings.notifications.kill.planningMessage),
+        status: NotificationStatus.IN_PROGRESS,
+        taskGroups: buildTaskGroups(plan.trackedActions),
+        expectImmediateFeedback: true,
+      })
+
+      await pollOperations({
+        targetReplicaName: input.targetReplicaName,
+        notificationId: notification.notificationId,
+        trackedActions: plan.trackedActions,
+        pollActions: planExistenceActions,
+      })
+    }
+    return
+  }
+
+  skipPendingActions(existenceActions)
+  for (const plan of input.plans) {
+    await updateProgressNotification({
+      targetReplicaName: input.targetReplicaName,
+      notificationId: plan.notificationId,
+      trackedActions: plan.trackedActions,
+    })
+  }
+}
 
 type SelectedTaskIds = Set<string> & {
   notificationId: string
@@ -157,8 +290,11 @@ async function requestActionSelection(input: {
   return selectedTaskIds
 }
 
-async function executeSelectedActions(trackedActions: TrackedAction[]): Promise<void> {
-  const selectedActions = trackedActions.filter(action => action.status !== "SKIPPED")
+async function executeActions(selectedActions: TrackedAction[]): Promise<void> {
+  if (selectedActions.length === 0) {
+    return
+  }
+
   const actionsByHandler = new Map<string, TrackedAction[]>()
 
   for (const action of selectedActions) {
@@ -211,13 +347,14 @@ async function pollOperations(input: {
   targetReplicaName: string
   notificationId: string
   trackedActions: TrackedAction[]
+  pollActions: TrackedAction[]
 }): Promise<void> {
   let previousStatusKey = ""
 
-  while (hasActiveActions(input.trackedActions)) {
+  while (hasActiveActions(input.pollActions)) {
     await sleep(OPERATION_POLL_DELAY_MS)
     await Promise.all(
-      input.trackedActions
+      input.pollActions
         .filter(action => isActiveAction(action) && action.operation !== undefined)
         .map(async action => {
           const operation = await getResourceOperation({
@@ -352,6 +489,73 @@ function hasActiveActions(actions: TrackedAction[]): boolean {
 
 function isActiveAction(action: TrackedAction): boolean {
   return action.status === "PENDING" || action.status === "IN_PROGRESS"
+}
+
+export function applyActionHintSelectionRules(actions: TrackedAction[]): void {
+  for (const action of actions) {
+    if (!isSelectedExistenceAction(action)) {
+      continue
+    }
+
+    if (hasSkippedCriticalAction(actions)) {
+      action.status = "SKIPPED"
+    }
+  }
+}
+
+function canExecuteExistenceActions(actions: TrackedAction[]): boolean {
+  const existenceActions = actions.filter(action => isSelectedExistenceAction(action))
+  if (existenceActions.length === 0) {
+    return false
+  }
+
+  if (hasSkippedCriticalAction(actions)) {
+    return false
+  }
+
+  return actions.every(action => {
+    if (isExistenceAction(action)) {
+      return true
+    }
+
+    if (action.status === "SKIPPED" && !isCriticalAction(action)) {
+      return true
+    }
+
+    return action.status === "COMPLETED"
+  })
+}
+
+function hasSkippedCriticalAction(actions: TrackedAction[]): boolean {
+  return actions.some(action => isCriticalAction(action) && action.status === "SKIPPED")
+}
+
+function skipPendingActions(actions: TrackedAction[]): void {
+  for (const action of actions) {
+    if (action.status === "PENDING") {
+      action.status = "SKIPPED"
+    }
+  }
+}
+
+function isPendingRegularAction(action: TrackedAction): boolean {
+  return action.status === "PENDING" && !isExistenceAction(action)
+}
+
+function isPendingExistenceAction(action: TrackedAction): boolean {
+  return action.status === "PENDING" && isExistenceAction(action)
+}
+
+function isSelectedExistenceAction(action: TrackedAction): boolean {
+  return action.status !== "SKIPPED" && isExistenceAction(action)
+}
+
+function isExistenceAction(action: PlannedAction): boolean {
+  return action.hints.includes(EXISTENCE_ACTION_HINT)
+}
+
+function isCriticalAction(action: PlannedAction): boolean {
+  return action.hints.includes(CRITICAL_ACTION_HINT)
 }
 
 function buildStatusKey(actions: TrackedAction[]): string {

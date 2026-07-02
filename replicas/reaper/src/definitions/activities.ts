@@ -1,4 +1,5 @@
 import type { OperationJson } from "@reside/api/common/operation.v1"
+import type { ReaperActionHintJson } from "@reside/api/reaper/handler.v1"
 
 export type RegisteredReaperHandler = {
   /**
@@ -37,6 +38,11 @@ export type ReaperPlannedAction = {
    * The encrypted opaque action payload.
    */
   payload: string
+
+  /**
+   * The optional execution hints attached to this action.
+   */
+  hints: ReaperActionHintJson[]
 }
 
 export type StartedReaperExecution = {

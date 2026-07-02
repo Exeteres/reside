@@ -2,8 +2,8 @@
 // @generated from file reaper/handler.v1.proto (package reside.reaper.handler.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Operation, OperationJson } from "../common/operation.v1_pb";
 import { file_common_operation_v1 } from "../common/operation.v1_pb";
 import type { Empty, EmptyJson } from "@bufbuild/protobuf/wkt";
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file reaper/handler.v1.proto.
  */
 export const file_reaper_handler_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChdyZWFwZXIvaGFuZGxlci52MS5wcm90bxIYcmVzaWRlLnJlYXBlci5oYW5kbGVyLnYxIjoKDFJlYXBlckFjdGlvbhIKCgJpZBgDIAEoCRINCgV0aXRsZRgBIAEoCRIPCgdwYXlsb2FkGAIgASgJIi0KFVByZXZpZXdBY3Rpb25zUmVxdWVzdBIUCgxyZXBsaWNhX25hbWUYASABKAkiUQoWUHJldmlld0FjdGlvbnNSZXNwb25zZRI3CgdhY3Rpb25zGAEgAygLMiYucmVzaWRlLnJlYXBlci5oYW5kbGVyLnYxLlJlYXBlckFjdGlvbiIpChVFeGVjdXRlQWN0aW9uc1JlcXVlc3QSEAoIcGF5bG9hZHMYASADKAkimwEKFVJlYXBlckFjdGlvbkV4ZWN1dGlvbhIPCgdwYXlsb2FkGAEgASgJEjoKCW9wZXJhdGlvbhgCIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbkgAEisKCWNvbXBsZXRlZBgDIAEoCzIWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eUgAQggKBnJlc3VsdCJdChZFeGVjdXRlQWN0aW9uc1Jlc3BvbnNlEkMKCmV4ZWN1dGlvbnMYASADKAsyLy5yZXNpZGUucmVhcGVyLmhhbmRsZXIudjEuUmVhcGVyQWN0aW9uRXhlY3V0aW9uMoACChRSZXBsaWNhUmVhcGVySGFuZGxlchJzCg5QcmV2aWV3QWN0aW9ucxIvLnJlc2lkZS5yZWFwZXIuaGFuZGxlci52MS5QcmV2aWV3QWN0aW9uc1JlcXVlc3QaMC5yZXNpZGUucmVhcGVyLmhhbmRsZXIudjEuUHJldmlld0FjdGlvbnNSZXNwb25zZRJzCg5FeGVjdXRlQWN0aW9ucxIvLnJlc2lkZS5yZWFwZXIuaGFuZGxlci52MS5FeGVjdXRlQWN0aW9uc1JlcXVlc3QaMC5yZXNpZGUucmVhcGVyLmhhbmRsZXIudjEuRXhlY3V0ZUFjdGlvbnNSZXNwb25zZWIGcHJvdG8z", [file_common_operation_v1, file_google_protobuf_empty]);
+  fileDesc("ChdyZWFwZXIvaGFuZGxlci52MS5wcm90bxIYcmVzaWRlLnJlYXBlci5oYW5kbGVyLnYxInUKDFJlYXBlckFjdGlvbhIKCgJpZBgDIAEoCRINCgV0aXRsZRgBIAEoCRIPCgdwYXlsb2FkGAIgASgJEjkKBWhpbnRzGAQgAygOMioucmVzaWRlLnJlYXBlci5oYW5kbGVyLnYxLlJlYXBlckFjdGlvbkhpbnQiLQoVUHJldmlld0FjdGlvbnNSZXF1ZXN0EhQKDHJlcGxpY2FfbmFtZRgBIAEoCSJRChZQcmV2aWV3QWN0aW9uc1Jlc3BvbnNlEjcKB2FjdGlvbnMYASADKAsyJi5yZXNpZGUucmVhcGVyLmhhbmRsZXIudjEuUmVhcGVyQWN0aW9uIikKFUV4ZWN1dGVBY3Rpb25zUmVxdWVzdBIQCghwYXlsb2FkcxgBIAMoCSKbAQoVUmVhcGVyQWN0aW9uRXhlY3V0aW9uEg8KB3BheWxvYWQYASABKAkSOgoJb3BlcmF0aW9uGAIgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uSAASKwoJY29tcGxldGVkGAMgASgLMhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5SABCCAoGcmVzdWx0Il0KFkV4ZWN1dGVBY3Rpb25zUmVzcG9uc2USQwoKZXhlY3V0aW9ucxgBIAMoCzIvLnJlc2lkZS5yZWFwZXIuaGFuZGxlci52MS5SZWFwZXJBY3Rpb25FeGVjdXRpb24qeQoQUmVhcGVyQWN0aW9uSGludBIiCh5SRUFQRVJfQUNUSU9OX0hJTlRfVU5TUEVDSUZJRUQQABIgChxSRUFQRVJfQUNUSU9OX0hJTlRfRVhJU1RFTkNFEAESHwobUkVBUEVSX0FDVElPTl9ISU5UX0NSSVRJQ0FMEAIygAIKFFJlcGxpY2FSZWFwZXJIYW5kbGVyEnMKDlByZXZpZXdBY3Rpb25zEi8ucmVzaWRlLnJlYXBlci5oYW5kbGVyLnYxLlByZXZpZXdBY3Rpb25zUmVxdWVzdBowLnJlc2lkZS5yZWFwZXIuaGFuZGxlci52MS5QcmV2aWV3QWN0aW9uc1Jlc3BvbnNlEnMKDkV4ZWN1dGVBY3Rpb25zEi8ucmVzaWRlLnJlYXBlci5oYW5kbGVyLnYxLkV4ZWN1dGVBY3Rpb25zUmVxdWVzdBowLnJlc2lkZS5yZWFwZXIuaGFuZGxlci52MS5FeGVjdXRlQWN0aW9uc1Jlc3BvbnNlYgZwcm90bzM", [file_common_operation_v1, file_google_protobuf_empty]);
 
 /**
  * A planned destructive action prepared by a resource holder replica.
@@ -44,6 +44,13 @@ export type ReaperAction = Message<"reside.reaper.handler.v1.ReaperAction"> & {
    * @generated from field: string payload = 2;
    */
   payload: string;
+
+  /**
+   * Optional machine-readable hints that modify how clients should execute this action.
+   *
+   * @generated from field: repeated reside.reaper.handler.v1.ReaperActionHint hints = 4;
+   */
+  hints: ReaperActionHint[];
 };
 
 /**
@@ -74,6 +81,13 @@ export type ReaperActionJson = {
    * @generated from field: string payload = 2;
    */
   payload?: string;
+
+  /**
+   * Optional machine-readable hints that modify how clients should execute this action.
+   *
+   * @generated from field: repeated reside.reaper.handler.v1.ReaperActionHint hints = 4;
+   */
+  hints?: ReaperActionHintJson[];
 };
 
 /**
@@ -290,6 +304,47 @@ export type ExecuteActionsResponseJson = {
  */
 export const ExecuteActionsResponseSchema: GenMessage<ExecuteActionsResponse, {jsonType: ExecuteActionsResponseJson}> = /*@__PURE__*/
   messageDesc(file_reaper_handler_v1, 5);
+
+/**
+ * A machine-readable hint describing special execution semantics for a reaper action.
+ *
+ * @generated from enum reside.reaper.handler.v1.ReaperActionHint
+ */
+export enum ReaperActionHint {
+  /**
+   * The default value when no special execution semantics are required.
+   *
+   * @generated from enum value: REAPER_ACTION_HINT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The action affects the target replica existence and must only execute after critical actions are confirmed.
+   *
+   * @generated from enum value: REAPER_ACTION_HINT_EXISTENCE = 1;
+   */
+  EXISTENCE = 1,
+
+  /**
+   * The action must complete before existence actions can execute.
+   *
+   * @generated from enum value: REAPER_ACTION_HINT_CRITICAL = 2;
+   */
+  CRITICAL = 2,
+}
+
+/**
+ * A machine-readable hint describing special execution semantics for a reaper action.
+ *
+ * @generated from enum reside.reaper.handler.v1.ReaperActionHint
+ */
+export type ReaperActionHintJson = "REAPER_ACTION_HINT_UNSPECIFIED" | "REAPER_ACTION_HINT_EXISTENCE" | "REAPER_ACTION_HINT_CRITICAL";
+
+/**
+ * Describes the enum reside.reaper.handler.v1.ReaperActionHint.
+ */
+export const ReaperActionHintSchema: GenEnum<ReaperActionHint, ReaperActionHintJson> = /*@__PURE__*/
+  enumDesc(file_reaper_handler_v1, 0);
 
 /**
  * The service implemented by resource holder replicas to remove resources owned by a target replica.

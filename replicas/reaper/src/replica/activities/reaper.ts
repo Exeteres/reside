@@ -39,6 +39,7 @@ export function createReaperActivities({ prisma }: ReaperActivityServices): Reap
           resourceReplicaName: input.resourceReplicaName,
           title: requireValue(action.title, "action title"),
           payload: requireValue(action.payload, "action payload"),
+          hints: action.hints ?? [],
         })),
       }
     },
