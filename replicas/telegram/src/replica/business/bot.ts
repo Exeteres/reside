@@ -1979,7 +1979,7 @@ function formatMskDateTime(date: Date): { date: string; time: string } {
   }
 }
 
-function renderStoredNotificationMessage(input: {
+export function renderStoredNotificationMessage(input: {
   title: string
   content: string
   status: NotificationStatus
@@ -2008,18 +2008,24 @@ function renderNotificationTaskSelectionFallbackMessage(tasks: { title: string }
   ).html
 }
 
-function renderStoredNotificationTaskRows(taskGroups: StoredNotificationTaskGroup[]): string[] {
+function renderStoredNotificationTaskRows(
+  taskGroups: StoredNotificationTaskGroup[],
+): MessageElement[] {
   if (taskGroups.length === 0) {
     return []
   }
 
-  const rows: string[] = [""]
+  const rows: MessageElement[] = [{ html: "" }]
 
-  for (const group of taskGroups) {
-    rows.push(bold(`${getStatusIcon(getStoredTaskGroupStatus(group.tasks))} ${group.title}`).html)
+  for (const [groupIndex, group] of taskGroups.entries()) {
+    if (groupIndex > 0) {
+      rows.push({ html: "" })
+    }
+
+    rows.push(bold(`${getStatusIcon(getStoredTaskGroupStatus(group.tasks))} ${group.title}`))
 
     for (const task of group.tasks) {
-      rows.push(`- ${getStatusIcon(task.status)} ${task.title}`)
+      rows.push({ html: `${getStatusIcon(task.status)} ${html(task.title)}` })
     }
   }
 

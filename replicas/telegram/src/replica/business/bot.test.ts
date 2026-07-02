@@ -6,6 +6,7 @@ import {
   parseBindingCommandText,
   parseClearContextCommandText,
   parseNotificationTaskSelectionText,
+  renderStoredNotificationMessage,
   resolveBindingMessageThreadId,
   resolveBindingTopicInfo,
 } from "./bot"
@@ -146,6 +147,50 @@ describe("parseNotificationTaskSelectionText", () => {
     expect(parseNotificationTaskSelectionText("4", 3)).toBeNull()
     expect(parseNotificationTaskSelectionText("3-2", 3)).toBeNull()
     expect(parseNotificationTaskSelectionText("one", 3)).toBeNull()
+  })
+})
+
+describe("renderStoredNotificationMessage", () => {
+  test("renders task group headers as html and separates groups", () => {
+    expect(
+      renderStoredNotificationMessage({
+        title: "Запланировано удаление реплики bank",
+        content: "Выберите нужные действия.",
+        status: "PLANNING",
+        taskGroups: [
+          {
+            title: "Авторизационная Реплика",
+            tasks: [
+              {
+                title: "Удаление 7 биндингов",
+                status: "PLANNED",
+              },
+            ],
+          },
+          {
+            title: "Альфа-Реплика",
+            tasks: [
+              {
+                title: "Снятие регистрации",
+                status: "PLANNED",
+              },
+            ],
+          },
+        ],
+      }).html,
+    ).toBe(
+      [
+        "<b>📝 Запланировано удаление реплики bank</b>",
+        "",
+        "Выберите нужные действия.",
+        "",
+        "<b>📝 Авторизационная Реплика</b>",
+        "📝 Удаление 7 биндингов",
+        "",
+        "<b>📝 Альфа-Реплика</b>",
+        "📝 Снятие регистрации",
+      ].join("\n"),
+    )
   })
 })
 
