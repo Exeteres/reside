@@ -91,6 +91,7 @@ export function createNotificationService({
       )
 
       try {
+        const notificationStatus = toBusinessNotificationStatus(request.status)
         const result = await sendNotificationForReplica(
           crypto,
           prisma,
@@ -113,8 +114,10 @@ export function createNotificationService({
             expectImmediateFeedback: request.expectImmediateFeedback,
             topicId: request.topicId,
             acquireTopic: request.acquireTopic,
-            status: toBusinessNotificationStatus(request.status),
-            taskGroups: request.taskGroups.map(toBusinessTaskGroup),
+            status: notificationStatus,
+            taskGroups: request.taskGroups.map(group =>
+              toBusinessTaskGroup(group, notificationStatus),
+            ),
           },
         )
 
@@ -148,6 +151,7 @@ export function createNotificationService({
       try {
         parseNotificationId(request.notificationId)
         assertActionRows(request.actionRows)
+        const notificationStatus = toBusinessNotificationStatus(request.status)
 
         const result = await updateNotificationForReplica(
           crypto,
@@ -163,8 +167,10 @@ export function createNotificationService({
             actionRows: request.actionRows,
             requiresTextResponse: request.requiresTextResponse,
             expectImmediateFeedback: request.expectImmediateFeedback,
-            status: toBusinessNotificationStatus(request.status),
-            taskGroups: request.taskGroups.map(toBusinessTaskGroup),
+            status: notificationStatus,
+            taskGroups: request.taskGroups.map(group =>
+              toBusinessTaskGroup(group, notificationStatus),
+            ),
           },
         )
 
@@ -281,18 +287,21 @@ function requireNotificationReadModel(
   return notification
 }
 
-function toBusinessTaskGroup(input: {
-  id: string
-  title: string
-  tasks: { id: string; title: string; status: ApiNotificationTaskStatus }[]
-}): NotificationTaskGroupInput {
+export function toBusinessTaskGroup(
+  input: {
+    id: string
+    title: string
+    tasks: { id: string; title: string; status: ApiNotificationTaskStatus }[]
+  },
+  notificationStatus: NotificationStatus,
+): NotificationTaskGroupInput {
   return {
     id: input.id,
     title: input.title,
     tasks: input.tasks.map(task => ({
       id: task.id,
       title: task.title,
-      status: toBusinessNotificationTaskStatus(task.status),
+      status: toBusinessNotificationTaskStatus(task.status, notificationStatus),
     })),
   }
 }
@@ -314,7 +323,12 @@ function toBusinessNotificationStatus(status: ApiNotificationStatus): Notificati
 
 function toBusinessNotificationTaskStatus(
   status: ApiNotificationTaskStatus,
+  notificationStatus: NotificationStatus,
 ): NotificationTaskStatus {
+  if (notificationStatus === "PLANNING" && status === ApiNotificationTaskStatus.PENDING) {
+    return "PLANNED"
+  }
+
   switch (status) {
     case ApiNotificationTaskStatus.PENDING:
       return "PENDING"
