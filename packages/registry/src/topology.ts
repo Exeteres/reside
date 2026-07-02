@@ -206,6 +206,17 @@ export const bankReplica = defineReplica({
   },
 })
 
+export const notcompelReplica = defineReplica({
+  name: "notcompel",
+  dependencies: {
+    replicas: {
+      infra: infraReplica,
+      access: accessReplica,
+      interaction: telegramReplica,
+    },
+  },
+})
+
 export const topology = sortReplicasByDependencies([
   accessReplica,
   infraReplica,
@@ -215,4 +226,5 @@ export const topology = sortReplicasByDependencies([
   alphaReplica,
   rateReplica,
   bankReplica,
+  notcompelReplica,
 ])
