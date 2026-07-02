@@ -178,6 +178,9 @@ await Promise.all([
   // to allow telegram replica create gateway for itself
   ensureBinding(infraGatewayManagePermission.id, "replica:telegram", "telegram"),
 
+  // to allow telegram replica register its cleanup handler without requesting access during bootstrap
+  ensureBinding(reaperHandlerRegisterPermission.id, "replica:telegram", "telegram"),
+
   // to allow reaper replica to register cleanup handlers for itself if needed
   ensureBinding(reaperHandlerRegisterPermission.id, "replica:reaper", "reaper"),
 

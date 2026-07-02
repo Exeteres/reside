@@ -500,7 +500,7 @@ export async function defineCommonResources<TApiGroups extends string = string>(
 }
 
 function shouldRequestBootstrapPermissions(): boolean {
-  return process.env.REPLICA_NAME !== "access" && process.env.REPLICA_NAME !== "infra"
+  return !["access", "infra", "telegram"].includes(process.env.REPLICA_NAME ?? "")
 }
 
 function requireService<TService>(service: TService | undefined, serviceName: string): TService {

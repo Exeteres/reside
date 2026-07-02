@@ -2,6 +2,7 @@ import type { Client } from "@temporalio/client"
 import type { PrismaClient } from "../../database"
 import { describe, expect, test } from "bun:test"
 import { mockDeepFn } from "@reside/common/testing"
+import { OperationType } from "../../database"
 import { TELEGRAM_APPROVAL_WORKFLOW_TYPE } from "../../definitions"
 import { createApprovalRequest } from "./approval"
 
@@ -40,6 +41,7 @@ describe("createApprovalRequest", () => {
         data: expect.objectContaining({
           title: expect.any(String),
           description: null,
+          type: OperationType.APPROVAL_REQUEST,
         }),
       }),
     )
