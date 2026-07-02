@@ -162,6 +162,12 @@ await Promise.all([
     WellKnownPermissions.INFRA_GATEWAY_MANAGE,
   ),
 
+  ensureBinding(
+    permissionManagePermission.id,
+    "replica:infra",
+    WellKnownPermissions.INFRA_TEMPORARY_POSTGRES_DATABASE_CREATE,
+  ),
+
   // to allow auth requests on behalf of access replica
   ensureBinding(sendAsSubjectPermission.id, "replica:telegram", "replica:access"),
 
@@ -174,6 +180,12 @@ await Promise.all([
 
   // to allow reaper replica to register cleanup handlers for itself if needed
   ensureBinding(reaperHandlerRegisterPermission.id, "replica:reaper", "reaper"),
+
+  // to allow access replica register its cleanup handler without requesting access from itself
+  ensureBinding(reaperHandlerRegisterPermission.id, "replica:access", "access"),
+
+  // to allow infra replica register its cleanup handler without requesting access during bootstrap
+  ensureBinding(reaperHandlerRegisterPermission.id, "replica:infra", "infra"),
 
   // to allow users query NLS of other replicas via telegram replica
   ensureBinding(interactionNlsImpersonatePermission.id, "replica:telegram", "telegram"),

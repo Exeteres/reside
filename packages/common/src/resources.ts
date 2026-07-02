@@ -303,7 +303,7 @@ export async function defineCommonResources<TApiGroups extends string = string>(
     uniqueRequestItems.length,
   )
 
-  if (uniqueRequestItems.length > 0) {
+  if (uniqueRequestItems.length > 0 && shouldRequestBootstrapPermissions()) {
     const accessRequestService = requireService(
       accessServices.permissionRequestService,
       "permissionRequestService",
@@ -349,6 +349,12 @@ export async function defineCommonResources<TApiGroups extends string = string>(
     } else {
       logger.info("permission request returned no operation to wait for")
     }
+  } else if (uniqueRequestItems.length > 0) {
+    logger.info(
+      'skipping access permissions request for statically bootstrapped replica "%s" with %d items',
+      process.env.REPLICA_NAME ?? "",
+      uniqueRequestItems.length,
+    )
   }
 
   if (permissions.length > 0) {
@@ -491,6 +497,10 @@ export async function defineCommonResources<TApiGroups extends string = string>(
   }
 
   return
+}
+
+function shouldRequestBootstrapPermissions(): boolean {
+  return process.env.REPLICA_NAME !== "access" && process.env.REPLICA_NAME !== "infra"
 }
 
 function requireService<TService>(service: TService | undefined, serviceName: string): TService {
