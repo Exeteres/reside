@@ -24,46 +24,73 @@ export async function bootstrapService(options: ServiceOptions = {}): Promise<vo
   const customObjectsApi = kubeConfig.makeApiClient(CustomObjectsApi)
   const replicaName = getReplicaName()
 
-  await ensureKnativeService(customObjectsApi, {
-    apiVersion: "serving.knative.dev/v1",
-    kind: "Service",
-    metadata: {
-      name: replicaName,
-      namespace: getReplicaNamespace(),
-      labels: {
-        "app.kubernetes.io/name": `replica-${replicaName}`,
-      },
-    },
-    spec: {
-      template: {
-        metadata: {
-          labels: {
-            "app.kubernetes.io/name": `replica-${replicaName}`,
-            "reside.io/replica": replicaName,
-            "reside.io/component": "replica",
-          },
-          annotations: options.longRunning
-            ? { "autoscaling.knative.dev/min-scale": "1" }
-            : undefined,
+  try {
+    await ensureKnativeService(customObjectsApi, {
+      apiVersion: "serving.knative.dev/v1",
+      kind: "Service",
+      metadata: {
+        name: replicaName,
+        namespace: getReplicaNamespace(),
+        labels: {
+          "app.kubernetes.io/name": `replica-${replicaName}`,
         },
-        spec: {
-          serviceAccountName: replicaName,
-          terminationGracePeriodSeconds: 30,
-          containers: [
-            {
-              name: getReplicaNamespace(),
-              image: getReplicaImage(),
-              env: buildReplicaContainerEnv("replica", [
-                { name: "RESIDE_BIN", value: "replica" },
-                ...(options.extraEnv ?? []),
-              ]),
-              ports: [{ containerPort: 8080 }],
+      },
+      spec: {
+        template: {
+          metadata: {
+            labels: {
+              "app.kubernetes.io/name": `replica-${replicaName}`,
+              "reside.io/replica": replicaName,
+              "reside.io/component": "replica",
             },
-          ],
+            annotations: options.longRunning
+              ? { "autoscaling.knative.dev/min-scale": "1" }
+              : undefined,
+          },
+          spec: {
+            serviceAccountName: replicaName,
+            terminationGracePeriodSeconds: 30,
+            containers: [
+              {
+                name: getReplicaNamespace(),
+                image: getReplicaImage(),
+                env: buildReplicaContainerEnv("replica", [
+                  { name: "RESIDE_BIN", value: "replica" },
+                  ...(options.extraEnv ?? []),
+                ]),
+                ports: [{ containerPort: 8080 }],
+              },
+            ],
+          },
         },
       },
-    },
-  })
+    })
+  } catch (error) {
+    const wrappedError = new Error(
+      `Failed to bootstrap Knative service for replica "${replicaName}"`,
+      {
+        cause: normalizeError(error),
+      },
+    )
+
+    logger.error(
+      { error: wrappedError },
+      'bootstrap call failed replica="%s" action="%s" target="%s" resource="%s"',
+      replicaName,
+      "ensure knative service",
+      "kubernetes.customObjectsApi",
+      replicaName,
+    )
+    throw wrappedError
+  }
 
   logger.info('created/updated knative using image "%s"', getReplicaImage())
+}
+
+function normalizeError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error
+  }
+
+  return new Error(String(error))
 }

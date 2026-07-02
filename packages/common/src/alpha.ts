@@ -59,23 +59,41 @@ export async function registerReplica<TReplica extends Replica>({
 
     logger.info('registering replica "%s" in alpha', replica.name)
 
-    await registrationService.registerReplica({
-      title,
-      description,
-      internalEndpoint: getReplicaEndpoint(),
-      replicaDependencies,
-      endpointDependencies,
-      version: version?.trim() || metadata.version,
-      changes:
-        (version?.trim() || metadata.version) !== undefined
-          ? changes?.trim() || metadata.changes
-          : undefined,
-    })
+    try {
+      await registrationService.registerReplica({
+        title,
+        description,
+        internalEndpoint: getReplicaEndpoint(),
+        replicaDependencies,
+        endpointDependencies,
+        version: version?.trim() || metadata.version,
+        changes:
+          (version?.trim() || metadata.version) !== undefined
+            ? changes?.trim() || metadata.changes
+            : undefined,
+      })
+    } catch (error) {
+      throw new Error(`Failed to register replica "${replica.name}" in Alpha`, {
+        cause: normalizeError(error),
+      })
+    }
 
     logger.info('replica "%s" was registered in alpha successfully', replica.name)
   } catch (error) {
-    logger.error(error, 'failed to register replica "%s" in alpha, not retrying', replica.name)
+    logger.error(
+      { error: normalizeError(error) },
+      'failed to register replica "%s" in alpha, not retrying',
+      replica.name,
+    )
   }
+}
+
+function normalizeError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error
+  }
+
+  return new Error(String(error))
 }
 
 async function loadReplicaReleaseMetadata(cwd: string): Promise<ReplicaReleaseMetadata> {

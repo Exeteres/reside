@@ -149,19 +149,93 @@ export async function ensureReplicaAvatar({
     return
   }
 
-  try {
-    const ensureAvatarResponse = await avatarService.ensureAvatar({
-      replicaTitle: normalizedAvatarTitle,
-    })
+  const ensureAvatarResponse = await runOptionalBootstrapCall(
+    {
+      action: "ensure interaction avatar",
+      target: "interaction.avatarService.ensureAvatar",
+      resource: getReplicaName(),
+    },
+    async () =>
+      await avatarService.ensureAvatar({
+        replicaTitle: normalizedAvatarTitle,
+      }),
+  )
 
-    if (ensureAvatarResponse.operation) {
-      await waitForOperationSuccess(ensureAvatarResponse.operation, {
-        operationService,
-      })
-    }
-  } catch (error) {
-    logger.error({ error }, "failed to ensure avatar for replica %s", getReplicaName())
+  if (!ensureAvatarResponse?.operation) {
+    return
   }
+
+  const avatarOperation = ensureAvatarResponse.operation
+
+  await runOptionalBootstrapCall(
+    {
+      action: "wait for interaction avatar operation",
+      target: "interaction.operationService.waitForOperationSuccess",
+      resource: String(avatarOperation.id),
+    },
+    async () =>
+      await waitForOperationSuccess(avatarOperation, {
+        operationService,
+      }),
+  )
+}
+
+type BootstrapCallContext = {
+  action: string
+  target: string
+  resource?: string
+}
+
+async function runRequiredBootstrapCall<T>(
+  context: BootstrapCallContext,
+  callback: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await callback()
+  } catch (error) {
+    const wrappedError = createBootstrapCallError(context, error)
+    logBootstrapCallError("error", context, wrappedError)
+    throw wrappedError
+  }
+}
+
+async function runOptionalBootstrapCall<T>(
+  context: BootstrapCallContext,
+  callback: () => Promise<T>,
+): Promise<T | undefined> {
+  try {
+    return await callback()
+  } catch (error) {
+    const wrappedError = createBootstrapCallError(context, error)
+    logBootstrapCallError("warn", context, wrappedError)
+    return undefined
+  }
+}
+
+function createBootstrapCallError(context: BootstrapCallContext, error: unknown): Error {
+  const resourceSuffix = context.resource ? ` for "${context.resource}"` : ""
+
+  return new Error(
+    `Failed to ${context.action}${resourceSuffix} during bootstrap of replica "${getReplicaName()}" using ${context.target}`,
+    {
+      cause: normalizeError(error),
+    },
+  )
+}
+
+function logBootstrapCallError(
+  level: "error" | "warn",
+  context: BootstrapCallContext,
+  error: Error,
+): void {
+  logger[level](
+    { error },
+    'bootstrap call failed replica="%s" action="%s" target="%s" resource="%s"',
+    getReplicaName(),
+    context.action,
+    context.target,
+    context.resource ?? "",
+  )
 }
 
 /**
@@ -246,15 +320,31 @@ export async function defineCommonResources<TApiGroups extends string = string>(
       uniqueRequestItems.length,
     )
 
-    const { operation } = await accessRequestService.requestPermissions({
-      reason: `Для определения ресурсов, необходимых для работы реплики ${getReplicaName()}`,
-      permissionSetName: "define-common-resources",
-      items: uniqueRequestItems,
-    })
+    const { operation } = await runRequiredBootstrapCall(
+      {
+        action: "request access permissions set",
+        target: "access.permissionRequestService.requestPermissions",
+        resource: "define-common-resources",
+      },
+      async () =>
+        await accessRequestService.requestPermissions({
+          reason: `Для определения ресурсов, необходимых для работы реплики ${getReplicaName()}`,
+          permissionSetName: "define-common-resources",
+          items: uniqueRequestItems,
+        }),
+    )
 
     if (operation) {
       logger.info("waiting for permission request operation to complete")
-      await waitForOperationSuccess(operation, { operationService: accessOperationService })
+      await runRequiredBootstrapCall(
+        {
+          action: "wait for access permission request operation",
+          target: "access.operationService.waitForOperationSuccess",
+          resource: String(operation.id),
+        },
+        async () =>
+          await waitForOperationSuccess(operation, { operationService: accessOperationService }),
+      )
       logger.info("permission request operation completed successfully")
     } else {
       logger.info("permission request returned no operation to wait for")
@@ -267,7 +357,14 @@ export async function defineCommonResources<TApiGroups extends string = string>(
       "accessDefinitionService",
     )
 
-    await accessDefinitionService.putPermissions({ permissions })
+    await runRequiredBootstrapCall(
+      {
+        action: "define access permissions",
+        target: "access.definitionService.putPermissions",
+        resource: permissions.map(permission => permission.name).join(","),
+      },
+      async () => await accessDefinitionService.putPermissions({ permissions }),
+    )
     logger.info("defined %d access permissions", permissions.length)
   }
 
@@ -278,11 +375,19 @@ export async function defineCommonResources<TApiGroups extends string = string>(
     )
 
     for (const realm of realms) {
-      await accessDefinitionService.putRealm({
-        ...realm,
-        subjectServiceEndpoint:
-          realm.subjectServiceEndpoint?.trim() || getReplicaCallbackEndpoint(),
-      })
+      await runRequiredBootstrapCall(
+        {
+          action: "define access realm",
+          target: "access.definitionService.putRealm",
+          resource: realm.name,
+        },
+        async () =>
+          await accessDefinitionService.putRealm({
+            ...realm,
+            subjectServiceEndpoint:
+              realm.subjectServiceEndpoint?.trim() || getReplicaCallbackEndpoint(),
+          }),
+      )
     }
 
     logger.info("defined %d access realms", realms.length)
@@ -294,23 +399,31 @@ export async function defineCommonResources<TApiGroups extends string = string>(
       "interactionDefinitionService",
     )
 
-    await interactionDefinitionService.putCommands({
-      commands: commands.map(command => ({
-        name: command.name,
-        title: command.title,
-        description: command.description,
-        protected: command.protected,
-        callbackEndpoint: `${getReplicaEndpoint()}:80`,
-        parameters: Object.entries(command.params ?? {}).map(([name, parameter]) => ({
-          name,
-          title: parameter.title,
-          description: parameter.description,
-          type: mapCommandParameterType(parameter),
-          required: parameter.required === true,
-          rest: parameter.rest === true,
-        })),
-      })),
-    })
+    await runRequiredBootstrapCall(
+      {
+        action: "define interaction commands",
+        target: "interaction.definitionService.putCommands",
+        resource: commands.map(command => command.name).join(","),
+      },
+      async () =>
+        await interactionDefinitionService.putCommands({
+          commands: commands.map(command => ({
+            name: command.name,
+            title: command.title,
+            description: command.description,
+            protected: command.protected,
+            callbackEndpoint: `${getReplicaEndpoint()}:80`,
+            parameters: Object.entries(command.params ?? {}).map(([name, parameter]) => ({
+              name,
+              title: parameter.title,
+              description: parameter.description,
+              type: mapCommandParameterType(parameter),
+              required: parameter.required === true,
+              rest: parameter.rest === true,
+            })),
+          })),
+        }),
+    )
 
     logger.info("defined %d interaction commands", commands.length)
   }
@@ -321,9 +434,17 @@ export async function defineCommonResources<TApiGroups extends string = string>(
       "interactionDefinitionService",
     )
 
-    await interactionDefinitionService.putChannels({
-      channels: notificationsChannels,
-    })
+    await runRequiredBootstrapCall(
+      {
+        action: "define interaction notification channels",
+        target: "interaction.definitionService.putChannels",
+        resource: notificationsChannels.map(channel => channel.name).join(","),
+      },
+      async () =>
+        await interactionDefinitionService.putChannels({
+          channels: notificationsChannels,
+        }),
+    )
 
     logger.info("defined %d interaction notification channels", notificationsChannels.length)
   }
@@ -334,22 +455,24 @@ export async function defineCommonResources<TApiGroups extends string = string>(
       "reaperDefinitionService",
     )
 
-    try {
-      await reaperDefinitionService.putHandlers({
-        handlers: reaperHandlers.map(handler => ({
-          resourceReplicaName: handler.resourceReplicaName,
-          title: handler.title,
-          callbackEndpoint: handler.callbackEndpoint?.trim() || `${getReplicaEndpoint()}:80`,
-        })),
-      })
+    const response = await runOptionalBootstrapCall(
+      {
+        action: "define reaper handlers",
+        target: "reaper.definitionService.putHandlers",
+        resource: reaperHandlers.map(handler => handler.resourceReplicaName).join(","),
+      },
+      async () =>
+        await reaperDefinitionService.putHandlers({
+          handlers: reaperHandlers.map(handler => ({
+            resourceReplicaName: handler.resourceReplicaName,
+            title: handler.title,
+            callbackEndpoint: handler.callbackEndpoint?.trim() || `${getReplicaEndpoint()}:80`,
+          })),
+        }),
+    )
 
+    if (response !== undefined) {
       logger.info("defined %d reaper handlers", reaperHandlers.length)
-    } catch (error) {
-      logger.warn(
-        { error: normalizeError(error) },
-        'failed to define reaper handlers reaper_handler_count="%d"',
-        reaperHandlers.length,
-      )
     }
   }
 
@@ -398,19 +521,37 @@ export async function defineGateway({
     "infraOperationService",
   )
 
-  const response = await gatewayService.ensureGateway({
-    name,
-    title,
-    description,
-  })
+  const response = await runRequiredBootstrapCall(
+    {
+      action: "ensure infra gateway",
+      target: "infra.gatewayService.ensureGateway",
+      resource: name,
+    },
+    async () =>
+      await gatewayService.ensureGateway({
+        name,
+        title,
+        description,
+      }),
+  )
 
   if (!response.response || response.response.case === undefined) {
     throw new Error(`Gateway "${name}" ensure response is empty`)
   }
 
-  const result = await waitForResult<EnsureGatewayResult>(response.response, {
-    operationService: infraOperationService,
-  })
+  const gatewayResponse = response.response
+
+  const result = await runRequiredBootstrapCall(
+    {
+      action: "wait for infra gateway operation",
+      target: "infra.operationService.waitForResult",
+      resource: name,
+    },
+    async () =>
+      await waitForResult<EnsureGatewayResult>(gatewayResponse, {
+        operationService: infraOperationService,
+      }),
+  )
 
   const endpoint = result.endpoint.trim()
   if (endpoint.length === 0) {
