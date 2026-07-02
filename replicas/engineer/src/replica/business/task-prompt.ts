@@ -79,6 +79,7 @@ export function createImplementationPrompt(
     "When migration generation, Prisma checks, or database-backed tests need a development database, call create_dev_database and use the returned DATABASE_URL with direct commands such as `DATABASE_URL=... bun prisma migrate dev`.",
     "Temporary development databases are removed after 24 hours. If a resumed session finds that a created database disappeared, call create_dev_database again and continue with the new DATABASE_URL.",
     "Prefer create/edit tools for source-file content changes. Use bash for inspection, generators, checks, git recovery, and simple filesystem operations; avoid shell heredocs, `cat >`, `sed -i`, `perl -pi`, and one-off Node/Python scripts for writing repository source files unless a structured edit tool cannot express the change.",
+    "When a task asks to remove a replica from the codebase, consider using `git revert` on commits that originally added that replica if it produces a smaller and clearer change than manual deletion.",
     "Before making changelog, versioning, or commit decisions, read and follow `docs/changes.md`.",
     "Prefer commit_changes for normal commits because it stages paths, creates a conventional commit without a body, and validates branch commit rules. Raw git commit commands remain available for recovery and advanced history fixes.",
     "Before calling deliver_changes, ensure git HEAD is on the initial branch shown above.",
