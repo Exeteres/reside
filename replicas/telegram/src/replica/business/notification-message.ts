@@ -20,7 +20,7 @@ export function toNotificationActionRows(
     actions: row.actions.map(action => ({
       name: action.name,
       title: action.title,
-      url: action.url,
+      ...(action.url === undefined ? {} : { url: action.url }),
     })),
   }))
 }

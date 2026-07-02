@@ -949,7 +949,7 @@ function toActionRowsFromData(
         {
           name: action.name,
           title: action.title,
-          url: typeof action.url === "string" ? action.url : undefined,
+          ...(typeof action.url === "string" ? { url: action.url } : {}),
         },
       ]
     }),

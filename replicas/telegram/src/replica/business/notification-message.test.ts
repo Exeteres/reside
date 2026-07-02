@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test"
+import { fromJson } from "@bufbuild/protobuf"
+import { NotificationSchema } from "@reside/api/interaction/notification.v1"
 import {
   assertChannelName,
   isReplyTargetMessageMissingError,
   toInlineKeyboardMarkupFromActionRows,
+  toNotificationActionRows,
   toReplyParameters,
   toTelegramMessageTextValue,
 } from "./notification-message"
@@ -10,6 +13,32 @@ import {
 describe("notification message helpers", () => {
   test("assertChannelName throws for empty value", () => {
     expect(() => assertChannelName("")).toThrow("Channel name must not be empty")
+  })
+
+  test("toNotificationActionRows omits url for callback actions", () => {
+    const actionRows = toNotificationActionRows([
+      {
+        actions: [
+          {
+            name: "approve",
+            title: "Approve",
+          },
+        ],
+      },
+    ])
+
+    expect(actionRows[0]?.actions?.[0]).toEqual({
+      name: "approve",
+      title: "Approve",
+    })
+    expect(() =>
+      fromJson(NotificationSchema, {
+        notificationId: "1",
+        title: "Title",
+        content: "Content",
+        actionRows,
+      }),
+    ).not.toThrow()
   })
 
   test("toInlineKeyboardMarkupFromActionRows maps callback and url actions", () => {
