@@ -7,6 +7,10 @@ export type ProvisionPostgresDatabaseWorkflowInput = {
   operationId: number
 }
 
+export type ProvisionTemporaryPostgresDatabaseWorkflowInput = {
+  operationId: number
+}
+
 export type ProvisionTemporalNamespaceWorkflowInput = {
   operationId: number
 }

@@ -1,6 +1,10 @@
 import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
+import type {
+  PostgresDatabaseCredentials,
+  ProvisionServiceClient,
+} from "@reside/api/infra/provision.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { GenericOperationService } from "@reside/common"
 import type { Operation, PrismaClient } from "../../database"
@@ -9,7 +13,7 @@ import type { EngineerAiRuntime } from "../business"
 import { mkdir, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { defineTool } from "@github/copilot-sdk"
-import { waitForOperationSuccess } from "@reside/api"
+import { waitForOperationSuccess, waitForResult } from "@reside/api"
 import {
   DEFAULT_NLS_SYSTEM_TOOLS,
   type LanguageEngine,
@@ -139,6 +143,8 @@ type TaskActivityServices = {
   notificationService: NotificationServiceClient
   permissionRequestService: PermissionRequestServiceClient
   accessOperationService: OperationServiceClient
+  provisionService: ProvisionServiceClient
+  infraOperationService: OperationServiceClient
   loadService: LoadServiceClient
   alphaOperationService: OperationServiceClient
   operationService: GenericOperationService<Operation>
@@ -151,6 +157,8 @@ export function createTaskActivities({
   notificationService,
   permissionRequestService,
   accessOperationService,
+  provisionService,
+  infraOperationService,
   loadService,
   alphaOperationService,
   operationService,
@@ -633,6 +641,8 @@ export function createTaskActivities({
           runtime,
           permissionRequestService,
           accessOperationService,
+          provisionService,
+          infraOperationService,
           loadService,
           alphaOperationService,
           owner,
@@ -877,6 +887,74 @@ export function parseGeneratedTaskPreviewTitle(content: string): { title: string
   }
 
   return generatedTitleSchema.parse(parsedContent)
+}
+
+function createDevDatabaseTool({
+  provisionService,
+  infraOperationService,
+}: {
+  provisionService: ProvisionServiceClient
+  infraOperationService: OperationServiceClient
+}) {
+  return defineTool("create_dev_database", {
+    description:
+      "Creates a temporary PostgreSQL development database that is automatically deleted after 24 hours",
+    parameters: z.object({}),
+    handler: async () => {
+      logger.info("engineer create_dev_database started")
+
+      try {
+        const response = await provisionService.createTemporaryPostgresDatabase({})
+
+        if (!response.credentials || response.credentials.case === undefined) {
+          throw new Error("Infra did not return temporary database credentials")
+        }
+
+        const credentials = await waitForResult<PostgresDatabaseCredentials>(response.credentials, {
+          operationService: infraOperationService,
+        })
+        const databaseUrl = buildTemporaryDatabaseUrl(credentials)
+
+        logger.info(
+          'engineer create_dev_database completed host="%s" database="%s"',
+          credentials.host,
+          credentials.database,
+        )
+
+        return [
+          "Temporary PostgreSQL database created.",
+          "It will be deleted automatically after 24 hours.",
+          "If this session is resumed after a long time and the database no longer exists, call create_dev_database again.",
+          `host=${credentials.host}`,
+          `port=${credentials.port}`,
+          `database=${credentials.database}`,
+          `username=${credentials.username}`,
+          `password=${credentials.password}`,
+          `DATABASE_URL=${databaseUrl}`,
+        ].join("\n")
+      } catch (error) {
+        const errorDetails = describeToolError(error) || "unknown error"
+        logger.error(
+          { error: toError(error) },
+          'engineer create_dev_database failed details="%s"',
+          errorDetails,
+        )
+
+        return `create_dev_database failed: ${errorDetails}`
+      }
+    },
+  })
+}
+
+function buildTemporaryDatabaseUrl(credentials: PostgresDatabaseCredentials): string {
+  const connectionUrl = new URL("postgresql://placeholder")
+  connectionUrl.hostname = credentials.host
+  connectionUrl.port = String(credentials.port)
+  connectionUrl.username = credentials.username
+  connectionUrl.password = credentials.password
+  connectionUrl.pathname = `/${credentials.database}`
+
+  return connectionUrl.toString()
 }
 
 function createDeployReplicaTool({
@@ -1626,6 +1704,8 @@ async function runImplementationLanguageStream({
   runtime,
   permissionRequestService,
   accessOperationService,
+  provisionService,
+  infraOperationService,
   loadService,
   alphaOperationService,
   owner,
@@ -1642,6 +1722,8 @@ async function runImplementationLanguageStream({
   runtime: EngineerAiRuntime
   permissionRequestService: PermissionRequestServiceClient
   accessOperationService: OperationServiceClient
+  provisionService: ProvisionServiceClient
+  infraOperationService: OperationServiceClient
   loadService: LoadServiceClient
   alphaOperationService: OperationServiceClient
   owner: string
@@ -1696,6 +1778,10 @@ async function runImplementationLanguageStream({
             repo,
             branchName: `replica/task-${dbTaskId}/${iterationId}`,
             issueNumber: issue?.number,
+          }),
+          createDevDatabaseTool({
+            provisionService,
+            infraOperationService,
           }),
         ],
         allowedSystemTools: ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS,

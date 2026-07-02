@@ -1028,6 +1028,10 @@ export const PostgresDatabaseScalarFieldEnum = {
   id: 'id',
   database: 'database',
   password: 'password',
+  kind: 'kind',
+  ownerReplicaName: 'ownerReplicaName',
+  expiresAt: 'expiresAt',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1187,6 +1191,20 @@ export type EnumOperationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'OperationType[]'
  */
 export type ListEnumOperationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OperationType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'PostgresDatabaseKind'
+ */
+export type EnumPostgresDatabaseKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PostgresDatabaseKind'>
+    
+
+
+/**
+ * Reference to a field of type 'PostgresDatabaseKind[]'
+ */
+export type ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PostgresDatabaseKind[]'>
     
 
 

@@ -22,6 +22,10 @@ export function createReplicaDatabaseOptions(): Pick<
         throw new Error("Database replica does not use provisioned PostgreSQL helper credentials")
       },
 
+      async createTemporaryPostgresDatabase() {
+        throw new Error("Database replica does not use temporary PostgreSQL helper credentials")
+      },
+
       async getTemporalNamespaceCredentials() {
         return create(GetTemporalNamespaceCredentialsResponseSchema, {
           credentials: {

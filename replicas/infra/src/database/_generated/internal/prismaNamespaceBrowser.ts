@@ -137,6 +137,10 @@ export const PostgresDatabaseScalarFieldEnum = {
   id: 'id',
   database: 'database',
   password: 'password',
+  kind: 'kind',
+  ownerReplicaName: 'ownerReplicaName',
+  expiresAt: 'expiresAt',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

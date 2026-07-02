@@ -38,6 +38,10 @@ export type PostgresDatabaseMinAggregateOutputType = {
   id: number | null
   database: string | null
   password: string | null
+  kind: $Enums.PostgresDatabaseKind | null
+  ownerReplicaName: string | null
+  expiresAt: Date | null
+  deletedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -46,6 +50,10 @@ export type PostgresDatabaseMaxAggregateOutputType = {
   id: number | null
   database: string | null
   password: string | null
+  kind: $Enums.PostgresDatabaseKind | null
+  ownerReplicaName: string | null
+  expiresAt: Date | null
+  deletedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -54,6 +62,10 @@ export type PostgresDatabaseCountAggregateOutputType = {
   id: number
   database: number
   password: number
+  kind: number
+  ownerReplicaName: number
+  expiresAt: number
+  deletedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -72,6 +84,10 @@ export type PostgresDatabaseMinAggregateInputType = {
   id?: true
   database?: true
   password?: true
+  kind?: true
+  ownerReplicaName?: true
+  expiresAt?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -80,6 +96,10 @@ export type PostgresDatabaseMaxAggregateInputType = {
   id?: true
   database?: true
   password?: true
+  kind?: true
+  ownerReplicaName?: true
+  expiresAt?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -88,6 +108,10 @@ export type PostgresDatabaseCountAggregateInputType = {
   id?: true
   database?: true
   password?: true
+  kind?: true
+  ownerReplicaName?: true
+  expiresAt?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -183,6 +207,10 @@ export type PostgresDatabaseGroupByOutputType = {
   id: number
   database: string
   password: string
+  kind: $Enums.PostgresDatabaseKind
+  ownerReplicaName: string | null
+  expiresAt: Date | null
+  deletedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: PostgresDatabaseCountAggregateOutputType | null
@@ -214,6 +242,10 @@ export type PostgresDatabaseWhereInput = {
   id?: Prisma.IntFilter<"PostgresDatabase"> | number
   database?: Prisma.StringFilter<"PostgresDatabase"> | string
   password?: Prisma.StringFilter<"PostgresDatabase"> | string
+  kind?: Prisma.EnumPostgresDatabaseKindFilter<"PostgresDatabase"> | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.StringNullableFilter<"PostgresDatabase"> | string | null
+  expiresAt?: Prisma.DateTimeNullableFilter<"PostgresDatabase"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"PostgresDatabase"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"PostgresDatabase"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PostgresDatabase"> | Date | string
   operations?: Prisma.OperationListRelationFilter
@@ -223,6 +255,10 @@ export type PostgresDatabaseOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   database?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrderInput | Prisma.SortOrder
+  expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   operations?: Prisma.OperationOrderByRelationAggregateInput
@@ -235,6 +271,10 @@ export type PostgresDatabaseWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.PostgresDatabaseWhereInput[]
   NOT?: Prisma.PostgresDatabaseWhereInput | Prisma.PostgresDatabaseWhereInput[]
   password?: Prisma.StringFilter<"PostgresDatabase"> | string
+  kind?: Prisma.EnumPostgresDatabaseKindFilter<"PostgresDatabase"> | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.StringNullableFilter<"PostgresDatabase"> | string | null
+  expiresAt?: Prisma.DateTimeNullableFilter<"PostgresDatabase"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"PostgresDatabase"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"PostgresDatabase"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PostgresDatabase"> | Date | string
   operations?: Prisma.OperationListRelationFilter
@@ -244,6 +284,10 @@ export type PostgresDatabaseOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   database?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrderInput | Prisma.SortOrder
+  expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.PostgresDatabaseCountOrderByAggregateInput
@@ -260,6 +304,10 @@ export type PostgresDatabaseScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"PostgresDatabase"> | number
   database?: Prisma.StringWithAggregatesFilter<"PostgresDatabase"> | string
   password?: Prisma.StringWithAggregatesFilter<"PostgresDatabase"> | string
+  kind?: Prisma.EnumPostgresDatabaseKindWithAggregatesFilter<"PostgresDatabase"> | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.StringNullableWithAggregatesFilter<"PostgresDatabase"> | string | null
+  expiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"PostgresDatabase"> | Date | string | null
+  deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"PostgresDatabase"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"PostgresDatabase"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"PostgresDatabase"> | Date | string
 }
@@ -267,6 +315,10 @@ export type PostgresDatabaseScalarWhereWithAggregatesInput = {
 export type PostgresDatabaseCreateInput = {
   database: string
   password: string
+  kind?: $Enums.PostgresDatabaseKind
+  ownerReplicaName?: string | null
+  expiresAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   operations?: Prisma.OperationCreateNestedManyWithoutPostgresDatabaseInput
@@ -276,6 +328,10 @@ export type PostgresDatabaseUncheckedCreateInput = {
   id?: number
   database: string
   password: string
+  kind?: $Enums.PostgresDatabaseKind
+  ownerReplicaName?: string | null
+  expiresAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   operations?: Prisma.OperationUncheckedCreateNestedManyWithoutPostgresDatabaseInput
@@ -284,6 +340,10 @@ export type PostgresDatabaseUncheckedCreateInput = {
 export type PostgresDatabaseUpdateInput = {
   database?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumPostgresDatabaseKindFieldUpdateOperationsInput | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operations?: Prisma.OperationUpdateManyWithoutPostgresDatabaseNestedInput
@@ -293,6 +353,10 @@ export type PostgresDatabaseUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   database?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumPostgresDatabaseKindFieldUpdateOperationsInput | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operations?: Prisma.OperationUncheckedUpdateManyWithoutPostgresDatabaseNestedInput
@@ -302,6 +366,10 @@ export type PostgresDatabaseCreateManyInput = {
   id?: number
   database: string
   password: string
+  kind?: $Enums.PostgresDatabaseKind
+  ownerReplicaName?: string | null
+  expiresAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -309,6 +377,10 @@ export type PostgresDatabaseCreateManyInput = {
 export type PostgresDatabaseUpdateManyMutationInput = {
   database?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumPostgresDatabaseKindFieldUpdateOperationsInput | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -317,6 +389,10 @@ export type PostgresDatabaseUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   database?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumPostgresDatabaseKindFieldUpdateOperationsInput | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -330,6 +406,10 @@ export type PostgresDatabaseCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   database?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
+  expiresAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -342,6 +422,10 @@ export type PostgresDatabaseMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   database?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
+  expiresAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -350,6 +434,10 @@ export type PostgresDatabaseMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   database?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  ownerReplicaName?: Prisma.SortOrder
+  expiresAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -374,9 +462,17 @@ export type PostgresDatabaseUpdateOneWithoutOperationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PostgresDatabaseUpdateToOneWithWhereWithoutOperationsInput, Prisma.PostgresDatabaseUpdateWithoutOperationsInput>, Prisma.PostgresDatabaseUncheckedUpdateWithoutOperationsInput>
 }
 
+export type EnumPostgresDatabaseKindFieldUpdateOperationsInput = {
+  set?: $Enums.PostgresDatabaseKind
+}
+
 export type PostgresDatabaseCreateWithoutOperationsInput = {
   database: string
   password: string
+  kind?: $Enums.PostgresDatabaseKind
+  ownerReplicaName?: string | null
+  expiresAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -385,6 +481,10 @@ export type PostgresDatabaseUncheckedCreateWithoutOperationsInput = {
   id?: number
   database: string
   password: string
+  kind?: $Enums.PostgresDatabaseKind
+  ownerReplicaName?: string | null
+  expiresAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -408,6 +508,10 @@ export type PostgresDatabaseUpdateToOneWithWhereWithoutOperationsInput = {
 export type PostgresDatabaseUpdateWithoutOperationsInput = {
   database?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumPostgresDatabaseKindFieldUpdateOperationsInput | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -416,6 +520,10 @@ export type PostgresDatabaseUncheckedUpdateWithoutOperationsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   database?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumPostgresDatabaseKindFieldUpdateOperationsInput | $Enums.PostgresDatabaseKind
+  ownerReplicaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -455,6 +563,10 @@ export type PostgresDatabaseSelect<ExtArgs extends runtime.Types.Extensions.Inte
   id?: boolean
   database?: boolean
   password?: boolean
+  kind?: boolean
+  ownerReplicaName?: boolean
+  expiresAt?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   operations?: boolean | Prisma.PostgresDatabase$operationsArgs<ExtArgs>
@@ -465,6 +577,10 @@ export type PostgresDatabaseSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   id?: boolean
   database?: boolean
   password?: boolean
+  kind?: boolean
+  ownerReplicaName?: boolean
+  expiresAt?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["postgresDatabase"]>
@@ -473,6 +589,10 @@ export type PostgresDatabaseSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   id?: boolean
   database?: boolean
   password?: boolean
+  kind?: boolean
+  ownerReplicaName?: boolean
+  expiresAt?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["postgresDatabase"]>
@@ -481,11 +601,15 @@ export type PostgresDatabaseSelectScalar = {
   id?: boolean
   database?: boolean
   password?: boolean
+  kind?: boolean
+  ownerReplicaName?: boolean
+  expiresAt?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PostgresDatabaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "database" | "password" | "createdAt" | "updatedAt", ExtArgs["result"]["postgresDatabase"]>
+export type PostgresDatabaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "database" | "password" | "kind" | "ownerReplicaName" | "expiresAt" | "deletedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["postgresDatabase"]>
 export type PostgresDatabaseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operations?: boolean | Prisma.PostgresDatabase$operationsArgs<ExtArgs>
   _count?: boolean | Prisma.PostgresDatabaseCountOutputTypeDefaultArgs<ExtArgs>
@@ -514,6 +638,22 @@ export type $PostgresDatabasePayload<ExtArgs extends runtime.Types.Extensions.In
      * The generated password for the dedicated PostgreSQL user.
      */
     password: string
+    /**
+     * The database lifecycle kind.
+     */
+    kind: $Enums.PostgresDatabaseKind
+    /**
+     * The replica that owns the temporary database, if applicable.
+     */
+    ownerReplicaName: string | null
+    /**
+     * The timestamp after which the temporary database should be removed.
+     */
+    expiresAt: Date | null
+    /**
+     * The timestamp when the temporary database was removed.
+     */
+    deletedAt: Date | null
     /**
      * The timestamp when this record was created.
      */
@@ -949,6 +1089,10 @@ export interface PostgresDatabaseFieldRefs {
   readonly id: Prisma.FieldRef<"PostgresDatabase", 'Int'>
   readonly database: Prisma.FieldRef<"PostgresDatabase", 'String'>
   readonly password: Prisma.FieldRef<"PostgresDatabase", 'String'>
+  readonly kind: Prisma.FieldRef<"PostgresDatabase", 'PostgresDatabaseKind'>
+  readonly ownerReplicaName: Prisma.FieldRef<"PostgresDatabase", 'String'>
+  readonly expiresAt: Prisma.FieldRef<"PostgresDatabase", 'DateTime'>
+  readonly deletedAt: Prisma.FieldRef<"PostgresDatabase", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"PostgresDatabase", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"PostgresDatabase", 'DateTime'>
 }

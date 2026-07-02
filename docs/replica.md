@@ -125,11 +125,13 @@ Runtime wiring in `src/replica/main.ts` must import service factories from `src/
 
 ## Prisma migration workflow
 
-- Use `devenv up -d` before creating migrations to spin up the development database.
+- Interactive development sessions are already launched in the prepared shell with access to the local development PostgreSQL database.
+- Do not run `devenv` for migration work unless the task explicitly changes or tests devenv configuration.
 - Create migrations with `bun prisma migrate dev`.
 - If another migration was already created in the current session, run `bun prisma migrate reset` before creating the next migration.
-- Generate migrations with Prisma before editing migration SQL. Manual SQL edits are allowed only for deployability, data backfills, or Prisma limitations, and must be verified with `bun prisma migrate reset --force` followed by `bun prisma migrate dev` against the devenv Postgres database.
+- Generate migrations with Prisma before editing migration SQL. Manual SQL edits are allowed only for deployability, data backfills, or Prisma limitations, and must be verified with `bun prisma migrate reset --force` followed by `bun prisma migrate dev` against the development PostgreSQL database.
 - The development database is used only for generating migrations, so database data is not important.
+- Non-interactive engineer tasks must create an isolated temporary development database through the engineer database tool and run Prisma commands with the returned `DATABASE_URL`. Temporary databases are removed after 24 hours; if a resumed session finds the database missing, create a new one and continue.
 - The first migration must always be named `init`.
 - Every migration after `init` must use a short descriptive name that explains what changed in a few words.
 

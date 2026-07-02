@@ -29,7 +29,10 @@ export async function resolveOperationResult(
 
   const namespace = getReplicaNamespace()
 
-  if (operation.type === OperationType.PROVISION_POSTGRES_DATABASE) {
+  if (
+    operation.type === OperationType.PROVISION_POSTGRES_DATABASE ||
+    operation.type === OperationType.PROVISION_TEMPORARY_POSTGRES_DATABASE
+  ) {
     if (operation.postgresDatabase === null) {
       throw new ConnectError(
         `Operation "${operationId}" is missing PostgreSQL database relation`,

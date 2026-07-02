@@ -8,10 +8,14 @@ import type {
   ProvisionPostgresDatabaseWorkflowInput,
   ProvisionStorageBucketWorkflowInput,
   ProvisionTemporalNamespaceWorkflowInput,
+  ProvisionTemporaryPostgresDatabaseWorkflowInput,
   WakeReplicaAfterTimerWorkflowInput,
 } from "../definitions"
+import { safeSleep } from "@reside/common/workflow"
 import { errorToString } from "@reside/utils"
 import { log, proxyActivities, sleep } from "@temporalio/workflow"
+
+const TEMPORARY_POSTGRES_DATABASE_TTL_MS = 24 * 60 * 60 * 1000
 
 const {
   getProvisionOperationById,
@@ -74,6 +78,37 @@ export async function provisionPostgresDatabaseWorkflow({
     })
     throw error
   }
+}
+
+export async function provisionTemporaryPostgresDatabaseWorkflow({
+  operationId,
+}: ProvisionTemporaryPostgresDatabaseWorkflowInput): Promise<void> {
+  const operation = await getProvisionOperationById({ operationId })
+
+  if (operation.type !== "PROVISION_TEMPORARY_POSTGRES_DATABASE") {
+    throw new Error(
+      `Operation "${operationId}" is not a temporary PostgreSQL provisioning operation`,
+    )
+  }
+
+  if (operation.postgresDatabase === null) {
+    throw new Error(`Operation "${operationId}" is missing PostgreSQL database relation`)
+  }
+
+  try {
+    await provisionPostgresDatabase({ postgresDatabase: operation.postgresDatabase })
+    await setOperationCompleted({ operationId: operation.id })
+  } catch (error) {
+    await setOperationFailed({
+      operationId: operation.id,
+      failureReason: "PROVISIONING_FAILED",
+      failureMessage: errorToString(error),
+    })
+    throw error
+  }
+
+  await safeSleep(TEMPORARY_POSTGRES_DATABASE_TTL_MS)
+  await deletePostgresDatabase({ name: operation.postgresDatabase.database })
 }
 
 export async function provisionTemporalNamespaceWorkflow({

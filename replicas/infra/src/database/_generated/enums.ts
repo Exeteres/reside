@@ -11,6 +11,7 @@
 
 export const OperationType = {
   PROVISION_POSTGRES_DATABASE: 'PROVISION_POSTGRES_DATABASE',
+  PROVISION_TEMPORARY_POSTGRES_DATABASE: 'PROVISION_TEMPORARY_POSTGRES_DATABASE',
   PROVISION_TEMPORAL_NAMESPACE: 'PROVISION_TEMPORAL_NAMESPACE',
   PROVISION_STORAGE_BUCKET: 'PROVISION_STORAGE_BUCKET',
   ENSURE_GATEWAY: 'ENSURE_GATEWAY',
@@ -30,3 +31,11 @@ export const OperationStatus = {
 } as const
 
 export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationStatus]
+
+
+export const PostgresDatabaseKind = {
+  REPLICA: 'REPLICA',
+  TEMPORARY: 'TEMPORARY'
+} as const
+
+export type PostgresDatabaseKind = (typeof PostgresDatabaseKind)[keyof typeof PostgresDatabaseKind]

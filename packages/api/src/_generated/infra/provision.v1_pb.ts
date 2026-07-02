@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file infra/provision.v1.proto.
  */
 export const file_infra_provision_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChhpbmZyYS9wcm92aXNpb24udjEucHJvdG8SGXJlc2lkZS5pbmZyYS5wcm92aXNpb24udjEibwobUG9zdGdyZXNEYXRhYmFzZUNyZWRlbnRpYWxzEgwKBGhvc3QYASABKAkSDAoEcG9ydBgCIAEoBRIQCghkYXRhYmFzZRgDIAEoCRIQCgh1c2VybmFtZRgEIAEoCRIQCghwYXNzd29yZBgFIAEoCSJCChxUZW1wb3JhbE5hbWVzcGFjZUNyZWRlbnRpYWxzEg8KB2FkZHJlc3MYASABKAkSEQoJbmFtZXNwYWNlGAIgASgJImQKGFN0b3JhZ2VCdWNrZXRDcmVkZW50aWFscxIQCghlbmRwb2ludBgBIAEoCRIOCgZidWNrZXQYAiABKAkSEgoKYWNjZXNzX2tleRgDIAEoCRISCgpzZWNyZXRfa2V5GAQgASgJIr8BCidHZXRUZW1wb3JhbE5hbWVzcGFjZUNyZWRlbnRpYWxzUmVzcG9uc2USSQoGcmVzdWx0GAEgASgLMjcucmVzaWRlLmluZnJhLnByb3Zpc2lvbi52MS5UZW1wb3JhbE5hbWVzcGFjZUNyZWRlbnRpYWxzSAASOgoJb3BlcmF0aW9uGAIgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uSABCDQoLY3JlZGVudGlhbHMivQEKJkdldFBvc3RncmVzRGF0YWJhc2VDcmVkZW50aWFsc1Jlc3BvbnNlEkgKBnJlc3VsdBgBIAEoCzI2LnJlc2lkZS5pbmZyYS5wcm92aXNpb24udjEuUG9zdGdyZXNEYXRhYmFzZUNyZWRlbnRpYWxzSAASOgoJb3BlcmF0aW9uGAIgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uSABCDQoLY3JlZGVudGlhbHMitwEKI0dldFN0b3JhZ2VCdWNrZXRDcmVkZW50aWFsc1Jlc3BvbnNlEkUKBnJlc3VsdBgBIAEoCzIzLnJlc2lkZS5pbmZyYS5wcm92aXNpb24udjEuU3RvcmFnZUJ1Y2tldENyZWRlbnRpYWxzSAASOgoJb3BlcmF0aW9uGAIgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uSABCDQoLY3JlZGVudGlhbHMyhQMKEFByb3Zpc2lvblNlcnZpY2USewoeR2V0UG9zdGdyZXNEYXRhYmFzZUNyZWRlbnRpYWxzEhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5GkEucmVzaWRlLmluZnJhLnByb3Zpc2lvbi52MS5HZXRQb3N0Z3Jlc0RhdGFiYXNlQ3JlZGVudGlhbHNSZXNwb25zZRJ9Ch9HZXRUZW1wb3JhbE5hbWVzcGFjZUNyZWRlbnRpYWxzEhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5GkIucmVzaWRlLmluZnJhLnByb3Zpc2lvbi52MS5HZXRUZW1wb3JhbE5hbWVzcGFjZUNyZWRlbnRpYWxzUmVzcG9uc2USdQobR2V0U3RvcmFnZUJ1Y2tldENyZWRlbnRpYWxzEhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5Gj4ucmVzaWRlLmluZnJhLnByb3Zpc2lvbi52MS5HZXRTdG9yYWdlQnVja2V0Q3JlZGVudGlhbHNSZXNwb25zZWIGcHJvdG8z", [file_google_protobuf_empty, file_common_operation_v1]);
+  fileDesc("ChhpbmZyYS9wcm92aXNpb24udjEucHJvdG8SGXJlc2lkZS5pbmZyYS5wcm92aXNpb24udjEibwobUG9zdGdyZXNEYXRhYmFzZUNyZWRlbnRpYWxzEgwKBGhvc3QYASABKAkSDAoEcG9ydBgCIAEoBRIQCghkYXRhYmFzZRgDIAEoCRIQCgh1c2VybmFtZRgEIAEoCRIQCghwYXNzd29yZBgFIAEoCSJCChxUZW1wb3JhbE5hbWVzcGFjZUNyZWRlbnRpYWxzEg8KB2FkZHJlc3MYASABKAkSEQoJbmFtZXNwYWNlGAIgASgJImQKGFN0b3JhZ2VCdWNrZXRDcmVkZW50aWFscxIQCghlbmRwb2ludBgBIAEoCRIOCgZidWNrZXQYAiABKAkSEgoKYWNjZXNzX2tleRgDIAEoCRISCgpzZWNyZXRfa2V5GAQgASgJIr8BCidHZXRUZW1wb3JhbE5hbWVzcGFjZUNyZWRlbnRpYWxzUmVzcG9uc2USSQoGcmVzdWx0GAEgASgLMjcucmVzaWRlLmluZnJhLnByb3Zpc2lvbi52MS5UZW1wb3JhbE5hbWVzcGFjZUNyZWRlbnRpYWxzSAASOgoJb3BlcmF0aW9uGAIgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uSABCDQoLY3JlZGVudGlhbHMivQEKJkdldFBvc3RncmVzRGF0YWJhc2VDcmVkZW50aWFsc1Jlc3BvbnNlEkgKBnJlc3VsdBgBIAEoCzI2LnJlc2lkZS5pbmZyYS5wcm92aXNpb24udjEuUG9zdGdyZXNEYXRhYmFzZUNyZWRlbnRpYWxzSAASOgoJb3BlcmF0aW9uGAIgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uSABCDQoLY3JlZGVudGlhbHMivgEKJ0NyZWF0ZVRlbXBvcmFyeVBvc3RncmVzRGF0YWJhc2VSZXNwb25zZRJICgZyZXN1bHQYASABKAsyNi5yZXNpZGUuaW5mcmEucHJvdmlzaW9uLnYxLlBvc3RncmVzRGF0YWJhc2VDcmVkZW50aWFsc0gAEjoKCW9wZXJhdGlvbhgCIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbkgAQg0KC2NyZWRlbnRpYWxzIrcBCiNHZXRTdG9yYWdlQnVja2V0Q3JlZGVudGlhbHNSZXNwb25zZRJFCgZyZXN1bHQYASABKAsyMy5yZXNpZGUuaW5mcmEucHJvdmlzaW9uLnYxLlN0b3JhZ2VCdWNrZXRDcmVkZW50aWFsc0gAEjoKCW9wZXJhdGlvbhgCIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbkgAQg0KC2NyZWRlbnRpYWxzMoQEChBQcm92aXNpb25TZXJ2aWNlEnsKHkdldFBvc3RncmVzRGF0YWJhc2VDcmVkZW50aWFscxIWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eRpBLnJlc2lkZS5pbmZyYS5wcm92aXNpb24udjEuR2V0UG9zdGdyZXNEYXRhYmFzZUNyZWRlbnRpYWxzUmVzcG9uc2USfQofQ3JlYXRlVGVtcG9yYXJ5UG9zdGdyZXNEYXRhYmFzZRIWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eRpCLnJlc2lkZS5pbmZyYS5wcm92aXNpb24udjEuQ3JlYXRlVGVtcG9yYXJ5UG9zdGdyZXNEYXRhYmFzZVJlc3BvbnNlEn0KH0dldFRlbXBvcmFsTmFtZXNwYWNlQ3JlZGVudGlhbHMSFi5nb29nbGUucHJvdG9idWYuRW1wdHkaQi5yZXNpZGUuaW5mcmEucHJvdmlzaW9uLnYxLkdldFRlbXBvcmFsTmFtZXNwYWNlQ3JlZGVudGlhbHNSZXNwb25zZRJ1ChtHZXRTdG9yYWdlQnVja2V0Q3JlZGVudGlhbHMSFi5nb29nbGUucHJvdG9idWYuRW1wdHkaPi5yZXNpZGUuaW5mcmEucHJvdmlzaW9uLnYxLkdldFN0b3JhZ2VCdWNrZXRDcmVkZW50aWFsc1Jlc3BvbnNlYgZwcm90bzM", [file_google_protobuf_empty, file_common_operation_v1]);
 
 /**
  * The object describing the credentials for a provisioned PostgreSQL database.
@@ -298,6 +298,60 @@ export const GetPostgresDatabaseCredentialsResponseSchema: GenMessage<GetPostgre
   messageDesc(file_infra_provision_v1, 4);
 
 /**
+ * The response for a CreateTemporaryPostgresDatabase request,
+ * which may contain either the credentials or an operation if the database is not yet ready.
+ * The result of the operation, once completed, will be the PostgresDatabaseCredentials.
+ * Clients should poll the operation using reside.common.operation.v1.OperationService.
+ *
+ * @generated from message reside.infra.provision.v1.CreateTemporaryPostgresDatabaseResponse
+ */
+export type CreateTemporaryPostgresDatabaseResponse = Message<"reside.infra.provision.v1.CreateTemporaryPostgresDatabaseResponse"> & {
+  /**
+   * @generated from oneof reside.infra.provision.v1.CreateTemporaryPostgresDatabaseResponse.credentials
+   */
+  credentials: {
+    /**
+     * @generated from field: reside.infra.provision.v1.PostgresDatabaseCredentials result = 1;
+     */
+    value: PostgresDatabaseCredentials;
+    case: "result";
+  } | {
+    /**
+     * @generated from field: reside.common.operation.v1.Operation operation = 2;
+     */
+    value: Operation;
+    case: "operation";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * The response for a CreateTemporaryPostgresDatabase request,
+ * which may contain either the credentials or an operation if the database is not yet ready.
+ * The result of the operation, once completed, will be the PostgresDatabaseCredentials.
+ * Clients should poll the operation using reside.common.operation.v1.OperationService.
+ *
+ * @generated from message reside.infra.provision.v1.CreateTemporaryPostgresDatabaseResponse
+ */
+export type CreateTemporaryPostgresDatabaseResponseJson = {
+  /**
+   * @generated from field: reside.infra.provision.v1.PostgresDatabaseCredentials result = 1;
+   */
+  result?: PostgresDatabaseCredentialsJson;
+
+  /**
+   * @generated from field: reside.common.operation.v1.Operation operation = 2;
+   */
+  operation?: OperationJson;
+};
+
+/**
+ * Describes the message reside.infra.provision.v1.CreateTemporaryPostgresDatabaseResponse.
+ * Use `create(CreateTemporaryPostgresDatabaseResponseSchema)` to create a new message.
+ */
+export const CreateTemporaryPostgresDatabaseResponseSchema: GenMessage<CreateTemporaryPostgresDatabaseResponse, {jsonType: CreateTemporaryPostgresDatabaseResponseJson}> = /*@__PURE__*/
+  messageDesc(file_infra_provision_v1, 5);
+
+/**
  * The response for a GetStorageBucketCredentialsRequest,
  * which may contain either the credentials or an operation if the bucket is not yet ready.
  * The result of the operation, once completed, will be the StorageBucketCredentials.
@@ -349,7 +403,7 @@ export type GetStorageBucketCredentialsResponseJson = {
  * Use `create(GetStorageBucketCredentialsResponseSchema)` to create a new message.
  */
 export const GetStorageBucketCredentialsResponseSchema: GenMessage<GetStorageBucketCredentialsResponse, {jsonType: GetStorageBucketCredentialsResponseJson}> = /*@__PURE__*/
-  messageDesc(file_infra_provision_v1, 5);
+  messageDesc(file_infra_provision_v1, 6);
 
 /**
  * The service responsible for provisioning personal PostgreSQL databases for replicas.
@@ -366,6 +420,18 @@ export const ProvisionService: GenService<{
     methodKind: "unary";
     input: typeof EmptySchema;
     output: typeof GetPostgresDatabaseCredentialsResponseSchema;
+  },
+  /**
+   * Creates a new temporary PostgreSQL database for the caller.
+   * Temporary databases are deleted automatically 24 hours after creation.
+   * This method requires infra:temporary-postgres-database:create permission.
+   *
+   * @generated from rpc reside.infra.provision.v1.ProvisionService.CreateTemporaryPostgresDatabase
+   */
+  createTemporaryPostgresDatabase: {
+    methodKind: "unary";
+    input: typeof EmptySchema;
+    output: typeof CreateTemporaryPostgresDatabaseResponseSchema;
   },
   /**
    * Gets credentials for the caller's personal temporal namespace.

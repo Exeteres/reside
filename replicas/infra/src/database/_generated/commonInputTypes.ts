@@ -274,6 +274,23 @@ export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
 }
 
+export type EnumPostgresDatabaseKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.PostgresDatabaseKind | Prisma.EnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  in?: $Enums.PostgresDatabaseKind[] | Prisma.ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PostgresDatabaseKind[] | Prisma.ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPostgresDatabaseKindFilter<$PrismaModel> | $Enums.PostgresDatabaseKind
+}
+
+export type EnumPostgresDatabaseKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PostgresDatabaseKind | Prisma.EnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  in?: $Enums.PostgresDatabaseKind[] | Prisma.ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PostgresDatabaseKind[] | Prisma.ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPostgresDatabaseKindWithAggregatesFilter<$PrismaModel> | $Enums.PostgresDatabaseKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPostgresDatabaseKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPostgresDatabaseKindFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -518,6 +535,23 @@ export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumPostgresDatabaseKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.PostgresDatabaseKind | Prisma.EnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  in?: $Enums.PostgresDatabaseKind[] | Prisma.ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PostgresDatabaseKind[] | Prisma.ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPostgresDatabaseKindFilter<$PrismaModel> | $Enums.PostgresDatabaseKind
+}
+
+export type NestedEnumPostgresDatabaseKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PostgresDatabaseKind | Prisma.EnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  in?: $Enums.PostgresDatabaseKind[] | Prisma.ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PostgresDatabaseKind[] | Prisma.ListEnumPostgresDatabaseKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPostgresDatabaseKindWithAggregatesFilter<$PrismaModel> | $Enums.PostgresDatabaseKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPostgresDatabaseKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPostgresDatabaseKindFilter<$PrismaModel>
 }
 
 

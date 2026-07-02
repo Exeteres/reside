@@ -7,7 +7,7 @@ import {
   registerReplica,
   runPrismaMigrations,
 } from "@reside/common"
-import { infraReplica } from "@reside/registry"
+import { infraReplica, WellKnownPermissions } from "@reside/registry"
 import { PrismaClient } from "../database"
 import { strings } from "../locale"
 import {
@@ -44,6 +44,14 @@ await ensureMathesarBootstrap(adminPool, prisma)
 
 await defineCommonResources({
   services: await createCommonServices(infraReplica.endpoints),
+  permissions: [
+    {
+      name: WellKnownPermissions.INFRA_TEMPORARY_POSTGRES_DATABASE_CREATE,
+      title: strings.bootstrap.permissions.temporaryPostgresDatabaseCreate.title,
+      description: strings.bootstrap.permissions.temporaryPostgresDatabaseCreate.description,
+      scoped: false,
+    },
+  ],
   reaperHandlers: [
     {
       resourceReplicaName: "infra",

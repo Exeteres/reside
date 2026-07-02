@@ -51,4 +51,15 @@ describe("createDockerfile", () => {
       "COPY --from=build /app/replicas/test/reside.manifest.json /app/reside.manifest.json",
     )
   })
+
+  test("does not include nix or devenv runtime setup", () => {
+    const dockerfile = createDockerfile({
+      ...baseArgs,
+      hasChangelog: false,
+    })
+
+    expect(dockerfile).not.toContain("nix profile")
+    expect(dockerfile).not.toContain(".nix-profile")
+    expect(dockerfile).not.toContain("devenv shell")
+  })
 })

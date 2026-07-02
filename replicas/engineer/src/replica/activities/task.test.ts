@@ -1,6 +1,7 @@
 import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
+import type { ProvisionServiceClient } from "@reside/api/infra/provision.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { GenericOperationService, LanguageEngine } from "@reside/common"
 import type { DeepMockProxy } from "@reside/common/testing"
@@ -151,6 +152,8 @@ function createFixture(): {
   const notificationService = mockDeepFn<NotificationServiceClient>()
   const permissionRequestService = mockDeepFn<PermissionRequestServiceClient>()
   const accessOperationService = mockDeepFn<OperationServiceClient>()
+  const provisionService = mockDeepFn<ProvisionServiceClient>()
+  const infraOperationService = mockDeepFn<OperationServiceClient>()
   const loadService = mockDeepFn<LoadServiceClient>()
   const alphaOperationService = mockDeepFn<OperationServiceClient>()
   const operationService = mockDeepFn<GenericOperationService<Operation>>()
@@ -171,6 +174,8 @@ function createFixture(): {
       notificationService,
       permissionRequestService,
       accessOperationService,
+      provisionService,
+      infraOperationService,
       loadService,
       alphaOperationService,
       operationService,

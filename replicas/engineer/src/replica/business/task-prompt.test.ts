@@ -64,11 +64,12 @@ describe("createImplementationPrompt", () => {
     expect(prompt).toContain("For research-only tasks, do not change repository files")
     expect(prompt).toContain("Only call commit_changes, deliver_changes, or deploy_replica")
     expect(prompt).toContain(
-      "Run Prisma, Bun, repository scripts, checks, generators, and other project-specific tools through `devenv shell -- <command>`.",
+      "Run Prisma, Bun, repository scripts, checks, generators, and other project-specific tools directly.",
     )
-    expect(prompt).toContain(
-      "Do not call project-local Bun, Prisma, Nx, Biome, TypeScript, or generated-client commands outside `devenv shell -- ...`.",
-    )
+    expect(prompt).toContain("Do not run `devenv`, `devenv shell`, Nix")
+    expect(prompt).toContain("call create_dev_database")
+    expect(prompt).toContain("Temporary development databases are removed after 24 hours")
+    expect(prompt).not.toContain("devenv shell -- <command>")
     expect(prompt).toContain("Prefer create/edit tools for source-file content changes.")
     expect(prompt).toContain("Prefer commit_changes for normal commits")
     expect(prompt).toContain("read and follow `docs/changes.md`")

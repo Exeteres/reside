@@ -110,6 +110,11 @@ export enum WellKnownPermissions {
   INFRA_GATEWAY_MANAGE = "infra:gateway:manage",
 
   /**
+   * Allows to create temporary PostgreSQL databases in the Infra Replica.
+   */
+  INFRA_TEMPORARY_POSTGRES_DATABASE_CREATE = "infra:temporary-postgres-database:create",
+
+  /**
    * Allows to register a cleanup handler in the Reaper Replica.
    * The scope is the name of the resource holder replica.
    */

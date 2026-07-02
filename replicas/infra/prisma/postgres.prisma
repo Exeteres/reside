@@ -1,3 +1,8 @@
+enum PostgresDatabaseKind {
+  REPLICA
+  TEMPORARY
+}
+
 /// Represents PostgreSQL credentials for a replica database.
 model PostgresDatabase {
   /// The unique numeric identifier of the PostgreSQL database record.
@@ -9,6 +14,18 @@ model PostgresDatabase {
   /// The generated password for the dedicated PostgreSQL user.
   password String
 
+  /// The database lifecycle kind.
+  kind PostgresDatabaseKind @default(REPLICA)
+
+  /// The replica that owns the temporary database, if applicable.
+  ownerReplicaName String?
+
+  /// The timestamp after which the temporary database should be removed.
+  expiresAt DateTime?
+
+  /// The timestamp when the temporary database was removed.
+  deletedAt DateTime?
+
   /// The timestamp when this record was created.
   createdAt DateTime @default(now())
 
@@ -17,4 +34,7 @@ model PostgresDatabase {
 
   /// The operations associated with this PostgreSQL database.
   operations Operation[]
+
+  @@index([kind, expiresAt])
+  @@index([ownerReplicaName])
 }

@@ -4,12 +4,25 @@ export const ru = {
       title: "Инфраструктурная Реплика",
       description: "Предоставляет базовую инфраструктуру для других реплик.",
     },
+    permissions: {
+      temporaryPostgresDatabaseCreate: {
+        title: "Создание временных баз данных PostgreSQL",
+        description:
+          "Позволяет создавать временные базы данных PostgreSQL для инженерных и тестовых задач.",
+      },
+    },
   },
   operations: {
     postgres: {
       title: (replicaNamespace: string) => `Подготовка базы данных для "${replicaNamespace}"`,
       description: (replicaNamespace: string) =>
         `Подготовка базы данных PostgreSQL для "${replicaNamespace}"`,
+    },
+    temporaryPostgres: {
+      title: (ownerReplicaName: string) =>
+        `Подготовка временной базы данных для "${ownerReplicaName}"`,
+      description: (ownerReplicaName: string) =>
+        `Подготовка временной базы данных PostgreSQL для "${ownerReplicaName}"`,
     },
     temporal: {
       title: (replicaNamespace: string) => `Подготовка Temporal для "${replicaNamespace}"`,

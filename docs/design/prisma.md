@@ -119,8 +119,8 @@ Many replicas use a workflow/operation pattern.
 
 ## Migration workflow and naming
 
-- Start dev DB before migration creation:
-  - `devenv up -d`
+- Interactive development sessions are already launched in the prepared shell with access to the local development PostgreSQL database.
+- Do not run `devenv` for migration work unless the task explicitly changes or tests devenv configuration.
 - If another migration was created in the same session, reset first:
   - `bun prisma migrate reset --force`
 - Create migration:
@@ -129,7 +129,7 @@ Many replicas use a workflow/operation pattern.
 - Manual SQL edits are allowed only when Prisma's generated SQL is not deployable or cannot express the required migration safely, for example nullable-add/backfill/set-not-null sequences, data backfills, or provider-specific DDL.
 - New migrations must be safe to apply to non-empty tables. Do not add a required column without either a database default or an explicit backfill step that adds it nullable, fills all existing rows, and only then marks it `NOT NULL`.
 - Warnings for unique indexes on nullable columns created in the same migration are acceptable when existing rows cannot contain duplicates for that new column.
-- After any manual migration SQL edit, verify it against the devenv Postgres database before submitting:
+- After any manual migration SQL edit, verify it against the development PostgreSQL database before submitting:
   - `bun prisma migrate reset --force`
   - `bun prisma migrate dev`
   - The final `migrate dev` must report the schema is already in sync.
@@ -137,6 +137,7 @@ Many replicas use a workflow/operation pattern.
   - first migration must be `init`
   - later migrations must be short descriptive names of what changed
 - The dev database is used for migration generation only; data persistence is not important.
+- Non-interactive engineer tasks must create an isolated temporary development database through the engineer database tool and run Prisma commands with the returned `DATABASE_URL`. Temporary databases are removed after 24 hours; if a resumed session finds the database missing, create a new one and continue.
 
 ## Change checklist
 

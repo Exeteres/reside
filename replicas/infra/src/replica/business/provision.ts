@@ -11,7 +11,7 @@ import { randomBytes } from "node:crypto"
 import { Code, ConnectError } from "@connectrpc/connect"
 import { DEFAULT_TEMPORAL_TASK_QUEUE, getReplicaNamespace } from "@reside/common"
 import { WorkflowExecutionAlreadyStartedError, WorkflowIdReusePolicy } from "@temporalio/client"
-import { OperationStatus, OperationType } from "../../database"
+import { OperationStatus, OperationType, PostgresDatabaseKind } from "../../database"
 import { strings } from "../../locale"
 import {
   buildReplicaDatabaseName,
@@ -40,6 +40,8 @@ export type StorageCredentials = {
   accessKey: string
   secretKey: string
 }
+
+const TEMPORARY_POSTGRES_DATABASE_TTL_MS = 24 * 60 * 60 * 1000
 
 export type ProvisioningPayload<T> =
   | {
@@ -126,6 +128,51 @@ export async function resolvePostgresCredentialsPayload({
     })
 
     await startProvisioningWorkflow(temporalClient, "database", operation.id)
+
+    return {
+      kind: "operation",
+      value: operation,
+    }
+  })
+}
+
+export async function resolveTemporaryPostgresCredentialsPayload({
+  prisma,
+  temporalClient,
+  ownerReplicaName,
+}: {
+  prisma: PrismaClient
+  temporalClient: Client
+  ownerReplicaName: string
+}): Promise<ProvisioningPayload<PostgresCredentials>> {
+  return await prisma.$transaction(async tx => {
+    const expiresAt = new Date(Date.now() + TEMPORARY_POSTGRES_DATABASE_TTL_MS)
+    const postgresDatabase = await tx.postgresDatabase.create({
+      data: {
+        database: buildTemporaryDatabaseName(ownerReplicaName),
+        password: randomBytes(24).toString("base64url"),
+        kind: PostgresDatabaseKind.TEMPORARY,
+        ownerReplicaName,
+        expiresAt,
+        deletedAt: null,
+      },
+    })
+
+    const operation = await tx.operation.create({
+      data: {
+        title: strings.operations.temporaryPostgres.title(ownerReplicaName),
+        description: strings.operations.temporaryPostgres.description(ownerReplicaName),
+        type: OperationType.PROVISION_TEMPORARY_POSTGRES_DATABASE,
+        status: OperationStatus.PENDING,
+        failureReason: null,
+        failureMessage: null,
+        callbackEndpoint: null,
+        resolvedAt: null,
+        postgresDatabaseId: postgresDatabase.id,
+      },
+    })
+
+    await startProvisioningWorkflow(temporalClient, "temporary-database", operation.id)
 
     return {
       kind: "operation",
@@ -333,7 +380,7 @@ function buildStorageCredentials(storageBucket: StorageBucket, endpoint: string)
 
 async function startProvisioningWorkflow(
   temporalClient: Client,
-  kind: "database" | "temporal-namespace" | "storage-bucket",
+  kind: "database" | "temporary-database" | "temporal-namespace" | "storage-bucket",
   operationId: number,
 ): Promise<void> {
   const workflowId = buildProvisioningWorkflowId(kind, operationId)
@@ -342,9 +389,11 @@ async function startProvisioningWorkflow(
     const workflowType =
       kind === "database"
         ? "provisionPostgresDatabaseWorkflow"
-        : kind === "temporal-namespace"
-          ? "provisionTemporalNamespaceWorkflow"
-          : "provisionStorageBucketWorkflow"
+        : kind === "temporary-database"
+          ? "provisionTemporaryPostgresDatabaseWorkflow"
+          : kind === "temporal-namespace"
+            ? "provisionTemporalNamespaceWorkflow"
+            : "provisionStorageBucketWorkflow"
 
     await temporalClient.workflow.start(workflowType, {
       args: [{ operationId }],
@@ -368,10 +417,18 @@ async function startProvisioningWorkflow(
 }
 
 function buildProvisioningWorkflowId(
-  kind: "database" | "temporal-namespace" | "storage-bucket",
+  kind: "database" | "temporary-database" | "temporal-namespace" | "storage-bucket",
   operationId: number,
 ) {
   return `provision-${kind}-${operationId}`
+}
+
+function buildTemporaryDatabaseName(ownerReplicaName: string): string {
+  const normalizedOwner = ownerReplicaName.replaceAll(/[^a-z0-9]+/g, "_").replaceAll(/^_+|_+$/g, "")
+  const ownerSegment = normalizedOwner.length > 0 ? normalizedOwner : "replica"
+  const randomSegment = randomBytes(8).toString("hex")
+
+  return `tmp_${ownerSegment}_${randomSegment}`.slice(0, 63)
 }
 
 export async function toProvisionApiOperation<T>(

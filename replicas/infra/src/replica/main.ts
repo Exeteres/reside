@@ -10,6 +10,7 @@ import { ReplicaReaperHandler } from "@reside/api/reaper/handler.v1"
 import {
   createPingService,
   createServer,
+  createSleepActivities,
   crypto,
   getReplicaNamespace,
   logger,
@@ -82,6 +83,7 @@ await startTemporalWorker({
   createActivities: ({ connection }) => {
     return {
       ...services.operationService.activities,
+      ...createSleepActivities(services.timerService),
       ...createDatabaseActivities({
         ...services,
         workflowService: connection.workflowService,

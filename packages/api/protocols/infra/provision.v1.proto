@@ -50,6 +50,17 @@ message GetPostgresDatabaseCredentialsResponse {
   }
 }
 
+// The response for a CreateTemporaryPostgresDatabase request,
+// which may contain either the credentials or an operation if the database is not yet ready.
+// The result of the operation, once completed, will be the PostgresDatabaseCredentials.
+// Clients should poll the operation using reside.common.operation.v1.OperationService.
+message CreateTemporaryPostgresDatabaseResponse {
+  oneof credentials {
+    PostgresDatabaseCredentials          result    = 1;
+    reside.common.operation.v1.Operation operation = 2;
+  }
+}
+
 // The response for a GetStorageBucketCredentialsRequest,
 // which may contain either the credentials or an operation if the bucket is not yet ready.
 // The result of the operation, once completed, will be the StorageBucketCredentials.
@@ -66,6 +77,12 @@ service ProvisionService {
   // Gets credentials for the caller's personal PostgreSQL database.
   rpc GetPostgresDatabaseCredentials(google.protobuf.Empty)
   returns (GetPostgresDatabaseCredentialsResponse);
+
+  // Creates a new temporary PostgreSQL database for the caller.
+  // Temporary databases are deleted automatically 24 hours after creation.
+  // This method requires infra:temporary-postgres-database:create permission.
+  rpc CreateTemporaryPostgresDatabase(google.protobuf.Empty)
+  returns (CreateTemporaryPostgresDatabaseResponse);
 
   // Gets credentials for the caller's personal temporal namespace.
   rpc GetTemporalNamespaceCredentials(google.protobuf.Empty) returns (GetTemporalNamespaceCredentialsResponse);

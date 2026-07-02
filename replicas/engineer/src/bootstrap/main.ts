@@ -1,3 +1,4 @@
+import { waitForOperationSuccess } from "@reside/api"
 import {
   bootstrapService,
   defineCommonResources,
@@ -45,5 +46,22 @@ await defineCommonResources({
     },
   ],
 })
+
+const temporaryDatabasePermission = await services.permissionRequestService.requestPermissions({
+  reason:
+    "Для создания временных баз данных PostgreSQL при выполнении инженерных задач и проверок.",
+  permissionSetName: "engineer-temporary-postgres-databases",
+  items: [
+    {
+      permissionName: WellKnownPermissions.INFRA_TEMPORARY_POSTGRES_DATABASE_CREATE,
+    },
+  ],
+})
+
+if (temporaryDatabasePermission.operation) {
+  await waitForOperationSuccess(temporaryDatabasePermission.operation, {
+    operationService: services.accessOperationService,
+  })
+}
 
 await bootstrapService({ longRunning: true })

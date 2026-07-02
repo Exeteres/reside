@@ -86,6 +86,8 @@ const taskActivities = createTaskActivities({
   notificationService: services.notificationService,
   permissionRequestService: services.permissionRequestService,
   accessOperationService: services.accessOperationService,
+  provisionService: services.provisionService,
+  infraOperationService: services.infraOperationService,
   loadService: services.alphaLoadService,
   alphaOperationService: services.alphaOperationService,
   operationService: services.operationService,
