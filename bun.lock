@@ -271,6 +271,31 @@
         "pg": "catalog:",
       },
     },
+    "replicas/notcompel": {
+      "name": "@replicas/notcompel",
+      "dependencies": {
+        "@bufbuild/protobuf": "catalog:",
+        "@connectrpc/connect": "catalog:",
+        "@connectrpc/connect-fastify": "catalog:",
+        "@github/copilot-sdk": "catalog:",
+        "@kubernetes/client-node": "catalog:",
+        "@temporalio/client": "catalog:",
+        "@temporalio/worker": "catalog:",
+        "@temporalio/workflow": "catalog:",
+        "fastify": "catalog:",
+        "pg": "catalog:",
+        "prisma": "catalog:",
+      },
+      "devDependencies": {
+        "@prisma/client": "catalog:",
+        "@reside/api": "workspace:*",
+        "@reside/common": "workspace:*",
+        "@reside/registry": "workspace:*",
+        "@types/pg": "catalog:",
+        "@typescript/native-preview": "catalog:",
+        "zod": "catalog:",
+      },
+    },
     "replicas/rate": {
       "name": "@replicas/rate",
       "dependencies": {
@@ -1011,6 +1036,8 @@
     "@replicas/example": ["@replicas/example@workspace:replicas/example"],
 
     "@replicas/infra": ["@replicas/infra@workspace:replicas/infra"],
+
+    "@replicas/notcompel": ["@replicas/notcompel@workspace:replicas/notcompel"],
 
     "@replicas/rate": ["@replicas/rate@workspace:replicas/rate"],
 

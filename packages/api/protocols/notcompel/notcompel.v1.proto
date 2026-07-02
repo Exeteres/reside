@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package reside.notcompel.v1;
+
+// The request message for sending the current Notcompel image to the system chat.
+message SendImageRequest {}
+
+// The response message for a sent Notcompel image.
+message SendImageResponse {
+  // The identifier of the created notification.
+  string notification_id = 1;
+
+  // The optional external link to the created notification message.
+  optional string message_link = 2;
+}
+
+// The Notcompel image service.
+service NotcompelService {
+  // Fetches the current image from notcompel.ru and sends it to the system chat.
+  rpc SendImage(SendImageRequest) returns (SendImageResponse);
+}
