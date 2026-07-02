@@ -77,6 +77,14 @@ function toCapitalized(value: string): string {
   return `${value[0]?.toUpperCase() ?? ""}${value.slice(1)}`
 }
 
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+
+  return `${year}-${month}-${day}`
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
@@ -250,7 +258,7 @@ async function updateChangelog(
   title?: string,
 ): Promise<void> {
   const changelogPath = path.join(targetDir, "CHANGELOG.md")
-  const today = new Date().toISOString().slice(0, 10)
+  const today = formatLocalDate(new Date())
   const replicaTitle = title?.trim() || toCapitalized(targetName)
   const content = `# Changelog\n\n## 0.1.0 - ${today}\n\nСоздана начальная версия ${replicaTitle}.\n`
 

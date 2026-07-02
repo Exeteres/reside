@@ -42,6 +42,14 @@ function bumpVersion(current: string, incType: IncrementType): string {
   return `${major}.${minor}.${patch + 1}`
 }
 
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+
+  return `${year}-${month}-${day}`
+}
+
 async function exists(filePath: string): Promise<boolean> {
   try {
     await access(filePath, constants.F_OK)
@@ -104,7 +112,7 @@ async function main(): Promise<void> {
 
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8")
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = formatLocalDate(new Date())
   const newSection = `## ${nextVersion} - ${today}\n\n${changelogEntry}\n`
 
   const hasChangelog = await exists(changelogPath)
