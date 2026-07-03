@@ -119,9 +119,14 @@ export type GetResourceOperationInput = {
 
 export type GetResourceOperationOutput = {
   /**
-   * The latest operation state.
+   * The latest operation state when it is still available from the resource holder.
    */
-  operation: OperationJson
+  operation?: OperationJson
+
+  /**
+   * Whether the resource holder still has this operation.
+   */
+  found: boolean
 }
 
 export type ReaperActivities = {

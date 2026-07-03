@@ -357,12 +357,12 @@ async function pollOperations(input: {
       input.pollActions
         .filter(action => isActiveAction(action) && action.operation !== undefined)
         .map(async action => {
-          const operation = await getResourceOperation({
+          const operationResult = await getResourceOperation({
             callbackEndpoint: action.handler.callbackEndpoint,
             operationId: getOperationId(action.operation),
           })
-          action.operation = operation.operation
-          action.status = mapOperationStatus(operation.operation.status)
+
+          applyResourceOperationPollResult(action, operationResult)
         }),
     )
 
@@ -376,6 +376,25 @@ async function pollOperations(input: {
   }
 
   await updateProgressNotification(input)
+}
+
+export function applyResourceOperationPollResult(
+  action: {
+    status: TrackedActionStatus
+    operation?: StartedReaperExecution["operation"]
+  },
+  operationResult: {
+    found: boolean
+    operation?: StartedReaperExecution["operation"]
+  },
+): void {
+  if (!operationResult.found || !operationResult.operation) {
+    action.status = "FAILED"
+    return
+  }
+
+  action.operation = operationResult.operation
+  action.status = mapOperationStatus(operationResult.operation.status)
 }
 
 async function updateProgressNotification(input: {

@@ -510,6 +510,7 @@ export async function acceptNotificationResponseForReplica(
       id: true,
       messageEcid: true,
       requiresTextResponse: true,
+      actionRows: true,
       acquireTopic: true,
       operationId: true,
       sendAsSubjectId: true,
@@ -525,7 +526,11 @@ export async function acceptNotificationResponseForReplica(
     throw new ConnectError(`Notification "${input.notificationId}" was not found`, Code.NotFound)
   }
 
-  if (!notification.requiresTextResponse && !notification.acquireTopic) {
+  if (
+    collectCallbackActions(toActionRowsFromData(notification.actionRows)).length === 0 &&
+    !notification.requiresTextResponse &&
+    !notification.acquireTopic
+  ) {
     throw new ConnectError(
       `Notification "${input.notificationId}" does not accept responses`,
       Code.FailedPrecondition,

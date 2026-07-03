@@ -1,6 +1,16 @@
+import type { OperationJson } from "@reside/api/common/operation.v1"
 import { describe, expect, test } from "bun:test"
 import { NotificationTaskStatus } from "@reside/api/interaction/notification.v1"
-import { applyActionHintSelectionRules, buildTaskGroups } from "./reaper"
+import {
+  applyActionHintSelectionRules,
+  applyResourceOperationPollResult,
+  buildTaskGroups,
+} from "./reaper"
+
+type TestTrackedAction = {
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "SKIPPED"
+  operation?: OperationJson
+}
 
 describe("buildTaskGroups", () => {
   test("uses planned status for initial planning notifications", () => {
@@ -120,5 +130,41 @@ describe("applyActionHintSelectionRules", () => {
     applyActionHintSelectionRules(actions)
 
     expect(actions[1]!.status).toBe("PENDING")
+  })
+})
+
+describe("applyResourceOperationPollResult", () => {
+  test("marks action failed when resource operation is missing", () => {
+    const action: TestTrackedAction = {
+      status: "IN_PROGRESS",
+      operation: {
+        id: 30,
+        status: "OPERATION_STATUS_IN_PROGRESS",
+      },
+    }
+
+    applyResourceOperationPollResult(action, { found: false })
+
+    expect(action.status).toBe("FAILED")
+    expect(action.operation?.id).toBe(30)
+  })
+
+  test("updates action from available resource operation", () => {
+    const action: TestTrackedAction = {
+      status: "IN_PROGRESS",
+      operation: {
+        id: 30,
+        status: "OPERATION_STATUS_IN_PROGRESS",
+      },
+    }
+    const operation: OperationJson = {
+      id: 30,
+      status: "OPERATION_STATUS_COMPLETED",
+    }
+
+    applyResourceOperationPollResult(action, { found: true, operation })
+
+    expect(action.status).toBe("COMPLETED")
+    expect(action.operation).toBe(operation)
   })
 })

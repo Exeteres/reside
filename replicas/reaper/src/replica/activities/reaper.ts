@@ -1,6 +1,8 @@
+import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { ReaperActivities } from "../../definitions"
 import type { ReaperServices } from "../../shared"
 import { toJson } from "@bufbuild/protobuf"
+import { Code, ConnectError } from "@connectrpc/connect"
 import { OperationSchema, OperationService } from "@reside/api/common/operation.v1"
 import {
   ExecuteActionsResponseSchema,
@@ -62,18 +64,40 @@ export function createReaperActivities({ prisma }: ReaperActivityServices): Reap
 
     async getResourceOperation(input) {
       const client = createClient(OperationService, createChannel(input.callbackEndpoint))
-      const response = await client.getOperation({
-        operationId: input.operationId,
-      })
+      const response = await getOperationIfAvailable(client, input.operationId)
+
+      if (response === undefined) {
+        return {
+          found: false,
+        }
+      }
 
       if (!response.operation) {
         throw new Error(`Operation "${input.operationId}" response is missing operation`)
       }
 
       return {
+        found: true,
         operation: toJson(OperationSchema, response.operation),
       }
     },
+  }
+}
+
+async function getOperationIfAvailable(
+  client: Pick<OperationServiceClient, "getOperation">,
+  operationId: number,
+) {
+  try {
+    return await client.getOperation({
+      operationId,
+    })
+  } catch (error) {
+    if (error instanceof ConnectError && error.code === Code.NotFound) {
+      return undefined
+    }
+
+    throw error
   }
 }
 

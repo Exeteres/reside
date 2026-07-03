@@ -61,16 +61,16 @@ model Operation {
   storageBucketId Int?
 
   /// The Temporal namespace record associated with this operation, if applicable.
-  temporalNamespace TemporalNamespace? @relation(fields: [temporalNamespaceId], references: [id], onDelete: Cascade)
+  temporalNamespace TemporalNamespace? @relation(fields: [temporalNamespaceId], references: [id], onDelete: SetNull)
 
   /// The PostgreSQL database record associated with this operation, if applicable.
-  postgresDatabase PostgresDatabase? @relation(fields: [postgresDatabaseId], references: [id], onDelete: Cascade)
+  postgresDatabase PostgresDatabase? @relation(fields: [postgresDatabaseId], references: [id], onDelete: SetNull)
 
   /// The gateway record associated with this operation, if applicable.
-  gateway Gateway? @relation(fields: [gatewayId], references: [id], onDelete: Cascade)
+  gateway Gateway? @relation(fields: [gatewayId], references: [id], onDelete: SetNull)
 
   /// The storage bucket record associated with this operation, if applicable.
-  storageBucket StorageBucket? @relation(fields: [storageBucketId], references: [id], onDelete: Cascade)
+  storageBucket StorageBucket? @relation(fields: [storageBucketId], references: [id], onDelete: SetNull)
 
   /// The timestamp when this operation record was created.
   createdAt DateTime @default(now())
