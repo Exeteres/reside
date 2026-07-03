@@ -1,8 +1,7 @@
 import type { Client as TemporalClient } from "@temporalio/client"
 import type { PrismaClient } from "../../database"
 import { randomUUID } from "node:crypto"
-import { defineTool } from "@github/copilot-sdk"
-import { getReplicaName } from "@reside/common"
+import { defineTool, getReplicaName } from "@reside/common"
 import { z } from "zod"
 import { startResetReplicaNodeCommand, startSetReplicaNodeCommand } from "../business"
 

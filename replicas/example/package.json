@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.914.0",
-    "@github/copilot-sdk": "catalog:",
     "@connectrpc/connect": "catalog:",
     "@connectrpc/connect-fastify": "catalog:",
     "@temporalio/client": "catalog:",

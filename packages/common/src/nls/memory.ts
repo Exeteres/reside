@@ -1,5 +1,5 @@
-import { defineTool, type SessionConfig } from "@github/copilot-sdk"
 import { z } from "zod"
+import { defineTool, type SessionConfig } from "./tool"
 
 const MEMORY_SEARCH_LIMIT = 10
 const MEMORY_SEARCH_WORD_LIMIT = 12

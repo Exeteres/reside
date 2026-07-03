@@ -154,9 +154,6 @@ export const engineerReplica = defineReplica({
       private_key: "$file:ENGINEER_GITHUB_APP_PRIVATE_KEY",
       installation_id: "$ENGINEER_GITHUB_APP_INSTALLATION_ID",
     },
-    copilot: {
-      user_token: "$COPILOT_USER_TOKEN",
-    },
   },
   configMaps: {
     "github-repository": {

@@ -1,7 +1,7 @@
-import { mkdtemp, rm } from "node:fs/promises"
+import { mkdir, mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { CopilotClient } from "@github/copilot-sdk"
+import { Codex } from "@openai/codex-sdk"
 import { logger, subscribeToSecret } from "@reside/common"
 import { toError } from "@reside/utils"
 import { z } from "zod"
@@ -17,7 +17,6 @@ const llmSecretSchema = z.object({
 const runtime = await startEngineerAiRuntime()
 let exitCode = 0
 let workspacePath: string | undefined
-let copilotClient: CopilotClient | undefined
 
 try {
   logger.info("starting engineer e2e")
@@ -39,10 +38,6 @@ try {
     30_000,
     'Timed out waiting for secret "llm"',
   )
-
-  copilotClient = new CopilotClient({
-    useLoggedInUser: false,
-  })
 
   const issuesResponse = await octokit.rest.issues.listForRepo({
     owner: repository.owner,
@@ -67,28 +62,27 @@ try {
 
   workspacePath = await mkdtemp(join(tmpdir(), "reside-engineer-e2e-"))
   const repositoryPath = join(workspacePath, repository.name)
+  const codexHomePath = join(workspacePath, "codex-home")
+  await mkdir(codexHomePath, { recursive: true })
   await runCommand(["git", "clone", "--depth", "1", repository.cloneUrl, repositoryPath])
 
-  const session = await copilotClient.createSession({
-    model: llmSecret["light-model"],
-    provider: {
-      type: "openai",
-      baseUrl: llmSecret.endpoint,
-      apiKey: llmSecret["api-key"],
-    },
-    workingDirectory: repositoryPath,
-    onPermissionRequest: async () => ({ kind: "approved" }),
+  const codex = new Codex({
+    baseUrl: llmSecret.endpoint,
+    apiKey: llmSecret["api-key"],
+    env: createCodexEnvironment(codexHomePath),
   })
+  const thread = codex.startThread({
+    model: llmSecret["light-model"],
+    workingDirectory: repositoryPath,
+    skipGitRepoCheck: true,
+    sandboxMode: "danger-full-access",
+    approvalPolicy: "never",
+    networkAccessEnabled: true,
+    webSearchMode: "live",
+  })
+  const agentResponse = await thread.run("Say hello to engineer replica in one short sentence.")
 
-  try {
-    const agentResponse = await session.sendAndWait({
-      prompt: "Say hello to engineer replica in one short sentence.",
-    })
-
-    logger.info('engineer e2e agent response text="%s"', normalizeAgentResponse(agentResponse))
-  } finally {
-    await session.disconnect()
-  }
+  logger.info('engineer e2e agent response text="%s"', normalizeAgentResponse(agentResponse))
 
   logger.info("engineer e2e completed")
 } catch (error) {
@@ -102,10 +96,6 @@ try {
   }
 
   try {
-    if (copilotClient) {
-      await copilotClient.stop()
-    }
-
     await withTimeout(runtime.stop(), 5_000, "Timed out waiting for runtime stop")
   } catch (error) {
     logger.warn({ error: toError(error) }, "engineer e2e runtime stop warning")
@@ -165,7 +155,27 @@ async function withTimeout<T>(
   }
 }
 
+function createCodexEnvironment(codexHomePath: string): Record<string, string> {
+  const env: Record<string, string> = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined) {
+      env[key] = value
+    }
+  }
+
+  env.CODEX_HOME = codexHomePath
+
+  return env
+}
+
 function normalizeAgentResponse(response: unknown): string {
+  if (response && typeof response === "object" && "finalResponse" in response) {
+    const finalResponse = response.finalResponse
+    if (typeof finalResponse === "string") {
+      return finalResponse
+    }
+  }
+
   if (typeof response === "string") {
     return response
   }

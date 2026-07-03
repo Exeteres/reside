@@ -11,22 +11,18 @@ export async function createLanguageActivities({
   model,
   sessionPrefix,
   systemPrompt,
-  allowedSystemTools,
   tools,
   tags,
   storageCredentials,
-  copilotClientProvider,
 }: CreateLanguageEngineOptions): Promise<LanguageActivities> {
   const languageEngine: LanguageEngine = await createLanguageEngine({
     services,
     model,
     sessionPrefix,
     systemPrompt,
-    allowedSystemTools,
     tools,
     tags,
     storageCredentials,
-    copilotClientProvider,
   })
 
   registerGracefulShutdown(async () => {

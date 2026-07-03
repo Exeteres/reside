@@ -1,4 +1,4 @@
-import { defineTool } from "@github/copilot-sdk"
+import { defineTool } from "@reside/common"
 import { z } from "zod"
 import { fetchKeyRate, replaceSingleRateInTitle } from "../business"
 
@@ -17,37 +17,29 @@ export function createGetRateTool(services: GetRateToolServices) {
       contextToken: z.string().optional(),
     }),
     handler: async ({ contextToken }) => {
-      try {
-        const rate = await fetchKeyRate({
-          fetchFn: fetch,
-        })
-        let titleUpdated = false
+      const rate = await fetchKeyRate({
+        fetchFn: fetch,
+      })
+      let titleUpdated = false
 
-        if (contextToken) {
-          const { title } = await services.avatarService.getAvatarChatTitle({ contextToken })
-          const updatedTitle = replaceSingleRateInTitle(title, rate)
+      if (contextToken) {
+        const { title } = await services.avatarService.getAvatarChatTitle({ contextToken })
+        const updatedTitle = replaceSingleRateInTitle(title, rate)
 
-          if (updatedTitle !== undefined && updatedTitle !== title) {
-            await services.avatarService.updateAvatarChatTitle({
-              contextToken,
-              title: updatedTitle,
-            })
-            titleUpdated = true
-          }
+        if (updatedTitle !== undefined && updatedTitle !== title) {
+          await services.avatarService.updateAvatarChatTitle({
+            contextToken,
+            title: updatedTitle,
+          })
+          titleUpdated = true
         }
+      }
 
-        return {
-          rate,
-          unit: "percent",
-          titleUpdated,
-          response: `Current key rate is ${rate}%.`,
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-
-        return {
-          response: `Failed to get key rate: ${errorMessage}`,
-        }
+      return {
+        rate,
+        unit: "percent",
+        titleUpdated,
+        response: `Current key rate is ${rate}%.`,
       }
     },
   })

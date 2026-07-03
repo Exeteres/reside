@@ -1,10 +1,10 @@
 import type { ConnectRouter } from "@connectrpc/connect"
 import type { FastifyInstance } from "fastify"
 import type { MemoryToolTagDefinitions } from "./memory"
+import type { SessionConfig } from "./tool"
 import { create } from "@bufbuild/protobuf"
 import { Code, ConnectError, type HandlerContext } from "@connectrpc/connect"
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
-import { defineTool, type SessionConfig } from "@github/copilot-sdk"
 import { waitForOperationSuccess } from "@reside/api"
 import { DiscoveryService, type DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
 import { ReplicaService, type ReplicaServiceClient } from "@reside/api/alpha/replica.v1"
@@ -29,6 +29,7 @@ import {
   type LanguageEngineServices,
   type LanguageEngineStorageCredentials,
 } from "./engine"
+import { defineTool } from "./tool"
 
 const NLS_DEFAULT_MODEL = "light"
 const NLS_SESSION_PREFIX = "sessions"
@@ -404,66 +405,51 @@ function createAskReplicaTool(args: {
       const normalizedReplicaName = replicaName.trim()
       const currentReplicaSubjectId = `replica:${getReplicaName()}`
 
-      try {
-        if (!/^[a-z0-9-]+$/.test(normalizedReplicaName)) {
-          throw new Error("replicaName must match /^[a-z0-9-]+$/")
-        }
+      if (!/^[a-z0-9-]+$/.test(normalizedReplicaName)) {
+        throw new Error("replicaName must match /^[a-z0-9-]+$/")
+      }
 
-        const toSubjectId = `replica:${normalizedReplicaName}`
-        const permissionRequest = await args.services.permissionRequestService.requestPermissions({
-          subjectId: currentReplicaSubjectId,
-          reason: `Для запроса через ask_replica к ${toSubjectId}`,
-          permissionSetName: `nls:ask-replica:${normalizedReplicaName}`,
-          items: [
-            {
-              permissionName: WellKnownPermissions.INTERACTION_NLS_ASK,
-              scope: toSubjectId,
-            },
-          ],
+      const toSubjectId = `replica:${normalizedReplicaName}`
+      const permissionRequest = await args.services.permissionRequestService.requestPermissions({
+        subjectId: currentReplicaSubjectId,
+        reason: `Для запроса через ask_replica к ${toSubjectId}`,
+        permissionSetName: `nls:ask-replica:${normalizedReplicaName}`,
+        items: [
+          {
+            permissionName: WellKnownPermissions.INTERACTION_NLS_ASK,
+            scope: toSubjectId,
+          },
+        ],
+      })
+
+      if (permissionRequest.operation) {
+        await waitForOperationSuccess(permissionRequest.operation, {
+          operationService: args.services.accessOperationService,
         })
+      }
 
-        if (permissionRequest.operation) {
-          await waitForOperationSuccess(permissionRequest.operation, {
-            operationService: args.services.accessOperationService,
-          })
-        }
+      const endpointResponse = await args.alphaDiscoveryService.getSubjectEndpoint({
+        subjectId: toSubjectId,
+      })
 
-        const endpointResponse = await args.alphaDiscoveryService.getSubjectEndpoint({
-          subjectId: toSubjectId,
-        })
+      const endpoint = endpointResponse.endpoint.trim()
+      if (endpoint.length === 0) {
+        throw new Error(`Replica "${normalizedReplicaName}" has empty endpoint`)
+      }
 
-        const endpoint = endpointResponse.endpoint.trim()
-        if (endpoint.length === 0) {
-          throw new Error(`Replica "${normalizedReplicaName}" has empty endpoint`)
-        }
+      let client = nlsClients.get(endpoint)
+      if (!client) {
+        client = createClient(NaturalLanguageService, createChannel(endpoint))
+        nlsClients.set(endpoint, client)
+      }
 
-        let client = nlsClients.get(endpoint)
-        if (!client) {
-          client = createClient(NaturalLanguageService, createChannel(endpoint))
-          nlsClients.set(endpoint, client)
-        }
+      const askResponse = await client.ask({
+        text: prompt.trim(),
+      })
 
-        const askResponse = await client.ask({
-          text: prompt.trim(),
-        })
-
-        return {
-          replicaName: normalizedReplicaName,
-          response: askResponse.text,
-        }
-      } catch (error) {
-        const errorObject = normalizeError(error)
-
-        logger.warn(
-          { error: errorObject },
-          'nls ask_replica failed replica_name="%s"',
-          normalizedReplicaName,
-        )
-
-        return {
-          replicaName: normalizedReplicaName,
-          response: `Failed to ask replica "${normalizedReplicaName}": ${errorObject.message}`,
-        }
+      return {
+        replicaName: normalizedReplicaName,
+        response: askResponse.text,
       }
     },
   })
@@ -500,29 +486,19 @@ function createQueryDatabaseTool(args: { services: LanguageEngineServices }) {
     handler: async ({ sql }) => {
       const query = sql.trim()
 
-      try {
-        if (query.length === 0) {
-          throw new Error("sql must not be empty")
-        }
+      if (query.length === 0) {
+        throw new Error("sql must not be empty")
+      }
 
-        const result = await args.services.pool.query(query)
-        const rows = result.rows.slice(0, DATABASE_QUERY_MAX_ROWS).map(row => normalizeSqlRow(row))
+      const result = await args.services.pool.query(query)
+      const rows = result.rows.slice(0, DATABASE_QUERY_MAX_ROWS).map(row => normalizeSqlRow(row))
 
-        return {
-          command: result.command,
-          rowCount: result.rowCount,
-          returnedRows: result.rows.length,
-          rowsTruncated: result.rows.length > rows.length,
-          rows,
-        }
-      } catch (error) {
-        const errorObject = normalizeError(error)
-
-        logger.warn({ error: errorObject }, "nls query_database failed")
-
-        return {
-          response: `Failed to query database: ${errorObject.message}`,
-        }
+      return {
+        command: result.command,
+        rowCount: result.rowCount,
+        returnedRows: result.rows.length,
+        rowsTruncated: result.rows.length > rows.length,
+        rows,
       }
     },
   })

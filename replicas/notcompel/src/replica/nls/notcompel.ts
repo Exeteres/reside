@@ -1,7 +1,7 @@
 import type { NotcompelServices } from "../../shared"
 import { create } from "@bufbuild/protobuf"
-import { defineTool } from "@github/copilot-sdk"
 import { SendImageRequestSchema } from "@reside/api/notcompel/notcompel.v1"
+import { defineTool } from "@reside/common"
 import { z } from "zod"
 import { createNotcompelService } from "../services"
 

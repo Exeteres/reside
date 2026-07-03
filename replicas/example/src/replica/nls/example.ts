@@ -1,5 +1,5 @@
 import type { ExampleServices } from "../../shared"
-import { defineTool } from "@github/copilot-sdk"
+import { defineTool } from "@reside/common"
 import { z } from "zod"
 import { getExampleStatus } from "../business"
 

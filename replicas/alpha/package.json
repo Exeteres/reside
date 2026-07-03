@@ -12,7 +12,6 @@
   "dependencies": {
     "@connectrpc/connect-fastify": "catalog:",
     "@connectrpc/connect": "catalog:",
-    "@github/copilot-sdk": "catalog:",
     "@temporalio/client": "catalog:",
     "@temporalio/common": "catalog:",
     "@temporalio/worker": "catalog:",

@@ -12,25 +12,21 @@ import type { EngineerTaskActivities } from "../../definitions"
 import type { EngineerAiRuntime } from "../business"
 import { mkdir, rm } from "node:fs/promises"
 import { join } from "node:path"
-import { defineTool } from "@github/copilot-sdk"
 import { waitForOperationSuccess, waitForResult } from "@reside/api"
 import {
-  DEFAULT_NLS_SYSTEM_TOOLS,
+  defineTool,
   type LanguageEngine,
   link,
   logger,
-  NlsSystemTool,
   parseResideManifest,
   RESIDE_MANIFEST_FILE,
 } from "@reside/common"
 import { crypto as resideCrypto } from "@reside/common/encryption"
 import { WellKnownPermissions } from "@reside/registry"
-import { toError } from "@reside/utils"
 import OpenAI from "openai"
 import { z } from "zod"
 import { strings } from "../../locale"
 import {
-  CommitValidationError,
   createImplementationPrompt,
   createPlanningPrompt,
   createProgressReporter,
@@ -51,15 +47,6 @@ import {
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = "session"
 const ENGINEER_NLS_IDLE_TIMEOUT_MS = 20 * 60_000
-const ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS = [
-  ...DEFAULT_NLS_SYSTEM_TOOLS,
-  NlsSystemTool.View,
-  NlsSystemTool.Create,
-  NlsSystemTool.Edit,
-  NlsSystemTool.Grep,
-  NlsSystemTool.Glob,
-  NlsSystemTool.Task,
-]
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
@@ -903,45 +890,34 @@ function createDevDatabaseTool({
     handler: async () => {
       logger.info("engineer create_dev_database started")
 
-      try {
-        const response = await provisionService.createTemporaryPostgresDatabase({})
+      const response = await provisionService.createTemporaryPostgresDatabase({})
 
-        if (!response.credentials || response.credentials.case === undefined) {
-          throw new Error("Infra did not return temporary database credentials")
-        }
-
-        const credentials = await waitForResult<PostgresDatabaseCredentials>(response.credentials, {
-          operationService: infraOperationService,
-        })
-        const databaseUrl = buildTemporaryDatabaseUrl(credentials)
-
-        logger.info(
-          'engineer create_dev_database completed host="%s" database="%s"',
-          credentials.host,
-          credentials.database,
-        )
-
-        return [
-          "Temporary PostgreSQL database created.",
-          "It will be deleted automatically after 24 hours.",
-          "If this session is resumed after a long time and the database no longer exists, call create_dev_database again.",
-          `host=${credentials.host}`,
-          `port=${credentials.port}`,
-          `database=${credentials.database}`,
-          `username=${credentials.username}`,
-          `password=${credentials.password}`,
-          `DATABASE_URL=${databaseUrl}`,
-        ].join("\n")
-      } catch (error) {
-        const errorDetails = describeToolError(error) || "unknown error"
-        logger.error(
-          { error: toError(error) },
-          'engineer create_dev_database failed details="%s"',
-          errorDetails,
-        )
-
-        return `create_dev_database failed: ${errorDetails}`
+      if (!response.credentials || response.credentials.case === undefined) {
+        throw new Error("Infra did not return temporary database credentials")
       }
+
+      const credentials = await waitForResult<PostgresDatabaseCredentials>(response.credentials, {
+        operationService: infraOperationService,
+      })
+      const databaseUrl = buildTemporaryDatabaseUrl(credentials)
+
+      logger.info(
+        'engineer create_dev_database completed host="%s" database="%s"',
+        credentials.host,
+        credentials.database,
+      )
+
+      return [
+        "Temporary PostgreSQL database created.",
+        "It will be deleted automatically after 24 hours.",
+        "If this session is resumed after a long time and the database no longer exists, call create_dev_database again.",
+        `host=${credentials.host}`,
+        `port=${credentials.port}`,
+        `database=${credentials.database}`,
+        `username=${credentials.username}`,
+        `password=${credentials.password}`,
+        `DATABASE_URL=${databaseUrl}`,
+      ].join("\n")
     },
   })
 }
@@ -991,107 +967,94 @@ function createDeployReplicaTool({
         branchName,
       )
 
-      try {
-        const octokit = runtime.getOctokit()
-        const startedAt = new Date()
+      const octokit = runtime.getOctokit()
+      const startedAt = new Date()
 
-        const mergedPullRequest = await getMergedPullRequestForBranch({
-          octokit,
-          owner,
-          repo,
-          branchName,
-        })
+      const mergedPullRequest = await getMergedPullRequestForBranch({
+        octokit,
+        owner,
+        repo,
+        branchName,
+      })
 
-        if (mergedPullRequest) {
-          if (mergedPullRequest.title.trim().length === 0) {
-            throw new Error(
-              `Merged pull request for branch "${branchName}" has empty title. Use a descriptive PR title and retry.`,
-            )
-          }
-
-          if (issueNumber && !hasIssueClosingTagAtBodyEnd(mergedPullRequest.body, issueNumber)) {
-            throw new Error(
-              `Merged pull request #${mergedPullRequest.number} must end body with "Closes #${issueNumber}".`,
-            )
-          }
-        } else {
-          logger.info(
-            'engineer deploy_replica proceeding without merged PR replica="%s" branch="%s"',
-            replicaName,
-            branchName,
-          )
-        }
-
-        await octokit.rest.actions.createWorkflowDispatch({
-          owner,
-          repo,
-          workflow_id: "build-replica.yml",
-          ref: "main",
-          inputs: {
-            replica_name: replicaName,
-          },
-        })
-
-        const run = await waitForWorkflowRun({
-          octokit,
-          owner,
-          repo,
-          startedAt,
-        })
-        if (run.conclusion !== "success") {
+      if (mergedPullRequest) {
+        if (mergedPullRequest.title.trim().length === 0) {
           throw new Error(
-            `Replica build workflow failed with conclusion "${run.conclusion}" (run: ${run.url}).`,
+            `Merged pull request for branch "${branchName}" has empty title. Use a descriptive PR title and retry.`,
           )
         }
 
-        const manifest = await loadReplicaManifestFromRepository({
-          octokit,
-          owner,
-          repo,
-          replicaName,
-        })
-
-        await requestReplicaLoadPermission({
-          permissionRequestService,
-          accessOperationService,
-          replicaName,
-          issueUrl: issueNumber
-            ? `https://github.com/${owner}/${repo}/issues/${issueNumber}`
-            : undefined,
-        })
-
-        const loadReplicaResponse = await loadService.loadReplica({
-          name: replicaName,
-          image: `${manifest.image}:${manifest.version}`,
-        })
-
-        if (!loadReplicaResponse.operation) {
-          throw new Error("Alpha load operation was not returned")
+        if (issueNumber && !hasIssueClosingTagAtBodyEnd(mergedPullRequest.body, issueNumber)) {
+          throw new Error(
+            `Merged pull request #${mergedPullRequest.number} must end body with "Closes #${issueNumber}".`,
+          )
         }
-
-        await waitForOperationSuccess(loadReplicaResponse.operation, {
-          operationService: alphaOperationService,
-        })
-
+      } else {
         logger.info(
-          'engineer deploy_replica completed replica="%s" branch="%s"',
+          'engineer deploy_replica proceeding without merged PR replica="%s" branch="%s"',
           replicaName,
           branchName,
         )
-
-        return `Replica ${replicaName} deployed successfully`
-      } catch (error) {
-        const errorDetails = describeToolError(error) || "unknown error"
-        logger.error(
-          { error: toError(error) },
-          'engineer deploy_replica failed replica="%s" branch="%s" details="%s"',
-          replicaName,
-          branchName,
-          errorDetails,
-        )
-
-        return `deploy_replica failed: ${errorDetails}`
       }
+
+      await octokit.rest.actions.createWorkflowDispatch({
+        owner,
+        repo,
+        workflow_id: "build-replica.yml",
+        ref: "main",
+        inputs: {
+          replica_name: replicaName,
+        },
+      })
+
+      const run = await waitForWorkflowRun({
+        octokit,
+        owner,
+        repo,
+        startedAt,
+      })
+      if (run.conclusion !== "success") {
+        throw new Error(
+          `Replica build workflow failed with conclusion "${run.conclusion}" (run: ${run.url}).`,
+        )
+      }
+
+      const manifest = await loadReplicaManifestFromRepository({
+        octokit,
+        owner,
+        repo,
+        replicaName,
+      })
+
+      await requestReplicaLoadPermission({
+        permissionRequestService,
+        accessOperationService,
+        replicaName,
+        issueUrl: issueNumber
+          ? `https://github.com/${owner}/${repo}/issues/${issueNumber}`
+          : undefined,
+      })
+
+      const loadReplicaResponse = await loadService.loadReplica({
+        name: replicaName,
+        image: `${manifest.image}:${manifest.version}`,
+      })
+
+      if (!loadReplicaResponse.operation) {
+        throw new Error("Alpha load operation was not returned")
+      }
+
+      await waitForOperationSuccess(loadReplicaResponse.operation, {
+        operationService: alphaOperationService,
+      })
+
+      logger.info(
+        'engineer deploy_replica completed replica="%s" branch="%s"',
+        replicaName,
+        branchName,
+      )
+
+      return `Replica ${replicaName} deployed successfully`
     },
   })
 }
@@ -1156,112 +1119,95 @@ function createDeliverChangesTool({
         truncateOneLine(title, 160),
       )
 
-      try {
-        const octokit = runtime.getOctokit()
-        const currentBranch = await getCurrentGitBranch(repositoryPath)
+      const octokit = runtime.getOctokit()
+      const currentBranch = await getCurrentGitBranch(repositoryPath)
 
-        if (currentBranch !== branchName) {
-          throw new Error(
-            `Before deliver_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
-          )
-        }
-
-        validatePullRequestTitle(title)
-
-        if (issueNumber && !hasIssueClosingTagAtBodyEnd(body, issueNumber)) {
-          throw new Error(`Pull request body must end with "Closes #${issueNumber}".`)
-        }
-
-        await validateBranchCommitMessages(repositoryPath, branchName)
-
-        await runCommand([
-          "git",
-          "-C",
-          repositoryPath,
-          "push",
-          "--set-upstream",
-          "origin",
-          branchName,
-        ])
-
-        const existingPullRequests = await octokit.rest.pulls.list({
-          owner,
-          repo,
-          state: "open",
-          head: `${owner}:${branchName}`,
-        })
-
-        const existingPullRequest = existingPullRequests.data[0]
-        const pullRequest = existingPullRequest
-          ? (
-              await octokit.rest.pulls.update({
-                owner,
-                repo,
-                pull_number: existingPullRequest.number,
-                title,
-                body,
-              })
-            ).data
-          : (
-              await octokit.rest.pulls.create({
-                owner,
-                repo,
-                base: "main",
-                head: branchName,
-                title,
-                body,
-              })
-            ).data
-
-        const ciCheckResult = await waitForPullRequestCiCheck({
-          octokit,
-          owner,
-          repo,
-          pullRequestNumber: pullRequest.number,
-        })
-
-        if (ciCheckResult.status !== "success") {
-          throw new Error(`PR check ci:check failed: ${ciCheckResult.failureMessage}`)
-        }
-
-        await octokit.rest.pulls.merge({
-          owner,
-          repo,
-          pull_number: pullRequest.number,
-          merge_method: "rebase",
-        })
-
-        await octokit.rest.git
-          .deleteRef({
-            owner,
-            repo,
-            ref: `heads/${branchName}`,
-          })
-          .catch(() => undefined)
-
-        logger.info(
-          'engineer deliver_changes completed branch="%s" pr_number="%s"',
-          branchName,
-          String(pullRequest.number),
+      if (currentBranch !== branchName) {
+        throw new Error(
+          `Before deliver_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
         )
-
-        return `Pull request #${pullRequest.number} merged: ${pullRequest.html_url}`
-      } catch (error) {
-        const errorDetails = describeToolError(error) || "unknown error"
-        const rewriteHint =
-          error instanceof CommitValidationError
-            ? "Rewrite invalid commit message(s) before retry. Follow docs/changes.md for commit message rules"
-            : undefined
-        const responseDetails = rewriteHint ? `${errorDetails}. ${rewriteHint}` : errorDetails
-        logger.error(
-          { error: toError(error) },
-          'engineer deliver_changes failed branch="%s" details="%s"',
-          branchName,
-          responseDetails,
-        )
-
-        return `deliver_changes failed: ${responseDetails}`
       }
+
+      validatePullRequestTitle(title)
+
+      if (issueNumber && !hasIssueClosingTagAtBodyEnd(body, issueNumber)) {
+        throw new Error(`Pull request body must end with "Closes #${issueNumber}".`)
+      }
+
+      await validateBranchCommitMessages(repositoryPath, branchName)
+
+      await runCommand([
+        "git",
+        "-C",
+        repositoryPath,
+        "push",
+        "--set-upstream",
+        "origin",
+        branchName,
+      ])
+
+      const existingPullRequests = await octokit.rest.pulls.list({
+        owner,
+        repo,
+        state: "open",
+        head: `${owner}:${branchName}`,
+      })
+
+      const existingPullRequest = existingPullRequests.data[0]
+      const pullRequest = existingPullRequest
+        ? (
+            await octokit.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: existingPullRequest.number,
+              title,
+              body,
+            })
+          ).data
+        : (
+            await octokit.rest.pulls.create({
+              owner,
+              repo,
+              base: "main",
+              head: branchName,
+              title,
+              body,
+            })
+          ).data
+
+      const ciCheckResult = await waitForPullRequestCiCheck({
+        octokit,
+        owner,
+        repo,
+        pullRequestNumber: pullRequest.number,
+      })
+
+      if (ciCheckResult.status !== "success") {
+        throw new Error(`PR check ci:check failed: ${ciCheckResult.failureMessage}`)
+      }
+
+      await octokit.rest.pulls.merge({
+        owner,
+        repo,
+        pull_number: pullRequest.number,
+        merge_method: "rebase",
+      })
+
+      await octokit.rest.git
+        .deleteRef({
+          owner,
+          repo,
+          ref: `heads/${branchName}`,
+        })
+        .catch(() => undefined)
+
+      logger.info(
+        'engineer deliver_changes completed branch="%s" pr_number="%s"',
+        branchName,
+        String(pullRequest.number),
+      )
+
+      return `Pull request #${pullRequest.number} merged: ${pullRequest.html_url}`
     },
   })
 }
@@ -1288,48 +1234,36 @@ function createCommitChangesTool({
         String(paths.length),
       )
 
-      try {
-        const currentBranch = await getCurrentGitBranch(repositoryPath)
-        if (currentBranch !== branchName) {
-          throw new Error(
-            `Before commit_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
-          )
-        }
-
-        validateBranchCommitLogOutput(`0000000000000000000000000000000000000000\0${message}\0\0`)
-
-        await runCommand(["git", "-C", repositoryPath, "add", "--", ...paths])
-        await runCommand(["git", "-C", repositoryPath, "commit", "-m", message])
-        await validateBranchCommitMessages(repositoryPath, branchName)
-
-        const { stdout } = await runCommandWithOutput([
-          "git",
-          "-C",
-          repositoryPath,
-          "rev-parse",
-          "--short",
-          "HEAD",
-        ])
-        const commitHash = stdout.trim()
-
-        logger.info(
-          'engineer commit_changes completed branch="%s" commit="%s"',
-          branchName,
-          commitHash,
+      const currentBranch = await getCurrentGitBranch(repositoryPath)
+      if (currentBranch !== branchName) {
+        throw new Error(
+          `Before commit_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
         )
-
-        return `Created validated commit ${commitHash}.`
-      } catch (error) {
-        const errorDetails = describeToolError(error) || "unknown error"
-        logger.error(
-          { error: toError(error) },
-          'engineer commit_changes failed branch="%s" details="%s"',
-          branchName,
-          errorDetails,
-        )
-
-        return `commit_changes failed: ${errorDetails}`
       }
+
+      validateBranchCommitLogOutput(`0000000000000000000000000000000000000000\0${message}\0\0`)
+
+      await runCommand(["git", "-C", repositoryPath, "add", "--", ...paths])
+      await runCommand(["git", "-C", repositoryPath, "commit", "-m", message])
+      await validateBranchCommitMessages(repositoryPath, branchName)
+
+      const { stdout } = await runCommandWithOutput([
+        "git",
+        "-C",
+        repositoryPath,
+        "rev-parse",
+        "--short",
+        "HEAD",
+      ])
+      const commitHash = stdout.trim()
+
+      logger.info(
+        'engineer commit_changes completed branch="%s" commit="%s"',
+        branchName,
+        commitHash,
+      )
+
+      return `Created validated commit ${commitHash}.`
     },
   })
 }
@@ -1689,7 +1623,6 @@ async function runPlanningLanguageStream({
         configDir: environment.sessionDirPath,
         idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
-        allowedSystemTools: ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS,
       },
     )
   } finally {
@@ -1784,7 +1717,6 @@ async function runImplementationLanguageStream({
             infraOperationService,
           }),
         ],
-        allowedSystemTools: ENGINEER_AGENT_ALLOWED_SYSTEM_TOOLS,
         shouldCancel: async () => await isTaskCancellationRequested(prisma, dbTaskId),
         cancelPollIntervalMs: 1000,
       },
@@ -1966,71 +1898,6 @@ async function createAuthenticatedCloneUrl(
 
 function sanitizeSensitiveLogText(value: string): string {
   return value.replace(/x-access-token:[^@\s]+@github\.com/gi, "x-access-token:***@github.com")
-}
-
-function describeToolError(error: unknown): string {
-  const message =
-    typeof error === "object" && error !== null && "message" in error
-      ? String((error as { message?: unknown }).message ?? "")
-      : String(error)
-
-  const status =
-    typeof error === "object" && error !== null && "status" in error
-      ? String((error as { status?: unknown }).status ?? "")
-      : ""
-
-  const response =
-    typeof error === "object" && error !== null && "response" in error
-      ? (error as { response?: unknown }).response
-      : undefined
-
-  const responseStatus =
-    response && typeof response === "object" && "status" in response
-      ? String((response as { status?: unknown }).status ?? "")
-      : ""
-  const responseMessage =
-    response && typeof response === "object" && "data" in response
-      ? extractResponseMessage((response as { data?: unknown }).data)
-      : ""
-
-  const parts = [message]
-  if (status.length > 0) {
-    parts.push(`status=${status}`)
-  }
-
-  if (responseStatus.length > 0) {
-    parts.push(`response_status=${responseStatus}`)
-  }
-
-  if (responseMessage.length > 0) {
-    parts.push(`response_message=${responseMessage}`)
-  }
-
-  return truncateOneLine(parts.filter(Boolean).join("; "), 1500)
-}
-
-function extractResponseMessage(value: unknown): string {
-  if (typeof value === "string") {
-    return value
-  }
-
-  if (!value || typeof value !== "object") {
-    return ""
-  }
-
-  if ("message" in value) {
-    return String((value as { message?: unknown }).message ?? "")
-  }
-
-  if ("error" in value) {
-    return String((value as { error?: unknown }).error ?? "")
-  }
-
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return ""
-  }
 }
 
 async function sleep(ms: number): Promise<void> {

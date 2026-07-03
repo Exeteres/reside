@@ -1,7 +1,9 @@
+import type { ThreadEvent, ThreadItem } from "@openai/codex-sdk"
 import type { Pool } from "pg"
 import type { CommonServices } from "../services"
-import { webcrypto } from "node:crypto"
-import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import type { Tool } from "./tool"
+import { randomUUID, webcrypto } from "node:crypto"
+import { access, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import {
   DeleteObjectCommand,
@@ -9,19 +11,19 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3"
-import { CopilotClient, type CopilotSession, type SessionConfig } from "@github/copilot-sdk"
+import { Codex } from "@openai/codex-sdk"
 import { z } from "zod"
 import { createStorageBucketService, type StorageBucketService } from "../database"
 import { crypto } from "../encryption"
 import { getReplicaName } from "../kubernetes"
 import { logger } from "../logger"
+import { type NlsMcpToolServer, startNlsMcpToolServer } from "./mcp-tool-server"
 import {
   createLanguageMemorySystemPrompt,
   createMemoryTools,
   type MemoryToolsPrisma,
   type MemoryToolTagDefinitions,
 } from "./memory"
-import { DEFAULT_NLS_SYSTEM_TOOLS, type NlsSystemTool } from "./system-tools"
 
 const NLS_SESSION_ARCHIVE_EXTENSION = "tgz"
 const NLS_NAMESPACE_PREFIX = "nls"
@@ -32,8 +34,8 @@ const STORAGE_INIT_RETRY_MS = 1000
 const STORAGE_INIT_MAX_ATTEMPTS = 5
 const STORAGE_OPERATION_WAIT_TIMEOUT_MS = 30_000
 const DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS = 120_000
-const BASH_RESULT_LOG_OUTPUT_MAX_LENGTH = 4000
 const LLM_SECRET_NAME = "llm"
+const MCP_TOKEN_ENV_VAR = "RESIDE_NLS_MCP_TOKEN"
 
 export type LanguageEngineModelTier = "light" | "smart"
 
@@ -65,8 +67,7 @@ export type LanguageEngineAskOptions = {
   systemPrompt?: string
   workingDirectory?: string
   configDir?: string
-  tools?: NonNullable<SessionConfig["tools"]>
-  allowedSystemTools?: NlsSystemTool[]
+  tools?: Tool[]
   idleTimeoutMs?: number
   shouldCancel?: () => Promise<boolean>
   cancelPollIntervalMs?: number
@@ -84,11 +85,15 @@ export type CreateLanguageEngineOptions = {
   model: LanguageEngineModelTier
   sessionPrefix: string
   systemPrompt: string
-  allowedSystemTools?: NlsSystemTool[]
-  tools?: NonNullable<SessionConfig["tools"]>
+  tools?: Tool[]
   tags?: MemoryToolTagDefinitions
   storageCredentials?: LanguageEngineStorageCredentials
-  copilotClientProvider?: () => CopilotClient
+}
+
+type CodexConfigValue = string | number | boolean | CodexConfigValue[] | CodexConfigObject
+
+type CodexConfigObject = {
+  [key: string]: CodexConfigValue
 }
 
 const llmSecretSchema = z.object({
@@ -105,21 +110,13 @@ export async function createLanguageEngine(
 
   const llmSecret = await crypto.getSecret(llmSecretSchema, LLM_SECRET_NAME)
   const model = selectLlmModel(llmSecret, args.model)
-  const provider: NonNullable<SessionConfig["provider"]> = {
-    type: "openai",
-    baseUrl: llmSecret.endpoint,
-    apiKey: llmSecret["api-key"],
-  }
-
   const sessionPrefix = normalizeSessionPrefix(args.sessionPrefix)
-  const copilotClientProvider = args.copilotClientProvider
   const baseSystemPrompt = args.systemPrompt.trim()
   const systemPrompt = [baseSystemPrompt, createLanguageMemorySystemPrompt(args.tags)].join("\n\n")
   if (systemPrompt.length === 0) {
     throw new Error("createLanguageEngine systemPrompt must not be empty")
   }
 
-  const allowedSystemTools = new Set<string>(args.allowedSystemTools ?? DEFAULT_NLS_SYSTEM_TOOLS)
   const workspacePath = join("/tmp", `${NLS_WORKSPACE_PREFIX}-${getReplicaName()}`)
   await mkdir(workspacePath, { recursive: true })
 
@@ -128,29 +125,16 @@ export async function createLanguageEngine(
       ? await waitForStorageBucketService(args.services)
       : createStorageBucketServiceFromCredentials(args.storageCredentials)
 
-  let currentCopilotClient: CopilotClient | undefined
-  if (!args.copilotClientProvider) {
-    const nextClient = new CopilotClient({
-      useLoggedInUser: false,
-    })
-    await nextClient.start()
-    currentCopilotClient = nextClient
-    logger.info("nls language client initialized")
-  }
-
-  const sessionLocks = new Map<string, Promise<void>>()
-
-  const engineTools: NonNullable<SessionConfig["tools"]> = [
+  const engineTools: Tool[] = [
     ...createMemoryTools({
       prisma: args.services.prisma,
       tags: args.tags,
     }),
     ...(args.tools ?? []),
   ]
-  const allowedCustomTools = collectCustomToolNames(engineTools)
-  for (const toolName of allowedCustomTools) {
-    allowedSystemTools.add(toolName)
-  }
+
+  const sessionLocks = new Map<string, Promise<void>>()
+  logger.info("nls language client initialized")
 
   return {
     ask: async (sessionId, text, options) => {
@@ -161,7 +145,6 @@ export async function createLanguageEngine(
         workingDirectory: options?.workingDirectory,
         configDir: options?.configDir,
         tools: options?.tools,
-        allowedSystemTools: options?.allowedSystemTools,
         idleTimeoutMs: options?.idleTimeoutMs,
         shouldCancel: options?.shouldCancel,
         cancelPollIntervalMs: options?.cancelPollIntervalMs,
@@ -176,7 +159,6 @@ export async function createLanguageEngine(
         workingDirectory: options?.workingDirectory,
         configDir: options?.configDir,
         tools: options?.tools,
-        allowedSystemTools: options?.allowedSystemTools,
         idleTimeoutMs: options?.idleTimeoutMs,
         shouldCancel: options?.shouldCancel,
         cancelPollIntervalMs: options?.cancelPollIntervalMs,
@@ -196,11 +178,7 @@ export async function createLanguageEngine(
         )
       })
     },
-    stop: async () => {
-      if (currentCopilotClient) {
-        await currentCopilotClient.stop()
-      }
-    },
+    stop: async () => undefined,
   }
 
   async function runLanguageEngineSession(args: {
@@ -209,8 +187,7 @@ export async function createLanguageEngine(
     systemPrompt?: string
     workingDirectory?: string
     configDir?: string
-    tools?: NonNullable<SessionConfig["tools"]>
-    allowedSystemTools?: NlsSystemTool[]
+    tools?: Tool[]
     idleTimeoutMs?: number
     shouldCancel?: () => Promise<boolean>
     cancelPollIntervalMs?: number
@@ -223,190 +200,64 @@ export async function createLanguageEngine(
     }
 
     return await runWithSessionLock(sessionLocks, normalizedSessionId, async () => {
-      const copilotClient = copilotClientProvider?.() ?? currentCopilotClient
-      if (!copilotClient) {
-        throw new Error("Copilot client is not initialized")
-      }
-
       const sessionWorkingDirectory = args.workingDirectory ?? workspacePath
       const sessionDirPath = args.configDir ?? join(workspacePath, NLS_SESSION_DIR)
       await mkdir(sessionDirPath, { recursive: true })
 
       const sessionTools = [...engineTools, ...(args.tools ?? [])]
-      const sessionAllowedSystemTools = new Set(allowedSystemTools)
-      for (const toolName of args.allowedSystemTools ?? []) {
-        const normalizedToolName = toolName.trim()
-        if (normalizedToolName.length > 0) {
-          sessionAllowedSystemTools.add(normalizedToolName)
-        }
-      }
-      for (const toolName of collectCustomToolNames(args.tools)) {
-        sessionAllowedSystemTools.add(toolName)
-      }
-
-      const environment: {
-        sessionId: string | undefined
-        sessionDirPath: string
-      } = {
+      const restoredThreadId = await restoreSessionArchive(
+        storageBucketService,
         sessionDirPath,
-        sessionId: await restoreSessionArchive(
-          storageBucketService,
-          sessionDirPath,
-          sessionPrefix,
-          normalizedSessionId,
-        ),
-      }
+        sessionPrefix,
+        normalizedSessionId,
+      )
+      let codexHomeId = restoredThreadId ?? randomUUID()
+      let codexHomePath = getSessionStatePath(sessionDirPath, codexHomeId)
+      await mkdir(codexHomePath, { recursive: true })
 
-      const sessionConfig: SessionConfig = {
-        model,
-        provider,
-        streaming: true,
-        workingDirectory: sessionWorkingDirectory,
-        configDir: sessionDirPath,
-        systemMessage: {
-          mode: "append",
-          content: [systemPrompt, args.systemPrompt?.trim()].filter(Boolean).join("\n\n"),
-        },
-        onPermissionRequest: async () => ({ kind: "approved" }),
+      const mcpServer = await startNlsMcpToolServer({
+        sessionId: normalizedSessionId,
         tools: sessionTools,
-        hooks: {
-          onPreToolUse: async toolInvocation => {
-            if (sessionAllowedSystemTools.has(toolInvocation.toolName)) {
-              return {
-                permissionDecision: "allow" as const,
-              }
-            }
-
-            const reason = `Tool "${toolInvocation.toolName}" is not allowed in language engine`
-
-            logger.warn(
-              'nls tool execution denied session_id="%s" tool_name="%s" reason="%s"',
-              normalizedSessionId,
-              toolInvocation.toolName,
-              reason,
-            )
-
-            return {
-              permissionDecision: "deny" as const,
-              permissionDecisionReason: reason,
-            }
-          },
-        },
-      }
-
-      const session = await createOrResumeSession(copilotClient, environment, sessionConfig)
-      const unsubscribeRealtimeLogs = registerLanguageSessionLogs(session, normalizedSessionId)
-      const stopCancellationWatcher = watchLanguageSessionCancellation({
-        session,
-        shouldCancel: args.shouldCancel,
-        pollIntervalMs: args.cancelPollIntervalMs,
       })
-      let unsubscribeAssistantMessage: (() => void) | undefined
-      let unsubscribeAssistantMessageDelta: (() => void) | undefined
-      let frameChain = Promise.resolve()
-      let hasStreamedFrame = false
-      let lastStreamedText = ""
-      let currentStreamMessageId: string | undefined
-      const streamedTextByMessageId = new Map<string, string>()
-      const deltaSeenMessageIds = new Set<string>()
-
-      const queueFrame = (frame: { text: string; reset: boolean }) => {
-        frameChain = frameChain
-          .then(async () => {
-            hasStreamedFrame = true
-            lastStreamedText = frame.text
-            await args.onFrame?.(frame)
-          })
-          .catch(error => {
-            logger.warn({ error: normalizeError(error) }, "nls stream frame callback failed")
-          })
-      }
-
-      if (args.onFrame) {
-        unsubscribeAssistantMessageDelta = session.on("assistant.message_delta", event => {
-          const deltaContent = event.data.deltaContent
-          if (deltaContent.length === 0) {
-            return
-          }
-
-          const messageId = event.data.messageId
-          const previousText = streamedTextByMessageId.get(messageId) ?? ""
-          const nextText = `${previousText}${deltaContent}`
-          const reset = currentStreamMessageId !== messageId
-
-          streamedTextByMessageId.set(messageId, nextText)
-          deltaSeenMessageIds.add(messageId)
-          currentStreamMessageId = messageId
-
-          queueFrame({
-            text: nextText,
-            reset,
-          })
-        })
-
-        unsubscribeAssistantMessage = session.on("assistant.message", event => {
-          const frameText = normalizeAgentResponse(event.data.content).trim()
-          if (frameText.length === 0) {
-            return
-          }
-
-          const messageId = event.data.messageId
-          const hasDeltaFrames = deltaSeenMessageIds.has(messageId)
-          const accumulatedText = streamedTextByMessageId.get(messageId) ?? ""
-
-          if (!hasDeltaFrames) {
-            const reset = currentStreamMessageId !== messageId
-            currentStreamMessageId = messageId
-
-            queueFrame({
-              text: frameText,
-              reset,
-            })
-            return
-          }
-
-          if (accumulatedText !== frameText) {
-            streamedTextByMessageId.set(messageId, frameText)
-            queueFrame({
-              text: frameText,
-              reset: false,
-            })
-          }
-        })
-      }
-
+      let threadId = restoredThreadId
       let sessionError: unknown
 
       try {
         logger.info(
-          'nls session prompt session_id="%s" prompt="%s"',
+          'nls session prompt received session_id="%s" prompt_length="%s"',
           normalizedSessionId,
-          truncateOneLine(normalizedText, 1000),
+          String(normalizedText.length),
         )
 
-        const finalMessage = await sendAndWaitForSessionIdle(
-          session,
-          normalizedText,
-          args.idleTimeoutMs ?? DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS,
-        )
-        const responseText = normalizeAgentResponse(finalMessage).trim()
+        const responseText = await runCodexThread({
+          mcpServer,
+          codexHomePath,
+          restoredThreadId,
+          model,
+          baseUrl: llmSecret.endpoint,
+          apiKey: llmSecret["api-key"],
+          workingDirectory: sessionWorkingDirectory,
+          prompt: buildCodexPrompt({
+            systemPrompt,
+            requestSystemPrompt: args.systemPrompt,
+            userPrompt: normalizedText,
+          }),
+          idleTimeoutMs: args.idleTimeoutMs ?? DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS,
+          shouldCancel: args.shouldCancel,
+          cancelPollIntervalMs: args.cancelPollIntervalMs,
+          onThreadId: nextThreadId => {
+            threadId = nextThreadId
+          },
+          onFrame: args.onFrame,
+          sessionId: normalizedSessionId,
+        })
 
-        if (responseText.length === 0) {
+        const normalizedResponseText = responseText.trim()
+        if (normalizedResponseText.length === 0) {
           throw new Error("NLS returned empty response")
         }
 
-        if (args.onFrame) {
-          await frameChain
-
-          if (!hasStreamedFrame || lastStreamedText !== responseText) {
-            await args.onFrame({
-              text: responseText,
-              reset: !hasStreamedFrame,
-            })
-          }
-        }
-
-        return responseText
+        return normalizedResponseText
       } catch (error) {
         sessionError = error
         const errorObject = normalizeError(error)
@@ -421,37 +272,38 @@ export async function createLanguageEngine(
           cause: errorObject,
         })
       } finally {
-        stopCancellationWatcher()
-        unsubscribeRealtimeLogs()
-        unsubscribeAssistantMessageDelta?.()
-        unsubscribeAssistantMessage?.()
-
-        try {
-          await session.disconnect()
-        } catch (error) {
+        await mcpServer.stop().catch(error => {
           logger.warn(
             { error: normalizeError(error) },
-            'nls session disconnect failed session_id="%s"',
+            'nls mcp server stop failed session_id="%s"',
             normalizedSessionId,
           )
-        }
+        })
 
-        const currentSessionId = environment.sessionId?.trim()
-        if (currentSessionId) {
+        const currentThreadId = threadId?.trim()
+        if (currentThreadId) {
           try {
+            if (currentThreadId !== codexHomeId) {
+              const nextCodexHomePath = getSessionStatePath(sessionDirPath, currentThreadId)
+              await rm(nextCodexHomePath, { recursive: true, force: true })
+              await rename(codexHomePath, nextCodexHomePath)
+              codexHomeId = currentThreadId
+              codexHomePath = nextCodexHomePath
+            }
+
             await uploadSessionArchive(
               storageBucketService,
-              environment.sessionDirPath,
+              sessionDirPath,
               sessionPrefix,
               normalizedSessionId,
-              currentSessionId,
+              codexHomeId,
             )
           } catch (error) {
             logger.warn(
               { error: normalizeError(error) },
-              'nls session archive upload failed session_id="%s" copilot_session_id="%s" after_error="%s"',
+              'nls session archive upload failed session_id="%s" codex_thread_id="%s" after_error="%s"',
               normalizedSessionId,
-              currentSessionId,
+              currentThreadId,
               sessionError === undefined ? "false" : "true",
             )
           }
@@ -461,180 +313,323 @@ export async function createLanguageEngine(
   }
 }
 
-function registerLanguageSessionLogs(session: CopilotSession, sessionId: string): () => void {
-  const toolNamesByCallId = new Map<string, string>()
-  const toolStartTimesByCallId = new Map<string, number>()
-  const unsubscribers = [
-    session.on("assistant.message", event => {
-      const content = event.data.content.trim()
-      if (content.length === 0) {
-        return
-      }
+async function runCodexThread({
+  mcpServer,
+  codexHomePath,
+  restoredThreadId,
+  model,
+  baseUrl,
+  apiKey,
+  workingDirectory,
+  prompt,
+  idleTimeoutMs,
+  shouldCancel,
+  cancelPollIntervalMs,
+  onThreadId,
+  onFrame,
+  sessionId,
+}: {
+  mcpServer: NlsMcpToolServer
+  codexHomePath: string
+  restoredThreadId?: string
+  model: string
+  baseUrl: string
+  apiKey: string
+  workingDirectory: string
+  prompt: string
+  idleTimeoutMs: number
+  shouldCancel?: () => Promise<boolean>
+  cancelPollIntervalMs?: number
+  onThreadId: (threadId: string) => void
+  onFrame?: (frame: { text: string; reset: boolean }) => Promise<void>
+  sessionId: string
+}): Promise<string> {
+  const abortController = new AbortController()
+  const stopCancellationWatcher = watchLanguageSessionCancellation({
+    abortController,
+    shouldCancel,
+    pollIntervalMs: cancelPollIntervalMs,
+  })
+  const timeout = createIdleTimeout(idleTimeoutMs, abortController)
+  const frameQueue = createFrameQueue(onFrame)
 
-      logger.info(
-        'nls assistant message session_id="%s" message_id="%s" content="%s"',
-        sessionId,
-        event.data.messageId,
-        truncateOneLine(content, 2000),
-      )
-    }),
-    session.on("tool.execution_start", event => {
-      const argumentSummary = summarizeToolArguments(event.data.toolName, event.data.arguments)
-      toolNamesByCallId.set(event.data.toolCallId, event.data.toolName)
-      toolStartTimesByCallId.set(event.data.toolCallId, Date.now())
-
-      logger.info(
-        'nls tool execution started session_id="%s" tool_name="%s" tool_call_id="%s" args="%s"',
-        sessionId,
-        event.data.toolName,
-        event.data.toolCallId,
-        argumentSummary,
-      )
-    }),
-    session.on("tool.execution_complete", event => {
-      const toolName = toolNamesByCallId.get(event.data.toolCallId)
-      toolNamesByCallId.delete(event.data.toolCallId)
-      const startedAt = toolStartTimesByCallId.get(event.data.toolCallId)
-      toolStartTimesByCallId.delete(event.data.toolCallId)
-      const durationMs = startedAt === undefined ? undefined : Date.now() - startedAt
-
-      if (toolName !== "bash") {
-        logger.info(
-          'nls tool execution completed session_id="%s" tool_name="%s" tool_call_id="%s" duration_ms="%s" result="%s"',
-          sessionId,
-          toolName ?? "unknown",
-          event.data.toolCallId,
-          durationMs === undefined ? "unknown" : String(durationMs),
-          summarizeToolResult(event.data.result),
-        )
-        return
-      }
-
-      const bashResult = summarizeBashToolResult(event.data.result)
-
-      logger.info(
-        'nls bash execution completed session_id="%s" tool_call_id="%s" success="%s" exit_code="%s" duration_ms="%s" output_truncated="%s" output_file="%s" output="%s"',
-        sessionId,
-        event.data.toolCallId,
-        String(bashResult.success),
-        bashResult.exitCode === undefined ? "unknown" : String(bashResult.exitCode),
-        durationMs === undefined ? "unknown" : String(durationMs),
-        String(bashResult.outputTruncated),
-        bashResult.outputFile ?? "",
-        bashResult.output,
-      )
-    }),
-  ]
-
-  return () => {
-    for (const unsubscribe of unsubscribers) {
-      unsubscribe()
+  try {
+    const codex = new Codex({
+      baseUrl,
+      apiKey,
+      env: createCodexEnvironment(codexHomePath, mcpServer.token),
+      config: createCodexConfig(mcpServer),
+    })
+    const threadOptions = {
+      model,
+      sandboxMode: "danger-full-access" as const,
+      approvalPolicy: "never" as const,
+      networkAccessEnabled: true,
+      webSearchMode: "live" as const,
+      workingDirectory,
+      skipGitRepoCheck: true,
     }
+    const thread = restoredThreadId
+      ? codex.resumeThread(restoredThreadId, threadOptions)
+      : codex.startThread(threadOptions)
+    const { events } = await thread.runStreamed(prompt, { signal: abortController.signal })
+    let finalResponse = ""
+    let failure: Error | undefined
+
+    for await (const event of events) {
+      timeout.reset()
+      const eventFailure = await handleCodexEvent({
+        event,
+        sessionId,
+        onThreadId,
+        frameQueue,
+        currentFinalResponse: finalResponse,
+      })
+
+      if (event.type === "item.completed" && event.item.type === "agent_message") {
+        finalResponse = event.item.text
+      }
+
+      if (eventFailure) {
+        failure = eventFailure
+        break
+      }
+    }
+
+    await frameQueue.flush(finalResponse)
+
+    if (failure) {
+      throw failure
+    }
+
+    return finalResponse
+  } finally {
+    timeout.stop()
+    stopCancellationWatcher()
   }
 }
 
-function summarizeBashToolResult(result: unknown): {
-  exitCode?: number
-  output: string
-  outputFile?: string
-  outputTruncated: boolean
-  success: boolean
-} {
-  const terminalContent = collectTerminalResultContent(result)
-  const output =
-    terminalContent.output.length > 0 ? terminalContent.output : collectTextResultContent(result)
-  const detectedExitCode = terminalContent.exitCode ?? extractExitCodeFromOutput(output)
-  const normalizedOutput = output.replace(/\s+/g, " ").trim()
-  const truncatedOutput = truncateOneLine(output, BASH_RESULT_LOG_OUTPUT_MAX_LENGTH)
-
-  return {
-    exitCode: detectedExitCode,
-    output: truncatedOutput,
-    outputFile: extractSavedOutputPath(output),
-    outputTruncated: normalizedOutput.length > BASH_RESULT_LOG_OUTPUT_MAX_LENGTH,
-    success: detectedExitCode === undefined || detectedExitCode === 0,
-  }
-}
-
-function summarizeToolResult(result: unknown): string {
-  const output = collectTextResultContent(result)
-  if (output.length > 0) {
-    return truncateOneLine(output, 400)
-  }
-
-  return truncateOneLine(JSON.stringify(result) ?? "", 400)
-}
-
-function extractExitCodeFromOutput(output: string): number | undefined {
-  const match = output.match(/<exited with exit code (\d+)>/u)
-  if (!match) {
+async function handleCodexEvent({
+  event,
+  sessionId,
+  onThreadId,
+  frameQueue,
+  currentFinalResponse,
+}: {
+  event: ThreadEvent
+  sessionId: string
+  onThreadId: (threadId: string) => void
+  frameQueue: LanguageEngineFrameQueue
+  currentFinalResponse: string
+}): Promise<Error | undefined> {
+  if (event.type === "thread.started") {
+    onThreadId(event.thread_id)
     return undefined
   }
 
-  return Number.parseInt(match[1]!, 10)
-}
-
-function extractSavedOutputPath(output: string): string | undefined {
-  const match = output.match(/Saved to:\s+(\/\S+)/u)
-  return match?.[1]
-}
-
-function collectTerminalResultContent(result: unknown): { exitCode?: number; output: string } {
-  const resultObject = asRecord(result)
-  const contents = resultObject && Array.isArray(resultObject.contents) ? resultObject.contents : []
-  const terminalOutputs: string[] = []
-  let exitCode: number | undefined
-
-  for (const content of contents) {
-    const contentObject = asRecord(content)
-    if (!contentObject || contentObject.type !== "terminal") {
-      continue
-    }
-
-    if (typeof contentObject.text === "string") {
-      terminalOutputs.push(contentObject.text)
-    }
-    if (typeof contentObject.exitCode === "number") {
-      exitCode = contentObject.exitCode
-    }
+  if (event.type === "turn.failed") {
+    return new Error(event.error.message)
   }
 
-  return {
-    exitCode,
-    output: terminalOutputs.join("\n"),
-  }
-}
-
-function collectTextResultContent(result: unknown): string {
-  const resultObject = asRecord(result)
-  if (!resultObject) {
-    return ""
+  if (event.type === "error") {
+    return new Error(event.message)
   }
 
-  if (typeof resultObject.detailedContent === "string") {
-    return resultObject.detailedContent
-  }
-  if (typeof resultObject.content === "string") {
-    return resultObject.content
-  }
-
-  return ""
-}
-
-function asRecord(value: unknown): Record<string, unknown> | undefined {
-  if (!value || typeof value !== "object") {
+  if (
+    event.type !== "item.started" &&
+    event.type !== "item.updated" &&
+    event.type !== "item.completed"
+  ) {
     return undefined
   }
 
-  return value as Record<string, unknown>
+  logCodexItem(event.item, event.type, sessionId)
+
+  if (event.item.type === "agent_message" && event.item.text !== currentFinalResponse) {
+    frameQueue.push(event.item.id, event.item.text)
+  }
+
+  return undefined
+}
+
+function logCodexItem(item: ThreadItem, eventType: string, sessionId: string): void {
+  if (item.type === "agent_message") {
+    logger.info(
+      'nls assistant message session_id="%s" event_type="%s" message_id="%s" content_length="%s"',
+      sessionId,
+      eventType,
+      item.id,
+      String(item.text.length),
+    )
+    return
+  }
+
+  if (item.type === "mcp_tool_call") {
+    logger.info(
+      'nls tool execution session_id="%s" event_type="%s" tool_name="%s" tool_call_id="%s" status="%s"',
+      sessionId,
+      eventType,
+      item.tool,
+      item.id,
+      item.status,
+    )
+    return
+  }
+
+  if (item.type === "command_execution") {
+    logger.info(
+      'nls command execution session_id="%s" event_type="%s" command_id="%s" status="%s" exit_code="%s" output_length="%s"',
+      sessionId,
+      eventType,
+      item.id,
+      item.status,
+      item.exit_code === undefined ? "unknown" : String(item.exit_code),
+      String(item.aggregated_output.length),
+    )
+    return
+  }
+
+  if (item.type === "file_change") {
+    logger.info(
+      'nls file change session_id="%s" event_type="%s" item_id="%s" status="%s" files_count="%s"',
+      sessionId,
+      eventType,
+      item.id,
+      item.status,
+      String(item.changes.length),
+    )
+    return
+  }
+
+  if (item.type === "web_search") {
+    logger.info(
+      'nls web search session_id="%s" event_type="%s" item_id="%s" query_length="%s"',
+      sessionId,
+      eventType,
+      item.id,
+      String(item.query.length),
+    )
+    return
+  }
+
+  if (item.type === "error") {
+    logger.warn(
+      'nls codex item error session_id="%s" event_type="%s" item_id="%s" message="%s"',
+      sessionId,
+      eventType,
+      item.id,
+      truncateOneLine(item.message, 400),
+    )
+  }
+}
+
+type LanguageEngineFrameQueue = {
+  push: (messageId: string, text: string) => void
+  flush: (finalText: string) => Promise<void>
+}
+
+function createFrameQueue(
+  onFrame: ((frame: { text: string; reset: boolean }) => Promise<void>) | undefined,
+): LanguageEngineFrameQueue {
+  let frameChain = Promise.resolve()
+  let hasStreamedFrame = false
+  let lastStreamedText = ""
+  let currentStreamMessageId: string | undefined
+
+  const queueFrame = (messageId: string, text: string) => {
+    if (!onFrame || text.length === 0) {
+      return
+    }
+
+    const reset = currentStreamMessageId !== messageId
+    currentStreamMessageId = messageId
+    frameChain = frameChain
+      .then(async () => {
+        hasStreamedFrame = true
+        lastStreamedText = text
+        await onFrame({ text, reset })
+      })
+      .catch(error => {
+        logger.warn({ error: normalizeError(error) }, "nls stream frame callback failed")
+      })
+  }
+
+  return {
+    push: queueFrame,
+    flush: async finalText => {
+      if (!onFrame) {
+        return
+      }
+
+      await frameChain
+
+      if (!hasStreamedFrame || lastStreamedText !== finalText) {
+        await onFrame({
+          text: finalText,
+          reset: !hasStreamedFrame,
+        })
+      }
+    },
+  }
+}
+
+function buildCodexPrompt({
+  systemPrompt,
+  requestSystemPrompt,
+  userPrompt,
+}: {
+  systemPrompt: string
+  requestSystemPrompt?: string
+  userPrompt: string
+}): string {
+  return [
+    "System instructions for this ReSide NLS session:",
+    [systemPrompt, requestSystemPrompt?.trim()].filter(Boolean).join("\n\n"),
+    "User prompt:",
+    userPrompt,
+  ].join("\n\n")
+}
+
+function createCodexConfig(mcpServer: NlsMcpToolServer): CodexConfigObject {
+  return {
+    approval_policy: "never",
+    sandbox_mode: "danger-full-access",
+    web_search: "live",
+    mcp_servers: {
+      [mcpServer.name]: {
+        url: mcpServer.url,
+        bearer_token_env_var: MCP_TOKEN_ENV_VAR,
+        enabled: true,
+        required: true,
+        enabled_tools: mcpServer.toolNames,
+        default_tools_approval_mode: "approve",
+        startup_timeout_sec: 5,
+        tool_timeout_sec: 600,
+      },
+    },
+  }
+}
+
+function createCodexEnvironment(codexHomePath: string, mcpToken: string): Record<string, string> {
+  const env: Record<string, string> = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined) {
+      env[key] = value
+    }
+  }
+
+  env.CODEX_HOME = codexHomePath
+  env[MCP_TOKEN_ENV_VAR] = mcpToken
+
+  return env
 }
 
 function watchLanguageSessionCancellation({
-  session,
+  abortController,
   shouldCancel,
   pollIntervalMs,
 }: {
-  session: CopilotSession
+  abortController: AbortController
   shouldCancel?: () => Promise<boolean>
   pollIntervalMs?: number
 }): () => void {
@@ -646,15 +641,15 @@ function watchLanguageSessionCancellation({
   const intervalMs = Math.max(250, pollIntervalMs ?? 1000)
 
   const loop = async () => {
-    while (!stopped) {
+    while (!stopped && !abortController.signal.aborted) {
       await Bun.sleep(intervalMs)
-      if (stopped) {
+      if (stopped || abortController.signal.aborted) {
         return
       }
 
       try {
         if (await shouldCancel()) {
-          await session.disconnect()
+          abortController.abort()
           return
         }
       } catch (error) {
@@ -672,209 +667,31 @@ function watchLanguageSessionCancellation({
   }
 }
 
-async function sendAndWaitForSessionIdle(
-  session: CopilotSession,
-  prompt: string,
+function createIdleTimeout(
   idleTimeoutMs: number,
-): Promise<unknown> {
+  abortController: AbortController,
+): { reset: () => void; stop: () => void } {
   let timeoutId: ReturnType<typeof setTimeout> | undefined
-  let lastAssistantMessage: unknown
-  let settled = false
 
-  let resolveIdle: () => void
-  let rejectIdle: (error: Error) => void
-  const idlePromise = new Promise<void>((resolve, reject) => {
-    resolveIdle = resolve
-    rejectIdle = reject
-  })
-
-  const resetTimeout = () => {
+  const stop = () => {
     if (timeoutId !== undefined) {
       clearTimeout(timeoutId)
+      timeoutId = undefined
     }
+  }
 
+  const reset = () => {
+    stop()
     timeoutId = setTimeout(() => {
-      rejectIdle(
-        new Error(
-          `Timeout after ${idleTimeoutMs}ms without session activity waiting for session.idle`,
-        ),
+      abortController.abort(
+        new Error(`Timeout after ${idleTimeoutMs}ms without Codex session activity`),
       )
     }, idleTimeoutMs)
   }
 
-  const unsubscribe = session.on(event => {
-    if (settled) {
-      return
-    }
+  reset()
 
-    resetTimeout()
-
-    if (event.type === "assistant.message") {
-      lastAssistantMessage = event.data.content
-      return
-    }
-
-    if (event.type === "session.idle") {
-      settled = true
-      resolveIdle()
-      return
-    }
-
-    if (event.type === "session.error") {
-      settled = true
-      const error = new Error(event.data.message)
-      error.stack = event.data.stack
-      rejectIdle(error)
-    }
-  })
-
-  try {
-    resetTimeout()
-    await session.send({ prompt })
-    await idlePromise
-
-    return lastAssistantMessage
-  } finally {
-    settled = true
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId)
-    }
-    unsubscribe()
-  }
-}
-
-function summarizeToolArguments(toolName: string, argumentsValue: unknown): string {
-  if (!argumentsValue || typeof argumentsValue !== "object") {
-    return "{}"
-  }
-
-  const typedArguments = argumentsValue as Record<string, unknown>
-
-  if (toolName === "apply_patch") {
-    const patchInput = typeof typedArguments.input === "string" ? typedArguments.input : ""
-    const files = extractApplyPatchFilePaths(patchInput)
-    const listedFiles = files
-      .slice(0, 5)
-      .map(path => truncateOneLine(path, 120))
-      .join(",")
-    const filesPart =
-      files.length > 0
-        ? `files=${listedFiles}${files.length > 5 ? ` (+${files.length - 5} more)` : ""}`
-        : "files=<unknown>"
-    const explanation =
-      typeof typedArguments.explanation === "string"
-        ? truncateOneLine(typedArguments.explanation, 160)
-        : ""
-
-    return explanation.length > 0 ? `${filesPart} explanation=${explanation}` : filesPart
-  }
-
-  if (toolName === "bash") {
-    const command = typeof typedArguments.command === "string" ? typedArguments.command : ""
-    return `command=${truncateOneLine(command, 1000)}`
-  }
-
-  if (toolName === "query_database" || toolName === "sql") {
-    const sql = typeof typedArguments.sql === "string" ? typedArguments.sql : ""
-    return `sql_length=${sql.length}`
-  }
-
-  const pathKeys = [
-    "filePath",
-    "path",
-    "dirPath",
-    "workspaceRoot",
-    "workingDirectory",
-    "includePattern",
-    "query",
-  ]
-
-  const pathParts = pathKeys
-    .map(key => {
-      const value = typedArguments[key]
-      if (typeof value !== "string" || value.length === 0) {
-        return undefined
-      }
-
-      return `${key}=${truncateOneLine(value, 180)}`
-    })
-    .filter((value): value is string => Boolean(value))
-
-  if (pathParts.length > 0) {
-    return pathParts.join(" ")
-  }
-
-  const summary = Object.entries(typedArguments)
-    .filter(([key]) => !["content", "newCode", "codeSnippet", "prompt"].includes(key))
-    .map(([key, value]) => {
-      if (typeof value === "string") {
-        return `${key}=${truncateOneLine(value, 120)}`
-      }
-
-      if (typeof value === "number" || typeof value === "boolean") {
-        return `${key}=${String(value)}`
-      }
-
-      if (Array.isArray(value)) {
-        return `${key}=[${value.length}]`
-      }
-
-      if (value && typeof value === "object") {
-        return `${key}={...}`
-      }
-
-      return `${key}=null`
-    })
-    .join(" ")
-
-  return summary.length > 0 ? summary : "{}"
-}
-
-function extractApplyPatchFilePaths(patchInput: string): string[] {
-  if (patchInput.trim().length === 0) {
-    return []
-  }
-
-  const matches = [...patchInput.matchAll(/^\*\*\*\s+(?:Update|Add|Delete)\s+File:\s+(.+)$/gm)]
-  const paths = matches
-    .map(match => match[1]?.trim() ?? "")
-    .map(path => path.replace(/\s+->.+$/, "").trim())
-    .filter(path => path.length > 0)
-
-  return [...new Set(paths)]
-}
-
-function truncateOneLine(value: string, maxLength: number): string {
-  const normalized = value.replace(/\s+/g, " ").trim()
-  if (normalized.length <= maxLength) {
-    return normalized
-  }
-
-  return `${normalized.slice(0, maxLength)}...`
-}
-
-function collectCustomToolNames(
-  tools: NonNullable<SessionConfig["tools"]> | undefined,
-): Set<string> {
-  const names = new Set<string>()
-
-  if (!tools) {
-    return names
-  }
-
-  for (const tool of tools) {
-    if (
-      tool &&
-      typeof tool === "object" &&
-      "name" in tool &&
-      typeof tool.name === "string" &&
-      tool.name.length > 0
-    ) {
-      names.add(tool.name)
-    }
-  }
-
-  return names
+  return { reset, stop }
 }
 
 function selectLlmModel(
@@ -959,34 +776,6 @@ function createStorageBucketServiceFromCredentials(
     }),
     bucket: credentials.bucket,
   }
-}
-
-async function createOrResumeSession(
-  copilotClient: CopilotClient,
-  environment: { sessionId: string | undefined; sessionDirPath: string },
-  sessionConfig: SessionConfig,
-): Promise<CopilotSession> {
-  const previousSessionId = environment.sessionId?.trim()
-
-  if (previousSessionId) {
-    try {
-      const resumedSession = await copilotClient.resumeSession(previousSessionId, sessionConfig)
-      environment.sessionId = resumedSession.sessionId
-
-      return resumedSession
-    } catch (error) {
-      logger.warn(
-        { error: normalizeError(error) },
-        'nls failed to resume session previous_session_id="%s"',
-        previousSessionId,
-      )
-    }
-  }
-
-  const nextSession = await copilotClient.createSession(sessionConfig)
-  environment.sessionId = nextSession.sessionId
-
-  return nextSession
 }
 
 async function restoreSessionArchive(
@@ -1160,44 +949,6 @@ async function readSessionIdFromArchive(archivePath: string): Promise<string | u
   return candidate
 }
 
-function normalizeAgentResponse(response: unknown): string {
-  if (typeof response === "string") {
-    return response
-  }
-
-  if (response && typeof response === "object") {
-    const objectResponse = response as {
-      text?: unknown
-      content?: unknown
-      message?: unknown
-      data?: {
-        content?: unknown
-      }
-    }
-
-    const values = [
-      objectResponse.text,
-      objectResponse.content,
-      objectResponse.message,
-      objectResponse.data?.content,
-    ]
-
-    for (const value of values) {
-      if (typeof value === "string") {
-        return value
-      }
-    }
-
-    try {
-      return JSON.stringify(response)
-    } catch {
-      return String(response)
-    }
-  }
-
-  return String(response)
-}
-
 function ensureWebCryptoGlobals(): void {
   if (!globalThis.crypto) {
     globalThis.crypto = webcrypto as unknown as Crypto
@@ -1261,6 +1012,15 @@ async function runCommandWithOutput(command: string[]): Promise<{ stdout: string
   }
 
   return { stdout }
+}
+
+function truncateOneLine(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+
+  return `${normalized.slice(0, maxLength)}...`
 }
 
 function sanitizeFilePart(value: string): string {

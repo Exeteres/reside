@@ -13,13 +13,13 @@
     "@aws-sdk/client-s3": "^3.914.0",
     "@connectrpc/connect-fastify": "catalog:",
     "@connectrpc/connect": "catalog:",
+    "@openai/codex-sdk": "catalog:",
     "@temporalio/client": "catalog:",
     "@temporalio/common": "catalog:",
     "@temporalio/worker": "catalog:",
     "@temporalio/workflow": "catalog:",
     "openai": "catalog:",
-    "prisma": "catalog:",
-    "@github/copilot-sdk": "catalog:"
+    "prisma": "catalog:"
   },
   "devDependencies": {
     "@typescript/native-preview": "catalog:",

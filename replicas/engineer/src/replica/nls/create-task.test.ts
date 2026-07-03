@@ -77,7 +77,7 @@ describe("createCreateTaskTool", () => {
     })
   })
 
-  test("returns failure result when workflow start fails", async () => {
+  test("throws when workflow start fails", async () => {
     const temporalClient = createTemporalClient({
       start: async () => {
         throw new Error("temporal unavailable")
@@ -85,19 +85,12 @@ describe("createCreateTaskTool", () => {
     })
 
     const tool = createCreateTaskTool({ temporalClient })
-    const result = await tool.handler(
-      { task: "fix deploy", mode: "plan" },
-      {} as Parameters<typeof tool.handler>[1],
-    )
-
-    expect(result).toMatchObject({
-      status: "failed",
-      errorMessage: "temporal unavailable",
-      response: "Failed to create task: temporal unavailable",
-    })
+    await expect(
+      tool.handler({ task: "fix deploy", mode: "plan" }, {} as Parameters<typeof tool.handler>[1]),
+    ).rejects.toThrow("temporal unavailable")
   })
 
-  test("returns failure result for blank task", async () => {
+  test("throws for blank task", async () => {
     const temporalClient = createTemporalClient({
       start: async () => {
         throw new Error("must not be called")
@@ -105,15 +98,9 @@ describe("createCreateTaskTool", () => {
     })
 
     const tool = createCreateTaskTool({ temporalClient })
-    const result = await tool.handler(
-      { task: " ", mode: "plan" },
-      {} as Parameters<typeof tool.handler>[1],
-    )
-
-    expect(result).toMatchObject({
-      status: "failed",
-      errorMessage: "Task description must not be empty",
-    })
+    await expect(
+      tool.handler({ task: " ", mode: "plan" }, {} as Parameters<typeof tool.handler>[1]),
+    ).rejects.toThrow("Task description must not be empty")
   })
 })
 

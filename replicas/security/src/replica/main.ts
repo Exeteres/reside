@@ -61,7 +61,6 @@ const languageActivities = await createLanguageActivities({
   model: "smart",
   sessionPrefix: "approval",
   systemPrompt: buildSecuritySystemPrompt(),
-  allowedSystemTools: [],
   tools: decisionTools.tools,
   tags: APPROVAL_MEMORY_TAGS,
 })

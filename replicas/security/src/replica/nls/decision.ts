@@ -1,6 +1,6 @@
-import type { SessionConfig } from "@github/copilot-sdk"
+import type { SessionConfig } from "@reside/common"
 import type { ToolDecision } from "../business"
-import { defineTool } from "@github/copilot-sdk"
+import { defineTool } from "@reside/common"
 import { z } from "zod"
 
 type DecisionToolArgs = {
