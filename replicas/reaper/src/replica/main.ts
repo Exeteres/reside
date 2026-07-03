@@ -1,11 +1,13 @@
 import type { ConnectRouter } from "@connectrpc/connect"
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
+import { OperationSubscriptionService } from "@reside/api/common/operation.v1"
 import { PingService } from "@reside/api/common/ping.v1"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import { DefinitionService } from "@reside/api/reaper/definition.v1"
 import {
   createCommandHandlerService,
   createInteractionActivities,
+  createOperationSubscriptionService,
   createPingService,
   createServer,
   logger,
@@ -33,6 +35,10 @@ await server.register(fastifyConnectPlugin, {
       }),
     )
     router.service(CommandHandlerService, createCommandHandlerService(services.temporalClient))
+    router.service(
+      OperationSubscriptionService,
+      createOperationSubscriptionService(services.temporalClient),
+    )
     router.service(PingService, createPingService())
   },
 })
