@@ -36,6 +36,7 @@ const STORAGE_OPERATION_WAIT_TIMEOUT_MS = 30_000
 const DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS = 120_000
 const LLM_SECRET_NAME = "llm"
 const MCP_TOKEN_ENV_VAR = "RESIDE_NLS_MCP_TOKEN"
+const CODEX_MODEL_PROVIDER_ID = "reside"
 
 export type LanguageEngineModelTier = "light" | "smart"
 
@@ -234,7 +235,7 @@ export async function createLanguageEngine(
           codexHomePath,
           restoredThreadId,
           model,
-          baseUrl: llmSecret.endpoint,
+          providerBaseUrl: llmSecret.endpoint,
           apiKey: llmSecret["api-key"],
           workingDirectory: sessionWorkingDirectory,
           prompt: buildCodexPrompt({
@@ -318,7 +319,7 @@ async function runCodexThread({
   codexHomePath,
   restoredThreadId,
   model,
-  baseUrl,
+  providerBaseUrl,
   apiKey,
   workingDirectory,
   prompt,
@@ -333,7 +334,7 @@ async function runCodexThread({
   codexHomePath: string
   restoredThreadId?: string
   model: string
-  baseUrl: string
+  providerBaseUrl: string
   apiKey: string
   workingDirectory: string
   prompt: string
@@ -355,10 +356,9 @@ async function runCodexThread({
 
   try {
     const codex = new Codex({
-      baseUrl,
       apiKey,
       env: createCodexEnvironment(codexHomePath, mcpServer.token),
-      config: createCodexConfig(mcpServer),
+      config: createCodexConfig(mcpServer, providerBaseUrl),
     })
     const threadOptions = {
       model,
@@ -590,10 +590,22 @@ function buildCodexPrompt({
   ].join("\n\n")
 }
 
-function createCodexConfig(mcpServer: NlsMcpToolServer): CodexConfigObject {
+function createCodexConfig(
+  mcpServer: NlsMcpToolServer,
+  providerBaseUrl: string,
+): CodexConfigObject {
   return {
     approval_policy: "never",
     sandbox_mode: "danger-full-access",
+    model_provider: CODEX_MODEL_PROVIDER_ID,
+    model_providers: {
+      [CODEX_MODEL_PROVIDER_ID]: {
+        name: "ReSide LLM",
+        base_url: providerBaseUrl,
+        env_key: "CODEX_API_KEY",
+        wire_api: "responses",
+      },
+    },
     web_search: "live",
     mcp_servers: {
       [mcpServer.name]: {
