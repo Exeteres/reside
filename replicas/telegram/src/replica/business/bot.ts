@@ -45,7 +45,11 @@ import {
   deleteNotificationChannelBinding,
 } from "./notification-channel-binding"
 import { renderRepliedNotificationInfo, resolveRepliedNotificationInfo } from "./notification-info"
-import { EDIT_NOTIFICATION_TASKS_ACTION, getStatusIcon } from "./notification-message"
+import {
+  EDIT_NOTIFICATION_TASKS_ACTION,
+  getStatusIcon,
+  renderNotificationTaskRows,
+} from "./notification-message"
 import {
   buildNotificationInlineKeyboard,
   isNotificationPaginationActionName,
@@ -1986,8 +1990,8 @@ export function renderStoredNotificationMessage(input: {
   taskGroups: StoredNotificationTaskGroup[]
 }): MessageElement {
   const content = input.content.trim()
-  const title = `${getStatusIcon(input.status)} ${input.title}`
-  const taskRows = renderStoredNotificationTaskRows(input.taskGroups)
+  const title = `${getStatusIcon(input.status)} ${input.title}`.trim()
+  const taskRows = renderNotificationTaskRows(input.taskGroups)
   if (content.length > 0) {
     return block(bold(title), "", { html: content }, ...taskRows)
   }
@@ -2006,54 +2010,6 @@ function renderNotificationTaskSelectionFallbackMessage(tasks: { title: string }
     "",
     ...taskRows,
   ).html
-}
-
-function renderStoredNotificationTaskRows(
-  taskGroups: StoredNotificationTaskGroup[],
-): MessageElement[] {
-  if (taskGroups.length === 0) {
-    return []
-  }
-
-  const rows: MessageElement[] = [{ html: "" }]
-
-  for (const [groupIndex, group] of taskGroups.entries()) {
-    if (groupIndex > 0) {
-      rows.push({ html: "" })
-    }
-
-    rows.push(bold(`${getStatusIcon(getStoredTaskGroupStatus(group.tasks))} ${group.title}`))
-
-    for (const task of group.tasks) {
-      rows.push({ html: `${getStatusIcon(task.status)} ${html(task.title)}` })
-    }
-  }
-
-  return rows
-}
-
-function getStoredTaskGroupStatus(tasks: StoredNotificationTask[]): NotificationTaskStatus {
-  if (tasks.length === 0) {
-    return "SKIPPED"
-  }
-
-  if (tasks.some(task => task.status === "FAILED")) {
-    return "FAILED"
-  }
-
-  if (tasks.some(task => task.status === "IN_PROGRESS")) {
-    return "IN_PROGRESS"
-  }
-
-  if (tasks.some(task => task.status === "PENDING")) {
-    return "PENDING"
-  }
-
-  if (tasks.every(task => task.status === "COMPLETED" || task.status === "SKIPPED")) {
-    return "COMPLETED"
-  }
-
-  return "PLANNED"
 }
 
 async function sendSystemMessage(

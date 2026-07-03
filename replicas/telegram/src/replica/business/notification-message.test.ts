@@ -171,10 +171,57 @@ describe("notification message helpers", () => {
       false,
     )
 
-    expect(text).toContain("🔄 Title")
-    expect(text).toContain("📝 Task Group")
-    expect(text).toContain("- 📝 task1")
-    expect(text).toContain("- ⏭️ task2")
+    expect(text).toBe(
+      ["<b>🔄 Title</b>", "", "Body", "", "<b>📝 Task Group</b>", "📝 task1", "⏭️ task2"].join("\n"),
+    )
+  })
+
+  test("toTelegramMessageTextValue separates task groups", () => {
+    const text = toTelegramMessageTextValue(
+      {
+        title: "Title",
+        content: undefined,
+        status: "PLANNING",
+        taskGroups: [
+          {
+            id: "group-1",
+            title: "Group 1",
+            tasks: [
+              {
+                id: "task-1",
+                title: "task1",
+                status: "PLANNED",
+              },
+            ],
+          },
+          {
+            id: "group-2",
+            title: "Group 2",
+            tasks: [
+              {
+                id: "task-2",
+                title: "task2",
+                status: "SKIPPED",
+              },
+            ],
+          },
+        ],
+      },
+      "Sender",
+      false,
+    )
+
+    expect(text).toBe(
+      [
+        "<b>📝 Title</b>",
+        "",
+        "<b>📝 Group 1</b>",
+        "📝 task1",
+        "",
+        "<b>✅ Group 2</b>",
+        "⏭️ task2",
+      ].join("\n"),
+    )
   })
 
   test("isReplyTargetMessageMissingError detects missing reply target", () => {

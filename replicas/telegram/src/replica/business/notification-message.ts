@@ -1,3 +1,4 @@
+import type { MessageElement } from "@reside/common"
 import type { InlineKeyboardMarkup } from "grammy/types"
 import type {
   ActionRow,
@@ -7,7 +8,7 @@ import type {
   NotificationTaskStatus,
 } from "./notification-types"
 import { Code, ConnectError } from "@connectrpc/connect"
-import { block, bold } from "@reside/common"
+import { block, bold, html } from "@reside/common"
 import { GrammyError } from "grammy"
 import { strings } from "../../locale"
 
@@ -107,25 +108,38 @@ export function getStatusIcon(status: NotificationStatus | NotificationTaskStatu
   }
 }
 
-function renderTaskGroups(taskGroups: NotificationTaskGroupInput[]): string[] {
+export function renderNotificationTaskRows(
+  taskGroups: {
+    title: string
+    tasks: { title: string; status: NotificationTaskStatus }[]
+  }[],
+): MessageElement[] {
   if (taskGroups.length === 0) {
     return []
   }
 
-  const rows: string[] = [""]
+  const rows: MessageElement[] = [{ html: "" }]
 
-  for (const group of taskGroups) {
-    rows.push(bold(`${getStatusIcon(getTaskGroupStatus(group.tasks))} ${group.title}`).html)
+  for (const [groupIndex, group] of taskGroups.entries()) {
+    if (groupIndex > 0) {
+      rows.push({ html: "" })
+    }
+
+    rows.push(bold(`${getStatusIcon(getTaskGroupStatus(group.tasks))} ${group.title}`))
 
     for (const task of group.tasks) {
-      rows.push(`- ${getStatusIcon(task.status)} ${task.title}`)
+      rows.push({ html: `${getStatusIcon(task.status)} ${html(task.title)}` })
     }
   }
 
   return rows
 }
 
-function getTaskGroupStatus(tasks: NotificationTaskGroupInput["tasks"]): NotificationTaskStatus {
+function renderTaskGroups(taskGroups: NotificationTaskGroupInput[]): MessageElement[] {
+  return renderNotificationTaskRows(taskGroups)
+}
+
+function getTaskGroupStatus(tasks: { status: NotificationTaskStatus }[]): NotificationTaskStatus {
   if (tasks.length === 0) {
     return "SKIPPED"
   }
