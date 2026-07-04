@@ -62,6 +62,7 @@ import {
   completeOperationFromTopicMessage,
 } from "./response"
 import { resolveTelegramSubjectIdByTelegramUserId, toTelegramSubjectId } from "./subject"
+import { replaceUserReferencesWithSubjectIds } from "./user-reference"
 
 export {
   parseCommandInvocation,
@@ -503,6 +504,11 @@ export async function createTelegramBot(args: {
     const interactionContext = await buildInteractionContext(args.crypto, context, {
       messageId: message.message_id,
     })
+    const textWithSubjectIds = await replaceUserReferencesWithSubjectIds({
+      crypto: args.crypto,
+      prisma: args.prisma,
+      text: message.text,
+    })
 
     const commandInvocation = parseCommandInvocation(message.text)
     if (commandInvocation) {
@@ -521,7 +527,7 @@ export async function createTelegramBot(args: {
           userId,
           subjectUserId,
           messageId: message.message_id,
-          text: message.text,
+          text: textWithSubjectIds,
           entities: message.entities as TelegramMessageEntity[] | undefined,
           interactionContext,
           sendSystemMessage: async input => {
@@ -552,7 +558,11 @@ export async function createTelegramBot(args: {
         return
       }
 
-      const prompt = mentionInvocation.prompt.trim()
+      const prompt = await replaceUserReferencesWithSubjectIds({
+        crypto: args.crypto,
+        prisma: args.prisma,
+        text: mentionInvocation.prompt.trim(),
+      })
       if (prompt.length === 0) {
         return
       }
@@ -715,7 +725,11 @@ export async function createTelegramBot(args: {
           chatId,
           userId,
           message,
-          text: textResponse,
+          text: await replaceUserReferencesWithSubjectIds({
+            crypto: args.crypto,
+            prisma: args.prisma,
+            text: textResponse,
+          }),
           sourceText: message.text,
           entities: message.entities as TelegramMessageEntity[] | undefined,
           mentionedUsername: undefined,
