@@ -1,10 +1,6 @@
 ---
 name: reside-interactive
 description: Use when operating in an interactive ReSide repository session with direct user collaboration, local edits, tool calls, validation, or user-visible progress updates.
-skill_enforcement:
-  patterns:
-    - ".opencode/**"
-    - ".agents/**"
 ---
 
 # ReSide Interactive Session Rules
@@ -25,8 +21,7 @@ skill_enforcement:
 
 - If you discover that something changed after your edits, keep the new user-provided changes and do not revert them.
 - If LSP gives an error but you are sure it is a false positive, run the relevant `typecheck` script to verify.
-- Never run `reside bootstrap` unless the user explicitly approves it in the current chat.
-- Never run `nx show project` in interactive mode.
+- Follow `reside-core` command rules for repository-wide command restrictions.
 
 ## Validation
 

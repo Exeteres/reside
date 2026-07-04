@@ -41,7 +41,7 @@ Re-read this file periodically during plugin development to refresh context and 
 Before creating any plugin, MUST regenerate the API reference to ensure accuracy:
 
 ```bash
-bun run .opencode/skill/create-opencode-plugin/scripts/extract-plugin-api.ts
+bun .opencode/skills/create-opencode-plugin/scripts/extract-plugin-api.ts
 ```
 
 This generates:

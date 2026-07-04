@@ -53,6 +53,7 @@ Replica services generally use TypeScript/Bun, Prisma ORM, PostgreSQL, Temporal,
 
 - For TypeScript code style, type modeling, aliases, unions, array typing, type references, generics, errors, and logging, load `reside-typescript`.
 - For replica structure, boundaries, entrypoints, bootstrap, runtime composition, operations, localization, and e2e layout, load `reside-replica`.
+- For operation models, OperationService flows, operation subscriptions, callback payloads, and Reaper action identity, load `reside-operations`.
 - For Prisma schema modeling, relations, indexes, configs, migrations, and database generation, load `reside-prisma`.
 - For API/protocol work, generated API bindings, gRPC contracts, and protocol design, load `reside-api`.
 - For business-layer design, dependency injection for functions, and testability boundaries, load `reside-business`.

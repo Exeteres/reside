@@ -37,7 +37,7 @@ skill_enforcement:
 
 - External IDs or tokens that clients should not inspect must be opaque strings and explicitly documented as opaque.
 - If a value can be either immediate or deferred, model it as `oneof { result | operation }`.
-- Deferred flows must use `reside.common.operation.v1.Operation` and be compatible with `OperationService` polling/subscription.
+- Deferred flows must follow `reside-operations` API compatibility rules.
 - Callback endpoints must include the expected service contract in comments, describing what service the endpoint must implement.
 - Idempotent write RPCs must state idempotency in comments.
 

@@ -113,7 +113,9 @@ export function createRegistrationActivities({
   return {
     async reconcileRegistrationOperation({ operationId }) {
       // ...
-      return "completed";
+      return {
+        status: "completed",
+      };
     },
   };
 }
@@ -132,7 +134,7 @@ export async function waitForReplicaRegistrationWorkflow({
   operationId,
 }: WaitForReplicaRegistrationWorkflowInput): Promise<void> {
   while (true) {
-    const status = await reconcileRegistrationOperation({ operationId });
+    const { status } = await reconcileRegistrationOperation({ operationId });
     if (status === "completed") {
       return;
     }

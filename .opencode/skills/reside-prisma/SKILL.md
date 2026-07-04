@@ -110,18 +110,7 @@ data Json
 
 ## Operation Model Pattern
 
-Many replicas use a workflow/operation pattern.
-
-- Keep one `Operation` model per replica.
-- Keep generic operation fields compatible with common helpers.
-- Define a replica-local `OperationType` enum for every operation-producing flow.
-- Require `Operation.type OperationType` on the operation model and set it at every operation creation site.
-- Attach feature-specific entities via optional foreign keys and explicit relations.
-- Store identifiers for external operation-related entities in named columns, not in `customData`.
-- Examples include Temporal workflow IDs, deterministic idempotency keys, external request IDs, and callback context tokens.
-- Reserve `customData` for opaque OperationService subscription payloads that are passed through to operation completion callbacks.
-- Index operation lifecycle queries, such as `@@index([createdAt])` and status-specific indexes where needed.
-- Add lookup constraints for operation identifiers, for example `reaperActionId String? @unique`, when idempotency or polling depends on them.
+- Load `reside-operations` for operation model, callback payload, API subscription, and operation migration rules.
 
 ## Migration Workflow and Naming
 

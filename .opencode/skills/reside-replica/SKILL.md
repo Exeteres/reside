@@ -132,18 +132,7 @@ export const ru = {
 
 ## Operations Contract
 
-- Replica operations must use `createGenericOperationService` from `@reside/common`.
-- Replica DB must contain exactly one `Operation` entity compatible with the generic helper.
-- `Operation` must include a replica-local `OperationType` enum and a required `type` column.
-- Every operation creation site must set `type` to a specific enum value for the producing flow.
-- `Operation` may contain fields required by the helper, result references, and named operation identity columns.
-- Store identifiers for external operation-related entities in dedicated columns instead of `customData`.
-- `customData` is reserved for opaque OperationService subscription payloads passed through to completion callbacks, including callback workflow IDs embedded in that payload.
-- Operation migrations must be deployable on non-empty tables.
-- When adding `Operation.type` or any other required field to an existing table, add it nullable, backfill a deterministic value for all existing rows, and then mark it required; alternatively use a database default when that is the correct long-term model.
-- Expose operation subscription API via `createOperationSubscriptionService` when the server supports operation callbacks.
-- Reaper action payloads must include surrogate identifiers for replica-related resources, such as numeric database IDs or sorted binding IDs.
-- Do not derive action IDs only from stable names like replica names, command names, or resource names, because the same replica name can be recreated with different underlying resources.
+- Load `reside-operations` for operation model, callback payload, API subscription, and operation migration rules.
 
 ## API and Schema Generation
 

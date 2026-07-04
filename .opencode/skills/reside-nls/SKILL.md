@@ -5,6 +5,7 @@ skill_enforcement:
   patterns:
     - "replicas/*/src/replica/nls/**"
     - "replicas/*/src/replica/setupLanguageSubsystem.ts"
+    - "replicas/*/src/replica/main.ts"
     - "replicas/*/src/replica/assistant/**"
 ---
 
