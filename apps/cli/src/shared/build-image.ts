@@ -41,6 +41,7 @@ export async function buildPackageImage(
   const manifest = await loadResideManifest(packagePath)
   const hasWorkflows = await pathExists(resolve(packagePath, "src/workflows/index.ts"))
   const hasAssetsDirectory = await pathExists(resolve(packagePath, "assets"))
+  const hasOpenCodeConfig = await pathExists(resolve(rootPath, ".opencode/opencode.json"))
 
   if (!manifest) {
     throw new Error(`${RESIDE_MANIFEST_FILE} with image and version is required to build an image`)
@@ -56,6 +57,7 @@ export async function buildPackageImage(
     hasPrismaDirectory,
     hasPrismaConfig,
     hasAssetsDirectory,
+    hasOpenCodeConfig,
   })
   args.logger.debug("generated Dockerfile:\n%s", dockerfile)
 

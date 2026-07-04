@@ -16,6 +16,7 @@ describe("createDockerfile", () => {
     hasPrismaDirectory: false,
     hasPrismaConfig: false,
     hasAssetsDirectory: false,
+    hasOpenCodeConfig: false,
   }
 
   test("copies changelog into runtime image when replica has changelog", () => {
@@ -61,5 +62,17 @@ describe("createDockerfile", () => {
     expect(dockerfile).not.toContain("nix profile")
     expect(dockerfile).not.toContain(".nix-profile")
     expect(dockerfile).not.toContain("devenv shell")
+  })
+
+  test("copies opencode config into runtime image when present", () => {
+    const dockerfile = createDockerfile({
+      ...baseArgs,
+      hasChangelog: false,
+      hasOpenCodeConfig: true,
+    })
+
+    expect(dockerfile).toContain(
+      "COPY --from=build /app/.opencode/opencode.json /app/.opencode/opencode.json",
+    )
   })
 })

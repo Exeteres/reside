@@ -10,6 +10,7 @@ export type CreateDockerfileArgs = {
   hasPrismaDirectory: boolean
   hasPrismaConfig: boolean
   hasAssetsDirectory: boolean
+  hasOpenCodeConfig: boolean
 }
 
 export function createDockerfile(args: CreateDockerfileArgs): string {
@@ -98,6 +99,10 @@ export function createDockerfile(args: CreateDockerfileArgs): string {
 
   if (args.hasAssetsDirectory) {
     lines.push(`COPY --from=build /app/${args.replicaPath}/assets/ /app/assets/`)
+  }
+
+  if (args.hasOpenCodeConfig) {
+    lines.push("COPY --from=build /app/.opencode/opencode.json /app/.opencode/opencode.json")
   }
 
   lines.push("")
