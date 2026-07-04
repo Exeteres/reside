@@ -4,6 +4,7 @@ import { getSkillName, loadSkillRules } from "./skills"
 import { getTargetPaths } from "./targets"
 
 const interactiveSkillName = "reside-interactive"
+const engineerSkillName = "reside-engineer"
 const interactiveSessionReminder = [
   "This is an interactive ReSide session.",
   `Before working with the user's request, load the "${interactiveSkillName}" skill.`,
@@ -33,6 +34,15 @@ export const SkillEnforcementPlugin: Plugin = async ({ worktree }) => {
     "tool.execute.before": async (input, output) => {
       if (input.tool === "skill") {
         const skillName = getSkillName(output.args)
+
+        if (isInteractiveSession && skillName === engineerSkillName) {
+          throw new Error(
+            [
+              "Skill enforcement blocked this skill load.",
+              `The "${engineerSkillName}" skill is only allowed in non-interactive sessions.`,
+            ].join("\n"),
+          )
+        }
 
         if (skillName) {
           loadedSkills.add(skillName)
