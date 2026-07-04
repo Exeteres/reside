@@ -1,5 +1,5 @@
 import type { Config, SessionPromptResponse } from "@opencode-ai/sdk/v2"
-import { mkdtemp, rm } from "node:fs/promises"
+import { mkdtemp, readFile, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { createOpencode } from "@opencode-ai/sdk/v2"
@@ -16,6 +16,10 @@ const llmSecretSchema = z.object({
 })
 
 const runtime = await startEngineerAiRuntime()
+const OPENCODE_MODEL_PROVIDER_ID = "reside"
+const OPENCODE_CONFIG_PATH = ".opencode/opencode.json"
+const RESIDE_LLM_ENDPOINT_ENV_VAR = "RESIDE_LLM_ENDPOINT"
+const RESIDE_LLM_API_KEY_ENV_VAR = "RESIDE_LLM_API_KEY"
 let exitCode = 0
 let workspacePath: string | undefined
 
@@ -65,17 +69,22 @@ try {
   const repositoryPath = join(workspacePath, repository.name)
   await runCommand(["git", "clone", "--depth", "1", repository.cloneUrl, repositoryPath])
 
+  const opencodeConfig = await loadOpenCodeConfig(llmSecret["light-model"])
+  const restoreEnvironment = setOpenCodeEnvironment({
+    providerBaseUrl: llmSecret.endpoint,
+    apiKey: llmSecret["api-key"],
+  })
   const opencode = await createOpencode({
     port: 0,
-    config: createOpenCodeConfig(llmSecret),
-  })
+    config: createOpenCodeSessionConfig(opencodeConfig, llmSecret["light-model"]),
+  }).finally(restoreEnvironment)
   const session = await opencode.client.session.create({
     directory: repositoryPath,
     title: "Engineer e2e",
     agent: "build",
     model: {
       id: llmSecret["light-model"],
-      providerID: "reside",
+      providerID: OPENCODE_MODEL_PROVIDER_ID,
     },
     permission: [{ permission: "*", pattern: "*", action: "allow" }],
   })
@@ -88,7 +97,7 @@ try {
     directory: repositoryPath,
     agent: "build",
     model: {
-      providerID: "reside",
+      providerID: OPENCODE_MODEL_PROVIDER_ID,
       modelID: llmSecret["light-model"],
     },
     parts: [{ type: "text", text: "Say hello to engineer replica in one short sentence." }],
@@ -171,28 +180,55 @@ async function withTimeout<T>(
   }
 }
 
-function createOpenCodeConfig(llmSecret: z.infer<typeof llmSecretSchema>): Config {
-  return {
-    share: "disabled",
-    autoupdate: false,
-    provider: {
-      reside: {
-        name: "ReSide LLM",
-        api: "openai",
-        options: {
-          apiKey: llmSecret["api-key"],
-          baseURL: llmSecret.endpoint,
-        },
-        models: {
-          [llmSecret["light-model"]]: {
-            name: llmSecret["light-model"],
-            tool_call: true,
-            reasoning: true,
-          },
-        },
-      },
-    },
+async function loadOpenCodeConfig(model: string): Promise<Config> {
+  const rawConfig = await readFile(OPENCODE_CONFIG_PATH, "utf8")
+  const config = JSON.parse(stripJsonCommentsAndTrailingCommas(rawConfig)) as Config
+  const provider = config.provider?.[OPENCODE_MODEL_PROVIDER_ID]
+  if (!provider?.models?.[model]) {
+    throw new Error(
+      `OpenCode config provider "${OPENCODE_MODEL_PROVIDER_ID}" does not define model "${model}"`,
+    )
   }
+
+  return config
+}
+
+function createOpenCodeSessionConfig(baseConfig: Config, model: string): Config {
+  return {
+    ...baseConfig,
+    model: `${OPENCODE_MODEL_PROVIDER_ID}/${model}`,
+  }
+}
+
+function setOpenCodeEnvironment({
+  providerBaseUrl,
+  apiKey,
+}: {
+  providerBaseUrl: string
+  apiKey: string
+}): () => void {
+  const previousEndpoint = process.env[RESIDE_LLM_ENDPOINT_ENV_VAR]
+  const previousApiKey = process.env[RESIDE_LLM_API_KEY_ENV_VAR]
+  process.env[RESIDE_LLM_ENDPOINT_ENV_VAR] = providerBaseUrl
+  process.env[RESIDE_LLM_API_KEY_ENV_VAR] = apiKey
+
+  return () => {
+    restoreEnvironmentValue(RESIDE_LLM_ENDPOINT_ENV_VAR, previousEndpoint)
+    restoreEnvironmentValue(RESIDE_LLM_API_KEY_ENV_VAR, previousApiKey)
+  }
+}
+
+function restoreEnvironmentValue(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name]
+    return
+  }
+
+  process.env[name] = value
+}
+
+function stripJsonCommentsAndTrailingCommas(value: string): string {
+  return value.replaceAll(/,\s*([}\]])/g, "$1")
 }
 
 function normalizeAgentResponse(response: SessionPromptResponse): string {

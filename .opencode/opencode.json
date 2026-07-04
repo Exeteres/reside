@@ -1,3 +1,30 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "reside": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "reside",
+      "options": {
+        "apiKey": "{env:RESIDE_LLM_API_KEY}",
+        "baseURL": "{env:RESIDE_LLM_ENDPOINT}",
+      },
+      "models": {
+        "cx/gpt-5.5": {
+          "name": "GPT-5.5",
+          "cost": {
+            "input": 5,
+            "output": 30,
+            "context_over_200k": {
+              "input": 10,
+              "output": 45
+            }
+          },
+          "limit": {
+            "context": 256000,
+            "output": 128000
+          }
+        },
+      },
+    },
+  },
 }

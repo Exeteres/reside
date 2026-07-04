@@ -37,6 +37,9 @@ const STORAGE_OPERATION_WAIT_TIMEOUT_MS = 30_000
 const DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS = 120_000
 const LLM_SECRET_NAME = "llm"
 const OPENCODE_MODEL_PROVIDER_ID = "reside"
+const OPENCODE_CONFIG_PATH = ".opencode/opencode.json"
+const RESIDE_LLM_ENDPOINT_ENV_VAR = "RESIDE_LLM_ENDPOINT"
+const RESIDE_LLM_API_KEY_ENV_VAR = "RESIDE_LLM_API_KEY"
 const COMMAND_LOG_MAX_LENGTH = 500
 const COMMAND_OUTPUT_TAIL_MAX_LENGTH = 2000
 
@@ -136,6 +139,7 @@ export async function createLanguageEngine(
 
   const llmSecret = await crypto.getSecret(llmSecretSchema, LLM_SECRET_NAME)
   const model = selectLlmModel(llmSecret, args.model)
+  const opencodeConfig = await loadOpenCodeConfig(model)
   const sessionPrefix = normalizeSessionPrefix(args.sessionPrefix)
   const baseSystemPrompt = args.systemPrompt.trim()
   const systemPrompt = [baseSystemPrompt, createLanguageMemorySystemPrompt(args.tags)].join("\n\n")
@@ -272,6 +276,7 @@ export async function createLanguageEngine(
           opencodeStatePath,
           restoredThreadId,
           model,
+          opencodeConfig,
           providerBaseUrl: llmSecret.endpoint,
           apiKey: llmSecret["api-key"],
           workingDirectory: sessionWorkingDirectory,
@@ -381,6 +386,7 @@ async function runOpenCodeSession({
   opencodeStatePath,
   restoredThreadId,
   model,
+  opencodeConfig,
   providerBaseUrl,
   apiKey,
   workingDirectory,
@@ -398,6 +404,7 @@ async function runOpenCodeSession({
   opencodeStatePath: string
   restoredThreadId?: string
   model: string
+  opencodeConfig: Config
   providerBaseUrl: string
   apiKey: string
   workingDirectory: string
@@ -424,11 +431,15 @@ async function runOpenCodeSession({
   let finalResponse = ""
   let status: OpenCodeTurnStatus = "failed"
   const serverAbortController = new AbortController()
+  const restoreEnvironment = setOpenCodeEnvironment({
+    providerBaseUrl,
+    apiKey,
+  })
   const opencode = await createOpencode({
     port: 0,
     signal: serverAbortController.signal,
-    config: createOpenCodeConfig(mcpServer, providerBaseUrl, apiKey, model),
-  })
+    config: createOpenCodeSessionConfig(opencodeConfig, mcpServer, model),
+  }).finally(restoreEnvironment)
 
   try {
     await mkdir(opencodeStatePath, { recursive: true })
@@ -526,34 +537,29 @@ function tailString(value: string, maxLength: number): string {
   return value.slice(value.length - maxLength)
 }
 
-function createOpenCodeConfig(
+async function loadOpenCodeConfig(model: string): Promise<Config> {
+  const rawConfig = await readFile(OPENCODE_CONFIG_PATH, "utf8")
+  const config = JSON.parse(stripJsonCommentsAndTrailingCommas(rawConfig)) as Config
+  const provider = config.provider?.[OPENCODE_MODEL_PROVIDER_ID]
+  if (!provider?.models?.[model]) {
+    throw new Error(
+      `OpenCode config provider "${OPENCODE_MODEL_PROVIDER_ID}" does not define model "${model}"`,
+    )
+  }
+
+  return config
+}
+
+function createOpenCodeSessionConfig(
+  baseConfig: Config,
   mcpServer: NlsMcpToolServer,
-  providerBaseUrl: string,
-  apiKey: string,
   model: string,
 ): Config {
   return {
-    share: "disabled",
-    autoupdate: false,
+    ...baseConfig,
     model: `${OPENCODE_MODEL_PROVIDER_ID}/${model}`,
-    provider: {
-      [OPENCODE_MODEL_PROVIDER_ID]: {
-        name: "ReSide LLM",
-        api: "openai",
-        options: {
-          apiKey,
-          baseURL: providerBaseUrl,
-        },
-        models: {
-          [model]: {
-            name: model,
-            tool_call: true,
-            reasoning: true,
-          },
-        },
-      },
-    },
     mcp: {
+      ...baseConfig.mcp,
       [mcpServer.name]: {
         type: "remote",
         url: mcpServer.url,
@@ -566,6 +572,37 @@ function createOpenCodeConfig(
       },
     },
   }
+}
+
+function setOpenCodeEnvironment({
+  providerBaseUrl,
+  apiKey,
+}: {
+  providerBaseUrl: string
+  apiKey: string
+}): () => void {
+  const previousEndpoint = process.env[RESIDE_LLM_ENDPOINT_ENV_VAR]
+  const previousApiKey = process.env[RESIDE_LLM_API_KEY_ENV_VAR]
+  process.env[RESIDE_LLM_ENDPOINT_ENV_VAR] = providerBaseUrl
+  process.env[RESIDE_LLM_API_KEY_ENV_VAR] = apiKey
+
+  return () => {
+    restoreEnvironmentValue(RESIDE_LLM_ENDPOINT_ENV_VAR, previousEndpoint)
+    restoreEnvironmentValue(RESIDE_LLM_API_KEY_ENV_VAR, previousApiKey)
+  }
+}
+
+function restoreEnvironmentValue(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name]
+    return
+  }
+
+  process.env[name] = value
+}
+
+function stripJsonCommentsAndTrailingCommas(value: string): string {
+  return value.replaceAll(/,\s*([}\]])/g, "$1")
 }
 
 function extractOpenCodeResponseText(response: SessionPromptResponse): string {
