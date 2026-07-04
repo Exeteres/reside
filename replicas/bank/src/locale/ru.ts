@@ -52,6 +52,8 @@ export const ru = {
     transactions: {
       empty: "История операций пуста.",
       title: "Последние операции:",
+      line: (createdAt: string, sign: string, amount: string, senderSubjectRhid: string) =>
+        `${createdAt} ${sign}${amount} ∅, отправитель: ${senderSubjectRhid}`,
     },
     transfer: {
       success: (amount: string) => `Переведено ${amount} ∅.`,

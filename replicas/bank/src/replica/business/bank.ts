@@ -6,6 +6,7 @@ import {
   InvalidTransferAmountError,
   InvalidTransferRecipientError,
 } from "../../definitions"
+import { strings } from "../../locale"
 
 const initialBalance = 100n
 const encryptedAmountSchema = z.object({ amount: z.string() })
@@ -30,13 +31,25 @@ export async function getTransactions(
     where: { OR: [{ senderAccountId: account.id }, { recipientAccountId: account.id }] },
     orderBy: { createdAt: "desc" },
     take: 10,
-    select: { senderAccountId: true, recipientAccountId: true, amountEcid: true, createdAt: true },
+    select: {
+      senderAccount: { select: { subjectRhid: true } },
+      recipientAccountId: true,
+      amountEcid: true,
+      createdAt: true,
+    },
   })
   const lines: string[] = []
   for (const row of rows) {
     const amount = await decryptAmount(crypto, row.amountEcid)
     const sign = row.recipientAccountId === account.id ? "+" : "-"
-    lines.push(`${row.createdAt.toISOString()} ${sign}${amount} ∅`)
+    lines.push(
+      strings.notifications.transactions.line(
+        row.createdAt.toISOString(),
+        sign,
+        amount,
+        row.senderAccount.subjectRhid,
+      ),
+    )
   }
   return lines
 }
