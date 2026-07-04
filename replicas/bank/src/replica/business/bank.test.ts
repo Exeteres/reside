@@ -53,7 +53,7 @@ describe("getTransactions", () => {
     } as never)
     prisma.transaction.findMany.mockResolvedValue([
       {
-        senderAccountId: "other",
+        senderAccount: { subjectRhid: "sender_rhid" },
         recipientAccountId: "account_1",
         amountEcid: "ecid:5",
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -61,7 +61,7 @@ describe("getTransactions", () => {
     ] as never)
 
     await expect(getTransactions(crypto, prisma, "subject_rhid")).resolves.toEqual([
-      "2026-01-01T00:00:00.000Z +5 ∅",
+      "2026-01-01T00:00:00.000Z +5 ∅, отправитель: sender_rhid",
     ])
   })
 })
