@@ -153,7 +153,7 @@ export async function createLanguageEngine(
     throw new Error("createLanguageEngine systemPrompt must not be empty")
   }
 
-  const workspacePath = getNlsRootPath()
+  const workspacePath = getNlsRootPath(sessionPrefix)
   await mkdir(workspacePath, { recursive: true })
 
   const storageBucketService =
@@ -1053,8 +1053,8 @@ function buildOpenCodePrompt({
   ].join("\n\n")
 }
 
-function getNlsRootPath(): string {
-  return join(homedir(), NLS_HOME_DIR)
+function getNlsRootPath(sessionPrefix: string): string {
+  return join(process.env.HOME ?? homedir(), NLS_HOME_DIR, sessionPrefix)
 }
 
 function watchLanguageSessionCancellation({
@@ -1286,10 +1286,10 @@ export async function uploadSessionArchive(
   }
 
   const archivePath = join(
-    getNlsRootPath(),
+    getNlsRootPath(sessionPrefix),
     `session-upload-${sanitizeFilePart(sessionStorageId)}.${NLS_SESSION_ARCHIVE_EXTENSION}`,
   )
-  await mkdir(getNlsRootPath(), { recursive: true })
+  await mkdir(getNlsRootPath(sessionPrefix), { recursive: true })
 
   await runCommand([
     "tar",
@@ -1345,10 +1345,10 @@ async function clearSessionArchive(
 ): Promise<void> {
   const archiveKey = getSessionArchiveKey(sessionPrefix, sessionStorageId)
   const archivePath = join(
-    getNlsRootPath(),
+    getNlsRootPath(sessionPrefix),
     `session-clear-${sanitizeFilePart(sessionStorageId)}.${NLS_SESSION_ARCHIVE_EXTENSION}`,
   )
-  await mkdir(getNlsRootPath(), { recursive: true })
+  await mkdir(getNlsRootPath(sessionPrefix), { recursive: true })
 
   try {
     const object = await storageBucketService.client.send(

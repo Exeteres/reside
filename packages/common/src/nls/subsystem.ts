@@ -35,7 +35,7 @@ import {
 import { defineTool } from "./tool"
 
 const NLS_DEFAULT_MODEL = "light"
-const NLS_SESSION_PREFIX = "sessions"
+const NLS_SESSION_PREFIX = "interactions"
 const DATABASE_QUERY_MAX_ROWS = 100
 const DATABASE_QUERY_MAX_VALUE_LENGTH = 2000
 

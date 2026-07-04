@@ -73,7 +73,7 @@ process.env.RESIDE_NON_INTERACTIVE = "1"
 const taskLanguageEngine = await createLanguageEngine({
   services,
   model: "smart",
-  sessionPrefix: "sessions",
+  sessionPrefix: "tasks",
   systemPrompt: "You implement engineer replica tasks inside prepared repository workspaces.",
 })
 registerGracefulShutdown(async () => {

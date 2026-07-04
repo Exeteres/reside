@@ -59,7 +59,7 @@ const decisionTools = createApprovalDecisionTools()
 const languageActivities = await createLanguageActivities({
   services,
   model: "smart",
-  sessionPrefix: "approval",
+  sessionPrefix: "approvals",
   systemPrompt: buildSecuritySystemPrompt(),
   tools: decisionTools.tools,
   tags: APPROVAL_MEMORY_TAGS,

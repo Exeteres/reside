@@ -1,6 +1,6 @@
 import type { StorageBucketService } from "../database"
 import { describe, expect, test } from "bun:test"
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import {
@@ -19,13 +19,13 @@ describe("nls session archive storage", () => {
       const uploaded = await uploadSessionArchive(
         service,
         join(root, "state"),
-        "sessions",
+        "interactions",
         "storage-empty",
         "ses_empty",
       )
 
       expect(uploaded).toBe(false)
-      expect(await service.hasObject("nls/sessions/storage-empty.tgz")).toBe(false)
+      expect(await service.hasObject("nls/interactions/storage-empty.tgz")).toBe(false)
     })
   })
 
@@ -39,17 +39,21 @@ describe("nls session archive storage", () => {
       const uploaded = await uploadSessionArchive(
         service,
         join(root, "source"),
-        "sessions",
+        "interactions",
         "storage-demo",
         "ses_demo",
       )
 
       expect(uploaded).toBe(true)
+      await expect(
+        stat(join(process.env.HOME ?? "", ".reside-nls", "interactions")),
+      ).resolves.toBeTruthy()
+      expect(await service.hasObject("nls/interactions/storage-demo.tgz")).toBe(true)
 
       const restoredSessionId = await restoreSessionArchive(
         service,
         restoredState,
-        "sessions",
+        "interactions",
         "storage-demo",
       )
 
@@ -73,6 +77,8 @@ type TempArchiveStore = {
 
 async function withTempArchiveStore(testBody: (store: TempArchiveStore) => Promise<void>) {
   const root = await mkdtemp(join(tmpdir(), "reside-nls-archive-"))
+  const previousHome = process.env.HOME
+  process.env.HOME = join(root, "home")
 
   try {
     await testBody({
@@ -80,6 +86,11 @@ async function withTempArchiveStore(testBody: (store: TempArchiveStore) => Promi
       service: createTempStorageBucketService(root),
     })
   } finally {
+    if (previousHome === undefined) {
+      delete process.env.HOME
+    } else {
+      process.env.HOME = previousHome
+    }
     await rm(root, { recursive: true, force: true })
   }
 }
