@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/nls.v1.proto.
  */
 export const file_interaction_nls_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEizgEKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEkwKDHN1YmplY3RfaW5mbxgDIAMoCzI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdC5TdWJqZWN0SW5mb0VudHJ5GjIKEFN1YmplY3RJbmZvRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASIbCgtBc2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJIjAKEUFza1N0cmVhbVJlc3BvbnNlEgwKBHRleHQYASABKAkSDQoFcmVzZXQYAiABKAgiMAoaQ2xlYXJTdWJqZWN0Q29udGV4dFJlcXVlc3QSEgoKc3ViamVjdF9pZBgBIAEoCTK4AgoWTmF0dXJhbExhbmd1YWdlU2VydmljZRJUCgNBc2sSJS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1JlcXVlc3QaJi5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1Jlc3BvbnNlEmIKCUFza1N0cmVhbRIlLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdBosLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrU3RyZWFtUmVzcG9uc2UwARJkChNDbGVhclN1YmplY3RDb250ZXh0EjUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5DbGVhclN1YmplY3RDb250ZXh0UmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
+  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEilAIKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEkwKDHN1YmplY3RfaW5mbxgDIAMoCzI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdC5TdWJqZWN0SW5mb0VudHJ5EhQKCnNlc3Npb25faWQYBCABKAlIABIZCg9sYXN0X3Nlc3Npb25faWQYBSABKAlIABoyChBTdWJqZWN0SW5mb0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCEwoRc2Vzc2lvbl9yZWZlcmVuY2UiLwoLQXNrUmVzcG9uc2USDAoEdGV4dBgBIAEoCRISCgpzZXNzaW9uX2lkGAIgASgJIkQKEUFza1N0cmVhbVJlc3BvbnNlEgwKBHRleHQYASABKAkSDQoFcmVzZXQYAiABKAgSEgoKc2Vzc2lvbl9pZBgDIAEoCSIwChpDbGVhclN1YmplY3RDb250ZXh0UmVxdWVzdBISCgpzdWJqZWN0X2lkGAEgASgJMrgCChZOYXR1cmFsTGFuZ3VhZ2VTZXJ2aWNlElQKA0FzaxIlLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdBomLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVzcG9uc2USYgoJQXNrU3RyZWFtEiUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXF1ZXN0GiwucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tTdHJlYW1SZXNwb25zZTABEmQKE0NsZWFyU3ViamVjdENvbnRleHQSNS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkNsZWFyU3ViamVjdENvbnRleHRSZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5YgZwcm90bzM", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
 
 /**
  * Request for asking the replica natural language subsystem.
@@ -42,6 +42,30 @@ export type AskRequest = Message<"reside.interaction.nls.v1.AskRequest"> & {
    * @generated from field: map<string, string> subject_info = 3;
    */
   subjectInfo: { [key: string]: string };
+
+  /**
+   * Optional conversation session reference.
+   * If omitted, the replica starts a new session.
+   *
+   * @generated from oneof reside.interaction.nls.v1.AskRequest.session_reference
+   */
+  sessionReference: {
+    /**
+     * Opaque session identifier that must be continued explicitly.
+     *
+     * @generated from field: string session_id = 4;
+     */
+    value: string;
+    case: "sessionId";
+  } | {
+    /**
+     * Opaque previous session identifier that the replica may continue when the prompt needs context.
+     *
+     * @generated from field: string last_session_id = 5;
+     */
+    value: string;
+    case: "lastSessionId";
+  } | { case: undefined; value?: undefined };
 };
 
 /**
@@ -72,6 +96,20 @@ export type AskRequestJson = {
    * @generated from field: map<string, string> subject_info = 3;
    */
   subjectInfo?: { [key: string]: string };
+
+  /**
+   * Opaque session identifier that must be continued explicitly.
+   *
+   * @generated from field: string session_id = 4;
+   */
+  sessionId?: string;
+
+  /**
+   * Opaque previous session identifier that the replica may continue when the prompt needs context.
+   *
+   * @generated from field: string last_session_id = 5;
+   */
+  lastSessionId?: string;
 };
 
 /**
@@ -93,6 +131,13 @@ export type AskResponse = Message<"reside.interaction.nls.v1.AskResponse"> & {
    * @generated from field: string text = 1;
    */
   text: string;
+
+  /**
+   * Opaque identifier of the created or continued session.
+   *
+   * @generated from field: string session_id = 2;
+   */
+  sessionId: string;
 };
 
 /**
@@ -107,6 +152,13 @@ export type AskResponseJson = {
    * @generated from field: string text = 1;
    */
   text?: string;
+
+  /**
+   * Opaque identifier of the created or continued session.
+   *
+   * @generated from field: string session_id = 2;
+   */
+  sessionId?: string;
 };
 
 /**
@@ -137,6 +189,14 @@ export type AskStreamResponse = Message<"reside.interaction.nls.v1.AskStreamResp
    * @generated from field: bool reset = 2;
    */
   reset: boolean;
+
+  /**
+   * Opaque identifier of the created or continued session.
+   * The first stream frame should include this as soon as the session is resolved.
+   *
+   * @generated from field: string session_id = 3;
+   */
+  sessionId: string;
 };
 
 /**
@@ -160,6 +220,14 @@ export type AskStreamResponseJson = {
    * @generated from field: bool reset = 2;
    */
   reset?: boolean;
+
+  /**
+   * Opaque identifier of the created or continued session.
+   * The first stream frame should include this as soon as the session is resolved.
+   *
+   * @generated from field: string session_id = 3;
+   */
+  sessionId?: string;
 };
 
 /**

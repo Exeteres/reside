@@ -395,6 +395,7 @@ export const ModelName = {
   EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   NaturalLanguageInteraction: 'NaturalLanguageInteraction',
+  NaturalLanguageInteractionMessage: 'NaturalLanguageInteractionMessage',
   NotificationResponse: 'NotificationResponse',
   NotificationTopic: 'NotificationTopic',
   NotificationTaskGroup: 'NotificationTaskGroup',
@@ -419,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "approvalRequest" | "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "notificationChannelBinding" | "chat" | "command" | "encryptedContent" | "memoryNote" | "naturalLanguageInteraction" | "notificationResponse" | "notificationTopic" | "notificationTaskGroup" | "notificationTask" | "notificationTaskPlanningPoll" | "notificationTaskPlanningPollOption" | "notification" | "operation" | "user"
+    modelProps: "approvalRequest" | "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "notificationChannelBinding" | "chat" | "command" | "encryptedContent" | "memoryNote" | "naturalLanguageInteraction" | "naturalLanguageInteractionMessage" | "notificationResponse" | "notificationTopic" | "notificationTaskGroup" | "notificationTask" | "notificationTaskPlanningPoll" | "notificationTaskPlanningPollOption" | "notification" | "operation" | "user"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1234,6 +1235,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.NaturalLanguageInteractionCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.NaturalLanguageInteractionCountAggregateOutputType> | number
+        }
+      }
+    }
+    NaturalLanguageInteractionMessage: {
+      payload: Prisma.$NaturalLanguageInteractionMessagePayload<ExtArgs>
+      fields: Prisma.NaturalLanguageInteractionMessageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NaturalLanguageInteractionMessageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NaturalLanguageInteractionMessageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>
+        }
+        findFirst: {
+          args: Prisma.NaturalLanguageInteractionMessageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NaturalLanguageInteractionMessageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>
+        }
+        findMany: {
+          args: Prisma.NaturalLanguageInteractionMessageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>[]
+        }
+        create: {
+          args: Prisma.NaturalLanguageInteractionMessageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>
+        }
+        createMany: {
+          args: Prisma.NaturalLanguageInteractionMessageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NaturalLanguageInteractionMessageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>[]
+        }
+        delete: {
+          args: Prisma.NaturalLanguageInteractionMessageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>
+        }
+        update: {
+          args: Prisma.NaturalLanguageInteractionMessageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>
+        }
+        deleteMany: {
+          args: Prisma.NaturalLanguageInteractionMessageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NaturalLanguageInteractionMessageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NaturalLanguageInteractionMessageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>[]
+        }
+        upsert: {
+          args: Prisma.NaturalLanguageInteractionMessageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NaturalLanguageInteractionMessagePayload>
+        }
+        aggregate: {
+          args: Prisma.NaturalLanguageInteractionMessageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNaturalLanguageInteractionMessage>
+        }
+        groupBy: {
+          args: Prisma.NaturalLanguageInteractionMessageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NaturalLanguageInteractionMessageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NaturalLanguageInteractionMessageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NaturalLanguageInteractionMessageCountAggregateOutputType> | number
         }
       }
     }
@@ -2078,13 +2153,25 @@ export const NaturalLanguageInteractionScalarFieldEnum = {
   id: 'id',
   chatId: 'chatId',
   userId: 'userId',
-  threadRhid: 'threadRhid',
   replicaName: 'replicaName',
+  sessionId: 'sessionId',
+  lastMessageLinkEcid: 'lastMessageLinkEcid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type NaturalLanguageInteractionScalarFieldEnum = (typeof NaturalLanguageInteractionScalarFieldEnum)[keyof typeof NaturalLanguageInteractionScalarFieldEnum]
+
+
+export const NaturalLanguageInteractionMessageScalarFieldEnum = {
+  id: 'id',
+  interactionId: 'interactionId',
+  messageRhid: 'messageRhid',
+  sender: 'sender',
+  createdAt: 'createdAt'
+} as const
+
+export type NaturalLanguageInteractionMessageScalarFieldEnum = (typeof NaturalLanguageInteractionMessageScalarFieldEnum)[keyof typeof NaturalLanguageInteractionMessageScalarFieldEnum]
 
 
 export const NotificationResponseScalarFieldEnum = {
@@ -2350,6 +2437,20 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'NaturalLanguageInteractionMessageSender'
+ */
+export type EnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NaturalLanguageInteractionMessageSender'>
+    
+
+
+/**
+ * Reference to a field of type 'NaturalLanguageInteractionMessageSender[]'
+ */
+export type ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NaturalLanguageInteractionMessageSender[]'>
+    
+
+
+/**
  * Reference to a field of type 'NotificationResponseType'
  */
 export type EnumNotificationResponseTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationResponseType'>
@@ -2538,6 +2639,7 @@ export type GlobalOmitConfig = {
   encryptedContent?: Prisma.EncryptedContentOmit
   memoryNote?: Prisma.MemoryNoteOmit
   naturalLanguageInteraction?: Prisma.NaturalLanguageInteractionOmit
+  naturalLanguageInteractionMessage?: Prisma.NaturalLanguageInteractionMessageOmit
   notificationResponse?: Prisma.NotificationResponseOmit
   notificationTopic?: Prisma.NotificationTopicOmit
   notificationTaskGroup?: Prisma.NotificationTaskGroupOmit

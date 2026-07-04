@@ -149,6 +149,7 @@
         "cbor2": "catalog:",
         "fastify": "catalog:",
         "jose": "catalog:",
+        "openai": "catalog:",
         "opencode-ai": "catalog:",
         "pg": "catalog:",
         "pino": "catalog:",

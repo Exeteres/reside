@@ -6,6 +6,7 @@ import type {
   NaturalLanguageServiceClient,
 } from "@reside/api/interaction/nls.v1"
 import type { ResideCrypto } from "@reside/common/encryption"
+import type { Message } from "grammy/types"
 import type { PrismaClient } from "../../database"
 import type { TelegramMessageEntity } from "./bot-command-invocation"
 import { logger, renderMarkdownAsTelegramHtml, rhid } from "@reside/common"
@@ -13,7 +14,6 @@ import { encryptedStringSchema } from "../../definitions"
 import { strings } from "../../locale"
 import { canAskNls, requestNlsAskPermission } from "./authorization"
 import { createTelegramBotClient } from "./bot-client"
-import { resolveNlsMessageThreadId } from "./bot-command"
 import { mapReplicaCallErrorMessage } from "./bot-replica-call"
 import { createEcidTextSubstitutor } from "./ecid-substitution"
 
@@ -36,6 +36,7 @@ export async function handleNlsMessage(args: {
     is_topic_message?: boolean
     message_thread_id?: number
     reply_to_message?: {
+      message_id?: number
       message_thread_id?: number
     }
   }
@@ -50,7 +51,6 @@ export async function handleNlsMessage(args: {
       logger.warn({ error, ecid }, 'failed to decrypt ecid during nls substitution ecid="%s"', ecid)
     },
   })
-  const messageThreadId = resolveNlsMessageThreadId(args.message)
   const draftMessageThreadId = resolveNlsDraftMessageThreadId(args.message)
   const chat = await args.prisma.chat.findUnique({
     where: {
@@ -64,47 +64,39 @@ export async function handleNlsMessage(args: {
     return
   }
 
-  const threadRhid = rhid(messageThreadId)
   const telegramUserRhid = rhid(String(args.userId))
+  const repliedMessageRhid =
+    typeof args.message.reply_to_message?.message_id === "number"
+      ? createTelegramMessageRhid(args.chatId, args.message.reply_to_message.message_id)
+      : undefined
 
   const interaction =
     args.mentionedUsername !== undefined
       ? await resolveMentionedReplicaInteraction(args.prisma, chat.id, telegramUserRhid, {
-          threadRhid,
           mentionedUsername: args.mentionedUsername,
         })
-      : await args.prisma.naturalLanguageInteraction.findUnique({
-          where: {
-            chatId_threadRhid: {
-              chatId: chat.id,
-              threadRhid,
-            },
-          },
-          select: {
-            replicaName: true,
-            user: {
-              select: {
-                telegramRhid: true,
-              },
-            },
-          },
-        })
+      : repliedMessageRhid !== undefined
+        ? await resolveRepliedReplicaInteraction(args.prisma, repliedMessageRhid)
+        : null
 
   if (!interaction) {
     return
   }
 
   if (interaction.user.telegramRhid !== telegramUserRhid) {
-    const replyBot = telegramBotClientFactory(args.managerToken, {
-      role: "worker.nls-reply",
+    const botToken = await resolveReplicaAvatarToken(
+      args.crypto,
+      args.prisma,
+      interaction.replicaName,
+    )
+    const replyBot = telegramBotClientFactory(botToken ?? args.managerToken, {
+      role: "worker.nls-reaction",
     })
 
-    await sendNlsReplyMessage({
+    await setNlsDislikeReaction({
       bot: replyBot,
       chatId: args.chatId,
-      replyToMessageId: args.message.message_id,
-      text: strings.worker.bot.nlsSessionOwnedByAnotherUser(interaction.replicaName),
-      ecidSubstitutor,
+      messageId: args.message.message_id,
     })
     return
   }
@@ -180,30 +172,61 @@ export async function handleNlsMessage(args: {
       subjectId: toSubjectId,
     })
 
+    const sessionReference = resolveNlsRequestSessionReference({
+      interactionSessionId: interaction.sessionId,
+      isMention: args.mentionedUsername !== undefined,
+      isReplyToTrackedAvatarMessage: repliedMessageRhid !== undefined,
+    })
+    const previousSessionId = interaction.sessionId
+    const previousMessageLink = await decryptOptionalString(
+      args.crypto,
+      interaction.lastMessageLinkEcid,
+    )
     const nlsFrames = args.getNaturalLanguageClient(endpoint.endpoint).askStream({
       text: args.text,
       subjectId: fromSubjectId,
       subjectInfo,
+      ...(sessionReference === undefined ? {} : { sessionReference }),
     })
 
     if (groupChat) {
-      const finalText = await streamNlsReplyGroupFrames({
+      const result = await streamNlsReplyGroupFrames({
         bot: replyBot,
         chatId: args.chatId,
         messageThreadId: draftMessageThreadId,
         replyToMessageId: args.message.message_id,
         frames: nlsFrames,
         ecidSubstitutor,
+        onSessionId: async sessionId => {
+          await sendContinuationNoticeIfNeeded({
+            bot: telegramBotClientFactory(args.managerToken, { role: "worker.nls-continuation" }),
+            chatId: args.chatId,
+            replyToMessageId: args.message.message_id,
+            replicaTitle: await resolveReplicaTitle(args.prisma, interaction.replicaName),
+            previousSessionId,
+            previousMessageLink,
+            sessionId,
+          })
+        },
       })
 
-      if (finalText.trim().length === 0) {
+      if (result.text.trim().length === 0) {
         throw new Error("NLS returned empty streamed response")
       }
+
+      await persistNlsInteractionResult(args.crypto, args.prisma, {
+        interactionId: interaction.id,
+        telegramChatId: args.chatId,
+        messageThreadId: draftMessageThreadId,
+        avatarMessageId: result.messageId,
+        userMessageId: args.message.message_id,
+        sessionId: result.sessionId,
+      })
 
       return
     }
 
-    const finalText = await streamNlsReplyDraftFrames({
+    const result = await streamNlsReplyDraftFrames({
       bot: replyBot,
       chatId: args.chatId,
       messageThreadId: draftMessageThreadId,
@@ -212,16 +235,35 @@ export async function handleNlsMessage(args: {
       ecidSubstitutor,
     })
 
-    if (finalText.trim().length === 0) {
+    if (result.text.trim().length === 0) {
       throw new Error("NLS returned empty streamed response")
     }
 
-    await sendNlsReplyMessage({
+    await sendContinuationNoticeIfNeeded({
+      bot: telegramBotClientFactory(args.managerToken, { role: "worker.nls-continuation" }),
+      chatId: args.chatId,
+      replyToMessageId: args.message.message_id,
+      replicaTitle: await resolveReplicaTitle(args.prisma, interaction.replicaName),
+      previousSessionId,
+      previousMessageLink,
+      sessionId: result.sessionId,
+    })
+
+    const sentMessage = await sendNlsReplyMessage({
       bot: replyBot,
       chatId: args.chatId,
       replyToMessageId: args.message.message_id,
-      text: finalText,
+      text: result.text,
       ecidSubstitutor,
+    })
+
+    await persistNlsInteractionResult(args.crypto, args.prisma, {
+      interactionId: interaction.id,
+      telegramChatId: args.chatId,
+      messageThreadId: draftMessageThreadId,
+      avatarMessageId: sentMessage.message_id,
+      userMessageId: args.message.message_id,
+      sessionId: result.sessionId,
     })
   } catch (error) {
     logger.error(
@@ -388,12 +430,15 @@ async function resolveMentionedReplicaInteraction(
   chatId: number,
   telegramUserRhid: string,
   input: {
-    threadRhid: string
     mentionedUsername: string
   },
 ): Promise<{
+  id: number
   replicaName: string
+  sessionId: string | null
+  lastMessageLinkEcid: string | null
   user: {
+    id: number
     telegramRhid: string
   }
 } | null> {
@@ -427,17 +472,17 @@ async function resolveMentionedReplicaInteraction(
     return null
   }
 
-  await prisma.naturalLanguageInteraction.upsert({
+  const interaction = await prisma.naturalLanguageInteraction.upsert({
     where: {
-      chatId_threadRhid: {
+      chatId_userId_replicaName: {
         chatId,
-        threadRhid: input.threadRhid,
+        userId: owner.id,
+        replicaName: avatar.replicaName,
       },
     },
     create: {
       chatId,
       userId: owner.id,
-      threadRhid: input.threadRhid,
       replicaName: avatar.replicaName,
     },
     update: {
@@ -446,15 +491,64 @@ async function resolveMentionedReplicaInteraction(
     },
     select: {
       id: true,
+      sessionId: true,
+      lastMessageLinkEcid: true,
     },
   })
 
   return {
+    id: interaction.id,
     replicaName: avatar.replicaName,
+    sessionId: interaction.sessionId,
+    lastMessageLinkEcid: interaction.lastMessageLinkEcid,
     user: {
+      id: owner.id,
       telegramRhid: owner.telegramRhid,
     },
   }
+}
+
+async function resolveRepliedReplicaInteraction(
+  prisma: PrismaClient,
+  messageRhid: string,
+): Promise<{
+  id: number
+  replicaName: string
+  sessionId: string | null
+  lastMessageLinkEcid: string | null
+  user: {
+    id: number
+    telegramRhid: string
+  }
+} | null> {
+  const message = await prisma.naturalLanguageInteractionMessage.findUnique({
+    where: {
+      messageRhid,
+    },
+    select: {
+      sender: true,
+      interaction: {
+        select: {
+          id: true,
+          replicaName: true,
+          sessionId: true,
+          lastMessageLinkEcid: true,
+          user: {
+            select: {
+              id: true,
+              telegramRhid: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  if (!message || message.sender !== "AVATAR") {
+    return null
+  }
+
+  return message.interaction
 }
 
 async function resolveReplicaAvatarToken(
@@ -521,11 +615,21 @@ async function streamNlsReplyDraftFrames(args: {
   ecidSubstitutor: {
     substituteInText: (text: string) => Promise<string>
   }
-}): Promise<string> {
+}): Promise<{ text: string; sessionId: string }> {
   let finalText = ""
+  let sessionId = ""
   let hasFrame = false
 
   for await (const frame of args.frames) {
+    const frameSessionId = getFrameSessionId(frame)
+    if (frameSessionId.length > 0) {
+      sessionId = frameSessionId
+    }
+
+    if (frame.text.trim().length === 0) {
+      continue
+    }
+
     if (frame.reset && hasFrame) {
       await sendNlsReplyDraftMessage({
         bot: args.bot,
@@ -550,7 +654,7 @@ async function streamNlsReplyDraftFrames(args: {
     finalText = frame.text
   }
 
-  return finalText
+  return { text: finalText, sessionId }
 }
 
 async function streamNlsReplyGroupFrames(args: {
@@ -562,7 +666,8 @@ async function streamNlsReplyGroupFrames(args: {
   ecidSubstitutor: {
     substituteInText: (text: string) => Promise<string>
   }
-}): Promise<string> {
+  onSessionId?: (sessionId: string) => Promise<void>
+}): Promise<{ text: string; sessionId: string; messageId: number }> {
   const stopTypingLoop = startTypingStatusLoop({
     bot: args.bot,
     chatId: args.chatId,
@@ -572,13 +677,45 @@ async function streamNlsReplyGroupFrames(args: {
   try {
     const iterator = args.frames[Symbol.asyncIterator]()
 
+    let sessionId = ""
+    let sessionNotified = false
+    const notifySession = async () => {
+      if (sessionNotified || sessionId.length === 0) {
+        return
+      }
+
+      sessionNotified = true
+      await args.onSessionId?.(sessionId)
+    }
     let firstFrame = await iterator.next()
+    while (!firstFrame.done && getFrameSessionId(firstFrame.value).length > 0) {
+      sessionId = getFrameSessionId(firstFrame.value)
+      await notifySession()
+      if (firstFrame.value.text.trim().length > 0) {
+        break
+      }
+
+      firstFrame = await iterator.next()
+    }
+
     while (!firstFrame.done && firstFrame.value.text.trim().length === 0) {
+      const frameSessionId = getFrameSessionId(firstFrame.value)
+      if (frameSessionId.length > 0) {
+        sessionId = frameSessionId
+        await notifySession()
+      }
+
       firstFrame = await iterator.next()
     }
 
     if (firstFrame.done) {
-      return ""
+      return { text: "", sessionId, messageId: 0 }
+    }
+
+    const firstFrameSessionId = getFrameSessionId(firstFrame.value)
+    if (firstFrameSessionId.length > 0) {
+      sessionId = firstFrameSessionId
+      await notifySession()
     }
 
     const firstText = await renderNlsReplyText(firstFrame.value.text, args.ecidSubstitutor)
@@ -609,6 +746,11 @@ async function streamNlsReplyGroupFrames(args: {
         if (frame.done) {
           streamCompleted = true
           return
+        }
+
+        const frameSessionId = getFrameSessionId(frame.value)
+        if (frameSessionId.length > 0) {
+          sessionId = frameSessionId
         }
 
         if (frame.value.text.trim().length === 0) {
@@ -660,7 +802,7 @@ async function streamNlsReplyGroupFrames(args: {
       throw streamError
     }
 
-    return finalText
+    return { text: finalText, sessionId, messageId: streamedMessageId }
   } finally {
     stopTypingLoop()
   }
@@ -718,6 +860,10 @@ function isGroupChat(chatId: number): boolean {
   return chatId < 0
 }
 
+function getFrameSessionId(frame: AskStreamResponse): string {
+  return frame.sessionId?.trim() ?? ""
+}
+
 async function sendNlsReplyMessage(args: {
   bot: ReturnType<typeof createTelegramBotClient>
   chatId: number
@@ -726,10 +872,10 @@ async function sendNlsReplyMessage(args: {
   ecidSubstitutor: {
     substituteInText: (text: string) => Promise<string>
   }
-}): Promise<void> {
+}): Promise<Message.TextMessage> {
   const text = await renderNlsReplyText(args.text, args.ecidSubstitutor)
 
-  await args.bot.api.sendMessage(args.chatId, text, {
+  return await args.bot.api.sendMessage(args.chatId, text, {
     parse_mode: "HTML",
     link_preview_options: {
       is_disabled: true,
@@ -738,6 +884,185 @@ async function sendNlsReplyMessage(args: {
       message_id: args.replyToMessageId,
     },
   })
+}
+
+type NlsRequestSessionReference =
+  | { case: "sessionId"; value: string }
+  | { case: "lastSessionId"; value: string }
+  | undefined
+
+function resolveNlsRequestSessionReference(args: {
+  interactionSessionId: string | null
+  isMention: boolean
+  isReplyToTrackedAvatarMessage: boolean
+}): NlsRequestSessionReference {
+  if (!args.interactionSessionId) {
+    return undefined
+  }
+
+  if (args.isReplyToTrackedAvatarMessage) {
+    return { case: "sessionId", value: args.interactionSessionId }
+  }
+
+  if (args.isMention) {
+    return { case: "lastSessionId", value: args.interactionSessionId }
+  }
+
+  return { case: "sessionId", value: args.interactionSessionId }
+}
+
+async function decryptOptionalString(
+  crypto: ResideCrypto,
+  ecid: string | null,
+): Promise<string | null> {
+  if (!ecid) {
+    return null
+  }
+
+  return await crypto.decrypt(encryptedStringSchema, ecid)
+}
+
+async function sendContinuationNoticeIfNeeded(args: {
+  bot: ReturnType<typeof createTelegramBotClient>
+  chatId: number
+  replyToMessageId: number
+  replicaTitle: string
+  previousSessionId: string | null
+  previousMessageLink: string | null
+  sessionId: string
+}): Promise<void> {
+  if (
+    !args.previousSessionId ||
+    args.previousSessionId !== args.sessionId ||
+    !args.previousMessageLink
+  ) {
+    return
+  }
+
+  await args.bot.api.sendMessage(
+    args.chatId,
+    `${escapeTelegramHtml(args.replicaTitle)} решила продолжить предыдущий <a href="https://${escapeTelegramHtml(args.previousMessageLink)}">диалог</a>`,
+    {
+      parse_mode: "HTML",
+      link_preview_options: {
+        is_disabled: true,
+      },
+      reply_parameters: {
+        message_id: args.replyToMessageId,
+      },
+    },
+  )
+}
+
+async function resolveReplicaTitle(prisma: PrismaClient, replicaName: string): Promise<string> {
+  const avatar = await prisma.avatar.findUnique({
+    where: {
+      replicaName,
+    },
+    select: {
+      replicaTitle: true,
+    },
+  })
+
+  return avatar?.replicaTitle ?? replicaName
+}
+
+async function persistNlsInteractionResult(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  input: {
+    interactionId: number
+    telegramChatId: number
+    messageThreadId: number | undefined
+    avatarMessageId: number
+    userMessageId: number
+    sessionId: string
+  },
+): Promise<void> {
+  if (input.sessionId.trim().length === 0 || input.avatarMessageId === 0) {
+    return
+  }
+
+  const messageLinkEcid = await crypto.encrypt(
+    createTelegramMessageLink(input.telegramChatId, input.avatarMessageId, input.messageThreadId),
+  )
+
+  await prisma.naturalLanguageInteraction.update({
+    where: {
+      id: input.interactionId,
+    },
+    data: {
+      sessionId: input.sessionId,
+      lastMessageLinkEcid: messageLinkEcid,
+      messages: {
+        upsert: [
+          {
+            where: {
+              messageRhid: createTelegramMessageRhid(input.telegramChatId, input.userMessageId),
+            },
+            create: {
+              messageRhid: createTelegramMessageRhid(input.telegramChatId, input.userMessageId),
+              sender: "USER",
+            },
+            update: {
+              sender: "USER",
+            },
+          },
+          {
+            where: {
+              messageRhid: createTelegramMessageRhid(input.telegramChatId, input.avatarMessageId),
+            },
+            create: {
+              messageRhid: createTelegramMessageRhid(input.telegramChatId, input.avatarMessageId),
+              sender: "AVATAR",
+            },
+            update: {
+              sender: "AVATAR",
+            },
+          },
+        ],
+      },
+    },
+  })
+}
+
+async function setNlsDislikeReaction(args: {
+  bot: ReturnType<typeof createTelegramBotClient>
+  chatId: number
+  messageId: number
+}): Promise<void> {
+  await args.bot.api.setMessageReaction(args.chatId, args.messageId, [
+    {
+      type: "emoji",
+      emoji: "👎",
+    },
+  ])
+}
+
+function createTelegramMessageRhid(chatId: number, messageId: number): string {
+  return rhid({ chatId: String(chatId), messageId: String(messageId) })
+}
+
+function createTelegramMessageLink(
+  chatId: number,
+  messageId: number,
+  messageThreadId: number | undefined,
+): string {
+  const linkChatId = String(chatId).replace(/^-100/, "")
+
+  if (messageThreadId !== undefined) {
+    return `t.me/c/${linkChatId}/${messageThreadId}/${messageId}`
+  }
+
+  return `t.me/c/${linkChatId}/${messageId}`
+}
+
+function escapeTelegramHtml(text: string): string {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
 }
 
 async function renderNlsReplyText(

@@ -270,6 +270,23 @@ export type BoolWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
+export type EnumNaturalLanguageInteractionMessageSenderFilter<$PrismaModel = never> = {
+  equals?: $Enums.NaturalLanguageInteractionMessageSender | Prisma.EnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  in?: $Enums.NaturalLanguageInteractionMessageSender[] | Prisma.ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.NaturalLanguageInteractionMessageSender[] | Prisma.ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumNaturalLanguageInteractionMessageSenderFilter<$PrismaModel> | $Enums.NaturalLanguageInteractionMessageSender
+}
+
+export type EnumNaturalLanguageInteractionMessageSenderWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.NaturalLanguageInteractionMessageSender | Prisma.EnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  in?: $Enums.NaturalLanguageInteractionMessageSender[] | Prisma.ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.NaturalLanguageInteractionMessageSender[] | Prisma.ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumNaturalLanguageInteractionMessageSenderWithAggregatesFilter<$PrismaModel> | $Enums.NaturalLanguageInteractionMessageSender
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumNaturalLanguageInteractionMessageSenderFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumNaturalLanguageInteractionMessageSenderFilter<$PrismaModel>
+}
+
 export type EnumNotificationResponseTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.NotificationResponseType | Prisma.EnumNotificationResponseTypeFieldRefInput<$PrismaModel>
   in?: $Enums.NotificationResponseType[] | Prisma.ListEnumNotificationResponseTypeFieldRefInput<$PrismaModel>
@@ -646,6 +663,23 @@ export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedBoolFilter<$PrismaModel>
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
+export type NestedEnumNaturalLanguageInteractionMessageSenderFilter<$PrismaModel = never> = {
+  equals?: $Enums.NaturalLanguageInteractionMessageSender | Prisma.EnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  in?: $Enums.NaturalLanguageInteractionMessageSender[] | Prisma.ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.NaturalLanguageInteractionMessageSender[] | Prisma.ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumNaturalLanguageInteractionMessageSenderFilter<$PrismaModel> | $Enums.NaturalLanguageInteractionMessageSender
+}
+
+export type NestedEnumNaturalLanguageInteractionMessageSenderWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.NaturalLanguageInteractionMessageSender | Prisma.EnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  in?: $Enums.NaturalLanguageInteractionMessageSender[] | Prisma.ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.NaturalLanguageInteractionMessageSender[] | Prisma.ListEnumNaturalLanguageInteractionMessageSenderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumNaturalLanguageInteractionMessageSenderWithAggregatesFilter<$PrismaModel> | $Enums.NaturalLanguageInteractionMessageSender
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumNaturalLanguageInteractionMessageSenderFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumNaturalLanguageInteractionMessageSenderFilter<$PrismaModel>
 }
 
 export type NestedEnumNotificationResponseTypeFilter<$PrismaModel = never> = {

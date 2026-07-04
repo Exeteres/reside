@@ -9,11 +9,17 @@ model NaturalLanguageInteraction {
   /// The user identifier that owns this interaction thread.
   userId Int
 
-  /// The RHID of the resolved Telegram thread identifier used for continuation lookup.
-  threadRhid String
-
   /// The target replica name for this interaction thread.
   replicaName String
+
+  /// The opaque NLS session identifier returned by the target replica.
+  sessionId String?
+
+  /// The ECID of the last Telegram message link for this NLS interaction.
+  lastMessageLinkEcid String? @unique
+
+  /// The encrypted last Telegram message link for this NLS interaction.
+  lastMessageLink EncryptedContent? @relation(name: "NaturalLanguageInteractionLastMessageLink", fields: [lastMessageLinkEcid], references: [ecid], onDelete: SetNull)
 
   /// The chat entity this interaction belongs to.
   chat Chat @relation("NaturalLanguageInteractionChat", fields: [chatId], references: [id], onDelete: Cascade)
@@ -21,13 +27,46 @@ model NaturalLanguageInteraction {
   /// The user that started this interaction thread.
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  /// Telegram messages associated with this NLS interaction.
+  messages NaturalLanguageInteractionMessage[]
+
   /// The timestamp when this interaction was created.
   createdAt DateTime @default(now())
 
   /// The timestamp when this interaction was last updated.
   updatedAt DateTime @updatedAt
 
-  @@unique([chatId, threadRhid])
+  @@unique([chatId, userId, replicaName])
   @@index([chatId, userId])
   @@index([replicaName])
+  @@index([sessionId])
+}
+
+/// Represents a Telegram message that belongs to an NLS interaction.
+model NaturalLanguageInteractionMessage {
+  /// The unique numeric identifier of the tracked message.
+  id Int @id @default(autoincrement())
+
+  /// The parent NLS interaction identifier.
+  interactionId Int
+
+  /// The RHID of the Telegram chat/message identifier pair.
+  messageRhid String
+
+  /// Whether the message was sent by the user or by the replica avatar.
+  sender NaturalLanguageInteractionMessageSender
+
+  /// The parent NLS interaction.
+  interaction NaturalLanguageInteraction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  /// The timestamp when this message was tracked.
+  createdAt DateTime @default(now())
+
+  @@unique([messageRhid])
+  @@index([interactionId])
+}
+
+enum NaturalLanguageInteractionMessageSender {
+  USER
+  AVATAR
 }

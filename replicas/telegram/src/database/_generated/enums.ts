@@ -18,6 +18,14 @@ export const ApprovalResult = {
 export type ApprovalResult = (typeof ApprovalResult)[keyof typeof ApprovalResult]
 
 
+export const NaturalLanguageInteractionMessageSender = {
+  USER: 'USER',
+  AVATAR: 'AVATAR'
+} as const
+
+export type NaturalLanguageInteractionMessageSender = (typeof NaturalLanguageInteractionMessageSender)[keyof typeof NaturalLanguageInteractionMessageSender]
+
+
 export const NotificationResponseType = {
   ACTION: 'ACTION',
   TEXT: 'TEXT',

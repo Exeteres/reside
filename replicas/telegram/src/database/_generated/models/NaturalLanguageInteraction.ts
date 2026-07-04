@@ -44,8 +44,9 @@ export type NaturalLanguageInteractionMinAggregateOutputType = {
   id: number | null
   chatId: number | null
   userId: number | null
-  threadRhid: string | null
   replicaName: string | null
+  sessionId: string | null
+  lastMessageLinkEcid: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -54,8 +55,9 @@ export type NaturalLanguageInteractionMaxAggregateOutputType = {
   id: number | null
   chatId: number | null
   userId: number | null
-  threadRhid: string | null
   replicaName: string | null
+  sessionId: string | null
+  lastMessageLinkEcid: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -64,8 +66,9 @@ export type NaturalLanguageInteractionCountAggregateOutputType = {
   id: number
   chatId: number
   userId: number
-  threadRhid: number
   replicaName: number
+  sessionId: number
+  lastMessageLinkEcid: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -88,8 +91,9 @@ export type NaturalLanguageInteractionMinAggregateInputType = {
   id?: true
   chatId?: true
   userId?: true
-  threadRhid?: true
   replicaName?: true
+  sessionId?: true
+  lastMessageLinkEcid?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -98,8 +102,9 @@ export type NaturalLanguageInteractionMaxAggregateInputType = {
   id?: true
   chatId?: true
   userId?: true
-  threadRhid?: true
   replicaName?: true
+  sessionId?: true
+  lastMessageLinkEcid?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -108,8 +113,9 @@ export type NaturalLanguageInteractionCountAggregateInputType = {
   id?: true
   chatId?: true
   userId?: true
-  threadRhid?: true
   replicaName?: true
+  sessionId?: true
+  lastMessageLinkEcid?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -205,8 +211,9 @@ export type NaturalLanguageInteractionGroupByOutputType = {
   id: number
   chatId: number
   userId: number
-  threadRhid: string
   replicaName: string
+  sessionId: string | null
+  lastMessageLinkEcid: string | null
   createdAt: Date
   updatedAt: Date
   _count: NaturalLanguageInteractionCountAggregateOutputType | null
@@ -238,48 +245,58 @@ export type NaturalLanguageInteractionWhereInput = {
   id?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
   chatId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
   userId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
-  threadRhid?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   replicaName?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
+  sessionId?: Prisma.StringNullableFilter<"NaturalLanguageInteraction"> | string | null
+  lastMessageLinkEcid?: Prisma.StringNullableFilter<"NaturalLanguageInteraction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
+  lastMessageLink?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
   chat?: Prisma.XOR<Prisma.ChatScalarRelationFilter, Prisma.ChatWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  messages?: Prisma.NaturalLanguageInteractionMessageListRelationFilter
 }
 
 export type NaturalLanguageInteractionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrderInput | Prisma.SortOrder
+  lastMessageLinkEcid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  lastMessageLink?: Prisma.EncryptedContentOrderByWithRelationInput
   chat?: Prisma.ChatOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
+  messages?: Prisma.NaturalLanguageInteractionMessageOrderByRelationAggregateInput
 }
 
 export type NaturalLanguageInteractionWhereUniqueInput = Prisma.AtLeast<{
   id?: number
-  chatId_threadRhid?: Prisma.NaturalLanguageInteractionChatIdThreadRhidCompoundUniqueInput
+  lastMessageLinkEcid?: string
+  chatId_userId_replicaName?: Prisma.NaturalLanguageInteractionChatIdUserIdReplicaNameCompoundUniqueInput
   AND?: Prisma.NaturalLanguageInteractionWhereInput | Prisma.NaturalLanguageInteractionWhereInput[]
   OR?: Prisma.NaturalLanguageInteractionWhereInput[]
   NOT?: Prisma.NaturalLanguageInteractionWhereInput | Prisma.NaturalLanguageInteractionWhereInput[]
   chatId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
   userId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
-  threadRhid?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   replicaName?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
+  sessionId?: Prisma.StringNullableFilter<"NaturalLanguageInteraction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
+  lastMessageLink?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
   chat?: Prisma.XOR<Prisma.ChatScalarRelationFilter, Prisma.ChatWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "id" | "chatId_threadRhid">
+  messages?: Prisma.NaturalLanguageInteractionMessageListRelationFilter
+}, "id" | "lastMessageLinkEcid" | "chatId_userId_replicaName">
 
 export type NaturalLanguageInteractionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrderInput | Prisma.SortOrder
+  lastMessageLinkEcid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.NaturalLanguageInteractionCountOrderByAggregateInput
@@ -296,63 +313,73 @@ export type NaturalLanguageInteractionScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"NaturalLanguageInteraction"> | number
   chatId?: Prisma.IntWithAggregatesFilter<"NaturalLanguageInteraction"> | number
   userId?: Prisma.IntWithAggregatesFilter<"NaturalLanguageInteraction"> | number
-  threadRhid?: Prisma.StringWithAggregatesFilter<"NaturalLanguageInteraction"> | string
   replicaName?: Prisma.StringWithAggregatesFilter<"NaturalLanguageInteraction"> | string
+  sessionId?: Prisma.StringNullableWithAggregatesFilter<"NaturalLanguageInteraction"> | string | null
+  lastMessageLinkEcid?: Prisma.StringNullableWithAggregatesFilter<"NaturalLanguageInteraction"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"NaturalLanguageInteraction"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"NaturalLanguageInteraction"> | Date | string
 }
 
 export type NaturalLanguageInteractionCreateInput = {
-  threadRhid: string
   replicaName: string
+  sessionId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  lastMessageLink?: Prisma.EncryptedContentCreateNestedOneWithoutNaturalLanguageInteractionLastMessageLinkInput
   chat: Prisma.ChatCreateNestedOneWithoutNaturalLanguageInteractionsInput
   user: Prisma.UserCreateNestedOneWithoutNaturalLanguageInteractionsInput
+  messages?: Prisma.NaturalLanguageInteractionMessageCreateNestedManyWithoutInteractionInput
 }
 
 export type NaturalLanguageInteractionUncheckedCreateInput = {
   id?: number
   chatId: number
   userId: number
-  threadRhid: string
   replicaName: string
+  sessionId?: string | null
+  lastMessageLinkEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  messages?: Prisma.NaturalLanguageInteractionMessageUncheckedCreateNestedManyWithoutInteractionInput
 }
 
 export type NaturalLanguageInteractionUpdateInput = {
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastMessageLink?: Prisma.EncryptedContentUpdateOneWithoutNaturalLanguageInteractionLastMessageLinkNestedInput
   chat?: Prisma.ChatUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput
+  messages?: Prisma.NaturalLanguageInteractionMessageUpdateManyWithoutInteractionNestedInput
 }
 
 export type NaturalLanguageInteractionUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
   userId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageLinkEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messages?: Prisma.NaturalLanguageInteractionMessageUncheckedUpdateManyWithoutInteractionNestedInput
 }
 
 export type NaturalLanguageInteractionCreateManyInput = {
   id?: number
   chatId: number
   userId: number
-  threadRhid: string
   replicaName: string
+  sessionId?: string | null
+  lastMessageLinkEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type NaturalLanguageInteractionUpdateManyMutationInput = {
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -361,8 +388,9 @@ export type NaturalLanguageInteractionUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
   userId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageLinkEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -377,17 +405,24 @@ export type NaturalLanguageInteractionOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type NaturalLanguageInteractionChatIdThreadRhidCompoundUniqueInput = {
+export type NaturalLanguageInteractionNullableScalarRelationFilter = {
+  is?: Prisma.NaturalLanguageInteractionWhereInput | null
+  isNot?: Prisma.NaturalLanguageInteractionWhereInput | null
+}
+
+export type NaturalLanguageInteractionChatIdUserIdReplicaNameCompoundUniqueInput = {
   chatId: number
-  threadRhid: string
+  userId: number
+  replicaName: string
 }
 
 export type NaturalLanguageInteractionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrder
+  lastMessageLinkEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -402,8 +437,9 @@ export type NaturalLanguageInteractionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrder
+  lastMessageLinkEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -412,8 +448,9 @@ export type NaturalLanguageInteractionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  threadRhid?: Prisma.SortOrder
   replicaName?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrder
+  lastMessageLinkEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -422,6 +459,11 @@ export type NaturalLanguageInteractionSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   chatId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+}
+
+export type NaturalLanguageInteractionScalarRelationFilter = {
+  is?: Prisma.NaturalLanguageInteractionWhereInput
+  isNot?: Prisma.NaturalLanguageInteractionWhereInput
 }
 
 export type NaturalLanguageInteractionCreateNestedManyWithoutChatInput = {
@@ -464,6 +506,52 @@ export type NaturalLanguageInteractionUncheckedUpdateManyWithoutChatNestedInput 
   update?: Prisma.NaturalLanguageInteractionUpdateWithWhereUniqueWithoutChatInput | Prisma.NaturalLanguageInteractionUpdateWithWhereUniqueWithoutChatInput[]
   updateMany?: Prisma.NaturalLanguageInteractionUpdateManyWithWhereWithoutChatInput | Prisma.NaturalLanguageInteractionUpdateManyWithWhereWithoutChatInput[]
   deleteMany?: Prisma.NaturalLanguageInteractionScalarWhereInput | Prisma.NaturalLanguageInteractionScalarWhereInput[]
+}
+
+export type NaturalLanguageInteractionCreateNestedOneWithoutLastMessageLinkInput = {
+  create?: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutLastMessageLinkInput>
+  connectOrCreate?: Prisma.NaturalLanguageInteractionCreateOrConnectWithoutLastMessageLinkInput
+  connect?: Prisma.NaturalLanguageInteractionWhereUniqueInput
+}
+
+export type NaturalLanguageInteractionUncheckedCreateNestedOneWithoutLastMessageLinkInput = {
+  create?: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutLastMessageLinkInput>
+  connectOrCreate?: Prisma.NaturalLanguageInteractionCreateOrConnectWithoutLastMessageLinkInput
+  connect?: Prisma.NaturalLanguageInteractionWhereUniqueInput
+}
+
+export type NaturalLanguageInteractionUpdateOneWithoutLastMessageLinkNestedInput = {
+  create?: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutLastMessageLinkInput>
+  connectOrCreate?: Prisma.NaturalLanguageInteractionCreateOrConnectWithoutLastMessageLinkInput
+  upsert?: Prisma.NaturalLanguageInteractionUpsertWithoutLastMessageLinkInput
+  disconnect?: Prisma.NaturalLanguageInteractionWhereInput | boolean
+  delete?: Prisma.NaturalLanguageInteractionWhereInput | boolean
+  connect?: Prisma.NaturalLanguageInteractionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NaturalLanguageInteractionUpdateToOneWithWhereWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUpdateWithoutLastMessageLinkInput>, Prisma.NaturalLanguageInteractionUncheckedUpdateWithoutLastMessageLinkInput>
+}
+
+export type NaturalLanguageInteractionUncheckedUpdateOneWithoutLastMessageLinkNestedInput = {
+  create?: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutLastMessageLinkInput>
+  connectOrCreate?: Prisma.NaturalLanguageInteractionCreateOrConnectWithoutLastMessageLinkInput
+  upsert?: Prisma.NaturalLanguageInteractionUpsertWithoutLastMessageLinkInput
+  disconnect?: Prisma.NaturalLanguageInteractionWhereInput | boolean
+  delete?: Prisma.NaturalLanguageInteractionWhereInput | boolean
+  connect?: Prisma.NaturalLanguageInteractionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NaturalLanguageInteractionUpdateToOneWithWhereWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUpdateWithoutLastMessageLinkInput>, Prisma.NaturalLanguageInteractionUncheckedUpdateWithoutLastMessageLinkInput>
+}
+
+export type NaturalLanguageInteractionCreateNestedOneWithoutMessagesInput = {
+  create?: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutMessagesInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutMessagesInput>
+  connectOrCreate?: Prisma.NaturalLanguageInteractionCreateOrConnectWithoutMessagesInput
+  connect?: Prisma.NaturalLanguageInteractionWhereUniqueInput
+}
+
+export type NaturalLanguageInteractionUpdateOneRequiredWithoutMessagesNestedInput = {
+  create?: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutMessagesInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutMessagesInput>
+  connectOrCreate?: Prisma.NaturalLanguageInteractionCreateOrConnectWithoutMessagesInput
+  upsert?: Prisma.NaturalLanguageInteractionUpsertWithoutMessagesInput
+  connect?: Prisma.NaturalLanguageInteractionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NaturalLanguageInteractionUpdateToOneWithWhereWithoutMessagesInput, Prisma.NaturalLanguageInteractionUpdateWithoutMessagesInput>, Prisma.NaturalLanguageInteractionUncheckedUpdateWithoutMessagesInput>
 }
 
 export type NaturalLanguageInteractionCreateNestedManyWithoutUserInput = {
@@ -509,20 +597,24 @@ export type NaturalLanguageInteractionUncheckedUpdateManyWithoutUserNestedInput 
 }
 
 export type NaturalLanguageInteractionCreateWithoutChatInput = {
-  threadRhid: string
   replicaName: string
+  sessionId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  lastMessageLink?: Prisma.EncryptedContentCreateNestedOneWithoutNaturalLanguageInteractionLastMessageLinkInput
   user: Prisma.UserCreateNestedOneWithoutNaturalLanguageInteractionsInput
+  messages?: Prisma.NaturalLanguageInteractionMessageCreateNestedManyWithoutInteractionInput
 }
 
 export type NaturalLanguageInteractionUncheckedCreateWithoutChatInput = {
   id?: number
   userId: number
-  threadRhid: string
   replicaName: string
+  sessionId?: string | null
+  lastMessageLinkEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  messages?: Prisma.NaturalLanguageInteractionMessageUncheckedCreateNestedManyWithoutInteractionInput
 }
 
 export type NaturalLanguageInteractionCreateOrConnectWithoutChatInput = {
@@ -558,27 +650,148 @@ export type NaturalLanguageInteractionScalarWhereInput = {
   id?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
   chatId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
   userId?: Prisma.IntFilter<"NaturalLanguageInteraction"> | number
-  threadRhid?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
   replicaName?: Prisma.StringFilter<"NaturalLanguageInteraction"> | string
+  sessionId?: Prisma.StringNullableFilter<"NaturalLanguageInteraction"> | string | null
+  lastMessageLinkEcid?: Prisma.StringNullableFilter<"NaturalLanguageInteraction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"NaturalLanguageInteraction"> | Date | string
 }
 
-export type NaturalLanguageInteractionCreateWithoutUserInput = {
-  threadRhid: string
+export type NaturalLanguageInteractionCreateWithoutLastMessageLinkInput = {
   replicaName: string
+  sessionId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   chat: Prisma.ChatCreateNestedOneWithoutNaturalLanguageInteractionsInput
+  user: Prisma.UserCreateNestedOneWithoutNaturalLanguageInteractionsInput
+  messages?: Prisma.NaturalLanguageInteractionMessageCreateNestedManyWithoutInteractionInput
+}
+
+export type NaturalLanguageInteractionUncheckedCreateWithoutLastMessageLinkInput = {
+  id?: number
+  chatId: number
+  userId: number
+  replicaName: string
+  sessionId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  messages?: Prisma.NaturalLanguageInteractionMessageUncheckedCreateNestedManyWithoutInteractionInput
+}
+
+export type NaturalLanguageInteractionCreateOrConnectWithoutLastMessageLinkInput = {
+  where: Prisma.NaturalLanguageInteractionWhereUniqueInput
+  create: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutLastMessageLinkInput>
+}
+
+export type NaturalLanguageInteractionUpsertWithoutLastMessageLinkInput = {
+  update: Prisma.XOR<Prisma.NaturalLanguageInteractionUpdateWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUncheckedUpdateWithoutLastMessageLinkInput>
+  create: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutLastMessageLinkInput>
+  where?: Prisma.NaturalLanguageInteractionWhereInput
+}
+
+export type NaturalLanguageInteractionUpdateToOneWithWhereWithoutLastMessageLinkInput = {
+  where?: Prisma.NaturalLanguageInteractionWhereInput
+  data: Prisma.XOR<Prisma.NaturalLanguageInteractionUpdateWithoutLastMessageLinkInput, Prisma.NaturalLanguageInteractionUncheckedUpdateWithoutLastMessageLinkInput>
+}
+
+export type NaturalLanguageInteractionUpdateWithoutLastMessageLinkInput = {
+  replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput
+  messages?: Prisma.NaturalLanguageInteractionMessageUpdateManyWithoutInteractionNestedInput
+}
+
+export type NaturalLanguageInteractionUncheckedUpdateWithoutLastMessageLinkInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.IntFieldUpdateOperationsInput | number
+  replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messages?: Prisma.NaturalLanguageInteractionMessageUncheckedUpdateManyWithoutInteractionNestedInput
+}
+
+export type NaturalLanguageInteractionCreateWithoutMessagesInput = {
+  replicaName: string
+  sessionId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  lastMessageLink?: Prisma.EncryptedContentCreateNestedOneWithoutNaturalLanguageInteractionLastMessageLinkInput
+  chat: Prisma.ChatCreateNestedOneWithoutNaturalLanguageInteractionsInput
+  user: Prisma.UserCreateNestedOneWithoutNaturalLanguageInteractionsInput
+}
+
+export type NaturalLanguageInteractionUncheckedCreateWithoutMessagesInput = {
+  id?: number
+  chatId: number
+  userId: number
+  replicaName: string
+  sessionId?: string | null
+  lastMessageLinkEcid?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type NaturalLanguageInteractionCreateOrConnectWithoutMessagesInput = {
+  where: Prisma.NaturalLanguageInteractionWhereUniqueInput
+  create: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutMessagesInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutMessagesInput>
+}
+
+export type NaturalLanguageInteractionUpsertWithoutMessagesInput = {
+  update: Prisma.XOR<Prisma.NaturalLanguageInteractionUpdateWithoutMessagesInput, Prisma.NaturalLanguageInteractionUncheckedUpdateWithoutMessagesInput>
+  create: Prisma.XOR<Prisma.NaturalLanguageInteractionCreateWithoutMessagesInput, Prisma.NaturalLanguageInteractionUncheckedCreateWithoutMessagesInput>
+  where?: Prisma.NaturalLanguageInteractionWhereInput
+}
+
+export type NaturalLanguageInteractionUpdateToOneWithWhereWithoutMessagesInput = {
+  where?: Prisma.NaturalLanguageInteractionWhereInput
+  data: Prisma.XOR<Prisma.NaturalLanguageInteractionUpdateWithoutMessagesInput, Prisma.NaturalLanguageInteractionUncheckedUpdateWithoutMessagesInput>
+}
+
+export type NaturalLanguageInteractionUpdateWithoutMessagesInput = {
+  replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastMessageLink?: Prisma.EncryptedContentUpdateOneWithoutNaturalLanguageInteractionLastMessageLinkNestedInput
+  chat?: Prisma.ChatUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput
+}
+
+export type NaturalLanguageInteractionUncheckedUpdateWithoutMessagesInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  chatId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.IntFieldUpdateOperationsInput | number
+  replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageLinkEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type NaturalLanguageInteractionCreateWithoutUserInput = {
+  replicaName: string
+  sessionId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  lastMessageLink?: Prisma.EncryptedContentCreateNestedOneWithoutNaturalLanguageInteractionLastMessageLinkInput
+  chat: Prisma.ChatCreateNestedOneWithoutNaturalLanguageInteractionsInput
+  messages?: Prisma.NaturalLanguageInteractionMessageCreateNestedManyWithoutInteractionInput
 }
 
 export type NaturalLanguageInteractionUncheckedCreateWithoutUserInput = {
   id?: number
   chatId: number
-  threadRhid: string
   replicaName: string
+  sessionId?: string | null
+  lastMessageLinkEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  messages?: Prisma.NaturalLanguageInteractionMessageUncheckedCreateNestedManyWithoutInteractionInput
 }
 
 export type NaturalLanguageInteractionCreateOrConnectWithoutUserInput = {
@@ -610,34 +823,40 @@ export type NaturalLanguageInteractionUpdateManyWithWhereWithoutUserInput = {
 export type NaturalLanguageInteractionCreateManyChatInput = {
   id?: number
   userId: number
-  threadRhid: string
   replicaName: string
+  sessionId?: string | null
+  lastMessageLinkEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type NaturalLanguageInteractionUpdateWithoutChatInput = {
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastMessageLink?: Prisma.EncryptedContentUpdateOneWithoutNaturalLanguageInteractionLastMessageLinkNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput
+  messages?: Prisma.NaturalLanguageInteractionMessageUpdateManyWithoutInteractionNestedInput
 }
 
 export type NaturalLanguageInteractionUncheckedUpdateWithoutChatInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   userId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageLinkEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messages?: Prisma.NaturalLanguageInteractionMessageUncheckedUpdateManyWithoutInteractionNestedInput
 }
 
 export type NaturalLanguageInteractionUncheckedUpdateManyWithoutChatInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   userId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageLinkEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -645,60 +864,101 @@ export type NaturalLanguageInteractionUncheckedUpdateManyWithoutChatInput = {
 export type NaturalLanguageInteractionCreateManyUserInput = {
   id?: number
   chatId: number
-  threadRhid: string
   replicaName: string
+  sessionId?: string | null
+  lastMessageLinkEcid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type NaturalLanguageInteractionUpdateWithoutUserInput = {
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastMessageLink?: Prisma.EncryptedContentUpdateOneWithoutNaturalLanguageInteractionLastMessageLinkNestedInput
   chat?: Prisma.ChatUpdateOneRequiredWithoutNaturalLanguageInteractionsNestedInput
+  messages?: Prisma.NaturalLanguageInteractionMessageUpdateManyWithoutInteractionNestedInput
 }
 
 export type NaturalLanguageInteractionUncheckedUpdateWithoutUserInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageLinkEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messages?: Prisma.NaturalLanguageInteractionMessageUncheckedUpdateManyWithoutInteractionNestedInput
 }
 
 export type NaturalLanguageInteractionUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   chatId?: Prisma.IntFieldUpdateOperationsInput | number
-  threadRhid?: Prisma.StringFieldUpdateOperationsInput | string
   replicaName?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageLinkEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+
+/**
+ * Count Type NaturalLanguageInteractionCountOutputType
+ */
+
+export type NaturalLanguageInteractionCountOutputType = {
+  messages: number
+}
+
+export type NaturalLanguageInteractionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  messages?: boolean | NaturalLanguageInteractionCountOutputTypeCountMessagesArgs
+}
+
+/**
+ * NaturalLanguageInteractionCountOutputType without action
+ */
+export type NaturalLanguageInteractionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NaturalLanguageInteractionCountOutputType
+   */
+  select?: Prisma.NaturalLanguageInteractionCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * NaturalLanguageInteractionCountOutputType without action
+ */
+export type NaturalLanguageInteractionCountOutputTypeCountMessagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NaturalLanguageInteractionMessageWhereInput
+}
 
 
 export type NaturalLanguageInteractionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   chatId?: boolean
   userId?: boolean
-  threadRhid?: boolean
   replicaName?: boolean
+  sessionId?: boolean
+  lastMessageLinkEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  lastMessageLink?: boolean | Prisma.NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  messages?: boolean | Prisma.NaturalLanguageInteraction$messagesArgs<ExtArgs>
+  _count?: boolean | Prisma.NaturalLanguageInteractionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["naturalLanguageInteraction"]>
 
 export type NaturalLanguageInteractionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   chatId?: boolean
   userId?: boolean
-  threadRhid?: boolean
   replicaName?: boolean
+  sessionId?: boolean
+  lastMessageLinkEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  lastMessageLink?: boolean | Prisma.NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["naturalLanguageInteraction"]>
@@ -707,10 +967,12 @@ export type NaturalLanguageInteractionSelectUpdateManyAndReturn<ExtArgs extends 
   id?: boolean
   chatId?: boolean
   userId?: boolean
-  threadRhid?: boolean
   replicaName?: boolean
+  sessionId?: boolean
+  lastMessageLinkEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  lastMessageLink?: boolean | Prisma.NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["naturalLanguageInteraction"]>
@@ -719,22 +981,28 @@ export type NaturalLanguageInteractionSelectScalar = {
   id?: boolean
   chatId?: boolean
   userId?: boolean
-  threadRhid?: boolean
   replicaName?: boolean
+  sessionId?: boolean
+  lastMessageLinkEcid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type NaturalLanguageInteractionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "chatId" | "userId" | "threadRhid" | "replicaName" | "createdAt" | "updatedAt", ExtArgs["result"]["naturalLanguageInteraction"]>
+export type NaturalLanguageInteractionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "chatId" | "userId" | "replicaName" | "sessionId" | "lastMessageLinkEcid" | "createdAt" | "updatedAt", ExtArgs["result"]["naturalLanguageInteraction"]>
 export type NaturalLanguageInteractionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  lastMessageLink?: boolean | Prisma.NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  messages?: boolean | Prisma.NaturalLanguageInteraction$messagesArgs<ExtArgs>
+  _count?: boolean | Prisma.NaturalLanguageInteractionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type NaturalLanguageInteractionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  lastMessageLink?: boolean | Prisma.NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type NaturalLanguageInteractionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  lastMessageLink?: boolean | Prisma.NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -743,6 +1011,10 @@ export type $NaturalLanguageInteractionPayload<ExtArgs extends runtime.Types.Ext
   name: "NaturalLanguageInteraction"
   objects: {
     /**
+     * The encrypted last Telegram message link for this NLS interaction.
+     */
+    lastMessageLink: Prisma.$EncryptedContentPayload<ExtArgs> | null
+    /**
      * The chat entity this interaction belongs to.
      */
     chat: Prisma.$ChatPayload<ExtArgs>
@@ -750,6 +1022,10 @@ export type $NaturalLanguageInteractionPayload<ExtArgs extends runtime.Types.Ext
      * The user that started this interaction thread.
      */
     user: Prisma.$UserPayload<ExtArgs>
+    /**
+     * Telegram messages associated with this NLS interaction.
+     */
+    messages: Prisma.$NaturalLanguageInteractionMessagePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     /**
@@ -765,13 +1041,17 @@ export type $NaturalLanguageInteractionPayload<ExtArgs extends runtime.Types.Ext
      */
     userId: number
     /**
-     * The RHID of the resolved Telegram thread identifier used for continuation lookup.
-     */
-    threadRhid: string
-    /**
      * The target replica name for this interaction thread.
      */
     replicaName: string
+    /**
+     * The opaque NLS session identifier returned by the target replica.
+     */
+    sessionId: string | null
+    /**
+     * The ECID of the last Telegram message link for this NLS interaction.
+     */
+    lastMessageLinkEcid: string | null
     /**
      * The timestamp when this interaction was created.
      */
@@ -1174,8 +1454,10 @@ readonly fields: NaturalLanguageInteractionFieldRefs;
  */
 export interface Prisma__NaturalLanguageInteractionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  lastMessageLink<T extends Prisma.NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   chat<T extends Prisma.ChatDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChatDefaultArgs<ExtArgs>>): Prisma.Prisma__ChatClient<runtime.Types.Result.GetResult<Prisma.$ChatPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  messages<T extends Prisma.NaturalLanguageInteraction$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.NaturalLanguageInteraction$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NaturalLanguageInteractionMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1208,8 +1490,9 @@ export interface NaturalLanguageInteractionFieldRefs {
   readonly id: Prisma.FieldRef<"NaturalLanguageInteraction", 'Int'>
   readonly chatId: Prisma.FieldRef<"NaturalLanguageInteraction", 'Int'>
   readonly userId: Prisma.FieldRef<"NaturalLanguageInteraction", 'Int'>
-  readonly threadRhid: Prisma.FieldRef<"NaturalLanguageInteraction", 'String'>
   readonly replicaName: Prisma.FieldRef<"NaturalLanguageInteraction", 'String'>
+  readonly sessionId: Prisma.FieldRef<"NaturalLanguageInteraction", 'String'>
+  readonly lastMessageLinkEcid: Prisma.FieldRef<"NaturalLanguageInteraction", 'String'>
   readonly createdAt: Prisma.FieldRef<"NaturalLanguageInteraction", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"NaturalLanguageInteraction", 'DateTime'>
 }
@@ -1605,6 +1888,49 @@ export type NaturalLanguageInteractionDeleteManyArgs<ExtArgs extends runtime.Typ
    * Limit how many NaturalLanguageInteractions to delete.
    */
   limit?: number
+}
+
+/**
+ * NaturalLanguageInteraction.lastMessageLink
+ */
+export type NaturalLanguageInteraction$lastMessageLinkArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EncryptedContent
+   */
+  select?: Prisma.EncryptedContentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EncryptedContent
+   */
+  omit?: Prisma.EncryptedContentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EncryptedContentInclude<ExtArgs> | null
+  where?: Prisma.EncryptedContentWhereInput
+}
+
+/**
+ * NaturalLanguageInteraction.messages
+ */
+export type NaturalLanguageInteraction$messagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NaturalLanguageInteractionMessage
+   */
+  select?: Prisma.NaturalLanguageInteractionMessageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NaturalLanguageInteractionMessage
+   */
+  omit?: Prisma.NaturalLanguageInteractionMessageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NaturalLanguageInteractionMessageInclude<ExtArgs> | null
+  where?: Prisma.NaturalLanguageInteractionMessageWhereInput
+  orderBy?: Prisma.NaturalLanguageInteractionMessageOrderByWithRelationInput | Prisma.NaturalLanguageInteractionMessageOrderByWithRelationInput[]
+  cursor?: Prisma.NaturalLanguageInteractionMessageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NaturalLanguageInteractionMessageScalarFieldEnum | Prisma.NaturalLanguageInteractionMessageScalarFieldEnum[]
 }
 
 /**

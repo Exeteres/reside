@@ -62,6 +62,7 @@ export const ModelName = {
   EncryptedContent: 'EncryptedContent',
   MemoryNote: 'MemoryNote',
   NaturalLanguageInteraction: 'NaturalLanguageInteraction',
+  NaturalLanguageInteractionMessage: 'NaturalLanguageInteractionMessage',
   NotificationResponse: 'NotificationResponse',
   NotificationTopic: 'NotificationTopic',
   NotificationTaskGroup: 'NotificationTaskGroup',
@@ -225,13 +226,25 @@ export const NaturalLanguageInteractionScalarFieldEnum = {
   id: 'id',
   chatId: 'chatId',
   userId: 'userId',
-  threadRhid: 'threadRhid',
   replicaName: 'replicaName',
+  sessionId: 'sessionId',
+  lastMessageLinkEcid: 'lastMessageLinkEcid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type NaturalLanguageInteractionScalarFieldEnum = (typeof NaturalLanguageInteractionScalarFieldEnum)[keyof typeof NaturalLanguageInteractionScalarFieldEnum]
+
+
+export const NaturalLanguageInteractionMessageScalarFieldEnum = {
+  id: 'id',
+  interactionId: 'interactionId',
+  messageRhid: 'messageRhid',
+  sender: 'sender',
+  createdAt: 'createdAt'
+} as const
+
+export type NaturalLanguageInteractionMessageScalarFieldEnum = (typeof NaturalLanguageInteractionMessageScalarFieldEnum)[keyof typeof NaturalLanguageInteractionMessageScalarFieldEnum]
 
 
 export const NotificationResponseScalarFieldEnum = {

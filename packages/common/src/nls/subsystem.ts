@@ -2,6 +2,7 @@ import type { ConnectRouter } from "@connectrpc/connect"
 import type { FastifyInstance } from "fastify"
 import type { MemoryToolTagDefinitions } from "./memory"
 import type { SessionConfig } from "./tool"
+import { randomUUID } from "node:crypto"
 import { create } from "@bufbuild/protobuf"
 import { Code, ConnectError, type HandlerContext } from "@connectrpc/connect"
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
@@ -16,9 +17,11 @@ import {
   type NaturalLanguageServiceImplementation,
 } from "@reside/api/interaction/nls.v1"
 import { alphaReplica, WellKnownPermissions } from "@reside/registry"
+import OpenAI from "openai"
 import { z } from "zod"
 import { createChannel, createClient } from "../api"
 import { authenticate } from "../auth"
+import { crypto } from "../encryption"
 import { getReplicaName } from "../kubernetes"
 import { logger } from "../logger"
 import { rhid } from "../rhid"
@@ -35,6 +38,17 @@ const NLS_DEFAULT_MODEL = "light"
 const NLS_SESSION_PREFIX = "sessions"
 const DATABASE_QUERY_MAX_ROWS = 100
 const DATABASE_QUERY_MAX_VALUE_LENGTH = 2000
+
+const llmSecretSchema = z.object({
+  endpoint: z.string().trim().min(1),
+  "api-key": z.string().trim().min(1),
+  "light-model": z.string().trim().min(1),
+  "smart-model": z.string().trim().min(1),
+})
+
+const sessionClassificationSchema = z.object({
+  action: z.enum(["continue", "new"]),
+})
 
 export type SetupLanguageSubsystemOptions = {
   services: LanguageEngineServices
@@ -115,22 +129,26 @@ function createNaturalLanguageService(
 ): NaturalLanguageServiceImplementation {
   return {
     async ask(request, context: HandlerContext) {
-      const { subjectId, prompt, subjectInfo } = await authorizeAskRequest(
+      const { subjectId, prompt, subjectInfo, sessionReference } = await authorizeAskRequest(
         services,
         request,
         context,
       )
-      const text = await subsystem.ask(subjectId, prompt, {
+      const sessionId = await resolveRequestSessionId(prompt, sessionReference)
+      const text = await subsystem.ask(sessionId, prompt, {
         systemPrompt: await buildRequestSystemPrompt(subjectId, subjectInfo),
       })
-      return create(AskResponseSchema, { text })
+      return create(AskResponseSchema, { text, sessionId })
     },
     async *askStream(request, context: HandlerContext) {
-      const { subjectId, prompt, subjectInfo } = await authorizeAskRequest(
+      const { subjectId, prompt, subjectInfo, sessionReference } = await authorizeAskRequest(
         services,
         request,
         context,
       )
+      const sessionId = await resolveRequestSessionId(prompt, sessionReference)
+      yield create(AskStreamResponseSchema, { sessionId })
+
       const frameQueue: Array<{ text: string; reset: boolean }> = []
       let queueNotifier: (() => void) | undefined
       let streamCompleted = false
@@ -147,7 +165,7 @@ function createNaturalLanguageService(
 
       const runStream = subsystem
         .askStream(
-          subjectId,
+          sessionId,
           prompt,
           async frame => {
             frameQueue.push(frame)
@@ -181,6 +199,7 @@ function createNaturalLanguageService(
         yield create(AskStreamResponseSchema, {
           text: frame.text,
           reset: frame.reset,
+          sessionId,
         })
       }
 
@@ -204,9 +223,18 @@ async function authorizeAskRequest(
     text: string
     subjectId?: string
     subjectInfo?: Record<string, string>
+    sessionReference: {
+      case: "sessionId" | "lastSessionId" | undefined
+      value?: string
+    }
   },
   context: HandlerContext,
-): Promise<{ subjectId: string; prompt: string; subjectInfo: Record<string, string> }> {
+): Promise<{
+  subjectId: string
+  prompt: string
+  subjectInfo: Record<string, string>
+  sessionReference: NlsSessionReference
+}> {
   const requester = await authenticate(context)
   const effectiveFromSubjectId = request.subjectId ?? requester.subjectId
 
@@ -258,6 +286,95 @@ async function authorizeAskRequest(
     subjectId: effectiveFromSubjectId,
     prompt,
     subjectInfo,
+    sessionReference: parseSessionReference(request.sessionReference),
+  }
+}
+
+type NlsSessionReference =
+  | { type: "explicit"; sessionId: string }
+  | { type: "last"; sessionId: string }
+  | { type: "none" }
+
+function parseSessionReference(input: {
+  case: "sessionId" | "lastSessionId" | undefined
+  value?: string
+}): NlsSessionReference {
+  if (input.case === "sessionId") {
+    return { type: "explicit", sessionId: normalizeApiSessionId(input.value, "session_id") }
+  }
+
+  if (input.case === "lastSessionId") {
+    return { type: "last", sessionId: normalizeApiSessionId(input.value, "last_session_id") }
+  }
+
+  return { type: "none" }
+}
+
+function normalizeApiSessionId(sessionId: string | undefined, fieldName: string): string {
+  const normalized = sessionId?.trim() ?? ""
+  if (normalized.length === 0) {
+    throw new ConnectError(`${fieldName} must not be empty`, Code.InvalidArgument)
+  }
+
+  return normalized
+}
+
+async function resolveRequestSessionId(
+  prompt: string,
+  sessionReference: NlsSessionReference,
+): Promise<string> {
+  if (sessionReference.type === "explicit") {
+    return sessionReference.sessionId
+  }
+
+  if (sessionReference.type === "none") {
+    return randomUUID()
+  }
+
+  const shouldContinue = await classifyShouldContinueLastSession(prompt)
+  if (shouldContinue) {
+    return sessionReference.sessionId
+  }
+
+  return randomUUID()
+}
+
+async function classifyShouldContinueLastSession(prompt: string): Promise<boolean> {
+  try {
+    const llmSecret = await crypto.getSecret(llmSecretSchema, "llm")
+    const client = new OpenAI({
+      apiKey: llmSecret["api-key"],
+      baseURL: llmSecret.endpoint,
+    })
+
+    const response = await client.chat.completions.create({
+      model: llmSecret["light-model"],
+      messages: [
+        {
+          role: "system",
+          content:
+            "Classify whether a user Telegram message is standalone or needs previous dialog context. " +
+            'Return only a valid JSON object with shape {"action":"continue"} or {"action":"new"}. ' +
+            "Use continue only when the message contains pronouns, ellipsis, direct follow-up wording, corrections, or references that require previous context. " +
+            "Use new for standalone questions, commands, greetings, or ambiguous messages.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    })
+
+    const content = response.choices[0]?.message.content
+    if (content === null || content === undefined || content.trim().length === 0) {
+      return false
+    }
+
+    return sessionClassificationSchema.parse(JSON.parse(content)).action === "continue"
+  } catch (error) {
+    logger.warn({ error: normalizeError(error) }, "nls session continuation classification failed")
+
+    return false
   }
 }
 

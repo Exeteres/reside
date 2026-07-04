@@ -49,6 +49,7 @@
     "fastify": "catalog:",
     "jose": "catalog:",
     "opencode-ai": "catalog:",
+    "openai": "catalog:",
     "pg": "catalog:",
     "pino": "catalog:",
     "prisma": "catalog:",

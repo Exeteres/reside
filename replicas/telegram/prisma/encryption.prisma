@@ -15,4 +15,5 @@ model EncryptedContent {
   notificationTopicThread  NotificationTopic?    @relation(name: "NotificationTopicThread")
   notificationTaskPlanningPollMessage NotificationTaskPlanningPoll? @relation(name: "NotificationTaskPlanningPollMessage")
   avatarToken              Avatar?               @relation(name: "AvatarToken")
+  naturalLanguageInteractionLastMessageLink NaturalLanguageInteraction? @relation(name: "NaturalLanguageInteractionLastMessageLink")
 }

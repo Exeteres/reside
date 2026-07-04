@@ -73,6 +73,11 @@ export type MemoryNote = Prisma.MemoryNoteModel
  */
 export type NaturalLanguageInteraction = Prisma.NaturalLanguageInteractionModel
 /**
+ * Model NaturalLanguageInteractionMessage
+ * Represents a Telegram message that belongs to an NLS interaction.
+ */
+export type NaturalLanguageInteractionMessage = Prisma.NaturalLanguageInteractionMessageModel
+/**
  * Model NotificationResponse
  * Represents a user response to a notification.
  */
