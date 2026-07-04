@@ -28,6 +28,10 @@ model Transaction {
   amountEcid String @unique
   amount EncryptedContent @relation(name: "TransactionAmount", fields: [amountEcid], references: [ecid], onDelete: Restrict)
 
+  /// The ECID of the encrypted user-provided transfer comment.
+  commentEcid String? @unique
+  comment EncryptedContent? @relation(name: "TransactionComment", fields: [commentEcid], references: [ecid], onDelete: Restrict)
+
   createdAt DateTime @default(now())
 
   @@index([senderAccountId, createdAt])

@@ -28,5 +28,11 @@ export const transferCommand = defineCommand({
       type: "integer",
       required: true,
     },
+    comment: {
+      title: strings.commands.transfer.params.comment.title,
+      description: strings.commands.transfer.params.comment.description,
+      type: "string",
+      rest: true,
+    },
   },
 })

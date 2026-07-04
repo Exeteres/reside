@@ -36,14 +36,16 @@ export function createBankTools({ prisma }: BankToolServices) {
         senderSubjectRhid: z.string().min(1),
         recipientSubjectRhid: z.string().min(1),
         amount: z.number().int().positive(),
+        comment: z.string().min(1).optional(),
       }),
-      handler: async ({ senderSubjectRhid, recipientSubjectRhid, amount }) => {
+      handler: async ({ senderSubjectRhid, recipientSubjectRhid, amount, comment }) => {
         const transferredAmount = await transferAmount(
           crypto,
           prisma,
           senderSubjectRhid,
           recipientSubjectRhid,
           amount,
+          comment,
         )
 
         return { response: strings.notifications.transfer.success(transferredAmount) }

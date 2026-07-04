@@ -72,6 +72,7 @@ export const transferCommandHandler = defineCommandHandler({
         senderSubjectRhid: subjectRhid,
         recipientSubjectRhid,
         amount: params.amount,
+        comment: params.comment,
       })
       await sendNotification({
         channel: BankNotificationChannels.COMMAND,

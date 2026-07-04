@@ -26,6 +26,10 @@ export const ru = {
           title: "Сумма",
           description: "Количество нихуя для перевода.",
         },
+        comment: {
+          title: "Комментарий",
+          description: "Необязательный комментарий к переводу.",
+        },
       },
     },
   },
@@ -38,7 +42,7 @@ export const ru = {
       transactions:
         "Получает недавнюю историю операций для RHID субъекта Telegram. Используй RHID текущего субъекта, если пользователь явно не просит другой opaque RHID.",
       transfer:
-        "Переводит валюту между RHID субъектов Telegram. Используй RHID текущего субъекта как отправителя, а mentioned_user_*_subject_rhid или явный RHID как получателя.",
+        "Переводит валюту между RHID субъектов Telegram. Используй RHID текущего субъекта как отправителя, а mentioned_user_*_subject_rhid или явный RHID как получателя. Если пользователь просит добавить комментарий, передай его как comment.",
     },
   },
   notifications: {
@@ -52,8 +56,16 @@ export const ru = {
     transactions: {
       empty: "История операций пуста.",
       title: "Последние операции:",
-      line: (createdAt: string, sign: string, amount: string, senderSubjectRhid: string) =>
-        `${createdAt} ${sign}${amount} ∅, отправитель: ${senderSubjectRhid}`,
+      line: (
+        createdAt: string,
+        sign: string,
+        amount: string,
+        senderSubjectRhid: string,
+        commentEcid?: string,
+      ) =>
+        commentEcid === undefined
+          ? `${createdAt} ${sign}${amount} ∅, отправитель: ${senderSubjectRhid}`
+          : `${createdAt} ${sign}${amount} ∅, отправитель: ${senderSubjectRhid}, комментарий: ${commentEcid}`,
     },
     transfer: {
       success: (amount: string) => `Переведено ${amount} ∅.`,
