@@ -28,7 +28,7 @@
     "@grpc/grpc-js": "^1.14.3",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@octokit/auth-app": "^8.2.0",
-    "@openai/codex-sdk": "^0.142.5",
+    "@opencode-ai/sdk": "^1.16.2",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.67.0",
     "@opentelemetry/exporter-trace-otlp-grpc": "^0.206.0",

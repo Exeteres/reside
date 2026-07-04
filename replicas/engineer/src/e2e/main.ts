@@ -1,7 +1,8 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises"
+import type { Config, SessionPromptResponse } from "@opencode-ai/sdk/v2"
+import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { Codex } from "@openai/codex-sdk"
+import { createOpencode } from "@opencode-ai/sdk/v2"
 import { logger, subscribeToSecret } from "@reside/common"
 import { toError } from "@reside/utils"
 import { z } from "zod"
@@ -62,27 +63,42 @@ try {
 
   workspacePath = await mkdtemp(join(tmpdir(), "reside-engineer-e2e-"))
   const repositoryPath = join(workspacePath, repository.name)
-  const codexHomePath = join(workspacePath, "codex-home")
-  await mkdir(codexHomePath, { recursive: true })
   await runCommand(["git", "clone", "--depth", "1", repository.cloneUrl, repositoryPath])
 
-  const codex = new Codex({
-    baseUrl: llmSecret.endpoint,
-    apiKey: llmSecret["api-key"],
-    env: createCodexEnvironment(codexHomePath),
+  const opencode = await createOpencode({
+    port: 0,
+    config: createOpenCodeConfig(llmSecret),
   })
-  const thread = codex.startThread({
-    model: llmSecret["light-model"],
-    workingDirectory: repositoryPath,
-    skipGitRepoCheck: true,
-    sandboxMode: "danger-full-access",
-    approvalPolicy: "never",
-    networkAccessEnabled: true,
-    webSearchMode: "live",
+  const session = await opencode.client.session.create({
+    directory: repositoryPath,
+    title: "Engineer e2e",
+    agent: "build",
+    model: {
+      id: llmSecret["light-model"],
+      providerID: "reside",
+    },
+    permission: [{ permission: "*", pattern: "*", action: "allow" }],
   })
-  const agentResponse = await thread.run("Say hello to engineer replica in one short sentence.")
+  if (session.error) {
+    throw new Error(formatOpenCodeError(session.error))
+  }
 
-  logger.info('engineer e2e agent response text="%s"', normalizeAgentResponse(agentResponse))
+  const agentResponse = await opencode.client.session.prompt({
+    sessionID: session.data.id,
+    directory: repositoryPath,
+    agent: "build",
+    model: {
+      providerID: "reside",
+      modelID: llmSecret["light-model"],
+    },
+    parts: [{ type: "text", text: "Say hello to engineer replica in one short sentence." }],
+  })
+  opencode.server.close()
+  if (agentResponse.error) {
+    throw new Error(formatOpenCodeError(agentResponse.error))
+  }
+
+  logger.info('engineer e2e agent response text="%s"', normalizeAgentResponse(agentResponse.data))
 
   logger.info("engineer e2e completed")
 } catch (error) {
@@ -155,52 +171,51 @@ async function withTimeout<T>(
   }
 }
 
-function createCodexEnvironment(codexHomePath: string): Record<string, string> {
-  const env: Record<string, string> = {}
-  for (const [key, value] of Object.entries(process.env)) {
-    if (value !== undefined) {
-      env[key] = value
-    }
+function createOpenCodeConfig(llmSecret: z.infer<typeof llmSecretSchema>): Config {
+  return {
+    share: "disabled",
+    autoupdate: false,
+    provider: {
+      reside: {
+        name: "ReSide LLM",
+        api: "openai",
+        options: {
+          apiKey: llmSecret["api-key"],
+          baseURL: llmSecret.endpoint,
+        },
+        models: {
+          [llmSecret["light-model"]]: {
+            name: llmSecret["light-model"],
+            tool_call: true,
+            reasoning: true,
+          },
+        },
+      },
+    },
   }
-
-  env.CODEX_HOME = codexHomePath
-
-  return env
 }
 
-function normalizeAgentResponse(response: unknown): string {
-  if (response && typeof response === "object" && "finalResponse" in response) {
-    const finalResponse = response.finalResponse
-    if (typeof finalResponse === "string") {
-      return finalResponse
+function normalizeAgentResponse(response: SessionPromptResponse): string {
+  return response.parts
+    .filter(part => part.type === "text")
+    .map(part => part.text)
+    .join("\n")
+}
+
+function formatOpenCodeError(error: unknown): string {
+  if (error && typeof error === "object") {
+    const candidate = error as { data?: { message?: unknown }; message?: unknown; name?: unknown }
+    const message = candidate.data?.message ?? candidate.message
+    if (typeof message === "string") {
+      return message
+    }
+
+    if (typeof candidate.name === "string") {
+      return candidate.name
     }
   }
 
-  if (typeof response === "string") {
-    return response
-  }
-
-  if (response && typeof response === "object") {
-    const objectResponse = response as {
-      text?: unknown
-      content?: unknown
-      message?: unknown
-    }
-
-    for (const value of [objectResponse.text, objectResponse.content, objectResponse.message]) {
-      if (typeof value === "string") {
-        return value
-      }
-    }
-
-    try {
-      return JSON.stringify(response)
-    } catch {
-      return String(response)
-    }
-  }
-
-  return String(response)
+  return String(error)
 }
 
 async function runCommand(command: string[]): Promise<void> {
