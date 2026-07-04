@@ -191,7 +191,7 @@ export type ChatGroupByOutputType = {
   id: number
   telegramRhid: string
   dataEcid: string
-  dataRhid: string
+  dataRhid: string | null
   createdAt: Date
   updatedAt: Date
   _count: ChatCountAggregateOutputType | null
@@ -223,7 +223,7 @@ export type ChatWhereInput = {
   id?: Prisma.IntFilter<"Chat"> | number
   telegramRhid?: Prisma.StringFilter<"Chat"> | string
   dataEcid?: Prisma.StringFilter<"Chat"> | string
-  dataRhid?: Prisma.StringFilter<"Chat"> | string
+  dataRhid?: Prisma.StringNullableFilter<"Chat"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Chat"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Chat"> | Date | string
   data?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
@@ -237,7 +237,7 @@ export type ChatOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   telegramRhid?: Prisma.SortOrder
   dataEcid?: Prisma.SortOrder
-  dataRhid?: Prisma.SortOrder
+  dataRhid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   data?: Prisma.EncryptedContentOrderByWithRelationInput
@@ -268,7 +268,7 @@ export type ChatOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   telegramRhid?: Prisma.SortOrder
   dataEcid?: Prisma.SortOrder
-  dataRhid?: Prisma.SortOrder
+  dataRhid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ChatCountOrderByAggregateInput
@@ -285,14 +285,14 @@ export type ChatScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"Chat"> | number
   telegramRhid?: Prisma.StringWithAggregatesFilter<"Chat"> | string
   dataEcid?: Prisma.StringWithAggregatesFilter<"Chat"> | string
-  dataRhid?: Prisma.StringWithAggregatesFilter<"Chat"> | string
+  dataRhid?: Prisma.StringNullableWithAggregatesFilter<"Chat"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Chat"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Chat"> | Date | string
 }
 
 export type ChatCreateInput = {
   telegramRhid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
@@ -306,7 +306,7 @@ export type ChatUncheckedCreateInput = {
   id?: number
   telegramRhid: string
   dataEcid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
@@ -317,7 +317,7 @@ export type ChatUncheckedCreateInput = {
 
 export type ChatUpdateInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
@@ -331,7 +331,7 @@ export type ChatUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
@@ -344,14 +344,14 @@ export type ChatCreateManyInput = {
   id?: number
   telegramRhid: string
   dataEcid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type ChatUpdateManyMutationInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -360,7 +360,7 @@ export type ChatUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -500,7 +500,7 @@ export type ChatUpdateOneRequiredWithoutNotificationsNestedInput = {
 
 export type ChatCreateWithoutNotificationChannelBindingsInput = {
   telegramRhid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
@@ -513,7 +513,7 @@ export type ChatUncheckedCreateWithoutNotificationChannelBindingsInput = {
   id?: number
   telegramRhid: string
   dataEcid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
@@ -539,7 +539,7 @@ export type ChatUpdateToOneWithWhereWithoutNotificationChannelBindingsInput = {
 
 export type ChatUpdateWithoutNotificationChannelBindingsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
@@ -552,7 +552,7 @@ export type ChatUncheckedUpdateWithoutNotificationChannelBindingsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
@@ -562,7 +562,7 @@ export type ChatUncheckedUpdateWithoutNotificationChannelBindingsInput = {
 
 export type ChatCreateWithoutDataInput = {
   telegramRhid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationCreateNestedManyWithoutChatInput
@@ -574,7 +574,7 @@ export type ChatCreateWithoutDataInput = {
 export type ChatUncheckedCreateWithoutDataInput = {
   id?: number
   telegramRhid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
@@ -601,7 +601,7 @@ export type ChatUpdateToOneWithWhereWithoutDataInput = {
 
 export type ChatUpdateWithoutDataInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUpdateManyWithoutChatNestedInput
@@ -613,7 +613,7 @@ export type ChatUpdateWithoutDataInput = {
 export type ChatUncheckedUpdateWithoutDataInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
@@ -624,7 +624,7 @@ export type ChatUncheckedUpdateWithoutDataInput = {
 
 export type ChatCreateWithoutNaturalLanguageInteractionsInput = {
   telegramRhid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
@@ -637,7 +637,7 @@ export type ChatUncheckedCreateWithoutNaturalLanguageInteractionsInput = {
   id?: number
   telegramRhid: string
   dataEcid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
@@ -663,7 +663,7 @@ export type ChatUpdateToOneWithWhereWithoutNaturalLanguageInteractionsInput = {
 
 export type ChatUpdateWithoutNaturalLanguageInteractionsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
@@ -676,7 +676,7 @@ export type ChatUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
@@ -686,7 +686,7 @@ export type ChatUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
 
 export type ChatCreateWithoutNotificationTopicsInput = {
   telegramRhid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
@@ -699,7 +699,7 @@ export type ChatUncheckedCreateWithoutNotificationTopicsInput = {
   id?: number
   telegramRhid: string
   dataEcid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutChatInput
@@ -725,7 +725,7 @@ export type ChatUpdateToOneWithWhereWithoutNotificationTopicsInput = {
 
 export type ChatUpdateWithoutNotificationTopicsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
@@ -738,7 +738,7 @@ export type ChatUncheckedUpdateWithoutNotificationTopicsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutChatNestedInput
@@ -748,7 +748,7 @@ export type ChatUncheckedUpdateWithoutNotificationTopicsInput = {
 
 export type ChatCreateWithoutNotificationsInput = {
   telegramRhid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   data: Prisma.EncryptedContentCreateNestedOneWithoutChatDataInput
@@ -761,7 +761,7 @@ export type ChatUncheckedCreateWithoutNotificationsInput = {
   id?: number
   telegramRhid: string
   dataEcid: string
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   notificationTopics?: Prisma.NotificationTopicUncheckedCreateNestedManyWithoutChatInput
@@ -787,7 +787,7 @@ export type ChatUpdateToOneWithWhereWithoutNotificationsInput = {
 
 export type ChatUpdateWithoutNotificationsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   data?: Prisma.EncryptedContentUpdateOneRequiredWithoutChatDataNestedInput
@@ -800,7 +800,7 @@ export type ChatUncheckedUpdateWithoutNotificationsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notificationTopics?: Prisma.NotificationTopicUncheckedUpdateManyWithoutChatNestedInput
@@ -966,7 +966,7 @@ export type $ChatPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     /**
      * The RHID of the raw Telegram payload for the chat.
      */
-    dataRhid: string
+    dataRhid: string | null
     /**
      * The timestamp when this chat was created.
      */

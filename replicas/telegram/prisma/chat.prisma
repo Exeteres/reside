@@ -10,7 +10,7 @@ model Chat {
   dataEcid String @unique
 
   /// The RHID of the raw Telegram payload for the chat.
-  dataRhid String @unique
+  dataRhid String? @unique
 
   /// The encrypted raw Telegram payload for the chat.
   data EncryptedContent @relation(name: "ChatData", fields: [dataEcid], references: [ecid])
