@@ -582,5 +582,7 @@ function mapCommandParameterType(parameter: CommandDefinitionParameter): Command
       return CommandParameterType.INTEGER
     case "boolean":
       return CommandParameterType.BOOLEAN
+    case "user":
+      return CommandParameterType.USER
   }
 }

@@ -79,6 +79,9 @@ enum CommandParameterType {
 
   // The command parameter is a boolean value.
   COMMAND_PARAMETER_TYPE_BOOLEAN = 2;
+
+  // The command parameter is a user reference resolved to a canonical subject id by the caller.
+  COMMAND_PARAMETER_TYPE_USER = 3;
 }
 
 // The CommandParameter represents a single parameter that can be passed to a command when executing it.

@@ -170,6 +170,8 @@ export const ru = {
         `Параметр "${parameterName}" должен быть целым числом`,
       parameterMustBeBoolean: (parameterName: string) =>
         `Параметр "${parameterName}" должен быть true/false`,
+      parameterMustBeUser: (parameterName: string) =>
+        `Параметр "${parameterName}" должен быть упоминанием, именем пользователя или ID`,
       acceptedSuffix: (subjectTitle: string, date: string, time: string) =>
         `${subjectTitle} ответил ${date} в ${time} MSK`,
       acceptedActionSuffix: (

@@ -742,7 +742,8 @@ function parseStoredCommandParameters(raw: unknown): ParsedCommandParameter[] {
         typeof entry.type === "number" &&
         (entry.type === CommandParameterType.STRING ||
           entry.type === CommandParameterType.INTEGER ||
-          entry.type === CommandParameterType.BOOLEAN)
+          entry.type === CommandParameterType.BOOLEAN ||
+          entry.type === CommandParameterType.USER)
           ? entry.type
           : CommandParameterType.STRING,
       required: entry.required === true,
@@ -770,6 +771,8 @@ function toCommandParameterTypeJson(type: CommandParameterType): CommandParamete
       return "COMMAND_PARAMETER_TYPE_INTEGER"
     case CommandParameterType.BOOLEAN:
       return "COMMAND_PARAMETER_TYPE_BOOLEAN"
+    case CommandParameterType.USER:
+      return "COMMAND_PARAMETER_TYPE_USER"
   }
 }
 
@@ -817,6 +820,7 @@ function parseCommandParameterValue(
 ): string | number | boolean {
   switch (definition.type) {
     case CommandParameterType.STRING:
+    case CommandParameterType.USER:
       return value
     case CommandParameterType.INTEGER: {
       const numberValue = Number.parseInt(value, 10)

@@ -1,7 +1,10 @@
 import type { PrismaClient } from "../../database"
 import { describe, expect, test } from "bun:test"
 import { mockDeepFn, testCrypto } from "@reside/common/testing"
-import { replaceUserReferencesWithSubjectIds } from "./user-reference"
+import {
+  replaceUserReferencesWithSubjectIds,
+  resolveUserReferenceToSubjectId,
+} from "./user-reference"
 
 process.env.REPLICA_NAME = "telegram"
 
@@ -55,6 +58,20 @@ describe("replaceUserReferencesWithSubjectIds", () => {
     })
 
     expect(result).toBe("hello,@alice_user and id=123456")
+    expect(prisma.user.findUnique.spy()).toHaveBeenCalledTimes(0)
+    expect(prisma.user.findMany.spy()).toHaveBeenCalledTimes(0)
+  })
+
+  test("accepts already resolved telegram subject ids", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+
+    const result = await resolveUserReferenceToSubjectId({
+      crypto: testCrypto,
+      prisma,
+      value: "telegram:10",
+    })
+
+    expect(result).toBe("telegram:10")
     expect(prisma.user.findUnique.spy()).toHaveBeenCalledTimes(0)
     expect(prisma.user.findMany.spy()).toHaveBeenCalledTimes(0)
   })

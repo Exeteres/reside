@@ -2,7 +2,7 @@ import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
 import { rhid } from "@reside/common"
 import { telegramUserDataSchema } from "../../definitions"
-import { toTelegramSubjectId } from "./subject"
+import { parseTelegramSubjectId, toTelegramSubjectId } from "./subject"
 
 const USERNAME_PATTERN = /^@?[A-Za-z0-9_]{5,32}$/
 const TELEGRAM_USER_ID_PATTERN = /^\d+$/
@@ -28,6 +28,23 @@ export async function replaceUserReferencesWithSubjectIds(args: {
   }
 
   return tokens.map(token => replacements.get(token) ?? token).join("")
+}
+
+export async function resolveUserReferenceToSubjectId(args: {
+  crypto: ResideCrypto
+  prisma: PrismaClient
+  value: string
+}): Promise<string | undefined> {
+  if (parseTelegramSubjectId(args.value) !== null) {
+    return args.value
+  }
+
+  if (!USERNAME_PATTERN.test(args.value) && !TELEGRAM_USER_ID_PATTERN.test(args.value)) {
+    return undefined
+  }
+
+  const replacements = await resolveUserReferenceReplacements(args, [args.value])
+  return replacements.get(args.value)
 }
 
 async function resolveUserReferenceReplacements(

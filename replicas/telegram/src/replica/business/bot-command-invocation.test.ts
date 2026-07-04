@@ -307,4 +307,106 @@ describe("handleCommandInvocation", () => {
       replyToMessageId: 3,
     })
   })
+
+  test("resolves user parameters to telegram subject ids", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<AuthzServiceClient>()
+    const permissionRequestService = mockDeepFn<PermissionRequestServiceClient>()
+    const invokeCommand = mock(async (_input: unknown) => ({}))
+    const commandHandlerClient = {
+      invokeCommand,
+    } as unknown as CommandHandlerServiceClient
+    const sendSystemMessage = mock(async (_input: { text: string; replyToMessageId: number }) => {})
+
+    prisma.command.findUnique.mockResolvedValue({
+      id: 1,
+      name: "deploy",
+      title: "Deploy",
+      description: null,
+      parameters: [
+        {
+          name: "recipient",
+          title: "Recipient",
+          type: CommandParameterType.USER,
+          required: true,
+          rest: false,
+        },
+      ],
+      isProtected: false,
+      callbackEndpoint: "https://handler.local",
+    } as never)
+
+    await handleCommandInvocation({
+      prisma,
+      crypto: testCrypto,
+      authzService,
+      permissionRequestService,
+      getCommandHandlerClient: () => commandHandlerClient,
+      chatId: 1,
+      userId: 2,
+      subjectUserId: 20,
+      messageId: 3,
+      text: "/deploy telegram:10",
+      interactionContext: {
+        token: "token",
+        title: "title",
+      },
+      sendSystemMessage,
+    })
+
+    expect(sendSystemMessage).not.toHaveBeenCalledWith({
+      text: strings.worker.bot.parameterMustBeUser("recipient"),
+      replyToMessageId: 3,
+    })
+  })
+
+  test("rejects unresolved user parameters", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<AuthzServiceClient>()
+    const permissionRequestService = mockDeepFn<PermissionRequestServiceClient>()
+    const commandHandlerClient = mockDeepFn<CommandHandlerServiceClient>()
+    const sendSystemMessage = mock(async (_input: { text: string; replyToMessageId: number }) => {})
+
+    prisma.command.findUnique.mockResolvedValue({
+      id: 1,
+      name: "deploy",
+      title: "Deploy",
+      description: null,
+      parameters: [
+        {
+          name: "recipient",
+          title: "Recipient",
+          type: CommandParameterType.USER,
+          required: true,
+          rest: false,
+        },
+      ],
+      isProtected: false,
+      callbackEndpoint: "https://handler.local",
+    } as never)
+
+    await handleCommandInvocation({
+      prisma,
+      crypto: testCrypto,
+      authzService,
+      permissionRequestService,
+      getCommandHandlerClient: () => commandHandlerClient,
+      chatId: 1,
+      userId: 2,
+      subjectUserId: 20,
+      messageId: 3,
+      text: "/deploy not-a-user",
+      interactionContext: {
+        token: "token",
+        title: "title",
+      },
+      sendSystemMessage,
+    })
+
+    expect(sendSystemMessage).toHaveBeenCalledWith({
+      text: strings.worker.bot.parameterMustBeUser("recipient"),
+      replyToMessageId: 3,
+    })
+    expect(commandHandlerClient.invokeCommand.spy()).toHaveBeenCalledTimes(0)
+  })
 })

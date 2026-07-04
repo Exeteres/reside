@@ -11,7 +11,6 @@ import type { PrismaClient } from "../../database"
 import { fromJson } from "@bufbuild/protobuf"
 import { CommandInvocationSchema } from "@reside/api/interaction/command.v1"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
-import { telegramUserDataSchema } from "../../definitions"
 import { strings } from "../../locale"
 import { canInvokeCommand, requestCommandInvokePermission } from "./authorization"
 import {
@@ -20,7 +19,8 @@ import {
   parseStoredCommandParameters,
 } from "./bot-command"
 import { mapReplicaCallErrorMessage } from "./bot-replica-call"
-import { resolveTelegramSubjectIdByTelegramUserId, toTelegramSubjectId } from "./subject"
+import { toTelegramSubjectId } from "./subject"
+import { resolveUserReferenceToSubjectId } from "./user-reference"
 
 export type TelegramMessageEntity = {
   type: string
@@ -92,7 +92,11 @@ export async function handleCommandInvocation(args: {
 
   let parameters: Record<string, unknown>
   try {
-    parameters = parseCommandParameters(commandDefinition.parameters, commandInvocation.parameters)
+    parameters = await resolveUserCommandParameters(
+      args,
+      commandDefinition.parameters,
+      parseCommandParameters(commandDefinition.parameters, commandInvocation.parameters),
+    )
   } catch (error) {
     await args.sendSystemMessage({
       text: error instanceof Error ? error.message : String(error),
@@ -125,7 +129,7 @@ export async function handleCommandInvocation(args: {
         callbackEndpoint: commandDefinition.callbackEndpoint,
       },
       context: args.interactionContext,
-      parameters: toInvocationParametersJson(await enrichInvocationParameters(args, parameters)),
+      parameters: toInvocationParametersJson(parameters),
       subjectId: toTelegramSubjectId(args.subjectUserId),
     }
 
@@ -166,48 +170,47 @@ function toCommandParameterTypeJson(type: CommandParameterType): CommandParamete
     return "COMMAND_PARAMETER_TYPE_BOOLEAN"
   }
 
+  if (type === CommandParameterType.USER) {
+    return "COMMAND_PARAMETER_TYPE_USER"
+  }
+
   return "COMMAND_PARAMETER_TYPE_STRING"
 }
 
-async function enrichInvocationParameters(
+async function resolveUserCommandParameters(
   args: {
     prisma: PrismaClient
     crypto: ResideCrypto
-    text: string
-    entities?: TelegramMessageEntity[]
   },
+  rawParameters: unknown,
   parameters: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const user = parameters.user
-  if (typeof user !== "string" || user.length === 0) return parameters
-  const recipientSubjectId = await resolveRecipientSubjectId(args, user)
-  return recipientSubjectId === undefined ? parameters : { ...parameters, recipientSubjectId }
-}
-
-async function resolveRecipientSubjectId(
-  args: {
-    prisma: PrismaClient
-    crypto: ResideCrypto
-    text: string
-    entities?: TelegramMessageEntity[]
-  },
-  user: string,
-): Promise<string | undefined> {
-  const normalized = user.trim().replace(/^@/, "").toLowerCase()
-  const mention = args.entities?.find(
-    entity => entity.type === "text_mention" && entity.user?.id !== undefined,
-  )
-  if (mention?.user?.id !== undefined) {
-    return await resolveTelegramSubjectIdByTelegramUserId(args.prisma, mention.user.id)
-  }
-  const users = await args.prisma.user.findMany({
-    select: { id: true, dataEcid: true },
-  })
-  for (const candidate of users) {
-    const data = await args.crypto.decrypt(telegramUserDataSchema, candidate.dataEcid)
-    if (data.username?.toLowerCase() === normalized) {
-      return toTelegramSubjectId(candidate.id)
+  const resolvedParameters = { ...parameters }
+  for (const definition of parseStoredCommandParameters(rawParameters)) {
+    if (definition.type !== CommandParameterType.USER) {
+      continue
     }
+
+    const value = parameters[definition.name]
+    if (value === undefined) {
+      continue
+    }
+
+    if (typeof value !== "string") {
+      throw new Error(strings.worker.bot.parameterMustBeUser(definition.name))
+    }
+
+    const subjectId = await resolveUserReferenceToSubjectId({
+      crypto: args.crypto,
+      prisma: args.prisma,
+      value,
+    })
+    if (subjectId === undefined) {
+      throw new Error(strings.worker.bot.parameterMustBeUser(definition.name))
+    }
+
+    resolvedParameters[definition.name] = subjectId
   }
-  return undefined
+
+  return resolvedParameters
 }

@@ -35,7 +35,7 @@ export type CommandDefinition<
   protected?: boolean
 }
 
-export type ParameterType = "string" | "integer" | "boolean"
+export type ParameterType = "string" | "integer" | "boolean" | "user"
 
 export type CommandDefinitionParameter<
   TType extends ParameterType = ParameterType,
@@ -73,7 +73,9 @@ export type ParameterValue<TType extends ParameterType> = TType extends "string"
     ? number
     : TType extends "boolean"
       ? boolean
-      : never
+      : TType extends "user"
+        ? string
+        : never
 
 export type CommandParameters<TParameters extends Record<string, CommandDefinitionParameter>> = {
   [K in keyof TParameters]: TParameters[K]["required"] extends true
@@ -183,6 +185,7 @@ function parseCommandParameters(
 
     switch (definition.type) {
       case "string":
+      case "user":
         if (typeof value !== "string") {
           throw new Error(`Invalid type for parameter ${key}: expected string`)
         }

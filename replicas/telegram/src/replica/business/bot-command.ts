@@ -95,7 +95,8 @@ export function parseStoredCommandParameters(raw: unknown): ParsedCommandParamet
         typeof entry.type === "number" &&
         (entry.type === CommandParameterType.STRING ||
           entry.type === CommandParameterType.INTEGER ||
-          entry.type === CommandParameterType.BOOLEAN)
+          entry.type === CommandParameterType.BOOLEAN ||
+          entry.type === CommandParameterType.USER)
           ? entry.type
           : CommandParameterType.STRING,
       required: entry.required === true,
