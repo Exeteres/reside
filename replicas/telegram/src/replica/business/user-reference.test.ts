@@ -8,8 +8,8 @@ process.env.REPLICA_NAME = "telegram"
 describe("replaceUserReferencesWithSubjectIds", () => {
   test("replaces isolated at-mentions, usernames, and telegram user ids", async () => {
     const prisma = mockDeepFn<PrismaClient>()
-    const aliceUsernameEcid = await testCrypto.encrypt("alice_user")
-    const bobUsernameEcid = await testCrypto.encrypt("bob_user")
+    const aliceDataEcid = await testCrypto.encrypt({ username: "alice_user" })
+    const bobDataEcid = await testCrypto.encrypt({ username: "bob_user" })
 
     prisma.user.findUnique
       .mockResolvedValueOnce({ id: 30 } as never)
@@ -17,8 +17,8 @@ describe("replaceUserReferencesWithSubjectIds", () => {
       .mockResolvedValueOnce(null as never)
       .mockResolvedValue(null as never)
     prisma.user.findMany.mockResolvedValue([
-      { id: 10, usernameEcid: aliceUsernameEcid },
-      { id: 20, usernameEcid: bobUsernameEcid },
+      { id: 10, dataEcid: aliceDataEcid },
+      { id: 20, dataEcid: bobDataEcid },
     ] as never)
 
     const result = await replaceUserReferencesWithSubjectIds({
@@ -30,7 +30,7 @@ describe("replaceUserReferencesWithSubjectIds", () => {
     expect(result).toBe("ask telegram:10 telegram:20 telegram:30")
   })
 
-  test("uses username rhid lookup before decrypting existing username ecids", async () => {
+  test("uses username rhid lookup before decrypting existing user data", async () => {
     const prisma = mockDeepFn<PrismaClient>()
 
     prisma.user.findUnique.mockResolvedValue({ id: 10 } as never)

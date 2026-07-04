@@ -1,12 +1,12 @@
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
 import type { Bot, Context } from "grammy"
+import type { User } from "grammy/types"
 import type { PrismaClient } from "../../database"
 import { logger, rhid } from "@reside/common"
 import {
   AVATAR_BOT_CONFIG_VERSION,
   avatarManagedBotCreatedSignal,
-  encryptedStringSchema,
   getAvatarProvisionWorkflowId,
 } from "../../definitions"
 
@@ -404,10 +404,10 @@ async function resolveCreatorUserId(
   }
 
   const telegramRhid = rhid(String(user.id))
-  const telegramUserId = String(user.id)
+  const _telegramUserId = String(user.id)
+  const userData = user as User
+  const dataRhid = rhid(userData)
   const username = toOptionalNonEmptyString(user.username)
-  const firstName = toOptionalNonEmptyString(user.first_name)
-  const lastName = toOptionalNonEmptyString(user.last_name)
 
   const existingUser = await prisma.user.findUnique({
     where: {
@@ -415,23 +415,20 @@ async function resolveCreatorUserId(
     },
     select: {
       id: true,
-      telegramUserIdEcid: true,
-      usernameEcid: true,
       usernameRhid: true,
-      firstNameEcid: true,
-      lastNameEcid: true,
+      dataRhid: true,
     },
   })
 
   if (!existingUser) {
+    const dataEcid = await crypto.encrypt(userData)
+
     const userEntity = await prisma.user.create({
       data: {
         telegramRhid,
-        telegramUserIdEcid: await crypto.encrypt(telegramUserId),
-        usernameEcid: username === undefined ? null : await crypto.encrypt(username),
         usernameRhid: username === undefined ? null : rhid(username.toLowerCase()),
-        firstNameEcid: firstName === undefined ? null : await crypto.encrypt(firstName),
-        lastNameEcid: lastName === undefined ? null : await crypto.encrypt(lastName),
+        dataEcid,
+        dataRhid,
       },
       select: {
         id: true,
@@ -442,37 +439,19 @@ async function resolveCreatorUserId(
   }
 
   const updateData: {
-    telegramUserIdEcid?: string
-    usernameEcid?: string | null
     usernameRhid?: string | null
-    firstNameEcid?: string | null
-    lastNameEcid?: string | null
+    dataEcid?: string
+    dataRhid?: string
   } = {}
 
-  const currentTelegramUserId = await crypto.decrypt(
-    encryptedStringSchema,
-    existingUser.telegramUserIdEcid,
-  )
-  if (currentTelegramUserId !== telegramUserId) {
-    updateData.telegramUserIdEcid = await crypto.encrypt(telegramUserId)
+  const usernameRhid = username === undefined ? null : rhid(username.toLowerCase())
+  if (existingUser.usernameRhid !== usernameRhid) {
+    updateData.usernameRhid = usernameRhid
   }
 
-  const currentUsername = await decryptOptionalString(crypto, existingUser.usernameEcid)
-  if (currentUsername !== username) {
-    updateData.usernameEcid = username === undefined ? null : await crypto.encrypt(username)
-    updateData.usernameRhid = username === undefined ? null : rhid(username.toLowerCase())
-  } else if (username !== undefined && existingUser.usernameRhid === null) {
-    updateData.usernameRhid = rhid(username.toLowerCase())
-  }
-
-  const currentFirstName = await decryptOptionalString(crypto, existingUser.firstNameEcid)
-  if (currentFirstName !== firstName) {
-    updateData.firstNameEcid = firstName === undefined ? null : await crypto.encrypt(firstName)
-  }
-
-  const currentLastName = await decryptOptionalString(crypto, existingUser.lastNameEcid)
-  if (currentLastName !== lastName) {
-    updateData.lastNameEcid = lastName === undefined ? null : await crypto.encrypt(lastName)
+  if (existingUser.dataRhid !== dataRhid) {
+    updateData.dataEcid = await crypto.encrypt(userData)
+    updateData.dataRhid = dataRhid
   }
 
   if (Object.keys(updateData).length > 0) {
@@ -488,17 +467,6 @@ async function resolveCreatorUserId(
   }
 
   return existingUser.id
-}
-
-async function decryptOptionalString(
-  crypto: ResideCrypto,
-  ecid: string | null,
-): Promise<string | undefined> {
-  if (ecid === null) {
-    return undefined
-  }
-
-  return await crypto.decrypt(encryptedStringSchema, ecid)
 }
 
 function toOptionalNonEmptyString(value: unknown): string | undefined {

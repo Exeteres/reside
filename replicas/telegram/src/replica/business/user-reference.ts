@@ -1,7 +1,7 @@
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
 import { rhid } from "@reside/common"
-import { encryptedStringSchema } from "../../definitions"
+import { telegramUserDataSchema } from "../../definitions"
 import { toTelegramSubjectId } from "./subject"
 
 const USERNAME_PATTERN = /^@?[A-Za-z0-9_]{5,32}$/
@@ -82,24 +82,19 @@ async function resolveUserReferenceReplacements(
   }
 
   const users = await args.prisma.user.findMany({
-    where: {
-      usernameEcid: {
-        not: null,
-      },
-    },
     select: {
       id: true,
-      usernameEcid: true,
+      dataEcid: true,
     },
   })
 
   for (const user of users) {
-    if (user.usernameEcid === null) {
+    const data = await args.crypto.decrypt(telegramUserDataSchema, user.dataEcid)
+    if (data.username === undefined) {
       continue
     }
 
-    const username = await args.crypto.decrypt(encryptedStringSchema, user.usernameEcid)
-    const matchedValue = usernameValues.get(username.toLowerCase())
+    const matchedValue = usernameValues.get(data.username.toLowerCase())
     if (matchedValue !== undefined) {
       replacements.set(matchedValue, toTelegramSubjectId(user.id))
     }

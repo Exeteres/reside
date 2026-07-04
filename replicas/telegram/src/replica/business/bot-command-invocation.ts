@@ -11,7 +11,7 @@ import type { PrismaClient } from "../../database"
 import { fromJson } from "@bufbuild/protobuf"
 import { CommandInvocationSchema } from "@reside/api/interaction/command.v1"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
-import { encryptedStringSchema } from "../../definitions"
+import { telegramUserDataSchema } from "../../definitions"
 import { strings } from "../../locale"
 import { canInvokeCommand, requestCommandInvokePermission } from "./authorization"
 import {
@@ -201,12 +201,11 @@ async function resolveRecipientSubjectId(
     return await resolveTelegramSubjectIdByTelegramUserId(args.prisma, mention.user.id)
   }
   const users = await args.prisma.user.findMany({
-    select: { id: true, usernameEcid: true },
+    select: { id: true, dataEcid: true },
   })
   for (const candidate of users) {
-    if (!candidate.usernameEcid) continue
-    const username = await args.crypto.decrypt(encryptedStringSchema, candidate.usernameEcid)
-    if (username.toLowerCase() === normalized) {
+    const data = await args.crypto.decrypt(telegramUserDataSchema, candidate.dataEcid)
+    if (data.username?.toLowerCase() === normalized) {
       return toTelegramSubjectId(candidate.id)
     }
   }

@@ -21,7 +21,7 @@ describe("parseTelegramSubjectId", () => {
 
 describe("toTelegramUserTitle", () => {
   test("uses username when available", () => {
-    expect(toTelegramUserTitle("123", { username: "nick" } as PrismaJson.UserData)).toBe("nick")
+    expect(toTelegramUserTitle("123", { username: "nick" })).toBe("nick")
   })
 
   test("falls back to first and last name", () => {
@@ -29,7 +29,7 @@ describe("toTelegramUserTitle", () => {
       toTelegramUserTitle("123", {
         first_name: "John",
         last_name: "Doe",
-      } as PrismaJson.UserData),
+      }),
     ).toBe("John Doe")
   })
 })
@@ -37,14 +37,10 @@ describe("toTelegramUserTitle", () => {
 describe("resolveTelegramSubjectDisplayInfo", () => {
   test("loads user by parsed telegram id and returns computed title", async () => {
     const prisma = mockDeepFn<PrismaClient>()
-    const telegramUserIdEcid = await testCrypto.encrypt("123")
-    const usernameEcid = await testCrypto.encrypt("nick")
+    const dataEcid = await testCrypto.encrypt({ username: "nick" })
 
     prisma.user.findUnique.mockResolvedValue({
-      telegramUserIdEcid,
-      usernameEcid,
-      firstNameEcid: null,
-      lastNameEcid: null,
+      dataEcid,
     } as never)
 
     const result = await resolveTelegramSubjectDisplayInfo(testCrypto, prisma, "telegram:123")

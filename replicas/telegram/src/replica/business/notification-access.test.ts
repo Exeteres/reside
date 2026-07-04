@@ -10,6 +10,8 @@ import {
   resolveSenderSubjectId,
 } from "./notification-access"
 
+process.env.REPLICA_NAME = "telegram"
+
 describe("resolveSenderSubjectId", () => {
   test("returns caller subject id when requested subject is missing", async () => {
     const authzService = mockDeepFn<{
@@ -140,6 +142,7 @@ describe("parseInteractionContextToken", () => {
 describe("ensureTargetChatExists", () => {
   test("upserts chat by telegram rhid", async () => {
     const prisma = mockDeepFn<PrismaClient>()
+    prisma.chat.findUnique.mockResolvedValue(null as never)
     prisma.chat.upsert.mockResolvedValue({ id: 1 } as never)
 
     await ensureTargetChatExists(testCrypto, prisma, "-555")
@@ -152,12 +155,24 @@ describe("ensureTargetChatExists", () => {
         },
         update: {
           dataEcid: expect.any(String),
+          dataRhid: rhid({ id: "-555" }),
         },
         create: {
           telegramRhid: rhid("-555"),
           dataEcid: expect.any(String),
+          dataRhid: rhid({ id: "-555" }),
         },
       }),
     )
+  })
+
+  test("skips chat update when data rhid matches", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    prisma.chat.findUnique.mockResolvedValue({ id: 1, dataRhid: rhid({ id: "-555" }) } as never)
+
+    const result = await ensureTargetChatExists(testCrypto, prisma, "-555")
+
+    expect(result).toEqual({ id: 1 })
+    expect(prisma.chat.upsert.spy()).toHaveBeenCalledTimes(0)
   })
 })

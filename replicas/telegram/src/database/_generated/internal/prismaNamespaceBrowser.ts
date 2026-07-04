@@ -178,6 +178,7 @@ export const ChatScalarFieldEnum = {
   id: 'id',
   telegramRhid: 'telegramRhid',
   dataEcid: 'dataEcid',
+  dataRhid: 'dataRhid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -367,11 +368,9 @@ export type OperationScalarFieldEnum = (typeof OperationScalarFieldEnum)[keyof t
 export const UserScalarFieldEnum = {
   id: 'id',
   telegramRhid: 'telegramRhid',
-  telegramUserIdEcid: 'telegramUserIdEcid',
-  usernameEcid: 'usernameEcid',
   usernameRhid: 'usernameRhid',
-  firstNameEcid: 'firstNameEcid',
-  lastNameEcid: 'lastNameEcid',
+  dataEcid: 'dataEcid',
+  dataRhid: 'dataRhid',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

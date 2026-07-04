@@ -269,22 +269,21 @@ export async function sendAvatarPrivacyModeWarning(
     },
   })
   const chatRhid = rhid(targetChatId)
-  const chatDataEcid = await crypto.encrypt({ id: targetChatId })
-  const chat = await prisma.chat.upsert({
+  const chatData = { id: targetChatId }
+  const chatDataRhid = rhid(chatData)
+  const existingChat = await prisma.chat.findUnique({
     where: {
       telegramRhid: chatRhid,
     },
-    create: {
-      telegramRhid: chatRhid,
-      dataEcid: chatDataEcid,
-    },
-    update: {
-      dataEcid: chatDataEcid,
-    },
     select: {
       id: true,
+      dataRhid: true,
     },
   })
+  const chat =
+    existingChat && existingChat.dataRhid === chatDataRhid
+      ? { id: existingChat.id }
+      : await upsertNotificationChat(crypto, prisma, chatRhid, chatData, chatDataRhid)
 
   await prisma.notification.create({
     data: {
@@ -300,6 +299,34 @@ export async function sendAvatarPrivacyModeWarning(
       actionRows: [],
       requiresTextResponse: false,
       isProtected: false,
+    },
+  })
+}
+
+async function upsertNotificationChat(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  chatRhid: string,
+  chatData: { id: string },
+  chatDataRhid: string,
+): Promise<{ id: number }> {
+  const chatDataEcid = await crypto.encrypt(chatData)
+
+  return await prisma.chat.upsert({
+    where: {
+      telegramRhid: chatRhid,
+    },
+    create: {
+      telegramRhid: chatRhid,
+      dataEcid: chatDataEcid,
+      dataRhid: chatDataRhid,
+    },
+    update: {
+      dataEcid: chatDataEcid,
+      dataRhid: chatDataRhid,
+    },
+    select: {
+      id: true,
     },
   })
 }

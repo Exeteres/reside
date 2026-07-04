@@ -97,7 +97,26 @@ export async function ensureTargetChatExists(
   targetChatId: string,
 ): Promise<{ id: number }> {
   const telegramRhid = rhid(targetChatId)
-  const dataEcid = await crypto.encrypt({ id: targetChatId })
+  const data = { id: targetChatId }
+  const dataRhid = rhid(data)
+
+  const existingChat = await prisma.chat.findUnique({
+    where: {
+      telegramRhid,
+    },
+    select: {
+      id: true,
+      dataRhid: true,
+    },
+  })
+
+  if (existingChat && existingChat.dataRhid === dataRhid) {
+    return {
+      id: existingChat.id,
+    }
+  }
+
+  const dataEcid = await crypto.encrypt(data)
 
   return await prisma.chat.upsert({
     where: {
@@ -106,9 +125,11 @@ export async function ensureTargetChatExists(
     create: {
       telegramRhid,
       dataEcid,
+      dataRhid,
     },
     update: {
       dataEcid,
+      dataRhid,
     },
     select: {
       id: true,

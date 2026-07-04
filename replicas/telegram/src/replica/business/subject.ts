@@ -1,7 +1,8 @@
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
+import type { TelegramUserData } from "../../definitions"
 import { rhid } from "@reside/common"
-import { encryptedStringSchema } from "../../definitions"
+import { telegramUserDataSchema } from "../../definitions"
 import { strings } from "../../locale"
 
 export function toTelegramSubjectId(userId: number): string {
@@ -43,10 +44,7 @@ export async function resolveTelegramSubjectDisplayInfo(
       id: parsedSubject.id,
     },
     select: {
-      telegramUserIdEcid: true,
-      usernameEcid: true,
-      firstNameEcid: true,
-      lastNameEcid: true,
+      dataEcid: true,
     },
   })
 
@@ -54,28 +52,11 @@ export async function resolveTelegramSubjectDisplayInfo(
     throw new Error(`Subject "${subjectId}" was not found`)
   }
 
-  const username = await decryptOptionalString(crypto, user.usernameEcid)
-  const firstName = await decryptOptionalString(crypto, user.firstNameEcid)
-  const lastName = await decryptOptionalString(crypto, user.lastNameEcid)
+  const data = await crypto.decrypt(telegramUserDataSchema, user.dataEcid)
 
   return {
-    title: toTelegramUserTitle(String(parsedSubject.id), {
-      username,
-      first_name: firstName,
-      last_name: lastName,
-    } as PrismaJson.UserData),
+    title: toTelegramUserTitle(String(parsedSubject.id), data),
   }
-}
-
-async function decryptOptionalString(
-  crypto: ResideCrypto,
-  ecid: string | null,
-): Promise<string | undefined> {
-  if (ecid === null) {
-    return undefined
-  }
-
-  return await crypto.decrypt(encryptedStringSchema, ecid)
 }
 
 export function parseTelegramSubjectId(subjectId: string): { id: number } | null {
@@ -98,7 +79,7 @@ export function parseTelegramSubjectId(subjectId: string): { id: number } | null
   return { id }
 }
 
-export function toTelegramUserTitle(fallbackId: string, data: PrismaJson.UserData): string {
+export function toTelegramUserTitle(fallbackId: string, data: TelegramUserData): string {
   if (typeof data.username === "string" && data.username.length > 0) {
     return data.username
   }

@@ -5,10 +5,7 @@ model EncryptedContent {
   /// The encrypted content data.
   data String
 
-  userTelegramUserId       User?                 @relation(name: "UserTelegramUserId")
-  userUsername             User?                 @relation(name: "UserUsername")
-  userFirstName            User?                 @relation(name: "UserFirstName")
-  userLastName             User?                 @relation(name: "UserLastName")
+  userData                 User?                 @relation(name: "UserData")
   chatData                 Chat?                 @relation(name: "ChatData")
   notificationResponseText NotificationResponse? @relation(name: "NotificationResponseText")
   notificationMessage      Notification?         @relation(name: "NotificationMessage")

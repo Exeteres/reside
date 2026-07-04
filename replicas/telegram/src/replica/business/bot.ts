@@ -7,6 +7,7 @@ import type { NaturalLanguageServiceClient } from "@reside/api/interaction/nls.v
 import type { GenericOperationService, MessageElement } from "@reside/common"
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { Client } from "@temporalio/client"
+import type { Chat, User } from "grammy/types"
 import type { Operation, PrismaClient } from "../../database"
 import type { NotificationStatus, NotificationTaskStatus } from "./notification-types"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
@@ -22,11 +23,7 @@ import {
   rhid,
 } from "@reside/common"
 import { type Bot, type BotError, type Context, GrammyError, HttpError } from "grammy"
-import {
-  encryptedStringSchema,
-  getTelegramMessageChatId,
-  telegramSentMessageSchema,
-} from "../../definitions"
+import { getTelegramMessageChatId, telegramSentMessageSchema } from "../../definitions"
 import { strings } from "../../locale"
 import { createInteractionContextToken } from "../../shared"
 import {
@@ -904,14 +901,10 @@ async function ensureTelegramEntities(
   const userId = user?.id ? String(user.id) : null
 
   const chatEntity =
-    chatId === null
-      ? null
-      : await upsertTelegramChat(crypto, prisma, chatId, chat as unknown as PrismaJson.ChatData)
+    chatId === null ? null : await upsertTelegramChat(crypto, prisma, chatId, chat as Chat)
 
   const userEntity =
-    userId === null
-      ? null
-      : await upsertTelegramUser(crypto, prisma, userId, user as unknown as PrismaJson.UserData)
+    userId === null ? null : await upsertTelegramUser(crypto, prisma, userId, user as User)
 
   return {
     chat: chatEntity,
@@ -923,21 +916,49 @@ async function upsertTelegramChat(
   crypto: ResideCrypto,
   prisma: PrismaClient,
   telegramChatId: string,
-  data: PrismaJson.ChatData,
+  data: Chat,
 ): Promise<{ id: number }> {
   const telegramRhid = rhid(telegramChatId)
-  const dataEcid = await crypto.encrypt(data)
+  const dataRhid = rhid(data)
 
-  return await prisma.chat.upsert({
+  const existingChat = await prisma.chat.findUnique({
     where: {
       telegramRhid,
     },
-    create: {
+    select: {
+      id: true,
+      dataRhid: true,
+    },
+  })
+
+  if (existingChat !== null && existingChat.dataRhid === dataRhid) {
+    return {
+      id: existingChat.id,
+    }
+  }
+
+  const dataEcid = await crypto.encrypt(data)
+
+  if (existingChat !== null) {
+    return await prisma.chat.update({
+      where: {
+        telegramRhid,
+      },
+      data: {
+        dataEcid,
+        dataRhid,
+      },
+      select: {
+        id: true,
+      },
+    })
+  }
+
+  return await prisma.chat.create({
+    data: {
       telegramRhid,
       dataEcid,
-    },
-    update: {
-      dataEcid,
+      dataRhid,
     },
     select: {
       id: true,
@@ -949,12 +970,11 @@ async function upsertTelegramUser(
   crypto: ResideCrypto,
   prisma: PrismaClient,
   telegramUserId: string,
-  data: PrismaJson.UserData,
+  data: User,
 ): Promise<{ id: number }> {
   const telegramRhid = rhid(telegramUserId)
+  const dataRhid = rhid(data)
   const username = toOptionalNonEmptyString(data.username)
-  const firstName = toOptionalNonEmptyString(data.first_name)
-  const lastName = toOptionalNonEmptyString(data.last_name)
 
   const existingUser = await prisma.user.findUnique({
     where: {
@@ -962,23 +982,20 @@ async function upsertTelegramUser(
     },
     select: {
       id: true,
-      telegramUserIdEcid: true,
-      usernameEcid: true,
       usernameRhid: true,
-      firstNameEcid: true,
-      lastNameEcid: true,
+      dataRhid: true,
     },
   })
 
   if (!existingUser) {
+    const dataEcid = await crypto.encrypt(data)
+
     return await prisma.user.create({
       data: {
         telegramRhid,
-        telegramUserIdEcid: await crypto.encrypt(telegramUserId),
-        usernameEcid: username === undefined ? null : await crypto.encrypt(username),
         usernameRhid: username === undefined ? null : rhid(username.toLowerCase()),
-        firstNameEcid: firstName === undefined ? null : await crypto.encrypt(firstName),
-        lastNameEcid: lastName === undefined ? null : await crypto.encrypt(lastName),
+        dataEcid,
+        dataRhid,
       },
       select: {
         id: true,
@@ -987,37 +1004,19 @@ async function upsertTelegramUser(
   }
 
   const updateData: {
-    telegramUserIdEcid?: string
-    usernameEcid?: string | null
     usernameRhid?: string | null
-    firstNameEcid?: string | null
-    lastNameEcid?: string | null
+    dataEcid?: string
+    dataRhid?: string
   } = {}
 
-  const currentTelegramUserId = await crypto.decrypt(
-    encryptedStringSchema,
-    existingUser.telegramUserIdEcid,
-  )
-  if (currentTelegramUserId !== telegramUserId) {
-    updateData.telegramUserIdEcid = await crypto.encrypt(telegramUserId)
+  const usernameRhid = username === undefined ? null : rhid(username.toLowerCase())
+  if (existingUser.usernameRhid !== usernameRhid) {
+    updateData.usernameRhid = usernameRhid
   }
 
-  const currentUsername = await decryptOptionalString(crypto, existingUser.usernameEcid)
-  if (currentUsername !== username) {
-    updateData.usernameEcid = username === undefined ? null : await crypto.encrypt(username)
-    updateData.usernameRhid = username === undefined ? null : rhid(username.toLowerCase())
-  } else if (username !== undefined && existingUser.usernameRhid === null) {
-    updateData.usernameRhid = rhid(username.toLowerCase())
-  }
-
-  const currentFirstName = await decryptOptionalString(crypto, existingUser.firstNameEcid)
-  if (currentFirstName !== firstName) {
-    updateData.firstNameEcid = firstName === undefined ? null : await crypto.encrypt(firstName)
-  }
-
-  const currentLastName = await decryptOptionalString(crypto, existingUser.lastNameEcid)
-  if (currentLastName !== lastName) {
-    updateData.lastNameEcid = lastName === undefined ? null : await crypto.encrypt(lastName)
+  if (existingUser.dataRhid !== dataRhid) {
+    updateData.dataEcid = await crypto.encrypt(data)
+    updateData.dataRhid = dataRhid
   }
 
   if (Object.keys(updateData).length === 0) {
@@ -1035,17 +1034,6 @@ async function upsertTelegramUser(
       id: true,
     },
   })
-}
-
-async function decryptOptionalString(
-  crypto: ResideCrypto,
-  ecid: string | null,
-): Promise<string | undefined> {
-  if (ecid === null) {
-    return undefined
-  }
-
-  return await crypto.decrypt(encryptedStringSchema, ecid)
 }
 
 function toOptionalNonEmptyString(value: unknown): string | undefined {
@@ -1356,7 +1344,7 @@ async function handleNotificationTaskEditAction(
     args.crypto,
     args.prisma,
     String(userId),
-    context.from as PrismaJson.UserData,
+    context.from as User,
   )
 
   const notification = await args.prisma.notification.findFirst({
@@ -1507,12 +1495,7 @@ async function handleNotificationTaskPollAnswer(
     return
   }
 
-  const userRecord = await upsertTelegramUser(
-    args.crypto,
-    args.prisma,
-    String(user.id),
-    user as PrismaJson.UserData,
-  )
+  const userRecord = await upsertTelegramUser(args.crypto, args.prisma, String(user.id), user)
 
   const poll = await args.prisma.notificationTaskPlanningPoll.findUnique({
     where: {
@@ -1624,7 +1607,7 @@ async function handleNotificationTaskTextSelection(
     args.crypto,
     args.prisma,
     String(userId),
-    context.from as PrismaJson.UserData,
+    context.from as User,
   )
 
   if (prompt.launchedByUserId !== userRecord.id) {

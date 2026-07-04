@@ -40,6 +40,8 @@ export const telegramUserDataSchema = z
   })
   .passthrough()
 
+export type TelegramUserData = z.infer<typeof telegramUserDataSchema>
+
 export function getTelegramMessageChatId(message: TelegramSentMessage): string {
   return String(message.chat.id)
 }

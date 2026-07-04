@@ -1,7 +1,7 @@
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
 import type { SubjectServiceClientLike } from "./notification-types"
-import { encryptedStringSchema } from "../../definitions"
+import { telegramUserDataSchema } from "../../definitions"
 import { parseTelegramSubjectId, toTelegramUserTitle } from "./subject"
 
 const SUBJECT_TOKEN_PATTERN = /(^|\s)((?:telegram|replica):[a-zA-Z0-9._-]+)(?=$|\s)/g
@@ -68,9 +68,7 @@ async function resolveTelegramSubjectTitle(
       id: parsed.id,
     },
     select: {
-      usernameEcid: true,
-      firstNameEcid: true,
-      lastNameEcid: true,
+      dataEcid: true,
     },
   })
 
@@ -78,15 +76,9 @@ async function resolveTelegramSubjectTitle(
     return undefined
   }
 
-  const username = await decryptOptionalString(crypto, user.usernameEcid)
-  const firstName = await decryptOptionalString(crypto, user.firstNameEcid)
-  const lastName = await decryptOptionalString(crypto, user.lastNameEcid)
+  const data = await crypto.decrypt(telegramUserDataSchema, user.dataEcid)
 
-  return toTelegramUserTitle(String(parsed.id), {
-    username,
-    first_name: firstName,
-    last_name: lastName,
-  } as PrismaJson.UserData)
+  return toTelegramUserTitle(String(parsed.id), data)
 }
 
 async function resolveReplicaSubjectTitle(
@@ -99,15 +91,4 @@ async function resolveReplicaSubjectTitle(
   } catch {
     return undefined
   }
-}
-
-async function decryptOptionalString(
-  crypto: ResideCrypto,
-  ecid: string | null,
-): Promise<string | undefined> {
-  if (ecid === null) {
-    return undefined
-  }
-
-  return await crypto.decrypt(encryptedStringSchema, ecid)
 }
