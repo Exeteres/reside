@@ -35,6 +35,7 @@ export async function getTransactions(
       senderAccount: { select: { subjectRhid: true } },
       recipientAccountId: true,
       amountEcid: true,
+      commentEcid: true,
       createdAt: true,
     },
   })
@@ -48,6 +49,7 @@ export async function getTransactions(
         sign,
         amount,
         row.senderAccount.subjectRhid,
+        row.commentEcid ?? undefined,
       ),
     )
   }
@@ -60,6 +62,7 @@ export async function transferAmount(
   senderSubjectRhid: string,
   recipientSubjectRhid: string,
   amount: number,
+  comment?: string,
 ): Promise<string> {
   if (!Number.isInteger(amount) || amount <= 0) {
     throw new InvalidTransferAmountError(amount)
@@ -97,6 +100,7 @@ export async function transferAmount(
         senderAccountId: sender.id,
         recipientAccountId: recipient.id,
         amountEcid: await crypto.encrypt({ amount: amountText }),
+        commentEcid: await encryptComment(crypto, comment),
       },
     })
     return amountText
@@ -145,4 +149,16 @@ async function encryptAmount(crypto: ResideCrypto, amount: bigint): Promise<stri
 async function decryptAmount(crypto: ResideCrypto, ecid: string): Promise<string> {
   const value = await crypto.decrypt(encryptedAmountSchema, ecid)
   return value.amount
+}
+
+async function encryptComment(
+  crypto: ResideCrypto,
+  comment: string | undefined,
+): Promise<string | undefined> {
+  const normalizedComment = comment?.trim()
+  if (normalizedComment === undefined || normalizedComment.length === 0) {
+    return undefined
+  }
+
+  return await crypto.encrypt(normalizedComment)
 }

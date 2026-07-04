@@ -12,6 +12,8 @@ import { getBalance, getTransactions, transferAmount } from "./bank"
 function createCrypto(values: Record<string, { amount: string }> = {}): ResideCrypto {
   return {
     async encrypt(data: unknown) {
+      if (typeof data === "string") return `ecid:${data}`
+
       const amount = (data as { amount: string }).amount
       return `ecid:${amount}`
     },
@@ -56,12 +58,13 @@ describe("getTransactions", () => {
         senderAccount: { subjectRhid: "sender_rhid" },
         recipientAccountId: "account_1",
         amountEcid: "ecid:5",
+        commentEcid: "ecid:thanks",
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
       },
     ] as never)
 
     await expect(getTransactions(crypto, prisma, "subject_rhid")).resolves.toEqual([
-      "2026-01-01T00:00:00.000Z +5 ∅, отправитель: sender_rhid",
+      "2026-01-01T00:00:00.000Z +5 ∅, отправитель: sender_rhid, комментарий: ecid:thanks",
     ])
   })
 })
@@ -98,7 +101,43 @@ describe("transferAmount", () => {
       data: { balanceEcid: "ecid:4" },
     })
     expect(tx.transaction.create.spy()).toHaveBeenCalledWith({
-      data: { senderAccountId: "sender", recipientAccountId: "recipient", amountEcid: "ecid:3" },
+      data: {
+        senderAccountId: "sender",
+        recipientAccountId: "recipient",
+        amountEcid: "ecid:3",
+        commentEcid: undefined,
+      },
+    })
+  })
+
+  it("stores encrypted transfer comments when provided", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const crypto = createCrypto({ "ecid:10": { amount: "10" }, "ecid:1": { amount: "1" } })
+    const tx = mockDeepFn<PrismaClient>()
+
+    prisma.$transaction.mockImplementation(async callback => callback(tx))
+    tx.account.upsert.mockResolvedValueOnce({ id: "sender", balanceEcid: "stale" } as never)
+    tx.account.upsert.mockResolvedValueOnce({ id: "recipient", balanceEcid: "stale" } as never)
+    tx.account.findUniqueOrThrow.mockResolvedValueOnce({
+      id: "sender",
+      balanceEcid: "ecid:10",
+    } as never)
+    tx.account.findUniqueOrThrow.mockResolvedValueOnce({
+      id: "recipient",
+      balanceEcid: "ecid:1",
+    } as never)
+    tx.$executeRaw.mockResolvedValue(2 as never)
+
+    await expect(
+      transferAmount(crypto, prisma, "sender_rhid", "recipient_rhid", 3, " спасибо "),
+    ).resolves.toBe("3")
+    expect(tx.transaction.create.spy()).toHaveBeenCalledWith({
+      data: {
+        senderAccountId: "sender",
+        recipientAccountId: "recipient",
+        amountEcid: "ecid:3",
+        commentEcid: "ecid:спасибо",
+      },
     })
   })
 

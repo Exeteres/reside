@@ -21,6 +21,7 @@ export function createBankActivities({ prisma }: BankActivityServices): BankActi
           input.senderSubjectRhid,
           input.recipientSubjectRhid,
           input.amount,
+          input.comment,
         ),
       }
     },
