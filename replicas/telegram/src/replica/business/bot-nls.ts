@@ -7,6 +7,7 @@ import type {
 } from "@reside/api/interaction/nls.v1"
 import type { ResideCrypto } from "@reside/common/encryption"
 import type { PrismaClient } from "../../database"
+import type { TelegramMessageEntity } from "./bot-command-invocation"
 import { logger, renderMarkdownAsTelegramHtml, rhid } from "@reside/common"
 import { encryptedStringSchema } from "../../definitions"
 import { strings } from "../../locale"
@@ -39,6 +40,8 @@ export async function handleNlsMessage(args: {
     }
   }
   text: string
+  sourceText?: string
+  entities?: TelegramMessageEntity[]
   mentionedUsername: string | undefined
 }): Promise<void> {
   const telegramBotClientFactory = args.createTelegramBotClient ?? createTelegramBotClient
@@ -108,7 +111,13 @@ export async function handleNlsMessage(args: {
 
   const fromSubjectId = `telegram:${args.userId}`
   const toSubjectId = `replica:${interaction.replicaName}`
-  const subjectInfo = await resolveTelegramSubjectInfo(args.prisma, telegramUserRhid)
+  const subjectInfo = await resolveTelegramSubjectInfo(args.prisma, args.crypto, {
+    currentSubjectRhid: rhid(`telegram:${args.userId}`),
+    telegramRhid: telegramUserRhid,
+    text: args.sourceText ?? args.text,
+    entities: args.entities,
+    leadingReplicaMention: args.mentionedUsername,
+  })
 
   const permission = await canAskNls({
     authzService: args.authzService,
@@ -239,11 +248,18 @@ export async function handleNlsMessage(args: {
 
 async function resolveTelegramSubjectInfo(
   prisma: PrismaClient,
-  telegramRhid: string,
+  crypto: ResideCrypto,
+  input: {
+    currentSubjectRhid: string
+    telegramRhid: string
+    text: string
+    entities?: TelegramMessageEntity[]
+    leadingReplicaMention?: string
+  },
 ): Promise<Record<string, string>> {
   const user = await prisma.user.findUnique({
     where: {
-      telegramRhid,
+      telegramRhid: input.telegramRhid,
     },
     select: {
       telegramUserIdEcid: true,
@@ -254,15 +270,15 @@ async function resolveTelegramSubjectInfo(
   })
 
   if (!user) {
-    return {}
-  }
-
-  if (typeof user.telegramUserIdEcid !== "string" || user.telegramUserIdEcid.length === 0) {
-    return {}
+    return { telegram_subject_rhid: input.currentSubjectRhid }
   }
 
   const subjectInfo: Record<string, string> = {
-    telegram_user_id: user.telegramUserIdEcid,
+    telegram_subject_rhid: input.currentSubjectRhid,
+  }
+
+  if (typeof user.telegramUserIdEcid === "string" && user.telegramUserIdEcid.length > 0) {
+    subjectInfo.telegram_user_id = user.telegramUserIdEcid
   }
 
   if (typeof user.usernameEcid === "string" && user.usernameEcid.length > 0) {
@@ -277,7 +293,94 @@ async function resolveTelegramSubjectInfo(
     subjectInfo.second_name = user.lastNameEcid
   }
 
+  const mentionedSubjectRhids = await resolveMentionedUserSubjectRhids(prisma, crypto, input)
+  mentionedSubjectRhids.forEach((subjectRhid, index) => {
+    subjectInfo[`mentioned_user_${index + 1}_subject_rhid`] = subjectRhid
+  })
+
   return subjectInfo
+}
+
+async function resolveMentionedUserSubjectRhids(
+  prisma: PrismaClient,
+  crypto: ResideCrypto,
+  input: {
+    text: string
+    entities?: TelegramMessageEntity[]
+    leadingReplicaMention?: string
+  },
+): Promise<string[]> {
+  const subjectRhids: string[] = []
+  const seen = new Set<string>()
+
+  for (const entity of input.entities ?? []) {
+    const subjectRhid = await resolveMentionedEntitySubjectRhid(prisma, crypto, input, entity)
+    if (!subjectRhid || seen.has(subjectRhid)) {
+      continue
+    }
+
+    seen.add(subjectRhid)
+    subjectRhids.push(subjectRhid)
+  }
+
+  return subjectRhids
+}
+
+async function resolveMentionedEntitySubjectRhid(
+  prisma: PrismaClient,
+  crypto: ResideCrypto,
+  input: {
+    text: string
+    leadingReplicaMention?: string
+  },
+  entity: TelegramMessageEntity,
+): Promise<string | undefined> {
+  if (entity.type === "text_mention" && entity.user?.id !== undefined) {
+    return rhid(`telegram:${entity.user.id}`)
+  }
+
+  if (entity.type !== "mention") {
+    return undefined
+  }
+
+  const mention = input.text.slice(entity.offset, entity.offset + entity.length)
+  const username = mention.trim().replace(/^@/, "")
+  if (
+    username.length === 0 ||
+    username.toLowerCase() === input.leadingReplicaMention?.toLowerCase()
+  ) {
+    return undefined
+  }
+
+  return await resolveUsernameSubjectRhid(prisma, crypto, username)
+}
+
+async function resolveUsernameSubjectRhid(
+  prisma: PrismaClient,
+  crypto: ResideCrypto,
+  username: string,
+): Promise<string | undefined> {
+  const normalized = username.toLowerCase()
+  const users = await prisma.user.findMany({
+    select: { telegramUserIdEcid: true, usernameEcid: true },
+  })
+
+  for (const candidate of users) {
+    if (!candidate.usernameEcid) {
+      continue
+    }
+
+    const candidateUsername = await crypto.decrypt(encryptedStringSchema, candidate.usernameEcid)
+    if (candidateUsername.toLowerCase() !== normalized) {
+      continue
+    }
+
+    const telegramUserId = await crypto.decrypt(encryptedStringSchema, candidate.telegramUserIdEcid)
+
+    return rhid(`telegram:${telegramUserId}`)
+  }
+
+  return undefined
 }
 
 async function resolveMentionedReplicaInteraction(

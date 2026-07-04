@@ -550,6 +550,8 @@ export async function createTelegramBot(args: {
           userId,
           message,
           text: prompt,
+          sourceText: message.text,
+          entities: message.entities as TelegramMessageEntity[] | undefined,
           mentionedUsername: mentionInvocation.username,
         })
       } catch (error) {
@@ -679,6 +681,8 @@ export async function createTelegramBot(args: {
           userId,
           message,
           text: textResponse,
+          sourceText: message.text,
+          entities: message.entities as TelegramMessageEntity[] | undefined,
           mentionedUsername: undefined,
         })
       } catch (error) {

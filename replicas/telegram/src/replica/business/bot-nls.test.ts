@@ -368,7 +368,7 @@ describe("handleNlsMessage", () => {
     expect(nlsClient.askStream.spy()).toHaveBeenCalledWith({
       text: "hello",
       subjectId: "telegram:20",
-      subjectInfo: {},
+      subjectInfo: { telegram_subject_rhid: rhid("telegram:20") },
     })
     expect(telegramBot.api.sendMessageDraft.spy()).toHaveBeenCalledTimes(2)
     expect(telegramBot.api.sendMessageDraft.spy()).toHaveBeenNthCalledWith(1, 10, 30, "", {
