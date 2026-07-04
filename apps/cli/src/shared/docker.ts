@@ -38,6 +38,7 @@ export function createDockerfile(args: CreateDockerfileArgs): string {
   lines.push("")
   lines.push("# install production dependencies")
   lines.push("RUN bun install --production --ignore-scripts --linker hoisted")
+  lines.push("RUN cd node_modules/opencode-ai && node postinstall.mjs")
 
   lines.push("")
   lines.push("FROM oven/bun:1.3.10 AS build")

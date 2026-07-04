@@ -86,4 +86,13 @@ describe("createDockerfile", () => {
 
     expect(dockerfile).toContain(runtimePathLine)
   })
+
+  test("runs opencode postinstall in production dependencies", () => {
+    const dockerfile = createDockerfile({
+      ...baseArgs,
+      hasChangelog: false,
+    })
+
+    expect(dockerfile).toContain("RUN cd node_modules/opencode-ai && node postinstall.mjs")
+  })
 })
