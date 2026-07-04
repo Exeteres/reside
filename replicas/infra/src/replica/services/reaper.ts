@@ -12,6 +12,7 @@ import { WorkflowExecutionAlreadyStartedError, WorkflowIdReusePolicy } from "@te
 import { z } from "zod"
 import { OperationType } from "../../database"
 import { strings } from "../../locale"
+import { buildReplicaDatabaseName } from "../../shared"
 
 const deleteDatabasePayloadSchema = z.object({
   databaseId: z.number().int().positive(),
@@ -118,8 +119,9 @@ export function createReaperService({
     },
     async preview(replicaName) {
       const replicaNamespace = `replica-${replicaName}`
+      const databaseName = buildReplicaDatabaseName(replicaNamespace)
       const [database, temporalNamespace, storageBucket, gateways] = await Promise.all([
-        prisma.postgresDatabase.findUnique({ where: { database: replicaNamespace } }),
+        prisma.postgresDatabase.findUnique({ where: { database: databaseName } }),
         prisma.temporalNamespace.findUnique({ where: { namespace: replicaNamespace } }),
         prisma.storageBucket.findUnique({ where: { replicaNamespace } }),
         prisma.gateway.findMany({
