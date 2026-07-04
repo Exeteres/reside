@@ -288,11 +288,11 @@ export async function createLanguageEngine(
           homeDir: opencodeStatePath,
           workingDirectory: sessionWorkingDirectory,
           reasoningEffort: args.reasoningEffort,
-          prompt: buildOpenCodePrompt({
+          systemPrompt: buildOpenCodeSystemPrompt({
             systemPrompt,
             requestSystemPrompt: args.systemPrompt,
-            userPrompt: normalizedText,
           }),
+          userPrompt: normalizedText,
           idleTimeoutMs: args.idleTimeoutMs ?? DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS,
           shouldCancel: args.shouldCancel,
           cancelPollIntervalMs: args.cancelPollIntervalMs,
@@ -399,7 +399,8 @@ async function runOpenCodeSession({
   homeDir,
   workingDirectory,
   reasoningEffort,
-  prompt,
+  systemPrompt,
+  userPrompt,
   idleTimeoutMs,
   shouldCancel,
   cancelPollIntervalMs,
@@ -418,7 +419,8 @@ async function runOpenCodeSession({
   homeDir: string
   workingDirectory: string
   reasoningEffort?: LanguageEngineReasoningEffort
-  prompt: string
+  systemPrompt: string
+  userPrompt: string
   idleTimeoutMs: number
   shouldCancel?: () => Promise<boolean>
   cancelPollIntervalMs?: number
@@ -496,8 +498,8 @@ async function runOpenCodeSession({
         directory: workingDirectory,
         agent: "build",
         model: { providerID: OPENCODE_MODEL_PROVIDER_ID, modelID: model },
-        system: prompt,
-        parts: [{ type: "text", text: "Continue." }],
+        system: systemPrompt,
+        parts: [{ type: "text", text: userPrompt }],
         ...(reasoningEffort ? { variant: reasoningEffort } : {}),
       },
       { signal: abortController.signal },
@@ -1036,20 +1038,16 @@ function createFrameQueue(
   }
 }
 
-function buildOpenCodePrompt({
+function buildOpenCodeSystemPrompt({
   systemPrompt,
   requestSystemPrompt,
-  userPrompt,
 }: {
   systemPrompt: string
   requestSystemPrompt?: string
-  userPrompt: string
 }): string {
   return [
     "System instructions for this ReSide NLS session:",
     [systemPrompt, requestSystemPrompt?.trim()].filter(Boolean).join("\n\n"),
-    "User prompt:",
-    userPrompt,
   ].join("\n\n")
 }
 
