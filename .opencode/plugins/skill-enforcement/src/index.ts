@@ -13,11 +13,28 @@ const editTools = new Set(["apply_patch", "edit", "multiedit", "patch", "write"]
 
 export const SkillEnforcementPlugin: Plugin = async ({ worktree }) => {
   const rules = await loadSkillRules(worktree)
-  const loadedSkills = new Set<string>()
+  const loadedSkillsBySession = new Map<string, Set<string>>()
   const isInteractiveSession = !process.env.RESIDE_NON_INTERACTIVE
 
+  function getLoadedSkills(sessionID: string): Set<string> {
+    let loadedSkills = loadedSkillsBySession.get(sessionID)
+
+    if (!loadedSkills) {
+      loadedSkills = new Set<string>()
+      loadedSkillsBySession.set(sessionID, loadedSkills)
+    }
+
+    return loadedSkills
+  }
+
   return {
-    "chat.message": async (_input, output) => {
+    dispose: async () => {
+      loadedSkillsBySession.clear()
+    },
+
+    "chat.message": async (input, output) => {
+      const loadedSkills = getLoadedSkills(input.sessionID)
+
       if (!isInteractiveSession || loadedSkills.has(interactiveSkillName)) {
         return
       }
@@ -32,6 +49,8 @@ export const SkillEnforcementPlugin: Plugin = async ({ worktree }) => {
     },
 
     "tool.execute.before": async (input, output) => {
+      const loadedSkills = getLoadedSkills(input.sessionID)
+
       if (
         isInteractiveSession &&
         input.tool !== "skill" &&
