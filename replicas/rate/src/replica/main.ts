@@ -38,7 +38,7 @@ await setupLanguageSubsystem({
   description: strings.bootstrap.registration.description,
   instructions:
     "Help users get and understand Central Bank key rate information. " +
-    "Use get_rate for current key rate requests. " +
+    "Use reside_get_rate for current key rate requests. " +
     "Explain rate changes briefly and say clearly when rate data is unavailable.",
   tools: [createGetRateTool(services)],
 })

@@ -6,7 +6,7 @@ describe("buildSecuritySystemPrompt", () => {
     const prompt = buildSecuritySystemPrompt()
 
     expect(prompt).toContain(
-      "- when calling find_notes, pass separate important words, not a full sentence or query syntax.",
+      "- when calling reside_find_notes, pass separate important words, not a full sentence or query syntax.",
     )
     expect(prompt).toContain(
       "- include words for permission, scope, requester/target replica, action, and reason when available.",

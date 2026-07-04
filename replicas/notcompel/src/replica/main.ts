@@ -51,7 +51,7 @@ await setupLanguageSubsystem({
   description: strings.bootstrap.registration.description,
   instructions:
     "Help users send the current notcompel.ru image to the system chat. " +
-    "Use send_notcompel_image when the user asks to send, publish, or trigger the Notcompel image. " +
+    "Use reside_send_notcompel_image when the user asks to send, publish, or trigger the Notcompel image. " +
     "Do not claim that an image was sent unless the tool or API result confirms it.",
   tools: createNotcompelTools(services),
 })

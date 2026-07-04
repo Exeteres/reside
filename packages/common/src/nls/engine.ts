@@ -1,9 +1,10 @@
-import type { ThreadEvent, ThreadItem } from "@openai/codex-sdk"
+import type { CommandExecutionItem, ThreadEvent, ThreadItem, Usage } from "@openai/codex-sdk"
 import type { Pool } from "pg"
 import type { CommonServices } from "../services"
 import type { Tool } from "./tool"
 import { randomUUID, webcrypto } from "node:crypto"
-import { access, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
+import { access, chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
+import { homedir } from "node:os"
 import { join } from "node:path"
 import {
   DeleteObjectCommand,
@@ -15,7 +16,6 @@ import { Codex } from "@openai/codex-sdk"
 import { z } from "zod"
 import { createStorageBucketService, type StorageBucketService } from "../database"
 import { crypto } from "../encryption"
-import { getReplicaName } from "../kubernetes"
 import { logger } from "../logger"
 import { type NlsMcpToolServer, startNlsMcpToolServer } from "./mcp-tool-server"
 import {
@@ -29,7 +29,8 @@ const NLS_SESSION_ARCHIVE_EXTENSION = "tgz"
 const NLS_NAMESPACE_PREFIX = "nls"
 const NLS_SESSION_DIR = ".nls-session"
 const NLS_SESSION_STATE_DIR = "session-state"
-const NLS_WORKSPACE_PREFIX = "reside-nls"
+const NLS_CHAT_WORKSPACE_DIR = "chat-workspace"
+const NLS_HOME_DIR = ".reside-nls"
 const STORAGE_INIT_RETRY_MS = 1000
 const STORAGE_INIT_MAX_ATTEMPTS = 5
 const STORAGE_OPERATION_WAIT_TIMEOUT_MS = 30_000
@@ -37,6 +38,14 @@ const DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS = 120_000
 const LLM_SECRET_NAME = "llm"
 const MCP_TOKEN_ENV_VAR = "RESIDE_NLS_MCP_TOKEN"
 const CODEX_MODEL_PROVIDER_ID = "reside"
+const CODEX_MODEL_CATALOG_FILE = "model-catalog.json"
+const CODEX_DEBUG_DIR = ".tmp"
+const CODEX_DEBUG_LOG_DIR = "codex-debug-logs"
+const CODEX_DEBUG_RUST_LOG = "warn"
+const CODEX_DEBUG_LOG_MAX_LENGTH = 100_000
+const CODEX_DEBUG_LOG_IGNORED_LINES = new Set(["Reading prompt from stdin..."])
+const COMMAND_LOG_MAX_LENGTH = 500
+const COMMAND_OUTPUT_TAIL_MAX_LENGTH = 2000
 
 export type LanguageEngineModelTier = "light" | "smart"
 
@@ -97,6 +106,80 @@ type CodexConfigObject = {
   [key: string]: CodexConfigValue
 }
 
+type CodexDebugLog = {
+  wrapperPath: string
+  logPath: string
+}
+
+type CodexReasoningEffort = "low" | "medium" | "high" | "xhigh"
+
+type CodexReasoningLevel = {
+  effort: CodexReasoningEffort
+  description: string
+}
+
+type CodexModelCatalogModel = {
+  slug: string
+  display_name: string
+  description: string
+  default_reasoning_level: CodexReasoningEffort
+  supported_reasoning_levels: CodexReasoningLevel[]
+  shell_type: string
+  visibility: string
+  supported_in_api: boolean
+  priority: number
+  additional_speed_tiers: string[]
+  service_tiers: unknown[]
+  availability_nux: string | null
+  upgrade: string | null
+  base_instructions: string
+  model_messages: null
+  supports_reasoning_summaries: boolean
+  default_reasoning_summary: string
+  support_verbosity: boolean
+  default_verbosity: string
+  apply_patch_tool_type: string
+  web_search_tool_type: string
+  truncation_policy: {
+    mode: string
+    limit: number
+  }
+  supports_parallel_tool_calls: boolean
+  supports_image_detail_original: boolean
+  context_window: number
+  max_context_window: number
+  effective_context_window_percent: number
+  experimental_supported_tools: string[]
+  input_modalities: string[]
+  supports_search_tool: boolean
+  use_responses_lite: boolean
+}
+
+type CodexModelCatalog = {
+  models: CodexModelCatalogModel[]
+}
+
+type CodexExecutableResolver = {
+  exec: {
+    executablePath: string
+  }
+}
+
+type CodexTurnStatus = "completed" | "failed"
+
+type CodexTurnMetrics = {
+  turnStartedAt?: number
+  usage?: Usage
+  toolStartTimes: Map<string, number>
+  commandStartTimes: Map<string, number>
+  toolCallsCount: number
+  failedToolCallsCount: number
+  commandsCount: number
+  failedCommandsCount: number
+  totalCommandOutputLength: number
+  largestCommandOutputLength: number
+}
+
 const llmSecretSchema = z.object({
   endpoint: z.string().trim().min(1),
   "api-key": z.string().trim().min(1),
@@ -118,7 +201,7 @@ export async function createLanguageEngine(
     throw new Error("createLanguageEngine systemPrompt must not be empty")
   }
 
-  const workspacePath = join("/tmp", `${NLS_WORKSPACE_PREFIX}-${getReplicaName()}`)
+  const workspacePath = getNlsRootPath()
   await mkdir(workspacePath, { recursive: true })
 
   const storageBucketService =
@@ -201,8 +284,10 @@ export async function createLanguageEngine(
     }
 
     return await runWithSessionLock(sessionLocks, normalizedSessionId, async () => {
-      const sessionWorkingDirectory = args.workingDirectory ?? workspacePath
+      const sessionWorkingDirectory =
+        args.workingDirectory ?? join(workspacePath, NLS_CHAT_WORKSPACE_DIR)
       const sessionDirPath = args.configDir ?? join(workspacePath, NLS_SESSION_DIR)
+      await mkdir(sessionWorkingDirectory, { recursive: true })
       await mkdir(sessionDirPath, { recursive: true })
 
       const sessionTools = [...engineTools, ...(args.tools ?? [])]
@@ -220,6 +305,12 @@ export async function createLanguageEngine(
         sessionId: normalizedSessionId,
         tools: sessionTools,
       })
+      logger.debug(
+        'nls mcp server started session_id="%s" url="%s" tools="%s"',
+        normalizedSessionId,
+        mcpServer.url,
+        mcpServer.toolNames.join(","),
+      )
       let threadId = restoredThreadId
       let sessionError: unknown
 
@@ -258,6 +349,12 @@ export async function createLanguageEngine(
           throw new Error("NLS returned empty response")
         }
 
+        logger.info(
+          'nls session response completed session_id="%s" response_length="%s"',
+          normalizedSessionId,
+          String(normalizedResponseText.length),
+        )
+
         return normalizedResponseText
       } catch (error) {
         sessionError = error
@@ -283,6 +380,7 @@ export async function createLanguageEngine(
 
         const currentThreadId = threadId?.trim()
         if (currentThreadId) {
+          const archiveUploadStartedAt = Date.now()
           try {
             if (currentThreadId !== codexHomeId) {
               const nextCodexHomePath = getSessionStatePath(sessionDirPath, currentThreadId)
@@ -292,20 +390,36 @@ export async function createLanguageEngine(
               codexHomePath = nextCodexHomePath
             }
 
-            await uploadSessionArchive(
+            const archiveUploaded = await uploadSessionArchive(
               storageBucketService,
               sessionDirPath,
               sessionPrefix,
               normalizedSessionId,
               codexHomeId,
             )
+            if (archiveUploaded) {
+              logger.info(
+                'nls session archive upload completed session_id="%s" codex_thread_id="%s" duration_ms="%s"',
+                normalizedSessionId,
+                currentThreadId,
+                String(Date.now() - archiveUploadStartedAt),
+              )
+            } else {
+              logger.debug(
+                'nls session archive upload skipped session_id="%s" codex_thread_id="%s" duration_ms="%s"',
+                normalizedSessionId,
+                currentThreadId,
+                String(Date.now() - archiveUploadStartedAt),
+              )
+            }
           } catch (error) {
             logger.warn(
               { error: normalizeError(error) },
-              'nls session archive upload failed session_id="%s" codex_thread_id="%s" after_error="%s"',
+              'nls session archive upload failed session_id="%s" codex_thread_id="%s" after_error="%s" duration_ms="%s"',
               normalizedSessionId,
               currentThreadId,
               sessionError === undefined ? "false" : "true",
+              String(Date.now() - archiveUploadStartedAt),
             )
           }
         }
@@ -353,12 +467,20 @@ async function runCodexThread({
   })
   const timeout = createIdleTimeout(idleTimeoutMs, abortController)
   const frameQueue = createFrameQueue(onFrame)
+  const codexDebugLog = await createCodexDebugLog(codexHomePath)
+  const codexModelCatalogPath = await createCodexModelCatalog(codexHomePath, model)
+  const turnMetrics = createCodexTurnMetrics()
+  const sessionStartedAt = Date.now()
+  let codexThreadId = restoredThreadId
+  let finalResponse = ""
+  let status: CodexTurnStatus = "failed"
 
   try {
     const codex = new Codex({
+      codexPathOverride: codexDebugLog.wrapperPath,
       apiKey,
       env: createCodexEnvironment(codexHomePath, mcpServer.token),
-      config: createCodexConfig(mcpServer, providerBaseUrl),
+      config: createCodexConfig(mcpServer, providerBaseUrl, codexModelCatalogPath),
     })
     const threadOptions = {
       model,
@@ -373,7 +495,6 @@ async function runCodexThread({
       ? codex.resumeThread(restoredThreadId, threadOptions)
       : codex.startThread(threadOptions)
     const { events } = await thread.runStreamed(prompt, { signal: abortController.signal })
-    let finalResponse = ""
     let failure: Error | undefined
 
     for await (const event of events) {
@@ -381,9 +502,14 @@ async function runCodexThread({
       const eventFailure = await handleCodexEvent({
         event,
         sessionId,
-        onThreadId,
+        onThreadId: nextThreadId => {
+          codexThreadId = nextThreadId
+          onThreadId(nextThreadId)
+        },
         frameQueue,
         currentFinalResponse: finalResponse,
+        metrics: turnMetrics,
+        workingDirectory,
       })
 
       if (event.type === "item.completed" && event.item.type === "agent_message") {
@@ -402,10 +528,172 @@ async function runCodexThread({
       throw failure
     }
 
+    status = "completed"
     return finalResponse
   } finally {
     timeout.stop()
     stopCancellationWatcher()
+    await logCodexDebugLog(sessionId, codexDebugLog.logPath)
+    logCodexTurnSummary({
+      sessionId,
+      codexThreadId,
+      model,
+      mcpServer,
+      responseText: finalResponse,
+      metrics: turnMetrics,
+      durationMs: Date.now() - sessionStartedAt,
+      codexDebugLogPath: codexDebugLog.logPath,
+      status,
+    })
+  }
+}
+
+function createCodexTurnMetrics(): CodexTurnMetrics {
+  return {
+    toolStartTimes: new Map(),
+    commandStartTimes: new Map(),
+    toolCallsCount: 0,
+    failedToolCallsCount: 0,
+    commandsCount: 0,
+    failedCommandsCount: 0,
+    totalCommandOutputLength: 0,
+    largestCommandOutputLength: 0,
+  }
+}
+
+async function createCodexDebugLog(codexHomePath: string): Promise<CodexDebugLog> {
+  const debugWrapperDirPath = join(codexHomePath, CODEX_DEBUG_DIR)
+  const debugLogDirPath = join(getNlsRootPath(), CODEX_DEBUG_LOG_DIR)
+  const debugId = randomUUID()
+  const wrapperPath = join(debugWrapperDirPath, `codex-debug-${debugId}.sh`)
+  const logPath = join(debugLogDirPath, `codex-debug-${debugId}.stderr.log`)
+  const codexExecutablePath = resolveCodexExecutablePath()
+
+  await mkdir(debugWrapperDirPath, { recursive: true })
+  await mkdir(debugLogDirPath, { recursive: true })
+  await writeFile(
+    wrapperPath,
+    [
+      "#!/bin/sh",
+      `export RUST_LOG=${quoteShell(CODEX_DEBUG_RUST_LOG)}`,
+      "export RUST_BACKTRACE=1",
+      `exec ${quoteShell(codexExecutablePath)} "$@" 2>>${quoteShell(logPath)}`,
+      "",
+    ].join("\n"),
+  )
+  await chmod(wrapperPath, 0o700)
+
+  return { wrapperPath, logPath }
+}
+
+function resolveCodexExecutablePath(): string {
+  const codex = new Codex() as unknown as CodexExecutableResolver
+  return codex.exec.executablePath
+}
+
+async function logCodexDebugLog(sessionId: string, logPath: string): Promise<void> {
+  let text: string
+  try {
+    text = await readFile(logPath, "utf8")
+  } catch (error) {
+    logger.warn(
+      { error: normalizeError(error) },
+      'nls codex debug log read failed session_id="%s" log_path="%s"',
+      sessionId,
+      logPath,
+    )
+    return
+  }
+
+  const normalizedText = filterCodexDebugLogText(text)
+  if (normalizedText.length === 0) {
+    logger.debug('nls codex debug log empty session_id="%s" log_path="%s"', sessionId, logPath)
+    return
+  }
+
+  const truncatedText = tailString(normalizedText, CODEX_DEBUG_LOG_MAX_LENGTH)
+  logger.warn(
+    'nls codex debug log session_id="%s" log_path="%s" log_length="%s" truncated="%s" text="%s"',
+    sessionId,
+    logPath,
+    String(normalizedText.length),
+    normalizedText.length > truncatedText.length ? "true" : "false",
+    truncatedText,
+  )
+}
+
+function filterCodexDebugLogText(text: string): string {
+  return text
+    .split("\n")
+    .filter(line => !CODEX_DEBUG_LOG_IGNORED_LINES.has(line.trim()))
+    .join("\n")
+    .trim()
+}
+
+function tailString(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value
+  }
+
+  return value.slice(value.length - maxLength)
+}
+
+function quoteShell(value: string): string {
+  return `'${value.replaceAll("'", "'\"'\"'")}'`
+}
+
+async function createCodexModelCatalog(codexHomePath: string, model: string): Promise<string> {
+  const modelCatalogPath = join(codexHomePath, CODEX_MODEL_CATALOG_FILE)
+  const modelCatalog: CodexModelCatalog = {
+    models: [createCodexModelCatalogModel(model)],
+  }
+
+  await writeFile(modelCatalogPath, JSON.stringify(modelCatalog), "utf8")
+
+  return modelCatalogPath
+}
+
+function createCodexModelCatalogModel(model: string): CodexModelCatalogModel {
+  return {
+    slug: model,
+    display_name: model,
+    description: "ReSide NLS model catalog override.",
+    default_reasoning_level: "medium",
+    supported_reasoning_levels: [
+      { effort: "low", description: "Low" },
+      { effort: "medium", description: "Medium" },
+      { effort: "high", description: "High" },
+      { effort: "xhigh", description: "Extra high" },
+    ],
+    shell_type: "shell_command",
+    visibility: "list",
+    supported_in_api: true,
+    priority: 0,
+    additional_speed_tiers: [],
+    service_tiers: [],
+    availability_nux: null,
+    upgrade: null,
+    base_instructions: "",
+    model_messages: null,
+    supports_reasoning_summaries: true,
+    default_reasoning_summary: "none",
+    support_verbosity: true,
+    default_verbosity: "low",
+    apply_patch_tool_type: "freeform",
+    web_search_tool_type: "text_and_image",
+    truncation_policy: {
+      mode: "tokens",
+      limit: 10_000,
+    },
+    supports_parallel_tool_calls: true,
+    supports_image_detail_original: true,
+    context_window: 272_000,
+    max_context_window: 1_000_000,
+    effective_context_window_percent: 95,
+    experimental_supported_tools: [],
+    input_modalities: ["text", "image"],
+    supports_search_tool: false,
+    use_responses_lite: false,
   }
 }
 
@@ -415,15 +703,39 @@ async function handleCodexEvent({
   onThreadId,
   frameQueue,
   currentFinalResponse,
+  metrics,
+  workingDirectory,
 }: {
   event: ThreadEvent
   sessionId: string
   onThreadId: (threadId: string) => void
   frameQueue: LanguageEngineFrameQueue
   currentFinalResponse: string
+  metrics: CodexTurnMetrics
+  workingDirectory: string
 }): Promise<Error | undefined> {
   if (event.type === "thread.started") {
     onThreadId(event.thread_id)
+    return undefined
+  }
+
+  if (event.type === "turn.started") {
+    metrics.turnStartedAt = Date.now()
+    logger.info('nls turn started session_id="%s"', sessionId)
+    return undefined
+  }
+
+  if (event.type === "turn.completed") {
+    metrics.usage = event.usage
+    logger.info(
+      'nls turn completed session_id="%s" input_tokens="%s" cached_input_tokens="%s" output_tokens="%s" reasoning_output_tokens="%s" duration_ms="%s"',
+      sessionId,
+      String(event.usage.input_tokens),
+      String(event.usage.cached_input_tokens),
+      String(event.usage.output_tokens),
+      String(event.usage.reasoning_output_tokens),
+      formatDurationMs(metrics.turnStartedAt),
+    )
     return undefined
   }
 
@@ -443,7 +755,7 @@ async function handleCodexEvent({
     return undefined
   }
 
-  logCodexItem(event.item, event.type, sessionId)
+  logCodexItem(event.item, event.type, sessionId, metrics, workingDirectory)
 
   if (event.item.type === "agent_message" && event.item.text !== currentFinalResponse) {
     frameQueue.push(event.item.id, event.item.text)
@@ -452,39 +764,102 @@ async function handleCodexEvent({
   return undefined
 }
 
-function logCodexItem(item: ThreadItem, eventType: string, sessionId: string): void {
+function logCodexItem(
+  item: ThreadItem,
+  eventType: string,
+  sessionId: string,
+  metrics: CodexTurnMetrics,
+  workingDirectory: string,
+): void {
   if (item.type === "agent_message") {
     logger.info(
-      'nls assistant message session_id="%s" event_type="%s" message_id="%s" content_length="%s"',
+      'nls assistant message session_id="%s" event_type="%s" message_id="%s" content_length="%s" text="%s"',
       sessionId,
       eventType,
       item.id,
       String(item.text.length),
+      item.text,
     )
     return
   }
 
   if (item.type === "mcp_tool_call") {
+    if (eventType === "item.started") {
+      metrics.toolStartTimes.set(item.id, Date.now())
+      metrics.toolCallsCount += 1
+    }
+
+    const durationMs = formatAndMaybeClearItemDuration(metrics.toolStartTimes, item.id, eventType)
+    if (eventType === "item.completed" && item.status === "failed") {
+      metrics.failedToolCallsCount += 1
+    }
+
     logger.info(
-      'nls tool execution session_id="%s" event_type="%s" tool_name="%s" tool_call_id="%s" status="%s"',
+      'nls tool execution session_id="%s" event_type="%s" server_name="%s" tool_name="%s" tool_call_id="%s" status="%s" duration_ms="%s"',
       sessionId,
       eventType,
+      item.server,
       item.tool,
       item.id,
       item.status,
+      durationMs,
     )
     return
   }
 
   if (item.type === "command_execution") {
+    if (eventType === "item.started") {
+      metrics.commandStartTimes.set(item.id, Date.now())
+      metrics.commandsCount += 1
+    }
+
+    const outputLength = item.aggregated_output.length
+    if (eventType === "item.completed") {
+      metrics.totalCommandOutputLength += outputLength
+      metrics.largestCommandOutputLength = Math.max(
+        metrics.largestCommandOutputLength,
+        outputLength,
+      )
+      if (item.status === "failed" || (item.exit_code !== undefined && item.exit_code !== 0)) {
+        metrics.failedCommandsCount += 1
+      }
+    }
+
+    const durationMs = formatAndMaybeClearItemDuration(
+      metrics.commandStartTimes,
+      item.id,
+      eventType,
+    )
+    const command = formatCommandForLog(item.command)
+
+    if (eventType === "item.completed" && shouldLogCommandOutputTail(item)) {
+      logger.info(
+        'nls command execution session_id="%s" event_type="%s" command_id="%s" command="%s" cwd="%s" status="%s" exit_code="%s" duration_ms="%s" output_length="%s" output_tail="%s"',
+        sessionId,
+        eventType,
+        item.id,
+        command,
+        workingDirectory,
+        item.status,
+        item.exit_code === undefined ? "unknown" : String(item.exit_code),
+        durationMs,
+        String(outputLength),
+        formatCommandOutputTailForLog(item.aggregated_output),
+      )
+      return
+    }
+
     logger.info(
-      'nls command execution session_id="%s" event_type="%s" command_id="%s" status="%s" exit_code="%s" output_length="%s"',
+      'nls command execution session_id="%s" event_type="%s" command_id="%s" command="%s" cwd="%s" status="%s" exit_code="%s" duration_ms="%s" output_length="%s"',
       sessionId,
       eventType,
       item.id,
+      command,
+      workingDirectory,
       item.status,
       item.exit_code === undefined ? "unknown" : String(item.exit_code),
-      String(item.aggregated_output.length),
+      durationMs,
+      String(outputLength),
     )
     return
   }
@@ -521,6 +896,94 @@ function logCodexItem(item: ThreadItem, eventType: string, sessionId: string): v
       truncateOneLine(item.message, 400),
     )
   }
+}
+
+function formatAndMaybeClearItemDuration(
+  startTimes: Map<string, number>,
+  itemId: string,
+  eventType: string,
+): string {
+  const durationMs = formatDurationMs(startTimes.get(itemId))
+  if (eventType === "item.completed") {
+    startTimes.delete(itemId)
+  }
+
+  return durationMs
+}
+
+function formatDurationMs(startedAt: number | undefined): string {
+  if (startedAt === undefined) {
+    return "unknown"
+  }
+
+  return String(Date.now() - startedAt)
+}
+
+function shouldLogCommandOutputTail(item: CommandExecutionItem): boolean {
+  return item.status === "failed" || (item.exit_code !== undefined && item.exit_code !== 0)
+}
+
+function formatCommandForLog(command: string): string {
+  return truncateOneLine(redactCommandForLog(command), COMMAND_LOG_MAX_LENGTH)
+}
+
+function redactCommandForLog(command: string): string {
+  return command
+    .replaceAll(/x-access-token:[^@\s]+/g, "x-access-token:***")
+    .replaceAll(/(token|api[-_]?key|secret|password)=([^\s]+)/gi, "$1=***")
+}
+
+function formatCommandOutputTailForLog(output: string): string {
+  return tailString(redactCommandForLog(output), COMMAND_OUTPUT_TAIL_MAX_LENGTH)
+}
+
+function logCodexTurnSummary({
+  sessionId,
+  codexThreadId,
+  model,
+  mcpServer,
+  responseText,
+  metrics,
+  durationMs,
+  codexDebugLogPath,
+  status,
+}: {
+  sessionId: string
+  codexThreadId?: string
+  model: string
+  mcpServer: NlsMcpToolServer
+  responseText: string
+  metrics: CodexTurnMetrics
+  durationMs: number
+  codexDebugLogPath: string
+  status: CodexTurnStatus
+}): void {
+  logger.info(
+    'nls turn summary session_id="%s" codex_thread_id="%s" model="%s" server_name="%s" tool_count="%s" response_length="%s" input_tokens="%s" cached_input_tokens="%s" output_tokens="%s" reasoning_output_tokens="%s" duration_ms="%s" codex_debug_log_path="%s" status="%s" tool_calls_count="%s" failed_tool_calls_count="%s" commands_count="%s" failed_commands_count="%s" total_command_output_length="%s" largest_command_output_length="%s"',
+    sessionId,
+    codexThreadId ?? "unknown",
+    model,
+    mcpServer.name,
+    String(mcpServer.toolNames.length),
+    String(responseText.trim().length),
+    formatUsageValue(metrics.usage?.input_tokens),
+    formatUsageValue(metrics.usage?.cached_input_tokens),
+    formatUsageValue(metrics.usage?.output_tokens),
+    formatUsageValue(metrics.usage?.reasoning_output_tokens),
+    String(durationMs),
+    codexDebugLogPath,
+    status,
+    String(metrics.toolCallsCount),
+    String(metrics.failedToolCallsCount),
+    String(metrics.commandsCount),
+    String(metrics.failedCommandsCount),
+    String(metrics.totalCommandOutputLength),
+    String(metrics.largestCommandOutputLength),
+  )
+}
+
+function formatUsageValue(value: number | undefined): string {
+  return value === undefined ? "unknown" : String(value)
 }
 
 type LanguageEngineFrameQueue = {
@@ -593,10 +1056,12 @@ function buildCodexPrompt({
 function createCodexConfig(
   mcpServer: NlsMcpToolServer,
   providerBaseUrl: string,
+  modelCatalogPath: string,
 ): CodexConfigObject {
   return {
     approval_policy: "never",
     sandbox_mode: "danger-full-access",
+    model_catalog_json: modelCatalogPath,
     model_provider: CODEX_MODEL_PROVIDER_ID,
     model_providers: {
       [CODEX_MODEL_PROVIDER_ID]: {
@@ -613,7 +1078,10 @@ function createCodexConfig(
         bearer_token_env_var: MCP_TOKEN_ENV_VAR,
         enabled: true,
         required: true,
+        default_tools_enabled: true,
         enabled_tools: mcpServer.toolNames,
+        destructive_enabled: true,
+        open_world_enabled: true,
         default_tools_approval_mode: "approve",
         startup_timeout_sec: 5,
         tool_timeout_sec: 600,
@@ -634,6 +1102,10 @@ function createCodexEnvironment(codexHomePath: string, mcpToken: string): Record
   env[MCP_TOKEN_ENV_VAR] = mcpToken
 
   return env
+}
+
+function getNlsRootPath(): string {
+  return join(homedir(), NLS_HOME_DIR)
 }
 
 function watchLanguageSessionCancellation({
@@ -845,18 +1317,17 @@ async function uploadSessionArchive(
   sessionPrefix: string,
   sessionStorageId: string,
   sessionId: string,
-): Promise<void> {
+): Promise<boolean> {
   const sessionStatePath = getSessionStatePath(sessionDirPath, sessionId)
 
   try {
     await access(sessionStatePath)
   } catch {
-    return
+    return false
   }
 
   const archivePath = join(
-    "/tmp",
-    `${NLS_WORKSPACE_PREFIX}-${getReplicaName()}`,
+    getNlsRootPath(),
     `session-upload-${sanitizeFilePart(sessionStorageId)}.${NLS_SESSION_ARCHIVE_EXTENSION}`,
   )
 
@@ -866,6 +1337,8 @@ async function uploadSessionArchive(
     archivePath,
     "-C",
     sessionStatePath,
+    "--exclude=./.tmp",
+    "--exclude=./.tmp/*",
     "--transform",
     `s,^,${sessionId}/,`,
     ".",
@@ -882,6 +1355,7 @@ async function uploadSessionArchive(
   )
 
   await rm(archivePath, { force: true })
+  return true
 }
 
 async function clearSessionArchive(
@@ -892,8 +1366,7 @@ async function clearSessionArchive(
 ): Promise<void> {
   const archiveKey = getSessionArchiveKey(sessionPrefix, sessionStorageId)
   const archivePath = join(
-    "/tmp",
-    `${NLS_WORKSPACE_PREFIX}-${getReplicaName()}`,
+    getNlsRootPath(),
     `session-clear-${sanitizeFilePart(sessionStorageId)}.${NLS_SESSION_ARCHIVE_EXTENSION}`,
   )
 

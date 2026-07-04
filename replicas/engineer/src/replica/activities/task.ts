@@ -11,6 +11,7 @@ import type { Operation, PrismaClient } from "../../database"
 import type { EngineerTaskActivities } from "../../definitions"
 import type { EngineerAiRuntime } from "../business"
 import { mkdir, rm } from "node:fs/promises"
+import { homedir } from "node:os"
 import { join } from "node:path"
 import { waitForOperationSuccess, waitForResult } from "@reside/api"
 import {
@@ -47,6 +48,9 @@ import {
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = "session"
 const ENGINEER_NLS_IDLE_TIMEOUT_MS = 20 * 60_000
+const NLS_HOME_DIR = ".reside-nls"
+const ENGINEER_TASKS_DIR = "tasks"
+const ENGINEER_TASK_SESSIONS_DIR = ".task-sessions"
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
@@ -883,7 +887,7 @@ function createDevDatabaseTool({
   provisionService: ProvisionServiceClient
   infraOperationService: OperationServiceClient
 }) {
-  return defineTool("create_dev_database", {
+  return defineTool("reside_create_dev_database", {
     description:
       "Creates a temporary PostgreSQL development database that is automatically deleted after 24 hours",
     parameters: z.object({}),
@@ -910,7 +914,7 @@ function createDevDatabaseTool({
       return [
         "Temporary PostgreSQL database created.",
         "It will be deleted automatically after 24 hours.",
-        "If this session is resumed after a long time and the database no longer exists, call create_dev_database again.",
+        "If this session is resumed after a long time and the database no longer exists, call reside_create_dev_database again.",
         `host=${credentials.host}`,
         `port=${credentials.port}`,
         `database=${credentials.database}`,
@@ -954,7 +958,7 @@ function createDeployReplicaTool({
   branchName: string
   issueNumber?: number
 }) {
-  return defineTool("deploy_replica", {
+  return defineTool("reside_deploy_replica", {
     description:
       "Builds and pushes replica image via workflow dispatch from main, waits for completion, then loads replica through alpha",
     parameters: z.object({
@@ -1105,7 +1109,7 @@ function createDeliverChangesTool({
   branchName: string
   issueNumber?: number
 }) {
-  return defineTool("deliver_changes", {
+  return defineTool("reside_deliver_changes", {
     description:
       "Validates commits, pushes current branch, creates or updates pull request, waits for ci:check, merges it with rebase, and deletes source branch",
     parameters: z.object({
@@ -1124,7 +1128,7 @@ function createDeliverChangesTool({
 
       if (currentBranch !== branchName) {
         throw new Error(
-          `Before deliver_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
+          `Before reside_deliver_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
         )
       }
 
@@ -1219,7 +1223,7 @@ function createCommitChangesTool({
   repositoryPath: string
   branchName: string
 }) {
-  return defineTool("commit_changes", {
+  return defineTool("reside_commit_changes", {
     description:
       "Stages repository paths and creates a validated conventional commit without a commit body",
     parameters: z.object({
@@ -1237,7 +1241,7 @@ function createCommitChangesTool({
       const currentBranch = await getCurrentGitBranch(repositoryPath)
       if (currentBranch !== branchName) {
         throw new Error(
-          `Before commit_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
+          `Before reside_commit_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
         )
       }
 
@@ -1582,7 +1586,7 @@ async function runPlanningSession({
   const finalSummary = extractSummaryFromFinalMessage(finalMessage)
   const draftState = [...draftStatesBySessionId.values()].find(state => state.submittedDraft)
   if (!draftState?.submittedDraft) {
-    throw new Error("Copilot did not submit issue draft via submit_issue_draft tool")
+    throw new Error("Copilot did not submit issue draft via reside_submit_issue_draft tool")
   }
 
   return {
@@ -1729,7 +1733,7 @@ async function runImplementationLanguageStream({
 function createSubmitIssueDraftTool(
   draftStatesBySessionId: Map<string, { submittedDraft?: z.infer<typeof issueDraftSchema> }>,
 ) {
-  return defineTool("submit_issue_draft", {
+  return defineTool("reside_submit_issue_draft", {
     description: "Submit final GitHub issue draft title and body",
     parameters: issueDraftSchema,
     handler: async (parsedDraft, context) => {
@@ -1751,11 +1755,15 @@ async function createCopilotEnvironment(
     runtime.getOctokit(),
     repository.cloneUrl,
   )
-  const tempRoot = join("/tmp", `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`)
+  const tempRoot = join(
+    getNlsRootPath(),
+    ENGINEER_TASKS_DIR,
+    `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`,
+  )
   const worktreePath = join(tempRoot, "workspace")
   const repositoryPath = join(worktreePath, repository.name)
   const branchName = `replica/task-${taskId}/${iterationId}`
-  const sessionDirPath = join(tempRoot, ENGINEER_SESSION_DIR)
+  const sessionDirPath = getEngineerSessionDirPath(taskId)
 
   await rm(tempRoot, { recursive: true, force: true })
   await mkdir(worktreePath, { recursive: true })
@@ -1789,10 +1797,24 @@ async function createCopilotEnvironment(
     taskId,
     dispose: async () => {
       await rm(tempRoot, { recursive: true, force: true })
+      await rm(sessionDirPath, { recursive: true, force: true })
     },
   }
 
   return environment
+}
+
+function getEngineerSessionDirPath(taskId: number): string {
+  return join(
+    getNlsRootPath(),
+    ENGINEER_TASK_SESSIONS_DIR,
+    `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`,
+    ENGINEER_SESSION_DIR,
+  )
+}
+
+function getNlsRootPath(): string {
+  return join(homedir(), NLS_HOME_DIR)
 }
 
 function truncateOneLine(value: string, maxLength: number): string {

@@ -41,6 +41,12 @@ type McpResponse = {
 
 type McpNext = () => void
 
+type McpRequestSummary = {
+  method: string
+  requestId: string
+  requestCount: string
+}
+
 export async function startNlsMcpToolServer({
   sessionId,
   tools,
@@ -58,10 +64,22 @@ export async function startNlsMcpToolServer({
       return
     }
 
+    logger.warn('nls mcp request unauthorized session_id="%s"', sessionId)
     response.status(401).json({ error: "unauthorized" })
   })
 
   app.post(MCP_PATH, async (request: McpRequest, response: McpResponse) => {
+    const requestSummary = summarizeMcpRequest(request.body)
+    logger.debug(
+      'nls mcp request received session_id="%s" method="%s" request_id="%s" request_count="%s" tools_count="%s" tools="%s"',
+      sessionId,
+      requestSummary.method,
+      requestSummary.requestId,
+      requestSummary.requestCount,
+      requestSummary.method === "tools/list" ? String(tools.length) : "unknown",
+      requestSummary.method === "tools/list" ? tools.map(tool => tool.name).join(",") : "unknown",
+    )
+
     const server = createToolServer(sessionId, tools)
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
 
@@ -81,9 +99,21 @@ export async function startNlsMcpToolServer({
         response as unknown as ServerResponse,
         request.body,
       )
+      logger.debug(
+        'nls mcp request handled session_id="%s" method="%s" request_id="%s"',
+        sessionId,
+        requestSummary.method,
+        requestSummary.requestId,
+      )
       response.on("close", close)
     } catch (error) {
-      logger.warn({ error: normalizeError(error) }, "nls mcp request failed")
+      logger.warn(
+        { error: normalizeError(error) },
+        'nls mcp request failed session_id="%s" method="%s" request_id="%s"',
+        sessionId,
+        requestSummary.method,
+        requestSummary.requestId,
+      )
       if (!response.headersSent) {
         response.status(500).json({
           jsonrpc: "2.0",
@@ -110,7 +140,7 @@ export async function startNlsMcpToolServer({
   }
 
   return {
-    name: "reside_nls",
+    name: "reside",
     url: `http://${MCP_HOST}:${address.port}${MCP_PATH}`,
     token,
     toolNames: tools.map(tool => tool.name),
@@ -188,6 +218,52 @@ function createToolServer(sessionId: string, tools: Tool[]): McpServer {
   }
 
   return server
+}
+
+function summarizeMcpRequest(body: unknown): McpRequestSummary {
+  if (Array.isArray(body)) {
+    return {
+      method: summarizeMcpBatchMethods(body),
+      requestId: "batch",
+      requestCount: String(body.length),
+    }
+  }
+
+  return {
+    method: getMcpRequestMethod(body),
+    requestId: getMcpRequestId(body),
+    requestCount: "1",
+  }
+}
+
+function summarizeMcpBatchMethods(items: unknown[]): string {
+  const methods = items.map(getMcpRequestMethod).filter(method => method.length > 0)
+  if (methods.length === 0) {
+    return "unknown"
+  }
+
+  return methods.join(",")
+}
+
+function getMcpRequestMethod(body: unknown): string {
+  if (!body || typeof body !== "object" || !("method" in body)) {
+    return "unknown"
+  }
+
+  return String((body as { method?: unknown }).method ?? "unknown")
+}
+
+function getMcpRequestId(body: unknown): string {
+  if (!body || typeof body !== "object" || !("id" in body)) {
+    return "none"
+  }
+
+  const id = (body as { id?: unknown }).id
+  if (typeof id === "string" || typeof id === "number") {
+    return String(id)
+  }
+
+  return "unknown"
 }
 
 function getMcpInputSchema(parameters: unknown): AnySchema {

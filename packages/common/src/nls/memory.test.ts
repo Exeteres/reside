@@ -32,7 +32,7 @@ describe("createMemorySearchWords", () => {
 })
 
 describe("createMemoryTools", () => {
-  test("find_notes searches by any provided word and applies tag filter", async () => {
+  test("reside_find_notes searches by any provided word and applies tag filter", async () => {
     const rawQueries: { values: unknown[] }[] = []
     const prisma: MemoryToolsPrisma = {
       $queryRaw: async <T = unknown>(
@@ -64,9 +64,9 @@ describe("createMemoryTools", () => {
         allow: { description: "Allow rules" },
       },
     })
-    const findNotes = tools.find(tool => tool.name === "find_notes")
+    const findNotes = tools.find(tool => tool.name === "reside_find_notes")
     if (!findNotes) {
-      throw new Error("find_notes tool is missing")
+      throw new Error("reside_find_notes tool is missing")
     }
     const toolInvocation = {} as Parameters<typeof findNotes.handler>[1]
 
@@ -96,7 +96,7 @@ describe("createMemoryTools", () => {
     expect(rawQueries[0]?.values).toContainEqual(["allow"])
   })
 
-  test("find_notes returns empty result without querying when words contain no searchable terms", async () => {
+  test("reside_find_notes returns empty result without querying when words contain no searchable terms", async () => {
     let queried = false
     const prisma: MemoryToolsPrisma = {
       $queryRaw: async <T = unknown>(): Promise<T> => {
@@ -111,9 +111,9 @@ describe("createMemoryTools", () => {
       },
     }
     const tools = createMemoryTools({ prisma })
-    const findNotes = tools.find(tool => tool.name === "find_notes")
+    const findNotes = tools.find(tool => tool.name === "reside_find_notes")
     if (!findNotes) {
-      throw new Error("find_notes tool is missing")
+      throw new Error("reside_find_notes tool is missing")
     }
     const toolInvocation = {} as Parameters<typeof findNotes.handler>[1]
 

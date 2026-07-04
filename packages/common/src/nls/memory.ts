@@ -36,7 +36,7 @@ const languageMemorySystemPromptBase = [
   "- keep description concise (max 80 chars) and content factual.",
   "- write note title, description, and content in the same language as the user interaction that produced the note.",
   "- do not include the current timestamp in content; creation and update timestamps are stored automatically.",
-  "- before adding new memory, search existing notes by passing separate important words to find_notes and reuse/update when possible.",
+  "- before adding new memory, search existing notes by passing separate important words to reside_find_notes and reuse/update when possible.",
   "- keep notes compact and practical: clear title, concise description, factual content.",
   "- read full note content before making decisions based on a note summary.",
   "- update stale notes when facts change; remove notes that are no longer useful.",
@@ -168,7 +168,7 @@ export function createMemoryTools({
   const allowedTags = tags ? new Set(Object.keys(tags)) : undefined
 
   return [
-    defineTool("find_notes", {
+    defineTool("reside_find_notes", {
       description:
         "Finds memory notes containing any of the provided important words. Pass separate meaningful words from the request; do not build a search query or full sentence.",
       parameters: findNotesParametersSchema,
@@ -227,7 +227,7 @@ export function createMemoryTools({
         }
       },
     }),
-    defineTool("get_note_content", {
+    defineTool("reside_get_note_content", {
       description: "Returns full content for a note by id.",
       parameters: getNoteContentParametersSchema,
       handler: async ({ id }) => {
@@ -245,7 +245,7 @@ export function createMemoryTools({
         }
       },
     }),
-    defineTool("create_note", {
+    defineTool("reside_create_note", {
       description: "Creates a new memory note.",
       parameters: createNoteParametersSchema,
       handler: async ({ title, description, content, tags }) => {
@@ -268,7 +268,7 @@ export function createMemoryTools({
         }
       },
     }),
-    defineTool("update_note", {
+    defineTool("reside_update_note", {
       description: "Updates one or more text fields of a memory note.",
       parameters: updateNoteParametersSchema,
       handler: async ({ id, title, description, content, tags }) => {
@@ -301,7 +301,7 @@ export function createMemoryTools({
         }
       },
     }),
-    defineTool("delete_note", {
+    defineTool("reside_delete_note", {
       description: "Deletes a memory note by id.",
       parameters: deleteNoteParametersSchema,
       handler: async ({ id }) => {

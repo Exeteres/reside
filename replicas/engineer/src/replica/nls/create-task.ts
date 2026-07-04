@@ -9,7 +9,7 @@ type CreateTaskToolServices = {
 }
 
 export function createCreateTaskTool({ temporalClient }: CreateTaskToolServices) {
-  return defineTool("create_task", {
+  return defineTool("reside_create_task", {
     description: "Prepares an engineer task topic and starts task processing workflow.",
     parameters: z.object({
       task: z.string().min(1),

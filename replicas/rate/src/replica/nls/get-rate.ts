@@ -10,7 +10,7 @@ type GetRateToolServices = {
 }
 
 export function createGetRateTool(services: GetRateToolServices) {
-  return defineTool("get_rate", {
+  return defineTool("reside_get_rate", {
     description:
       "Gets the current Bank of Russia key rate and updates the current Telegram chat title when an interaction context token is provided.",
     parameters: z.object({
