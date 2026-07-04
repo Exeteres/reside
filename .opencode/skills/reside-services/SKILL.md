@@ -1,8 +1,8 @@
 ---
 name: reside-services
 description: Use when editing replica service implementations, service factories, src/replica/main.ts wiring, authentication in handlers, runtime dependency composition, or CommonServices dependency wiring.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/*/src/replica/services/**"
     - "replicas/*/src/replica/main.ts"
     - "replicas/*/src/shared/services.ts"

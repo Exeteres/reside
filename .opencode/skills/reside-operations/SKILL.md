@@ -1,8 +1,8 @@
 ---
 name: reside-operations
 description: Use when editing replica Operation models, OperationService flows, operation subscription APIs, callback payloads, operation migrations, or Reaper action identity.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/*/prisma/**/operation.prisma"
     - "replicas/*/src/**/operation*.ts"
     - "packages/api/protocols/common/operation.v1.proto"

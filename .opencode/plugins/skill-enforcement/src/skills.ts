@@ -7,10 +7,10 @@ export async function loadSkillRules(worktree: string): Promise<SkillRule[]> {
   for await (const file of glob.scan({ cwd: worktree })) {
     const text = await Bun.file(`${worktree}/${file}`).text()
     const name = parseSkillName(text)
-    const patterns = parseEnforcementPatterns(text)
+    const enforcement = parseEnforcement(text)
 
-    if (name && patterns.length > 0) {
-      rules.push({ name, patterns })
+    if (name && (enforcement.files.length > 0 || enforcement.commands.length > 0)) {
+      rules.push({ name, ...enforcement })
     }
   }
 
@@ -31,32 +31,39 @@ function parseSkillName(text: string): string | undefined {
   return text.match(/^name:\s*([^\n]+)$/m)?.[1]?.trim()
 }
 
-function parseEnforcementPatterns(text: string): string[] {
+function parseEnforcement(text: string): Pick<SkillRule, "files" | "commands"> {
   const block = text.match(/^---\n(?<body>[\s\S]*?)\n---/)?.groups?.body
 
   if (!block) {
-    return []
+    return { files: [], commands: [] }
   }
 
   const lines = block.split("\n")
-  const startIndex = lines.findIndex(line => line.trim() === "skill_enforcement:")
+  const startIndex = lines.findIndex(line => line.trim() === "enforcement:")
 
   if (startIndex === -1) {
-    return []
+    return { files: [], commands: [] }
   }
 
-  const patternsIndex = lines.findIndex(
-    (line, index) => index > startIndex && /^\s{2}patterns:\s*$/.test(line),
+  return {
+    files: parseEnforcementList(lines, startIndex, "files"),
+    commands: parseEnforcementList(lines, startIndex, "commands"),
+  }
+}
+
+function parseEnforcementList(lines: string[], startIndex: number, key: string): string[] {
+  const listIndex = lines.findIndex(
+    (line, index) => index > startIndex && new RegExp(`^\\s{2}${key}:\\s*$`).test(line),
   )
 
-  if (patternsIndex === -1) {
+  if (listIndex === -1) {
     return []
   }
 
   return lines
-    .slice(patternsIndex + 1)
+    .slice(listIndex + 1)
     .map(line => line.match(/^\s{4}-\s*["']?([^"'\n]+)["']?\s*$/)?.[1])
-    .filter((pattern): pattern is string => Boolean(pattern))
+    .filter((item): item is string => Boolean(item))
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

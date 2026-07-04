@@ -1,8 +1,8 @@
 ---
 name: reside-prisma
 description: Use when editing Prisma schema files, prisma.config.ts, migrations, database models, relations, indexes, JSON fields, Operation models, generated Prisma clients, or Prisma migration workflows.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/*/prisma/**"
     - "replicas/*/prisma.config.ts"
     - "replicas/*/src/database/_generated/**"

@@ -2,14 +2,21 @@ import type { SkillRule } from "./types"
 
 export function getMissingSkills(
   targets: string[],
+  commands: string[],
   rules: SkillRule[],
   loadedSkills: ReadonlySet<string>,
 ): string[] {
   const requiredSkills = new Set<string>()
 
-  for (const target of targets) {
-    for (const rule of rules) {
-      if (rule.patterns.some(pattern => matchesGlob(target, pattern))) {
+  for (const rule of rules) {
+    for (const target of targets) {
+      if (rule.files.some(pattern => matchesGlob(target, pattern))) {
+        requiredSkills.add(rule.name)
+      }
+    }
+
+    for (const command of commands) {
+      if (rule.commands.some(pattern => matchesGlob(command, pattern))) {
         requiredSkills.add(rule.name)
       }
     }

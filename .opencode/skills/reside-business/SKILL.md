@@ -1,8 +1,8 @@
 ---
 name: reside-business
 description: Use when editing src/replica/business code, extracting business functions, dependency injection, unit-testable logic, transport-agnostic behavior, or business-layer side effects.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/*/src/replica/business/**"
 ---
 

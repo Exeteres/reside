@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import { createDockerfile } from "./docker"
 
+const runtimePathLine = 'ENV PATH="/app/node_modules/.bin:$' + '{PATH}"'
+
 describe("createDockerfile", () => {
   const baseArgs = {
     baseDockerfile: "FROM scratch",
@@ -74,5 +76,14 @@ describe("createDockerfile", () => {
     expect(dockerfile).toContain(
       "COPY --from=build /app/.opencode/opencode.json /app/.opencode/opencode.json",
     )
+  })
+
+  test("adds workspace binary directory to runtime path", () => {
+    const dockerfile = createDockerfile({
+      ...baseArgs,
+      hasChangelog: false,
+    })
+
+    expect(dockerfile).toContain(runtimePathLine)
   })
 })

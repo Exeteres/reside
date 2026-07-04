@@ -1,5 +1,7 @@
 import type { WorkspacePackagePath } from "./project"
 
+const runtimePathLine = 'ENV PATH="/app/node_modules/.bin:$' + '{PATH}"'
+
 export type CreateDockerfileArgs = {
   baseDockerfile: string
   workspacePackages: WorkspacePackagePath[]
@@ -68,6 +70,7 @@ export function createDockerfile(args: CreateDockerfileArgs): string {
 
   lines.push("")
   lines.push("WORKDIR /app")
+  lines.push(runtimePathLine)
 
   lines.push("")
   lines.push("# copy hoisted dependencies")

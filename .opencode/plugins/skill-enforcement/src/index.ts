@@ -1,7 +1,7 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { getMissingSkills } from "./enforcement"
 import { getSkillName, loadSkillRules } from "./skills"
-import { getTargetPaths } from "./targets"
+import { getTargetCommands, getTargetPaths } from "./targets"
 
 const interactiveSkillName = "reside-interactive"
 const engineerSkillName = "reside-engineer"
@@ -51,12 +51,14 @@ export const SkillEnforcementPlugin: Plugin = async ({ worktree }) => {
         return
       }
 
-      if (!editTools.has(input.tool)) {
+      const targets = editTools.has(input.tool) ? getTargetPaths(input.tool, output.args) : []
+      const commands = getTargetCommands(input.tool, output.args)
+
+      if (targets.length === 0 && commands.length === 0) {
         return
       }
 
-      const targets = getTargetPaths(input.tool, output.args)
-      const missingSkills = getMissingSkills(targets, rules, loadedSkills)
+      const missingSkills = getMissingSkills(targets, commands, rules, loadedSkills)
 
       if (missingSkills.length === 0) {
         return
@@ -66,7 +68,8 @@ export const SkillEnforcementPlugin: Plugin = async ({ worktree }) => {
         [
           "Skill enforcement blocked this edit.",
           `Load required skills first: ${missingSkills.join(", ")}.`,
-          `Matched target files: ${targets.join(", ")}.`,
+          `Matched target files: ${targets.join(", ") || "none"}.`,
+          `Matched commands: ${commands.join(", ") || "none"}.`,
         ].join("\n"),
       )
     },

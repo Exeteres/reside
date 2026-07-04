@@ -1,8 +1,8 @@
 ---
 name: reside-workflows
 description: Use when editing Temporal workflows, activities, signals, workflow definitions, activity factories, retry policies, long-running workflows, workflow-safe definitions, or workflow notifications.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/*/src/workflows/**"
     - "replicas/*/src/replica/activities/**"
     - "replicas/*/src/definitions/workflows.ts"

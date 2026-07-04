@@ -1,8 +1,8 @@
 ---
 name: reside-typescript
 description: Use when editing TypeScript code, imports, JSDoc, async control flow, comments, type aliases, unions, generics, errors, logging, or general implementation style in ReSide.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "apps/**/*.ts"
     - "packages/**/*.ts"
     - "replicas/**/*.ts"

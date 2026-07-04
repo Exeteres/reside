@@ -1,8 +1,8 @@
 ---
 name: reside-replica
 description: Use when creating or editing replicas under replicas/*, replica entrypoints, locale files, bootstrap/runtime wiring, package structure, operations, workflow placement, API generation, or e2e layout.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/*/src/bootstrap/**"
     - "replicas/*/src/replica/**"
     - "replicas/*/src/workflows/**"

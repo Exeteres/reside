@@ -1,4 +1,5 @@
 export type SkillRule = {
   name: string
-  patterns: string[]
+  files: string[]
+  commands: string[]
 }

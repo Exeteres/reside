@@ -1,8 +1,8 @@
 ---
 name: reside-api
 description: Use when editing API protocols under packages/api/protocols, generated API bindings, gRPC/Connect service contracts, request/response DTOs, operation-based API flows, or protocol generation.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "packages/api/protocols/**"
     - "packages/api/src/_generated/**"
 ---

@@ -1,8 +1,8 @@
 ---
 name: reside-testing
 description: Use when adding or editing tests, business feature coverage, Bun test assertions, async matchers, deep mocks, Prisma-backed checks, or replica e2e scenarios.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "**/*.test.ts"
     - "**/*.spec.ts"
     - "replicas/*/src/e2e/**"

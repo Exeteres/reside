@@ -1,12 +1,14 @@
 ---
 name: reside-changes
 description: Use when changing CHANGELOG.md, reside.manifest.json, replica versions, release notes, version bumps, meaningful replica changes, or commit messages in ReSide.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/*/CHANGELOG.md"
     - "replicas/*/reside.manifest.json"
     - "CHANGELOG.md"
     - "reside.manifest.json"
+  commands:
+    - "git*"
 ---
 
 # ReSide Change Management Rules

@@ -1,8 +1,8 @@
 ---
 name: reside-engineer
 description: Use when operating as the Engineer replica implementation agent, executing GitHub issue work, classifying tasks, committing, delivering PRs, deploying replicas, or using engineer-specific tools.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/engineer/**"
 ---
 

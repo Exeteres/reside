@@ -1,8 +1,8 @@
 ---
 name: reside-skills
 description: Use when creating, editing, packaging, validating, or refactoring ReSide skills under .opencode/skills, skill-owned scripts, skill package.json files, or skill workspace rules.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - ".opencode/skills/**"
     - "AGENTS.md"
 ---

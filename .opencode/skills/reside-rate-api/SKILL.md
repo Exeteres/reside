@@ -1,8 +1,8 @@
 ---
 name: reside-rate-api
 description: Use when editing the key rate replica, its get_rate NLS tool, Bank of Russia SOAP integration, key rate parsing, or rate API behavior.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/rate/**"
 ---
 

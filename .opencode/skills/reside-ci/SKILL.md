@@ -1,8 +1,8 @@
 ---
 name: reside-ci
 description: Use when editing CI commands, package.json scripts, Nx targets, targetDefaults, workspace package scripts, validation targets, or repository check behavior.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - ".github/workflows/**"
     - "nx.json"
     - "package.json"

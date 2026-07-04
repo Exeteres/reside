@@ -1,8 +1,8 @@
 ---
 name: reside-nls
 description: Use when editing setupLanguageSubsystem, src/replica/nls tools, NLS memory, LLM tool definitions, language engine integration, replica assistant instructions, or NLS-facing data boundaries.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "replicas/*/src/replica/nls/**"
     - "replicas/*/src/replica/setupLanguageSubsystem.ts"
     - "replicas/*/src/replica/main.ts"

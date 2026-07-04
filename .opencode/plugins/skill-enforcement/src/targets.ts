@@ -12,6 +12,14 @@ export function getTargetPaths(tool: string, args: unknown): string[] {
     .map(normalizePath)
 }
 
+export function getTargetCommands(tool: string, args: unknown): string[] {
+  if (tool !== "bash" || !isRecord(args) || typeof args.command !== "string") {
+    return []
+  }
+
+  return [args.command]
+}
+
 function parsePatchTargets(value: unknown): string[] {
   if (typeof value !== "string") {
     return []

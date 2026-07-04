@@ -1,8 +1,8 @@
 ---
 name: create-opencode-plugin
 description: Use when creating OpenCode plugins with the @opencode-ai/plugin SDK, including custom tools, event hooks, auth providers, or tool execution interception.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - ".opencode/plugins/**"
 ---
 

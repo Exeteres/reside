@@ -1,8 +1,8 @@
 ---
 name: reside-core
 description: Use for any work in the ReSide repository. Covers repository basics, README-first workflow, Russian UI text, command restrictions, validation expectations, and scoped skill routing.
-skill_enforcement:
-  patterns:
+enforcement:
+  files:
     - "AGENTS.md"
     - "README.md"
 ---
