@@ -29,9 +29,16 @@ description: Use when operating in an interactive ReSide repository session with
 - Run broader repository checks when practical.
 - If a broad check fails only because of unrelated packages, missing local infrastructure, or environment configuration outside the task, report the exact unrelated failures and keep focused checks as the task verification.
 
+## Change Completion
+
+- Load `reside-changes` before finalizing edits that should be committed, update replica changelogs and versions when applicable, and follow its commit rules.
+- Commit completed changes during the interactive session unless the user asks not to commit or the work is blocked.
+
 ## Review Checklist
 
 - User changes were not reverted.
 - Destructive commands were not used without explicit approval.
 - Validation matches the scope of the change.
+- Applicable replica changelogs and versions were updated through `reside-changes`.
+- Completed changes were committed through `reside-changes`.
 - Any skipped validation is explained with the exact reason.
