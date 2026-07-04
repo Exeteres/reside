@@ -60,6 +60,7 @@ describe("upsertLoadedReplicaAndCreateOperation", () => {
     expect(temporalClient.workflow.start.spy()).toHaveBeenCalledWith(
       "waitForReplicaRegistrationWorkflow",
       expect.objectContaining({
+        args: [{ operationId: 42 }],
         workflowId: "wait-replica-ready-42",
       }),
     )

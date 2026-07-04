@@ -13,6 +13,7 @@ export function definePrismaConfig() {
       url:
         process.env.DATABASE_URL ??
         `postgresql://${user}@localhost/${user}?host=${process.env.PGHOST}/`,
+      shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
     },
   })
 }

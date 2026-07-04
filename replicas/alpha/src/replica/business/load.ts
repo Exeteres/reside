@@ -60,7 +60,7 @@ export async function startReplicaReadinessWorkflow(
 ): Promise<void> {
   try {
     await temporalClient.workflow.start("waitForReplicaRegistrationWorkflow", {
-      args: [operationId],
+      args: [{ operationId }],
       workflowId: `wait-replica-ready-${operationId}`,
       taskQueue: DEFAULT_TEMPORAL_TASK_QUEUE,
       workflowIdReusePolicy: WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,

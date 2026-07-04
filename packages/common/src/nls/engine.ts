@@ -3,9 +3,9 @@ import type { Pool } from "pg"
 import type { CommonServices } from "../services"
 import type { Tool } from "./tool"
 import { randomUUID, webcrypto } from "node:crypto"
-import { access, chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
+import { access, chmod, mkdir, readFile, rename, rm, symlink, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
-import { join } from "node:path"
+import { delimiter, join } from "node:path"
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -17,6 +17,7 @@ import { z } from "zod"
 import { createStorageBucketService, type StorageBucketService } from "../database"
 import { crypto } from "../encryption"
 import { logger } from "../logger"
+import sourceCodexModelCatalogJson from "./codex-models-0.142.5.json"
 import { type NlsMcpToolServer, startNlsMcpToolServer } from "./mcp-tool-server"
 import {
   createLanguageMemorySystemPrompt,
@@ -41,11 +42,14 @@ const CODEX_MODEL_PROVIDER_ID = "reside"
 const CODEX_MODEL_CATALOG_FILE = "model-catalog.json"
 const CODEX_DEBUG_DIR = ".tmp"
 const CODEX_DEBUG_LOG_DIR = "codex-debug-logs"
+const CODEX_PATH_DIR = "codex-path"
+const CODEX_APPLY_PATCH_ALIASES = ["apply_patch", "applypatch"]
 const CODEX_DEBUG_RUST_LOG = "warn"
 const CODEX_DEBUG_LOG_MAX_LENGTH = 100_000
 const CODEX_DEBUG_LOG_IGNORED_LINES = new Set(["Reading prompt from stdin..."])
 const COMMAND_LOG_MAX_LENGTH = 500
 const COMMAND_OUTPUT_TAIL_MAX_LENGTH = 2000
+const SOURCE_CODEX_MODEL_CATALOG = sourceCodexModelCatalogJson as CodexModelCatalog
 
 export type LanguageEngineModelTier = "light" | "smart"
 
@@ -116,46 +120,16 @@ type CodexDebugLog = {
   logPath: string
 }
 
-type CodexReasoningLevel = {
-  effort: CodexReasoningEffort
-  description: string
+type CodexPathSetup = {
+  pathDirPath: string
+  codexExecutablePath: string
+  aliasPaths: string[]
 }
 
 type CodexModelCatalogModel = {
   slug: string
-  display_name: string
-  description: string
-  default_reasoning_level: CodexReasoningEffort
-  supported_reasoning_levels: CodexReasoningLevel[]
-  shell_type: string
-  visibility: string
-  supported_in_api: boolean
-  priority: number
-  additional_speed_tiers: string[]
-  service_tiers: unknown[]
-  availability_nux: string | null
-  upgrade: string | null
-  base_instructions: string
-  model_messages: null
-  supports_reasoning_summaries: boolean
-  default_reasoning_summary: string
-  support_verbosity: boolean
-  default_verbosity: string
-  apply_patch_tool_type: string
-  web_search_tool_type: string
-  truncation_policy: {
-    mode: string
-    limit: number
-  }
-  supports_parallel_tool_calls: boolean
-  supports_image_detail_original: boolean
-  context_window: number
-  max_context_window: number
-  effective_context_window_percent: number
-  experimental_supported_tools: string[]
-  input_modalities: string[]
-  supports_search_tool: boolean
-  use_responses_lite: boolean
+  display_name?: string
+  [key: string]: unknown
 }
 
 type CodexModelCatalog = {
@@ -477,7 +451,21 @@ async function runCodexThread({
   const timeout = createIdleTimeout(idleTimeoutMs, abortController)
   const frameQueue = createFrameQueue(onFrame)
   const codexDebugLog = await createCodexDebugLog(codexHomePath)
+  const codexPathSetup = await createCodexPathDir(codexHomePath)
+  const codexEnvironment = createCodexEnvironment(
+    codexHomePath,
+    mcpServer.token,
+    codexPathSetup.pathDirPath,
+  )
+  const codexPathValue = codexEnvironment.PATH ?? codexPathSetup.pathDirPath
   const codexModelCatalogPath = await createCodexModelCatalog(codexHomePath, model)
+  logger.info(
+    'nls codex path setup session_id="%s" path_dir="%s" codex_executable="%s" aliases="%s"',
+    sessionId,
+    codexPathSetup.pathDirPath,
+    codexPathSetup.codexExecutablePath,
+    codexPathSetup.aliasPaths.join(","),
+  )
   const turnMetrics = createCodexTurnMetrics()
   const sessionStartedAt = Date.now()
   let codexThreadId = restoredThreadId
@@ -488,8 +476,8 @@ async function runCodexThread({
     const codex = new Codex({
       codexPathOverride: codexDebugLog.wrapperPath,
       apiKey,
-      env: createCodexEnvironment(codexHomePath, mcpServer.token),
-      config: createCodexConfig(mcpServer, providerBaseUrl, codexModelCatalogPath),
+      env: codexEnvironment,
+      config: createCodexConfig(mcpServer, providerBaseUrl, codexModelCatalogPath, codexPathValue),
     })
     const threadOptions = {
       model,
@@ -597,6 +585,23 @@ async function createCodexDebugLog(codexHomePath: string): Promise<CodexDebugLog
   return { wrapperPath, logPath }
 }
 
+async function createCodexPathDir(codexHomePath: string): Promise<CodexPathSetup> {
+  const pathDirPath = join(codexHomePath, CODEX_DEBUG_DIR, CODEX_PATH_DIR)
+  const codexExecutablePath = resolveCodexExecutablePath()
+  const aliasPaths: string[] = []
+
+  await mkdir(pathDirPath, { recursive: true })
+
+  for (const alias of CODEX_APPLY_PATCH_ALIASES) {
+    const aliasPath = join(pathDirPath, alias)
+    await rm(aliasPath, { force: true })
+    await symlink(codexExecutablePath, aliasPath)
+    aliasPaths.push(aliasPath)
+  }
+
+  return { pathDirPath, codexExecutablePath, aliasPaths }
+}
+
 function resolveCodexExecutablePath(): string {
   const codex = new Codex() as unknown as CodexExecutableResolver
   return codex.exec.executablePath
@@ -665,6 +670,24 @@ async function createCodexModelCatalog(codexHomePath: string, model: string): Pr
 }
 
 function createCodexModelCatalogModel(model: string): CodexModelCatalogModel {
+  const sourceModel = getSourceCodexModelCatalogModel(model)
+  const genericModel = createGenericCodexModelCatalogModel(model)
+  if (!sourceModel) {
+    logger.warn('nls codex model catalog using generic fallback requested_model="%s"', model)
+
+    return genericModel
+  }
+
+  logger.info(
+    'nls codex model catalog using generic tool config with source model metadata requested_model="%s" source_model="%s"',
+    model,
+    sourceModel.slug,
+  )
+
+  return applySourceCodexModelMetadata(genericModel, sourceModel)
+}
+
+function createGenericCodexModelCatalogModel(model: string): CodexModelCatalogModel {
   return {
     slug: model,
     display_name: model,
@@ -685,7 +708,10 @@ function createCodexModelCatalogModel(model: string): CodexModelCatalogModel {
     availability_nux: null,
     upgrade: null,
     base_instructions: "",
-    model_messages: null,
+    model_messages: {
+      instructions_template: "{{ personality }}",
+      instructions_variables: null,
+    },
     supports_reasoning_summaries: true,
     default_reasoning_summary: "none",
     support_verbosity: true,
@@ -706,6 +732,90 @@ function createCodexModelCatalogModel(model: string): CodexModelCatalogModel {
     supports_search_tool: false,
     use_responses_lite: false,
   }
+}
+
+function applySourceCodexModelMetadata(
+  model: CodexModelCatalogModel,
+  sourceModel: CodexModelCatalogModel,
+): CodexModelCatalogModel {
+  const sourceModelMessages = getRecordValue(sourceModel, "model_messages")
+  const sourceInstructionsVariables = sourceModelMessages
+    ? getRecordValue(sourceModelMessages, "instructions_variables")
+    : undefined
+
+  return {
+    ...model,
+    description: getStringValue(sourceModel, "description") ?? model.description,
+    default_reasoning_level:
+      getStringValue(sourceModel, "default_reasoning_level") ?? model.default_reasoning_level,
+    supported_reasoning_levels:
+      getArrayValue(sourceModel, "supported_reasoning_levels") ?? model.supported_reasoning_levels,
+    context_window: getNumberValue(sourceModel, "context_window") ?? model.context_window,
+    max_context_window:
+      getNumberValue(sourceModel, "max_context_window") ?? model.max_context_window,
+    supports_reasoning_summaries:
+      getBooleanValue(sourceModel, "supports_reasoning_summaries") ??
+      model.supports_reasoning_summaries,
+    default_reasoning_summary:
+      getStringValue(sourceModel, "default_reasoning_summary") ?? model.default_reasoning_summary,
+    support_verbosity: getBooleanValue(sourceModel, "support_verbosity") ?? model.support_verbosity,
+    default_verbosity: getStringValue(sourceModel, "default_verbosity") ?? model.default_verbosity,
+    model_messages: {
+      instructions_template: "{{ personality }}",
+      instructions_variables: sourceInstructionsVariables ?? null,
+    },
+  }
+}
+
+function getRecordValue(
+  source: Record<string, unknown>,
+  key: string,
+): Record<string, unknown> | undefined {
+  const value = source[key]
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined
+  }
+
+  return value as Record<string, unknown>
+}
+
+function getStringValue(source: Record<string, unknown>, key: string): string | undefined {
+  const value = source[key]
+
+  return typeof value === "string" ? value : undefined
+}
+
+function getNumberValue(source: Record<string, unknown>, key: string): number | undefined {
+  const value = source[key]
+
+  return typeof value === "number" ? value : undefined
+}
+
+function getBooleanValue(source: Record<string, unknown>, key: string): boolean | undefined {
+  const value = source[key]
+
+  return typeof value === "boolean" ? value : undefined
+}
+
+function getArrayValue(source: Record<string, unknown>, key: string): unknown[] | undefined {
+  const value = source[key]
+
+  return Array.isArray(value) ? value : undefined
+}
+
+function getSourceCodexModelCatalogModel(model: string): CodexModelCatalogModel | undefined {
+  const modelSlug = getCodexModelSlugSuffix(model)
+
+  return SOURCE_CODEX_MODEL_CATALOG.models.find(sourceModel => sourceModel.slug === modelSlug)
+}
+
+function getCodexModelSlugSuffix(model: string): string {
+  const separatorIndex = model.lastIndexOf("/")
+  if (separatorIndex === -1) {
+    return model
+  }
+
+  return model.slice(separatorIndex + 1)
 }
 
 async function handleCodexEvent({
@@ -1071,12 +1181,32 @@ function createCodexConfig(
   mcpServer: NlsMcpToolServer,
   providerBaseUrl: string,
   modelCatalogPath: string,
+  pathValue: string,
 ): CodexConfigObject {
   return {
     approval_policy: "never",
     sandbox_mode: "danger-full-access",
+    analytics: {
+      enabled: false,
+    },
+    feedback: {
+      enabled: false,
+    },
+    features: {
+      apply_patch_freeform: true,
+      plugins: false,
+      plugin_sharing: false,
+      remote_plugin: false,
+    },
+    experimental_use_freeform_apply_patch: true,
+    include_apply_patch_tool: true,
     model_catalog_json: modelCatalogPath,
     model_provider: CODEX_MODEL_PROVIDER_ID,
+    shell_environment_policy: {
+      set: {
+        PATH: pathValue,
+      },
+    },
     model_providers: {
       [CODEX_MODEL_PROVIDER_ID]: {
         name: "ReSide LLM",
@@ -1104,7 +1234,11 @@ function createCodexConfig(
   }
 }
 
-function createCodexEnvironment(codexHomePath: string, mcpToken: string): Record<string, string> {
+function createCodexEnvironment(
+  codexHomePath: string,
+  mcpToken: string,
+  pathDirPath: string,
+): Record<string, string> {
   const env: Record<string, string> = {}
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined) {
@@ -1112,10 +1246,15 @@ function createCodexEnvironment(codexHomePath: string, mcpToken: string): Record
     }
   }
 
+  env.PATH = prependPathEntry(pathDirPath, env.PATH)
   env.CODEX_HOME = codexHomePath
   env[MCP_TOKEN_ENV_VAR] = mcpToken
 
   return env
+}
+
+function prependPathEntry(pathEntry: string, pathValue: string | undefined): string {
+  return pathValue ? `${pathEntry}${delimiter}${pathValue}` : pathEntry
 }
 
 function getNlsRootPath(): string {

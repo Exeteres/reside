@@ -2,13 +2,19 @@
   "name": "reside",
   "type": "module",
   "private": true,
-  "workspaces": ["apps/*", "packages/*", "replicas/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "replicas/*",
+    ".opencode/skills/reside-core",
+    ".opencode/skills/reside-replica",
+    ".opencode/skills/reside-changes",
+    ".opencode/plugins/skill-enforcement"
+  ],
   "scripts": {
-    "ci:check-and-fix": "CI=1 nx run-many -t typecheck,biome,test",
-    "ci:check": "CI=1 nx run-many -t typecheck,biome:check,test",
-    "ci:publish": "CI=1 nx run-many -t publish",
-    "format": "nx run-many -t biome",
-    "scaffold:replica": "bun scripts/scaffold-replica.ts"
+    "ci:check-and-fix": "CI=1 nx run-many -t check:skills,typecheck,biome,test",
+    "ci:check": "CI=1 nx run-many -t check:skills,typecheck,biome:check,test",
+    "ci:publish": "CI=1 nx run-many -t publish"
   },
   "catalog": {
     "@fastify/otel": "^0.18.1",

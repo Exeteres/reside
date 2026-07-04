@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "create-opencode-plugin": {
+      "source": "igorwarzocha/opencode-workflows",
+      "sourceType": "github",
+      "skillPath": "agents/create-opencode-plugin/.opencode/skill/create-opencode-plugin/SKILL.md",
+      "computedHash": "529e5be309532437e4c444198d365f6f53904fa88e045a4de8c1c83cffc73f42"
+    }
+  }
+}
