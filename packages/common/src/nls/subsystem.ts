@@ -370,7 +370,14 @@ async function classifyShouldContinueLastSession(prompt: string): Promise<boolea
       return false
     }
 
-    return sessionClassificationSchema.parse(JSON.parse(content)).action === "continue"
+    const classification = sessionClassificationSchema.parse(JSON.parse(content))
+    logger.info(
+      'nls session continuation classified action="%s" prompt_length="%s"',
+      classification.action,
+      String(prompt.length),
+    )
+
+    return classification.action === "continue"
   } catch (error) {
     logger.warn({ error: normalizeError(error) }, "nls session continuation classification failed")
 

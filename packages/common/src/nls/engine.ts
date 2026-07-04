@@ -9,7 +9,7 @@ import type { Pool } from "pg"
 import type { CommonServices } from "../services"
 import type { Tool } from "./tool"
 import { randomUUID, webcrypto } from "node:crypto"
-import { access, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
+import { access, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import {
@@ -285,6 +285,7 @@ export async function createLanguageEngine(
           opencodeConfig,
           providerBaseUrl: llmSecret.endpoint,
           apiKey: llmSecret["api-key"],
+          homeDir: opencodeStatePath,
           workingDirectory: sessionWorkingDirectory,
           reasoningEffort: args.reasoningEffort,
           prompt: buildOpenCodePrompt({
@@ -395,6 +396,7 @@ async function runOpenCodeSession({
   opencodeConfig,
   providerBaseUrl,
   apiKey,
+  homeDir,
   workingDirectory,
   reasoningEffort,
   prompt,
@@ -413,6 +415,7 @@ async function runOpenCodeSession({
   opencodeConfig: Config
   providerBaseUrl: string
   apiKey: string
+  homeDir: string
   workingDirectory: string
   reasoningEffort?: LanguageEngineReasoningEffort
   prompt: string
@@ -441,6 +444,7 @@ async function runOpenCodeSession({
   const restoreEnvironment = setOpenCodeEnvironment({
     providerBaseUrl,
     apiKey,
+    homeDir,
   })
   let eventWatcher: Promise<void> | undefined
   const opencode = await createOpencode({
@@ -596,18 +600,23 @@ function createOpenCodeSessionConfig(
 function setOpenCodeEnvironment({
   providerBaseUrl,
   apiKey,
+  homeDir,
 }: {
   providerBaseUrl: string
   apiKey: string
+  homeDir: string
 }): () => void {
   const previousEndpoint = process.env[RESIDE_LLM_ENDPOINT_ENV_VAR]
   const previousApiKey = process.env[RESIDE_LLM_API_KEY_ENV_VAR]
+  const previousHome = process.env.HOME
   process.env[RESIDE_LLM_ENDPOINT_ENV_VAR] = providerBaseUrl
   process.env[RESIDE_LLM_API_KEY_ENV_VAR] = apiKey
+  process.env.HOME = homeDir
 
   return () => {
     restoreEnvironmentValue(RESIDE_LLM_ENDPOINT_ENV_VAR, previousEndpoint)
     restoreEnvironmentValue(RESIDE_LLM_API_KEY_ENV_VAR, previousApiKey)
+    restoreEnvironmentValue("HOME", previousHome)
   }
 }
 
@@ -1202,7 +1211,7 @@ function createStorageBucketServiceFromCredentials(
   }
 }
 
-async function restoreSessionArchive(
+export async function restoreSessionArchive(
   storageBucketService: StorageBucketService,
   sessionDirPath: string,
   sessionPrefix: string,
@@ -1210,6 +1219,7 @@ async function restoreSessionArchive(
 ): Promise<string | undefined> {
   const archiveKey = getSessionArchiveKey(sessionPrefix, sessionStorageId)
   const archivePath = join(sessionDirPath, `session.${NLS_SESSION_ARCHIVE_EXTENSION}`)
+  await mkdir(sessionDirPath, { recursive: true })
 
   try {
     const object = await storageBucketService.client.send(
@@ -1246,12 +1256,17 @@ async function restoreSessionArchive(
     await rm(archivePath, { force: true })
 
     return sessionId
-  } catch {
+  } catch (error) {
+    logger.warn(
+      { error: normalizeError(error) },
+      'nls session archive restore failed key="%s"',
+      archiveKey,
+    )
     return undefined
   }
 }
 
-async function uploadSessionArchive(
+export async function uploadSessionArchive(
   storageBucketService: StorageBucketService,
   sessionDirPath: string,
   sessionPrefix: string,
@@ -1266,10 +1281,15 @@ async function uploadSessionArchive(
     return false
   }
 
+  if (!(await hasDirectoryContent(sessionStatePath))) {
+    return false
+  }
+
   const archivePath = join(
     getNlsRootPath(),
     `session-upload-${sanitizeFilePart(sessionStorageId)}.${NLS_SESSION_ARCHIVE_EXTENSION}`,
   )
+  await mkdir(getNlsRootPath(), { recursive: true })
 
   await runCommand([
     "tar",
@@ -1298,6 +1318,25 @@ async function uploadSessionArchive(
   return true
 }
 
+async function hasDirectoryContent(path: string): Promise<boolean> {
+  const entries = await readdir(path, { withFileTypes: true })
+  for (const entry of entries) {
+    if (entry.name === ".tmp") {
+      continue
+    }
+
+    if (entry.isFile()) {
+      return true
+    }
+
+    if (entry.isDirectory() && (await hasDirectoryContent(join(path, entry.name)))) {
+      return true
+    }
+  }
+
+  return false
+}
+
 async function clearSessionArchive(
   storageBucketService: StorageBucketService,
   sessionDirPath: string,
@@ -1309,6 +1348,7 @@ async function clearSessionArchive(
     getNlsRootPath(),
     `session-clear-${sanitizeFilePart(sessionStorageId)}.${NLS_SESSION_ARCHIVE_EXTENSION}`,
   )
+  await mkdir(getNlsRootPath(), { recursive: true })
 
   try {
     const object = await storageBucketService.client.send(
@@ -1364,14 +1404,18 @@ async function readSessionIdFromArchive(archivePath: string): Promise<string | u
   }
 
   const [candidate] = uniqueEntries
-  if (
-    !candidate ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)
-  ) {
+  if (!candidate || !isValidArchivedSessionId(candidate)) {
     return undefined
   }
 
   return candidate
+}
+
+function isValidArchivedSessionId(sessionId: string): boolean {
+  return (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId) ||
+    /^ses_[a-zA-Z0-9]+$/.test(sessionId)
+  )
 }
 
 function ensureWebCryptoGlobals(): void {
