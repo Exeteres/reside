@@ -20,6 +20,7 @@ description: Use when operating in an interactive ReSide repository session with
 ## Hard Rules
 
 - If you discover that something changed after your edits, keep the new user-provided changes and do not revert them.
+- When the user corrects you and the correction is not context-specific and can be represented as a general rule, immediately add a todo item to update the relevant skill with that rule, continue the current task, and update the skill after the task is done.
 - If LSP gives an error but you are sure it is a false positive, run the relevant `typecheck` script to verify.
 - Follow `reside-core` command rules for repository-wide command restrictions.
 
