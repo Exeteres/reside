@@ -964,6 +964,7 @@ async function upsertTelegramUser(
       id: true,
       telegramUserIdEcid: true,
       usernameEcid: true,
+      usernameRhid: true,
       firstNameEcid: true,
       lastNameEcid: true,
     },
@@ -975,6 +976,7 @@ async function upsertTelegramUser(
         telegramRhid,
         telegramUserIdEcid: await crypto.encrypt(telegramUserId),
         usernameEcid: username === undefined ? null : await crypto.encrypt(username),
+        usernameRhid: username === undefined ? null : rhid(username.toLowerCase()),
         firstNameEcid: firstName === undefined ? null : await crypto.encrypt(firstName),
         lastNameEcid: lastName === undefined ? null : await crypto.encrypt(lastName),
       },
@@ -987,6 +989,7 @@ async function upsertTelegramUser(
   const updateData: {
     telegramUserIdEcid?: string
     usernameEcid?: string | null
+    usernameRhid?: string | null
     firstNameEcid?: string | null
     lastNameEcid?: string | null
   } = {}
@@ -1002,6 +1005,9 @@ async function upsertTelegramUser(
   const currentUsername = await decryptOptionalString(crypto, existingUser.usernameEcid)
   if (currentUsername !== username) {
     updateData.usernameEcid = username === undefined ? null : await crypto.encrypt(username)
+    updateData.usernameRhid = username === undefined ? null : rhid(username.toLowerCase())
+  } else if (username !== undefined && existingUser.usernameRhid === null) {
+    updateData.usernameRhid = rhid(username.toLowerCase())
   }
 
   const currentFirstName = await decryptOptionalString(crypto, existingUser.firstNameEcid)

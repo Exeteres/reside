@@ -11,7 +11,11 @@ describe("replaceUserReferencesWithSubjectIds", () => {
     const aliceUsernameEcid = await testCrypto.encrypt("alice_user")
     const bobUsernameEcid = await testCrypto.encrypt("bob_user")
 
-    prisma.user.findUnique.mockResolvedValue({ id: 30 } as never)
+    prisma.user.findUnique
+      .mockResolvedValueOnce({ id: 30 } as never)
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValue(null as never)
     prisma.user.findMany.mockResolvedValue([
       { id: 10, usernameEcid: aliceUsernameEcid },
       { id: 20, usernameEcid: bobUsernameEcid },
@@ -24,6 +28,21 @@ describe("replaceUserReferencesWithSubjectIds", () => {
     })
 
     expect(result).toBe("ask telegram:10 telegram:20 telegram:30")
+  })
+
+  test("uses username rhid lookup before decrypting existing username ecids", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+
+    prisma.user.findUnique.mockResolvedValue({ id: 10 } as never)
+
+    const result = await replaceUserReferencesWithSubjectIds({
+      crypto: testCrypto,
+      prisma,
+      text: "ask @alice_user",
+    })
+
+    expect(result).toBe("ask telegram:10")
+    expect(prisma.user.findMany.spy()).toHaveBeenCalledTimes(0)
   })
 
   test("does not replace references embedded into other text", async () => {

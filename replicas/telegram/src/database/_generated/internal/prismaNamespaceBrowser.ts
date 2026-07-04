@@ -369,6 +369,7 @@ export const UserScalarFieldEnum = {
   telegramRhid: 'telegramRhid',
   telegramUserIdEcid: 'telegramUserIdEcid',
   usernameEcid: 'usernameEcid',
+  usernameRhid: 'usernameRhid',
   firstNameEcid: 'firstNameEcid',
   lastNameEcid: 'lastNameEcid',
   createdAt: 'createdAt',

@@ -62,6 +62,25 @@ async function resolveUserReferenceReplacements(
     return replacements
   }
 
+  for (const [normalizedUsername, originalValue] of usernameValues) {
+    const user = await args.prisma.user.findUnique({
+      where: {
+        usernameRhid: rhid(normalizedUsername),
+      },
+      select: {
+        id: true,
+      },
+    })
+    if (user !== null) {
+      replacements.set(originalValue, toTelegramSubjectId(user.id))
+      usernameValues.delete(normalizedUsername)
+    }
+  }
+
+  if (usernameValues.size === 0) {
+    return replacements
+  }
+
   const users = await args.prisma.user.findMany({
     where: {
       usernameEcid: {
