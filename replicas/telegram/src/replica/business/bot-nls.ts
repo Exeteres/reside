@@ -177,6 +177,7 @@ export async function handleNlsMessage(args: {
       isMention: args.mentionedUsername !== undefined,
       isReplyToTrackedAvatarMessage: repliedMessageRhid !== undefined,
     })
+    const shouldSendContinuationNotice = sessionReference?.case === "lastSessionId"
     const previousSessionId = interaction.sessionId
     const previousMessageLink = await decryptOptionalString(
       args.crypto,
@@ -203,6 +204,7 @@ export async function handleNlsMessage(args: {
             chatId: args.chatId,
             replyToMessageId: args.message.message_id,
             replicaTitle: await resolveReplicaTitle(args.prisma, interaction.replicaName),
+            shouldSend: shouldSendContinuationNotice,
             previousSessionId,
             previousMessageLink,
             sessionId,
@@ -244,6 +246,7 @@ export async function handleNlsMessage(args: {
       chatId: args.chatId,
       replyToMessageId: args.message.message_id,
       replicaTitle: await resolveReplicaTitle(args.prisma, interaction.replicaName),
+      shouldSend: shouldSendContinuationNotice,
       previousSessionId,
       previousMessageLink,
       sessionId: result.sessionId,
@@ -927,11 +930,13 @@ async function sendContinuationNoticeIfNeeded(args: {
   chatId: number
   replyToMessageId: number
   replicaTitle: string
+  shouldSend: boolean
   previousSessionId: string | null
   previousMessageLink: string | null
   sessionId: string
 }): Promise<void> {
   if (
+    !args.shouldSend ||
     !args.previousSessionId ||
     args.previousSessionId !== args.sessionId ||
     !args.previousMessageLink

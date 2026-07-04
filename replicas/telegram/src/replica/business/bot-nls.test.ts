@@ -394,6 +394,150 @@ describe("handleNlsMessage", () => {
     expect(createTelegramBotClient).toHaveBeenCalledTimes(2)
   })
 
+  test("does not send continuation notice for explicit reply continuation", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const discoveryService = mockDeepFn<DiscoveryServiceClient>()
+    const authzService = mockDeepFn<AuthzServiceClient>()
+    const permissionRequestService = mockDeepFn<PermissionRequestServiceClient>()
+    const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
+    const telegramBot = mockDeepFn<TelegramBotLike>()
+
+    mockTelegramChat(prisma)
+    prisma.naturalLanguageInteractionMessage.findUnique.mockResolvedValue({
+      sender: "AVATAR",
+      interaction: {
+        id: 1,
+        replicaName: "engineer",
+        sessionId: "session-1",
+        lastMessageLinkEcid: await testCrypto.encrypt("t.me/c/10/29"),
+        user: {
+          id: 55,
+          telegramRhid: rhid("20"),
+        },
+      },
+    } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    authzService.checkPermission.mockResolvedValue({ authorized: true } as never)
+    discoveryService.getSubjectEndpoint.mockResolvedValue({ endpoint: "http://engineer" } as never)
+    nlsClient.askStream.mockImplementation(async function* () {
+      yield {
+        text: "",
+        sessionId: "session-1",
+      } as never
+      yield {
+        text: "ok",
+        reset: true,
+        sessionId: "session-1",
+      } as never
+    })
+    telegramBot.api.sendMessageDraft.mockResolvedValue(true as never)
+    telegramBot.api.sendMessage.mockResolvedValue({ message_id: 31 } as never)
+
+    await handleNlsMessage({
+      prisma,
+      discoveryService,
+      authzService,
+      permissionRequestService,
+      crypto: testCrypto,
+      getNaturalLanguageClient: () => nlsClient,
+      createTelegramBotClient: (() => telegramBot) as never,
+      managerToken: "manager-token",
+      chatId: 10,
+      userId: 20,
+      message: {
+        message_id: 30,
+        reply_to_message: {
+          message_id: 29,
+        },
+      },
+      text: "hello",
+      mentionedUsername: undefined,
+    })
+
+    expect(nlsClient.askStream.spy()).toHaveBeenCalledWith({
+      text: "hello",
+      subjectId: "telegram:20",
+      subjectInfo: { telegram_subject_rhid: rhid("telegram:20") },
+      sessionReference: { case: "sessionId", value: "session-1" },
+    })
+    expect(telegramBot.api.sendMessage.spy()).toHaveBeenCalledTimes(1)
+    expect(telegramBot.api.sendMessage.spy()).toHaveBeenCalledWith(10, "ok", expect.anything())
+  })
+
+  test("sends continuation notice for classifier continuation", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const discoveryService = mockDeepFn<DiscoveryServiceClient>()
+    const authzService = mockDeepFn<AuthzServiceClient>()
+    const permissionRequestService = mockDeepFn<PermissionRequestServiceClient>()
+    const nlsClient = mockDeepFn<NaturalLanguageServiceClient>()
+    const telegramBot = mockDeepFn<TelegramBotLike>()
+
+    mockTelegramChat(prisma)
+    prisma.avatar.findFirst.mockResolvedValue({ replicaName: "engineer" } as never)
+    prisma.user.findUnique.mockResolvedValue({ id: 55, telegramRhid: rhid("20") } as never)
+    prisma.naturalLanguageInteraction.upsert.mockResolvedValue({
+      id: 1,
+      sessionId: "session-1",
+      lastMessageLinkEcid: await testCrypto.encrypt("t.me/c/10/29"),
+    } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    authzService.checkPermission.mockResolvedValue({ authorized: true } as never)
+    discoveryService.getSubjectEndpoint.mockResolvedValue({ endpoint: "http://engineer" } as never)
+    nlsClient.askStream.mockImplementation(async function* () {
+      yield {
+        text: "",
+        sessionId: "session-1",
+      } as never
+      yield {
+        text: "ok",
+        reset: true,
+        sessionId: "session-1",
+      } as never
+    })
+    telegramBot.api.sendMessageDraft.mockResolvedValue(true as never)
+    telegramBot.api.sendMessage.mockResolvedValue({ message_id: 31 } as never)
+
+    await handleNlsMessage({
+      prisma,
+      discoveryService,
+      authzService,
+      permissionRequestService,
+      crypto: testCrypto,
+      getNaturalLanguageClient: () => nlsClient,
+      createTelegramBotClient: (() => telegramBot) as never,
+      managerToken: "manager-token",
+      chatId: 10,
+      userId: 20,
+      message: {
+        message_id: 30,
+      },
+      text: "hello",
+      mentionedUsername: "engineer_bot",
+    })
+
+    expect(nlsClient.askStream.spy()).toHaveBeenCalledWith({
+      text: "hello",
+      subjectId: "telegram:20",
+      subjectInfo: {
+        telegram_subject_rhid: rhid("telegram:20"),
+      },
+      sessionReference: { case: "lastSessionId", value: "session-1" },
+    })
+    expect(telegramBot.api.sendMessage.spy()).toHaveBeenCalledTimes(2)
+    expect(telegramBot.api.sendMessage.spy()).toHaveBeenNthCalledWith(
+      1,
+      10,
+      'engineer решила продолжить предыдущий <a href="https://t.me/c/10/29">диалог</a>',
+      expect.anything(),
+    )
+    expect(telegramBot.api.sendMessage.spy()).toHaveBeenNthCalledWith(
+      2,
+      10,
+      "ok",
+      expect.anything(),
+    )
+  })
+
   test("renders markdown in authorized nls replies before sending telegram html", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     const discoveryService = mockDeepFn<DiscoveryServiceClient>()
