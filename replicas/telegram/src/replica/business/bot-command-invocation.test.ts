@@ -24,6 +24,7 @@ describe("handleCommandInvocation", () => {
       getCommandHandlerClient: () => commandHandlerClient,
       chatId: 1,
       userId: 2,
+      subjectUserId: 20,
       messageId: 3,
       text: "hello",
       interactionContext: {
@@ -54,6 +55,7 @@ describe("handleCommandInvocation", () => {
       getCommandHandlerClient: () => commandHandlerClient,
       chatId: 1,
       userId: 2,
+      subjectUserId: 20,
       messageId: 3,
       text: "/missing",
       interactionContext: {
@@ -96,6 +98,7 @@ describe("handleCommandInvocation", () => {
       getCommandHandlerClient: () => commandHandlerClient,
       chatId: 1,
       userId: 2,
+      subjectUserId: 20,
       messageId: 3,
       text: "/deploy",
       interactionContext: {
@@ -138,6 +141,7 @@ describe("handleCommandInvocation", () => {
       getCommandHandlerClient: () => commandHandlerClient,
       chatId: 1,
       userId: 2,
+      subjectUserId: 20,
       messageId: 3,
       text: "/deploy",
       interactionContext: {
@@ -187,6 +191,7 @@ describe("handleCommandInvocation", () => {
       getCommandHandlerClient: () => commandHandlerClient,
       chatId: 1,
       userId: 2,
+      subjectUserId: 20,
       messageId: 3,
       text: "/deploy nope",
       interactionContext: {
@@ -228,6 +233,7 @@ describe("handleCommandInvocation", () => {
       getCommandHandlerClient: () => commandHandlerClient,
       chatId: 1,
       userId: 2,
+      subjectUserId: 20,
       messageId: 3,
       text: "/deploy",
       interactionContext: {
@@ -285,6 +291,7 @@ describe("handleCommandInvocation", () => {
       getCommandHandlerClient: () => commandHandlerClient,
       chatId: 1,
       userId: 2,
+      subjectUserId: 20,
       messageId: 3,
       text: "/deploy 42 true",
       interactionContext: {

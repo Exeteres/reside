@@ -11,7 +11,6 @@ import type { PrismaClient } from "../../database"
 import { fromJson } from "@bufbuild/protobuf"
 import { CommandInvocationSchema } from "@reside/api/interaction/command.v1"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
-import { rhid } from "@reside/common"
 import { encryptedStringSchema } from "../../definitions"
 import { strings } from "../../locale"
 import { canInvokeCommand, requestCommandInvokePermission } from "./authorization"
@@ -21,6 +20,7 @@ import {
   parseStoredCommandParameters,
 } from "./bot-command"
 import { mapReplicaCallErrorMessage } from "./bot-replica-call"
+import { resolveTelegramSubjectIdByTelegramUserId, toTelegramSubjectId } from "./subject"
 
 export type TelegramMessageEntity = {
   type: string
@@ -37,6 +37,7 @@ export async function handleCommandInvocation(args: {
   getCommandHandlerClient: (callbackEndpoint: string) => CommandHandlerServiceClient
   chatId: number
   userId: number
+  subjectUserId: number
   messageId: number
   text: string
   entities?: TelegramMessageEntity[]
@@ -68,7 +69,7 @@ export async function handleCommandInvocation(args: {
   if (commandDefinition.isProtected) {
     const permission = await canInvokeCommand({
       authzService: args.authzService,
-      userId: args.userId,
+      subjectId: toTelegramSubjectId(args.subjectUserId),
       commandName: commandDefinition.name,
     })
 
@@ -76,7 +77,7 @@ export async function handleCommandInvocation(args: {
       if (permission.checked) {
         await requestCommandInvokePermission({
           permissionRequestService: args.permissionRequestService,
-          userId: args.userId,
+          subjectId: toTelegramSubjectId(args.subjectUserId),
           commandName: commandDefinition.name,
         })
       }
@@ -125,8 +126,7 @@ export async function handleCommandInvocation(args: {
       },
       context: args.interactionContext,
       parameters: toInvocationParametersJson(await enrichInvocationParameters(args, parameters)),
-      subjectId: rhid(`telegram:${args.userId}`),
-      subjectInfo: { telegram_subject_rhid: rhid(`telegram:${args.userId}`) },
+      subjectId: toTelegramSubjectId(args.subjectUserId),
     }
 
     await args
@@ -180,11 +180,11 @@ async function enrichInvocationParameters(
 ): Promise<Record<string, unknown>> {
   const user = parameters.user
   if (typeof user !== "string" || user.length === 0) return parameters
-  const recipientSubjectRhid = await resolveRecipientSubjectRhid(args, user)
-  return recipientSubjectRhid === undefined ? parameters : { ...parameters, recipientSubjectRhid }
+  const recipientSubjectId = await resolveRecipientSubjectId(args, user)
+  return recipientSubjectId === undefined ? parameters : { ...parameters, recipientSubjectId }
 }
 
-async function resolveRecipientSubjectRhid(
+async function resolveRecipientSubjectId(
   args: {
     prisma: PrismaClient
     crypto: ResideCrypto
@@ -197,19 +197,17 @@ async function resolveRecipientSubjectRhid(
   const mention = args.entities?.find(
     entity => entity.type === "text_mention" && entity.user?.id !== undefined,
   )
-  if (mention?.user?.id !== undefined) return rhid(`telegram:${mention.user.id}`)
+  if (mention?.user?.id !== undefined) {
+    return await resolveTelegramSubjectIdByTelegramUserId(args.prisma, mention.user.id)
+  }
   const users = await args.prisma.user.findMany({
-    select: { telegramUserIdEcid: true, usernameEcid: true },
+    select: { id: true, usernameEcid: true },
   })
   for (const candidate of users) {
     if (!candidate.usernameEcid) continue
     const username = await args.crypto.decrypt(encryptedStringSchema, candidate.usernameEcid)
     if (username.toLowerCase() === normalized) {
-      const telegramUserId = await args.crypto.decrypt(
-        encryptedStringSchema,
-        candidate.telegramUserIdEcid,
-      )
-      return rhid(`telegram:${telegramUserId}`)
+      return toTelegramSubjectId(candidate.id)
     }
   }
   return undefined

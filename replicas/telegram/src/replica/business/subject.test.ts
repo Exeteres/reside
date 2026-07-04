@@ -1,6 +1,5 @@
 import type { PrismaClient } from "../../database"
 import { describe, expect, test } from "bun:test"
-import { rhid } from "@reside/common"
 import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import {
   parseTelegramSubjectId,
@@ -12,7 +11,7 @@ process.env.REPLICA_NAME = "telegram"
 
 describe("parseTelegramSubjectId", () => {
   test("parses telegram subject id", () => {
-    expect(parseTelegramSubjectId("telegram:123")).toEqual({ userId: "123" })
+    expect(parseTelegramSubjectId("telegram:123")).toEqual({ id: 123 })
   })
 
   test("returns null for invalid realm", () => {
@@ -42,7 +41,6 @@ describe("resolveTelegramSubjectDisplayInfo", () => {
     const usernameEcid = await testCrypto.encrypt("nick")
 
     prisma.user.findUnique.mockResolvedValue({
-      telegramRhid: rhid("123"),
       telegramUserIdEcid,
       usernameEcid,
       firstNameEcid: null,
@@ -56,7 +54,7 @@ describe("resolveTelegramSubjectDisplayInfo", () => {
     expect(prisma.user.findUnique.spy()).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          telegramRhid: rhid("123"),
+          id: 123,
         },
       }),
     )
@@ -66,7 +64,7 @@ describe("resolveTelegramSubjectDisplayInfo", () => {
     const prisma = mockDeepFn<PrismaClient>()
 
     expect(resolveTelegramSubjectDisplayInfo(testCrypto, prisma, "invalid")).rejects.toThrow(
-      'Subject ID must match format "telegram:{userId}"',
+      'Subject ID must match format "telegram:{id}"',
     )
     expect(prisma.user.findUnique.spy()).toHaveBeenCalledTimes(0)
   })

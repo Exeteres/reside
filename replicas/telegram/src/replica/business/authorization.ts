@@ -6,20 +6,17 @@ import { strings } from "../../locale"
 
 export async function canInteractWithNotificationChannel(args: {
   authzService: AuthzServiceClient
-  userId: number
+  subjectId: string
   channelName: string | null
 }): Promise<boolean> {
   if (!args.channelName) {
     return false
   }
 
-  const telegramUserId = String(args.userId)
-  const subjectId = `telegram:${telegramUserId}`
-
   try {
     const permissionCheck = await args.authzService.checkPermission({
       permissionName: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_INTERACT,
-      subjectId,
+      subjectId: args.subjectId,
       scope: args.channelName,
     })
 
@@ -27,10 +24,9 @@ export async function canInteractWithNotificationChannel(args: {
   } catch (error) {
     logger.warn(
       {
-        userId: telegramUserId,
-        subjectId,
+        subjectId: args.subjectId,
         channelName: args.channelName,
-        error: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error : new Error(String(error)),
       },
       "failed to check notification interaction permission",
     )
@@ -41,16 +37,13 @@ export async function canInteractWithNotificationChannel(args: {
 
 export async function canManageNotificationChannel(args: {
   authzService: AuthzServiceClient
-  userId: number
+  subjectId: string
   channelName: string
 }): Promise<boolean> {
-  const telegramUserId = String(args.userId)
-  const subjectId = `telegram:${telegramUserId}`
-
   try {
     const permissionCheck = await args.authzService.checkPermission({
       permissionName: WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_MANAGE,
-      subjectId,
+      subjectId: args.subjectId,
       scope: args.channelName,
     })
 
@@ -58,10 +51,9 @@ export async function canManageNotificationChannel(args: {
   } catch (error) {
     logger.warn(
       {
-        userId: telegramUserId,
-        subjectId,
+        subjectId: args.subjectId,
         channelName: args.channelName,
-        error: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error : new Error(String(error)),
       },
       "failed to check notification channel manage permission",
     )
@@ -72,19 +64,16 @@ export async function canManageNotificationChannel(args: {
 
 export async function canInvokeCommand(args: {
   authzService: AuthzServiceClient
-  userId: number
+  subjectId: string
   commandName: string
 }): Promise<{
   authorized: boolean
   checked: boolean
 }> {
-  const telegramUserId = String(args.userId)
-  const subjectId = `telegram:${telegramUserId}`
-
   try {
     const permissionCheck = await args.authzService.checkPermission({
       permissionName: WellKnownPermissions.TELEGRAM_COMMAND_INVOKE,
-      subjectId,
+      subjectId: args.subjectId,
       scope: args.commandName,
     })
 
@@ -95,10 +84,9 @@ export async function canInvokeCommand(args: {
   } catch (error) {
     logger.warn(
       {
-        userId: telegramUserId,
-        subjectId,
+        subjectId: args.subjectId,
         commandName: args.commandName,
-        error: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error : new Error(String(error)),
       },
       "failed to check command invoke permission",
     )
@@ -112,16 +100,15 @@ export async function canInvokeCommand(args: {
 
 export async function requestCommandInvokePermission(args: {
   permissionRequestService: PermissionRequestServiceClient
-  userId: number
+  subjectId: string
   commandName: string
 }): Promise<void> {
-  const subjectId = `telegram:${args.userId}`
   const permissionName = WellKnownPermissions.TELEGRAM_COMMAND_INVOKE
   const permissionSetName = `auto-request:${permissionName}:${args.commandName}`
 
   try {
     await args.permissionRequestService.requestPermissions({
-      subjectId,
+      subjectId: args.subjectId,
       reason: strings.worker.authorization.autoRequestReason(args.commandName),
       permissionSetName,
       items: [
@@ -134,12 +121,11 @@ export async function requestCommandInvokePermission(args: {
   } catch (error) {
     logger.warn(
       {
-        userId: args.userId,
-        subjectId,
+        subjectId: args.subjectId,
         commandName: args.commandName,
         permissionName,
         permissionSetName,
-        error: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error : new Error(String(error)),
       },
       "failed to auto-request command invoke permission",
     )
@@ -148,16 +134,15 @@ export async function requestCommandInvokePermission(args: {
 
 export async function requestNotificationChannelInteractPermission(args: {
   permissionRequestService: PermissionRequestServiceClient
-  userId: number
+  subjectId: string
   channelName: string
 }): Promise<void> {
-  const subjectId = `telegram:${args.userId}`
   const permissionName = WellKnownPermissions.TELEGRAM_NOTIFICATION_CHANNEL_INTERACT
   const permissionSetName = `auto-request:${permissionName}:${args.channelName}`
 
   try {
     await args.permissionRequestService.requestPermissions({
-      subjectId,
+      subjectId: args.subjectId,
       reason: strings.worker.authorization.autoRequestNotificationInteractReason(args.channelName),
       permissionSetName,
       items: [
@@ -170,12 +155,11 @@ export async function requestNotificationChannelInteractPermission(args: {
   } catch (error) {
     logger.warn(
       {
-        userId: args.userId,
-        subjectId,
+        subjectId: args.subjectId,
         channelName: args.channelName,
         permissionName,
         permissionSetName,
-        error: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error : new Error(String(error)),
       },
       "failed to auto-request notification interaction permission",
     )

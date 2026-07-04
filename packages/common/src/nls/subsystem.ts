@@ -24,7 +24,6 @@ import { authenticate } from "../auth"
 import { crypto } from "../encryption"
 import { getReplicaName } from "../kubernetes"
 import { logger } from "../logger"
-import { rhid } from "../rhid"
 import { registerGracefulShutdown } from "../utils"
 import {
   createLanguageEngine,
@@ -129,19 +128,19 @@ function createNaturalLanguageService(
 ): NaturalLanguageServiceImplementation {
   return {
     async ask(request, context: HandlerContext) {
-      const { subjectId, prompt, subjectInfo, sessionReference } = await authorizeAskRequest(
+      const { subjectId, prompt, sessionReference } = await authorizeAskRequest(
         services,
         request,
         context,
       )
       const sessionId = await resolveRequestSessionId(prompt, sessionReference)
       const text = await subsystem.ask(sessionId, prompt, {
-        systemPrompt: await buildRequestSystemPrompt(subjectId, subjectInfo),
+        systemPrompt: buildRequestSystemPrompt(subjectId),
       })
       return create(AskResponseSchema, { text, sessionId })
     },
     async *askStream(request, context: HandlerContext) {
-      const { subjectId, prompt, subjectInfo, sessionReference } = await authorizeAskRequest(
+      const { subjectId, prompt, sessionReference } = await authorizeAskRequest(
         services,
         request,
         context,
@@ -172,7 +171,7 @@ function createNaturalLanguageService(
             notifyQueue()
           },
           {
-            systemPrompt: await buildRequestSystemPrompt(subjectId, subjectInfo),
+            systemPrompt: buildRequestSystemPrompt(subjectId),
           },
         )
         .catch(error => {
@@ -222,7 +221,6 @@ async function authorizeAskRequest(
   request: {
     text: string
     subjectId?: string
-    subjectInfo?: Record<string, string>
     sessionReference: {
       case: "sessionId" | "lastSessionId" | undefined
       value?: string
@@ -232,7 +230,6 @@ async function authorizeAskRequest(
 ): Promise<{
   subjectId: string
   prompt: string
-  subjectInfo: Record<string, string>
   sessionReference: NlsSessionReference
 }> {
   const requester = await authenticate(context)
@@ -280,12 +277,9 @@ async function authorizeAskRequest(
     throw new ConnectError("text must not be empty", Code.InvalidArgument)
   }
 
-  const subjectInfo = request.subjectInfo ?? {}
-
   return {
     subjectId: effectiveFromSubjectId,
     prompt,
-    subjectInfo,
     sessionReference: parseSessionReference(request.sessionReference),
   }
 }
@@ -476,40 +470,14 @@ function buildReplicaSystemPrompt(args: {
   ].join("\n")
 }
 
-async function buildRequestSystemPrompt(
-  subjectId: string,
-  subjectInfo: Record<string, string>,
-): Promise<string> {
-  const subjectContext =
-    splitSubjectId(subjectId).realm === "replica" ? subjectId : hashSubjectId(subjectId)
-  const subjectInfoLines = Object.entries(subjectInfo)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `- ${key}: ${value}`)
-
+function buildRequestSystemPrompt(subjectId: string): string {
   return [
     "Current interaction context:",
-    `- Subject ID for this interaction: ${subjectContext}`,
-    "- If the subject ID is an RHID, treat it as an opaque stable identifier for this user in this replica and never claim to know the underlying plaintext subject.",
+    `- Subject ID for this interaction: ${subjectId}`,
     "- If your answer can use ECIDs directly without complex transformations, reply naturally as if you know the value and provide ECIDs in place of plaintext values.",
     "- For simple identity-style questions (for example: who is them), answer directly using the available ECID-based references instead of saying that the value is inaccessible.",
-    "- Subject info provided by the caller (list all keys and values exactly as provided):",
-    ...(subjectInfoLines.length > 0 ? subjectInfoLines : ["- none"]),
+    "- If you mention a subject, include its subject ID as an isolated word, for example: Subject: telegram:1.",
   ].join("\n")
-}
-
-function hashSubjectId(subjectId: string): string {
-  try {
-    return rhid(subjectId)
-  } catch (error) {
-    logger.warn(
-      {
-        error: normalizeError(error),
-      },
-      "nls could not hash interaction subject id",
-    )
-
-    return "unavailable"
-  }
 }
 
 function createAskReplicaTool(args: {

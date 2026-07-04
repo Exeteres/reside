@@ -134,6 +134,14 @@ export const ru = {
 
 - Load `reside-operations` for operation model, callback payload, API subscription, and operation migration rules.
 
+## Subject Identity And Display
+
+- Telegram subject IDs use the format `telegram:{id}`, where `{id}` is the Telegram replica database `User.id`, not a Telegram platform user ID.
+- Canonical Telegram subject IDs are not private and must not be wrapped in RHIDs.
+- When a field or parameter previously contained an RHID and now contains a canonical subject ID, rename it from `*Rhid` to `*Id`.
+- Replicas should pass displayable subject references as isolated subject ID words, for example `Subject: telegram:1` or `Subject: replica:alpha`.
+- Telegram-facing display titles are resolved at the Telegram replica output boundary; other replicas should not pre-render subject titles for Telegram messages.
+
 ## API and Schema Generation
 
 - Load `reside-api` for protocol changes.

@@ -17,7 +17,7 @@ describe("canInteractWithNotificationChannel", () => {
 
     const allowed = await canInteractWithNotificationChannel({
       authzService,
-      userId: 1,
+      subjectId: "telegram:1",
       channelName: null,
     })
 
@@ -31,7 +31,7 @@ describe("canInteractWithNotificationChannel", () => {
 
     const allowed = await canInteractWithNotificationChannel({
       authzService,
-      userId: 1,
+      subjectId: "telegram:1",
       channelName: "alerts",
     })
 
@@ -45,7 +45,7 @@ describe("canInteractWithNotificationChannel", () => {
 
     const allowed = await canInteractWithNotificationChannel({
       authzService,
-      userId: 1,
+      subjectId: "telegram:1",
       channelName: "alerts",
     })
 
@@ -60,7 +60,7 @@ describe("canInvokeCommand", () => {
 
     const result = await canInvokeCommand({
       authzService,
-      userId: 1,
+      subjectId: "telegram:1",
       commandName: "deploy",
     })
 
@@ -78,7 +78,7 @@ describe("requestCommandInvokePermission", () => {
 
     await requestCommandInvokePermission({
       permissionRequestService,
-      userId: 7,
+      subjectId: "telegram:7",
       commandName: "deploy",
     })
 
@@ -101,7 +101,7 @@ describe("requestCommandInvokePermission", () => {
 
     await requestCommandInvokePermission({
       permissionRequestService,
-      userId: 7,
+      subjectId: "telegram:7",
       commandName: "deploy",
     })
 
@@ -116,7 +116,7 @@ describe("requestNotificationChannelInteractPermission", () => {
 
     await requestNotificationChannelInteractPermission({
       permissionRequestService,
-      userId: 7,
+      subjectId: "telegram:7",
       channelName: "alerts",
     })
 
@@ -139,7 +139,7 @@ describe("requestNotificationChannelInteractPermission", () => {
 
     await requestNotificationChannelInteractPermission({
       permissionRequestService,
-      userId: 7,
+      subjectId: "telegram:7",
       channelName: "alerts",
     })
 

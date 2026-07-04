@@ -380,8 +380,7 @@ describe("handleNlsMessage", () => {
     })
     expect(nlsClient.askStream.spy()).toHaveBeenCalledWith({
       text: "hello",
-      subjectId: "telegram:20",
-      subjectInfo: { telegram_subject_rhid: rhid("telegram:20") },
+      subjectId: "telegram:55",
     })
     expect(telegramBot.api.sendMessageDraft.spy()).toHaveBeenCalledTimes(2)
     expect(telegramBot.api.sendMessageDraft.spy()).toHaveBeenNthCalledWith(1, 10, 30, "", {
@@ -456,8 +455,7 @@ describe("handleNlsMessage", () => {
 
     expect(nlsClient.askStream.spy()).toHaveBeenCalledWith({
       text: "hello",
-      subjectId: "telegram:20",
-      subjectInfo: { telegram_subject_rhid: rhid("telegram:20") },
+      subjectId: "telegram:55",
       sessionReference: { case: "sessionId", value: "session-1" },
     })
     expect(telegramBot.api.sendMessage.spy()).toHaveBeenCalledTimes(1)
@@ -517,10 +515,7 @@ describe("handleNlsMessage", () => {
 
     expect(nlsClient.askStream.spy()).toHaveBeenCalledWith({
       text: "hello",
-      subjectId: "telegram:20",
-      subjectInfo: {
-        telegram_subject_rhid: rhid("telegram:20"),
-      },
+      subjectId: "telegram:55",
       sessionReference: { case: "lastSessionId", value: "session-1" },
     })
     expect(telegramBot.api.sendMessage.spy()).toHaveBeenCalledTimes(2)

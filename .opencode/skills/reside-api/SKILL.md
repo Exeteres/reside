@@ -36,6 +36,7 @@ enforcement:
 ## Non-Obvious Stability Rules
 
 - External IDs or tokens that clients should not inspect must be opaque strings and explicitly documented as opaque.
+- Do not add caller-provided `subject_info` maps to NLS or command APIs for identity, personalization, or display metadata; callers must pass canonical subject IDs and leave final Telegram subject display to the Telegram replica.
 - If a value can be either immediate or deferred, model it as `oneof { result | operation }`.
 - Deferred flows must follow `reside-operations` API compatibility rules.
 - Callback endpoints must include the expected service contract in comments, describing what service the endpoint must implement.

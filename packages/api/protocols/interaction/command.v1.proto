@@ -23,9 +23,6 @@ message CommandInvocation {
 
   // The ID of the subject invoking the command.
   string subject_id = 5;
-
-  // Opaque caller-provided subject metadata.
-  map<string, string> subject_info = 6;
 }
 
 // The service implemented by the command handler to receive command invocations.

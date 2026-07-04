@@ -9,6 +9,7 @@ import type { ResideCrypto } from "@reside/common/encryption"
 import type { Message } from "grammy/types"
 import type { PrismaClient } from "../../database"
 import type { TelegramMessageEntity } from "./bot-command-invocation"
+import type { SubjectServiceClientLike } from "./notification-types"
 import { logger, renderMarkdownAsTelegramHtml, rhid } from "@reside/common"
 import { encryptedStringSchema } from "../../definitions"
 import { strings } from "../../locale"
@@ -16,12 +17,17 @@ import { canAskNls, requestNlsAskPermission } from "./authorization"
 import { createTelegramBotClient } from "./bot-client"
 import { mapReplicaCallErrorMessage } from "./bot-replica-call"
 import { createEcidTextSubstitutor } from "./ecid-substitution"
+import { toTelegramSubjectId } from "./subject"
+import { replaceSubjectIdsWithTitles } from "./subject-display"
 
 const GROUP_STREAM_EDIT_INTERVAL_MS = 1000
 const GROUP_TYPING_INTERVAL_MS = 5000
 
+type SubjectRenderer = (text: string) => Promise<string>
+
 export async function handleNlsMessage(args: {
   prisma: PrismaClient
+  subjectService?: SubjectServiceClientLike
   discoveryService: DiscoveryServiceClient
   authzService: AuthzServiceClient
   permissionRequestService: PermissionRequestServiceClient
@@ -46,6 +52,11 @@ export async function handleNlsMessage(args: {
   mentionedUsername: string | undefined
 }): Promise<void> {
   const telegramBotClientFactory = args.createTelegramBotClient ?? createTelegramBotClient
+  const subjectService = args.subjectService ?? {
+    async getSubjectDisplayInfo(input: { subjectId: string }) {
+      return { title: input.subjectId }
+    },
+  }
   const ecidSubstitutor = createEcidTextSubstitutor(args.crypto, {
     onDecryptError: ({ ecid, error }) => {
       logger.warn({ error, ecid }, 'failed to decrypt ecid during nls substitution ecid="%s"', ecid)
@@ -101,15 +112,8 @@ export async function handleNlsMessage(args: {
     return
   }
 
-  const fromSubjectId = `telegram:${args.userId}`
+  const fromSubjectId = toTelegramSubjectId(interaction.user.id)
   const toSubjectId = `replica:${interaction.replicaName}`
-  const subjectInfo = await resolveTelegramSubjectInfo(args.prisma, args.crypto, {
-    currentSubjectRhid: rhid(`telegram:${args.userId}`),
-    telegramRhid: telegramUserRhid,
-    text: args.sourceText ?? args.text,
-    entities: args.entities,
-    leadingReplicaMention: args.mentionedUsername,
-  })
 
   const permission = await canAskNls({
     authzService: args.authzService,
@@ -141,6 +145,8 @@ export async function handleNlsMessage(args: {
       replyToMessageId: args.message.message_id,
       text: strings.common.accessDenied,
       ecidSubstitutor,
+      subjectRenderer: text =>
+        replaceSubjectIdsWithTitles(args.crypto, args.prisma, subjectService, text),
     })
     return
   }
@@ -164,6 +170,8 @@ export async function handleNlsMessage(args: {
       draftId,
       text: "",
       ecidSubstitutor,
+      subjectRenderer: text =>
+        replaceSubjectIdsWithTitles(args.crypto, args.prisma, subjectService, text),
     })
   }
 
@@ -186,7 +194,6 @@ export async function handleNlsMessage(args: {
     const nlsFrames = args.getNaturalLanguageClient(endpoint.endpoint).askStream({
       text: args.text,
       subjectId: fromSubjectId,
-      subjectInfo,
       ...(sessionReference === undefined ? {} : { sessionReference }),
     })
 
@@ -198,6 +205,8 @@ export async function handleNlsMessage(args: {
         replyToMessageId: args.message.message_id,
         frames: nlsFrames,
         ecidSubstitutor,
+        subjectRenderer: text =>
+          replaceSubjectIdsWithTitles(args.crypto, args.prisma, subjectService, text),
         onSessionId: async sessionId => {
           await sendContinuationNoticeIfNeeded({
             bot: telegramBotClientFactory(args.managerToken, { role: "worker.nls-continuation" }),
@@ -235,6 +244,8 @@ export async function handleNlsMessage(args: {
       draftId,
       frames: nlsFrames,
       ecidSubstitutor,
+      subjectRenderer: text =>
+        replaceSubjectIdsWithTitles(args.crypto, args.prisma, subjectService, text),
     })
 
     if (result.text.trim().length === 0) {
@@ -258,6 +269,8 @@ export async function handleNlsMessage(args: {
       replyToMessageId: args.message.message_id,
       text: result.text,
       ecidSubstitutor,
+      subjectRenderer: text =>
+        replaceSubjectIdsWithTitles(args.crypto, args.prisma, subjectService, text),
     })
 
     await persistNlsInteractionResult(args.crypto, args.prisma, {
@@ -287,145 +300,10 @@ export async function handleNlsMessage(args: {
       replyToMessageId: args.message.message_id,
       text: mappedMessage,
       ecidSubstitutor,
+      subjectRenderer: text =>
+        replaceSubjectIdsWithTitles(args.crypto, args.prisma, subjectService, text),
     })
   }
-}
-
-async function resolveTelegramSubjectInfo(
-  prisma: PrismaClient,
-  crypto: ResideCrypto,
-  input: {
-    currentSubjectRhid: string
-    telegramRhid: string
-    text: string
-    entities?: TelegramMessageEntity[]
-    leadingReplicaMention?: string
-  },
-): Promise<Record<string, string>> {
-  const user = await prisma.user.findUnique({
-    where: {
-      telegramRhid: input.telegramRhid,
-    },
-    select: {
-      telegramUserIdEcid: true,
-      usernameEcid: true,
-      firstNameEcid: true,
-      lastNameEcid: true,
-    },
-  })
-
-  if (!user) {
-    return { telegram_subject_rhid: input.currentSubjectRhid }
-  }
-
-  const subjectInfo: Record<string, string> = {
-    telegram_subject_rhid: input.currentSubjectRhid,
-  }
-
-  if (typeof user.telegramUserIdEcid === "string" && user.telegramUserIdEcid.length > 0) {
-    subjectInfo.telegram_user_id = user.telegramUserIdEcid
-  }
-
-  if (typeof user.usernameEcid === "string" && user.usernameEcid.length > 0) {
-    subjectInfo.username = user.usernameEcid
-  }
-
-  if (typeof user.firstNameEcid === "string" && user.firstNameEcid.length > 0) {
-    subjectInfo.first_name = user.firstNameEcid
-  }
-
-  if (typeof user.lastNameEcid === "string" && user.lastNameEcid.length > 0) {
-    subjectInfo.second_name = user.lastNameEcid
-  }
-
-  const mentionedSubjectRhids = await resolveMentionedUserSubjectRhids(prisma, crypto, input)
-  mentionedSubjectRhids.forEach((subjectRhid, index) => {
-    subjectInfo[`mentioned_user_${index + 1}_subject_rhid`] = subjectRhid
-  })
-
-  return subjectInfo
-}
-
-async function resolveMentionedUserSubjectRhids(
-  prisma: PrismaClient,
-  crypto: ResideCrypto,
-  input: {
-    text: string
-    entities?: TelegramMessageEntity[]
-    leadingReplicaMention?: string
-  },
-): Promise<string[]> {
-  const subjectRhids: string[] = []
-  const seen = new Set<string>()
-
-  for (const entity of input.entities ?? []) {
-    const subjectRhid = await resolveMentionedEntitySubjectRhid(prisma, crypto, input, entity)
-    if (!subjectRhid || seen.has(subjectRhid)) {
-      continue
-    }
-
-    seen.add(subjectRhid)
-    subjectRhids.push(subjectRhid)
-  }
-
-  return subjectRhids
-}
-
-async function resolveMentionedEntitySubjectRhid(
-  prisma: PrismaClient,
-  crypto: ResideCrypto,
-  input: {
-    text: string
-    leadingReplicaMention?: string
-  },
-  entity: TelegramMessageEntity,
-): Promise<string | undefined> {
-  if (entity.type === "text_mention" && entity.user?.id !== undefined) {
-    return rhid(`telegram:${entity.user.id}`)
-  }
-
-  if (entity.type !== "mention") {
-    return undefined
-  }
-
-  const mention = input.text.slice(entity.offset, entity.offset + entity.length)
-  const username = mention.trim().replace(/^@/, "")
-  if (
-    username.length === 0 ||
-    username.toLowerCase() === input.leadingReplicaMention?.toLowerCase()
-  ) {
-    return undefined
-  }
-
-  return await resolveUsernameSubjectRhid(prisma, crypto, username)
-}
-
-async function resolveUsernameSubjectRhid(
-  prisma: PrismaClient,
-  crypto: ResideCrypto,
-  username: string,
-): Promise<string | undefined> {
-  const normalized = username.toLowerCase()
-  const users = await prisma.user.findMany({
-    select: { telegramUserIdEcid: true, usernameEcid: true },
-  })
-
-  for (const candidate of users) {
-    if (!candidate.usernameEcid) {
-      continue
-    }
-
-    const candidateUsername = await crypto.decrypt(encryptedStringSchema, candidate.usernameEcid)
-    if (candidateUsername.toLowerCase() !== normalized) {
-      continue
-    }
-
-    const telegramUserId = await crypto.decrypt(encryptedStringSchema, candidate.telegramUserIdEcid)
-
-    return rhid(`telegram:${telegramUserId}`)
-  }
-
-  return undefined
 }
 
 async function resolveMentionedReplicaInteraction(
@@ -600,8 +478,9 @@ async function sendNlsReplyDraftMessage(args: {
   ecidSubstitutor: {
     substituteInText: (text: string) => Promise<string>
   }
+  subjectRenderer: SubjectRenderer
 }): Promise<void> {
-  const text = await renderNlsReplyText(args.text, args.ecidSubstitutor)
+  const text = await renderNlsReplyText(args.text, args.ecidSubstitutor, args.subjectRenderer)
 
   await args.bot.api.sendMessageDraft(args.chatId, args.draftId, text, {
     message_thread_id: args.messageThreadId,
@@ -618,6 +497,7 @@ async function streamNlsReplyDraftFrames(args: {
   ecidSubstitutor: {
     substituteInText: (text: string) => Promise<string>
   }
+  subjectRenderer: SubjectRenderer
 }): Promise<{ text: string; sessionId: string }> {
   let finalText = ""
   let sessionId = ""
@@ -641,6 +521,7 @@ async function streamNlsReplyDraftFrames(args: {
         draftId: args.draftId,
         text: "",
         ecidSubstitutor: args.ecidSubstitutor,
+        subjectRenderer: args.subjectRenderer,
       })
     }
 
@@ -651,6 +532,7 @@ async function streamNlsReplyDraftFrames(args: {
       draftId: args.draftId,
       text: frame.text,
       ecidSubstitutor: args.ecidSubstitutor,
+      subjectRenderer: args.subjectRenderer,
     })
 
     hasFrame = true
@@ -669,6 +551,7 @@ async function streamNlsReplyGroupFrames(args: {
   ecidSubstitutor: {
     substituteInText: (text: string) => Promise<string>
   }
+  subjectRenderer: SubjectRenderer
   onSessionId?: (sessionId: string) => Promise<void>
 }): Promise<{ text: string; sessionId: string; messageId: number }> {
   const stopTypingLoop = startTypingStatusLoop({
@@ -721,7 +604,11 @@ async function streamNlsReplyGroupFrames(args: {
       await notifySession()
     }
 
-    const firstText = await renderNlsReplyText(firstFrame.value.text, args.ecidSubstitutor)
+    const firstText = await renderNlsReplyText(
+      firstFrame.value.text,
+      args.ecidSubstitutor,
+      args.subjectRenderer,
+    )
 
     const sentMessage = await args.bot.api.sendMessage(args.chatId, firstText, {
       parse_mode: "HTML",
@@ -760,7 +647,11 @@ async function streamNlsReplyGroupFrames(args: {
           continue
         }
 
-        latestPendingText = await renderNlsReplyText(frame.value.text, args.ecidSubstitutor)
+        latestPendingText = await renderNlsReplyText(
+          frame.value.text,
+          args.ecidSubstitutor,
+          args.subjectRenderer,
+        )
         hasPendingUpdate = true
       }
     })().catch(error => {
@@ -875,8 +766,9 @@ async function sendNlsReplyMessage(args: {
   ecidSubstitutor: {
     substituteInText: (text: string) => Promise<string>
   }
+  subjectRenderer: SubjectRenderer
 }): Promise<Message.TextMessage> {
-  const text = await renderNlsReplyText(args.text, args.ecidSubstitutor)
+  const text = await renderNlsReplyText(args.text, args.ecidSubstitutor, args.subjectRenderer)
 
   return await args.bot.api.sendMessage(args.chatId, text, {
     parse_mode: "HTML",
@@ -1075,7 +967,9 @@ async function renderNlsReplyText(
   ecidSubstitutor: {
     substituteInText: (text: string) => Promise<string>
   },
+  subjectRenderer: SubjectRenderer,
 ): Promise<string> {
   const substitutedText = await ecidSubstitutor.substituteInText(text)
-  return renderMarkdownAsTelegramHtml(substitutedText).html
+  const renderedText = await subjectRenderer(substitutedText)
+  return renderMarkdownAsTelegramHtml(renderedText).html
 }

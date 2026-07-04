@@ -50,6 +50,7 @@ import {
 } from "./notification-message"
 import { getNotificationCallbackActionNames } from "./notification-pagination"
 import { parseNotificationTopicId } from "./notification-topic"
+import { replaceSubjectIdsWithTitles } from "./subject-display"
 
 const RESPONSE_OPERATION_TITLE = strings.server.notification.responseOperationTitle
 const TELEGRAM_REPLICA_SUBJECT_ID = "replica:telegram"
@@ -115,10 +116,34 @@ export async function sendNotificationForReplica(
 
   const isTelegramReplicaSender = senderSubjectId === TELEGRAM_REPLICA_SUBJECT_ID
 
-  const renderedTitle = await ecidSubstitutor.substituteInText(input.title)
-  const renderedContent = await ecidSubstitutor.substituteInText(input.content ?? "")
-  const renderedActionRows = await renderActionRowsForTelegram(ecidSubstitutor, input.actionRows)
-  const renderedTaskGroups = await renderTaskGroupsForTelegram(ecidSubstitutor, taskGroups)
+  const renderedTitle = await renderTextForTelegram(
+    crypto,
+    prisma,
+    subjectService,
+    ecidSubstitutor,
+    input.title,
+  )
+  const renderedContent = await renderTextForTelegram(
+    crypto,
+    prisma,
+    subjectService,
+    ecidSubstitutor,
+    input.content ?? "",
+  )
+  const renderedActionRows = await renderActionRowsForTelegram(
+    crypto,
+    prisma,
+    subjectService,
+    ecidSubstitutor,
+    input.actionRows,
+  )
+  const renderedTaskGroups = await renderTaskGroupsForTelegram(
+    crypto,
+    prisma,
+    subjectService,
+    ecidSubstitutor,
+    taskGroups,
+  )
 
   const messageText = toTelegramMessageText(
     {
@@ -391,10 +416,34 @@ export async function updateNotificationForReplica(
   const bot = createTelegramBotClient(botToken, {
     role: "notification.update",
   })
-  const renderedTitle = await ecidSubstitutor.substituteInText(input.title)
-  const renderedContent = await ecidSubstitutor.substituteInText(input.content)
-  const renderedActionRows = await renderActionRowsForTelegram(ecidSubstitutor, input.actionRows)
-  const renderedTaskGroups = await renderTaskGroupsForTelegram(ecidSubstitutor, taskGroups)
+  const renderedTitle = await renderTextForTelegram(
+    crypto,
+    prisma,
+    subjectService,
+    ecidSubstitutor,
+    input.title,
+  )
+  const renderedContent = await renderTextForTelegram(
+    crypto,
+    prisma,
+    subjectService,
+    ecidSubstitutor,
+    input.content,
+  )
+  const renderedActionRows = await renderActionRowsForTelegram(
+    crypto,
+    prisma,
+    subjectService,
+    ecidSubstitutor,
+    input.actionRows,
+  )
+  const renderedTaskGroups = await renderTaskGroupsForTelegram(
+    crypto,
+    prisma,
+    subjectService,
+    ecidSubstitutor,
+    taskGroups,
+  )
   const replyMarkup = toInlineKeyboardMarkupFromActionRows(renderedActionRows, {
     status: notificationStatus,
   })
@@ -1057,6 +1106,9 @@ function toNotificationTaskStatusJson(
 }
 
 async function renderActionRowsForTelegram(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  subjectService: SubjectServiceClientLike,
   ecidSubstitutor: { substituteInText: (text: string) => Promise<string> },
   actionRows: ActionRow[],
 ): Promise<ActionRow[]> {
@@ -1066,14 +1118,29 @@ async function renderActionRowsForTelegram(
     const renderedActions: ActionRow["actions"] = []
 
     for (const action of row.actions) {
+      const title = await renderTextForTelegram(
+        crypto,
+        prisma,
+        subjectService,
+        ecidSubstitutor,
+        action.title,
+      )
+
       if (action.url === undefined) {
-        renderedActions.push(action)
+        renderedActions.push({ ...action, title })
         continue
       }
 
       renderedActions.push({
         ...action,
-        url: await ecidSubstitutor.substituteInText(action.url),
+        title,
+        url: await renderTextForTelegram(
+          crypto,
+          prisma,
+          subjectService,
+          ecidSubstitutor,
+          action.url,
+        ),
       })
     }
 
@@ -1086,6 +1153,9 @@ async function renderActionRowsForTelegram(
 }
 
 async function renderTaskGroupsForTelegram(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  subjectService: SubjectServiceClientLike,
   ecidSubstitutor: { substituteInText: (text: string) => Promise<string> },
   taskGroups: NotificationTaskGroupInput[],
 ): Promise<NotificationTaskGroupInput[]> {
@@ -1097,18 +1167,41 @@ async function renderTaskGroupsForTelegram(
     for (const task of group.tasks) {
       renderedTasks.push({
         ...task,
-        title: await ecidSubstitutor.substituteInText(task.title),
+        title: await renderTextForTelegram(
+          crypto,
+          prisma,
+          subjectService,
+          ecidSubstitutor,
+          task.title,
+        ),
       })
     }
 
     renderedGroups.push({
       ...group,
-      title: await ecidSubstitutor.substituteInText(group.title),
+      title: await renderTextForTelegram(
+        crypto,
+        prisma,
+        subjectService,
+        ecidSubstitutor,
+        group.title,
+      ),
       tasks: renderedTasks,
     })
   }
 
   return renderedGroups
+}
+
+async function renderTextForTelegram(
+  crypto: ResideCrypto,
+  prisma: PrismaClient,
+  subjectService: SubjectServiceClientLike,
+  ecidSubstitutor: { substituteInText: (text: string) => Promise<string> },
+  text: string,
+): Promise<string> {
+  const ecidRenderedText = await ecidSubstitutor.substituteInText(text)
+  return await replaceSubjectIdsWithTitles(crypto, prisma, subjectService, ecidRenderedText)
 }
 
 function createTelegramMessageLink(

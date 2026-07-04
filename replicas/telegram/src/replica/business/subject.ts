@@ -4,6 +4,30 @@ import { rhid } from "@reside/common"
 import { encryptedStringSchema } from "../../definitions"
 import { strings } from "../../locale"
 
+export function toTelegramSubjectId(userId: number): string {
+  return `telegram:${userId}`
+}
+
+export async function resolveTelegramSubjectIdByTelegramUserId(
+  prisma: PrismaClient,
+  telegramUserId: number | string,
+): Promise<string | undefined> {
+  const user = await prisma.user.findUnique({
+    where: {
+      telegramRhid: rhidTelegramUserId(telegramUserId),
+    },
+    select: {
+      id: true,
+    },
+  })
+
+  return user === null ? undefined : toTelegramSubjectId(user.id)
+}
+
+function rhidTelegramUserId(telegramUserId: number | string): string {
+  return rhid(String(telegramUserId))
+}
+
 export async function resolveTelegramSubjectDisplayInfo(
   crypto: ResideCrypto,
   prisma: PrismaClient,
@@ -11,15 +35,14 @@ export async function resolveTelegramSubjectDisplayInfo(
 ): Promise<{ title: string }> {
   const parsedSubject = parseTelegramSubjectId(subjectId)
   if (!parsedSubject) {
-    throw new Error('Subject ID must match format "telegram:{userId}"')
+    throw new Error('Subject ID must match format "telegram:{id}"')
   }
 
   const user = await prisma.user.findUnique({
     where: {
-      telegramRhid: rhid(parsedSubject.userId),
+      id: parsedSubject.id,
     },
     select: {
-      telegramRhid: true,
       telegramUserIdEcid: true,
       usernameEcid: true,
       firstNameEcid: true,
@@ -36,7 +59,7 @@ export async function resolveTelegramSubjectDisplayInfo(
   const lastName = await decryptOptionalString(crypto, user.lastNameEcid)
 
   return {
-    title: toTelegramUserTitle(parsedSubject.userId, {
+    title: toTelegramUserTitle(String(parsedSubject.id), {
       username,
       first_name: firstName,
       last_name: lastName,
@@ -55,19 +78,24 @@ async function decryptOptionalString(
   return await crypto.decrypt(encryptedStringSchema, ecid)
 }
 
-export function parseTelegramSubjectId(subjectId: string): { userId: string } | null {
+export function parseTelegramSubjectId(subjectId: string): { id: number } | null {
   const segments = subjectId.trim().split(":")
   if (segments.length !== 2) {
     return null
   }
 
   const realm = segments[0]
-  const userId = segments[1]
-  if (realm !== "telegram" || !userId) {
+  const rawId = segments[1]
+  if (realm !== "telegram" || !rawId) {
     return null
   }
 
-  return { userId }
+  const id = Number(rawId)
+  if (!Number.isSafeInteger(id) || id <= 0 || String(id) !== rawId) {
+    return null
+  }
+
+  return { id }
 }
 
 export function toTelegramUserTitle(fallbackId: string, data: PrismaJson.UserData): string {

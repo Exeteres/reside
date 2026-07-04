@@ -47,6 +47,7 @@ import { createWebhookUrl } from "../business/bot-runtime"
 import { loadTelegramConfigState } from "../business/config"
 import { createEcidTextSubstitutor } from "../business/ecid-substitution"
 import { loadTelegramSecretState, TELEGRAM_BOT_TOKEN_SECRET_KEY } from "../business/secret"
+import { resolveTelegramSubjectIdByTelegramUserId } from "../business/subject"
 
 type TelegramActivityServices = {
   prisma: PrismaClient
@@ -145,8 +146,15 @@ export function createTelegramActivities({
         }
       }
 
+      const subjectId = await resolveTelegramSubjectIdByTelegramUserId(prisma, input.userId)
+      if (subjectId === undefined) {
+        return {
+          kind: "reply",
+          text: strings.common.accessDenied,
+        }
+      }
+
       if (commandDefinition.isProtected) {
-        const subjectId = `telegram:${input.userId}`
         const check = await authzService.checkPermission({
           permissionName: WellKnownPermissions.TELEGRAM_COMMAND_INVOKE,
           subjectId,
@@ -202,7 +210,7 @@ export function createTelegramActivities({
           },
           context: input.interactionContext,
           parameters,
-          subjectId: `telegram:${input.userId}`,
+          subjectId,
         },
       }
     },

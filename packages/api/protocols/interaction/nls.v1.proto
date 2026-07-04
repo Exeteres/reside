@@ -14,18 +14,14 @@ message AskRequest {
   // If omitted, the authenticated requester subject is used.
   google.protobuf.StringValue subject_id = 2;
 
-  // The information about the subject that should be included in the request context.
-  // This is used by the replica to personalize responses based on the subject's attributes.
-  map<string, string> subject_info = 3; 
-
   // Optional conversation session reference.
   // If omitted, the replica starts a new session.
   oneof session_reference {
     // Opaque session identifier that must be continued explicitly.
-    string session_id = 4;
+    string session_id = 3;
 
     // Opaque previous session identifier that the replica may continue when the prompt needs context.
-    string last_session_id = 5;
+    string last_session_id = 4;
   }
 }
 

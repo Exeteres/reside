@@ -61,6 +61,7 @@ import {
   completeOperationFromTextReply,
   completeOperationFromTopicMessage,
 } from "./response"
+import { resolveTelegramSubjectIdByTelegramUserId, toTelegramSubjectId } from "./subject"
 
 export {
   parseCommandInvocation,
@@ -278,7 +279,15 @@ export async function createTelegramBot(args: {
         return
       }
 
-      const subjectId = `telegram:${userId}`
+      const subjectId = await resolveTelegramSubjectIdByTelegramUserId(args.prisma, userId)
+      if (subjectId === undefined) {
+        await sendSystemMessage(context, {
+          text: strings.common.accessDenied,
+          replyToMessageId: messageId,
+        })
+        return
+      }
+
       const endpoint = await args.discoveryService.getSubjectEndpoint({
         subjectId: `replica:${replicaName}`,
       })
@@ -467,7 +476,9 @@ export async function createTelegramBot(args: {
       String(message.entities?.length ?? 0),
     )
 
-    await ensureTelegramEntities(args.crypto, args.prisma, context)
+    const entities = await ensureTelegramEntities(args.crypto, args.prisma, context)
+    const subjectUserId = entities.user?.id
+    const subjectId = subjectUserId === undefined ? undefined : toTelegramSubjectId(subjectUserId)
 
     const textResponse = message.text.trim()
     const repliedMessageId = message.reply_to_message?.message_id
@@ -495,6 +506,10 @@ export async function createTelegramBot(args: {
 
     const commandInvocation = parseCommandInvocation(message.text)
     if (commandInvocation) {
+      if (subjectUserId === undefined) {
+        return
+      }
+
       try {
         await handleCommandInvocation({
           prisma: args.prisma,
@@ -504,6 +519,7 @@ export async function createTelegramBot(args: {
           getCommandHandlerClient,
           chatId,
           userId,
+          subjectUserId,
           messageId: message.message_id,
           text: message.text,
           entities: message.entities as TelegramMessageEntity[] | undefined,
@@ -532,6 +548,10 @@ export async function createTelegramBot(args: {
 
     const mentionInvocation = parseLeadingMention(message.text)
     if (mentionInvocation) {
+      if (subjectUserId === undefined) {
+        return
+      }
+
       const prompt = mentionInvocation.prompt.trim()
       if (prompt.length === 0) {
         return
@@ -540,6 +560,7 @@ export async function createTelegramBot(args: {
       try {
         await handleNlsMessage({
           prisma: args.prisma,
+          subjectService: args.subjectService,
           discoveryService: args.discoveryService,
           authzService: args.authzService,
           permissionRequestService: args.permissionRequestService,
@@ -621,12 +642,21 @@ export async function createTelegramBot(args: {
         textResponse,
         isSuperAdminUser: candidateUserId =>
           args.superAdminUserId !== undefined && String(candidateUserId) === args.superAdminUserId,
-        canInteractWithChannel: async (candidateUserId, channelName) =>
-          await canInteractWithNotificationChannel({
+        canInteractWithChannel: async (candidateUserId, channelName) => {
+          const candidateSubjectId = await resolveTelegramSubjectIdByTelegramUserId(
+            args.prisma,
+            candidateUserId,
+          )
+          if (candidateSubjectId === undefined) {
+            return false
+          }
+
+          return await canInteractWithNotificationChannel({
             authzService: args.authzService,
-            userId: candidateUserId,
+            subjectId: candidateSubjectId,
             channelName,
-          }),
+          })
+        },
       })
     } catch (error) {
       logger.error(
@@ -652,9 +682,13 @@ export async function createTelegramBot(args: {
 
     if (result.unauthorized) {
       if (result.unauthorizedChannelName) {
+        if (subjectId === undefined) {
+          return
+        }
+
         await requestNotificationChannelInteractPermission({
           permissionRequestService: args.permissionRequestService,
-          userId,
+          subjectId,
           channelName: result.unauthorizedChannelName,
         })
       }
@@ -671,6 +705,7 @@ export async function createTelegramBot(args: {
       try {
         await handleNlsMessage({
           prisma: args.prisma,
+          subjectService: args.subjectService,
           discoveryService: args.discoveryService,
           authzService: args.authzService,
           permissionRequestService: args.permissionRequestService,
@@ -742,12 +777,21 @@ export async function createTelegramBot(args: {
         actionName,
         isSuperAdminUser: candidateUserId =>
           args.superAdminUserId !== undefined && String(candidateUserId) === args.superAdminUserId,
-        canInteractWithChannel: async (candidateUserId, channelName) =>
-          await canInteractWithNotificationChannel({
+        canInteractWithChannel: async (candidateUserId, channelName) => {
+          const candidateSubjectId = await resolveTelegramSubjectIdByTelegramUserId(
+            args.prisma,
+            candidateUserId,
+          )
+          if (candidateSubjectId === undefined) {
+            return false
+          }
+
+          return await canInteractWithNotificationChannel({
             authzService: args.authzService,
-            userId: candidateUserId,
+            subjectId: candidateSubjectId,
             channelName,
-          }),
+          })
+        },
       })
     } catch (error) {
       logger.error(
@@ -808,9 +852,18 @@ export async function createTelegramBot(args: {
     }
 
     if (result.unauthorized && result.unauthorizedChannelName) {
+      const subjectId = await resolveTelegramSubjectIdByTelegramUserId(args.prisma, userId)
+      if (subjectId === undefined) {
+        await context.answerCallbackQuery({
+          text: strings.common.accessDenied,
+          show_alert: false,
+        })
+        return
+      }
+
       await requestNotificationChannelInteractPermission({
         permissionRequestService: args.permissionRequestService,
-        userId,
+        subjectId,
         channelName: result.unauthorizedChannelName,
       })
     }
@@ -829,7 +882,7 @@ async function ensureTelegramEntities(
   crypto: ResideCrypto,
   prisma: PrismaClient,
   context: Context,
-): Promise<void> {
+): Promise<{ chat: { id: number } | null; user: { id: number } | null }> {
   const chat = context.chat
   const user = context.from
 
@@ -846,10 +899,10 @@ async function ensureTelegramEntities(
       ? null
       : await upsertTelegramUser(crypto, prisma, userId, user as unknown as PrismaJson.UserData)
 
-  void chatEntity
-  void userEntity
-
-  return
+  return {
+    chat: chatEntity,
+    user: userEntity,
+  }
 }
 
 async function upsertTelegramChat(
@@ -991,6 +1044,7 @@ function toOptionalNonEmptyString(value: unknown): string | undefined {
 async function canManageNotificationChannelFromTelegramUser(
   args: {
     authzService: AuthzServiceClient
+    prisma: PrismaClient
     superAdminUserId: string | undefined
   },
   userId: number,
@@ -1000,9 +1054,14 @@ async function canManageNotificationChannelFromTelegramUser(
     return true
   }
 
+  const subjectId = await resolveTelegramSubjectIdByTelegramUserId(args.prisma, userId)
+  if (subjectId === undefined) {
+    return false
+  }
+
   return await canManageNotificationChannel({
     authzService: args.authzService,
-    userId,
+    subjectId,
     channelName,
   })
 }
@@ -1327,18 +1386,17 @@ async function handleNotificationTaskEditAction(
     return
   }
 
-  if (
-    notification.isProtected &&
-    !canSuperAdminInteract(args, userId) &&
-    !(await canInteractWithNotificationChannel({
-      authzService: args.authzService,
-      userId,
-      channelName: notification.channel.name,
-    }))
-  ) {
+  const subjectId = toTelegramSubjectId(user.id)
+  const canInteract = await canInteractWithNotificationChannel({
+    authzService: args.authzService,
+    subjectId,
+    channelName: notification.channel.name,
+  })
+
+  if (notification.isProtected && !canSuperAdminInteract(args, userId) && !canInteract) {
     await requestNotificationChannelInteractPermission({
       permissionRequestService: args.permissionRequestService,
-      userId,
+      subjectId,
       channelName: notification.channel.name,
     })
     await context.answerCallbackQuery({
@@ -1482,18 +1540,17 @@ async function handleNotificationTaskPollAnswer(
     return
   }
 
-  if (
-    poll.notification.isProtected &&
-    !canSuperAdminInteract(args, user.id) &&
-    !(await canInteractWithNotificationChannel({
-      authzService: args.authzService,
-      userId: user.id,
-      channelName: poll.notification.channel.name,
-    }))
-  ) {
+  const subjectId = toTelegramSubjectId(userRecord.id)
+  const canInteract = await canInteractWithNotificationChannel({
+    authzService: args.authzService,
+    subjectId,
+    channelName: poll.notification.channel.name,
+  })
+
+  if (poll.notification.isProtected && !canSuperAdminInteract(args, user.id) && !canInteract) {
     await requestNotificationChannelInteractPermission({
       permissionRequestService: args.permissionRequestService,
-      userId: user.id,
+      subjectId,
       channelName: poll.notification.channel.name,
     })
     await deletePlanningPollMessage(args.crypto, context, poll.messageEcid)
@@ -1567,18 +1624,17 @@ async function handleNotificationTaskTextSelection(
     return { completed: false, handled: true }
   }
 
-  if (
-    prompt.notification.isProtected &&
-    !canSuperAdminInteract(args, userId) &&
-    !(await canInteractWithNotificationChannel({
-      authzService: args.authzService,
-      userId,
-      channelName: prompt.notification.channel.name,
-    }))
-  ) {
+  const subjectId = toTelegramSubjectId(userRecord.id)
+  const canInteract = await canInteractWithNotificationChannel({
+    authzService: args.authzService,
+    subjectId,
+    channelName: prompt.notification.channel.name,
+  })
+
+  if (prompt.notification.isProtected && !canSuperAdminInteract(args, userId) && !canInteract) {
     await requestNotificationChannelInteractPermission({
       permissionRequestService: args.permissionRequestService,
-      userId,
+      subjectId,
       channelName: prompt.notification.channel.name,
     })
     await deletePlanningPollMessage(args.crypto, context, prompt.messageEcid)
@@ -2129,12 +2185,21 @@ async function completeTopicMessageResponse(args: {
       textResponse: args.textResponse,
       isSuperAdminUser: candidateUserId =>
         args.superAdminUserId !== undefined && String(candidateUserId) === args.superAdminUserId,
-      canInteractWithChannel: async (candidateUserId, channelName) =>
-        await canInteractWithNotificationChannel({
+      canInteractWithChannel: async (candidateUserId, channelName) => {
+        const candidateSubjectId = await resolveTelegramSubjectIdByTelegramUserId(
+          args.prisma,
+          candidateUserId,
+        )
+        if (candidateSubjectId === undefined) {
+          return false
+        }
+
+        return await canInteractWithNotificationChannel({
           authzService: args.authzService,
-          userId: candidateUserId,
+          subjectId: candidateSubjectId,
           channelName,
-        }),
+        })
+      },
     })
   } catch (error) {
     logger.error(
@@ -2154,9 +2219,14 @@ async function completeTopicMessageResponse(args: {
 
   if (result.unauthorized) {
     if (result.unauthorizedChannelName) {
+      const subjectId = await resolveTelegramSubjectIdByTelegramUserId(args.prisma, args.userId)
+      if (subjectId === undefined) {
+        return { completed: false, handled: true }
+      }
+
       await requestNotificationChannelInteractPermission({
         permissionRequestService: args.permissionRequestService,
-        userId: args.userId,
+        subjectId,
         channelName: result.unauthorizedChannelName,
       })
     }

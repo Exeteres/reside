@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/nls.v1.proto.
  */
 export const file_interaction_nls_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEilAIKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEkwKDHN1YmplY3RfaW5mbxgDIAMoCzI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdC5TdWJqZWN0SW5mb0VudHJ5EhQKCnNlc3Npb25faWQYBCABKAlIABIZCg9sYXN0X3Nlc3Npb25faWQYBSABKAlIABoyChBTdWJqZWN0SW5mb0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCEwoRc2Vzc2lvbl9yZWZlcmVuY2UiLwoLQXNrUmVzcG9uc2USDAoEdGV4dBgBIAEoCRISCgpzZXNzaW9uX2lkGAIgASgJIkQKEUFza1N0cmVhbVJlc3BvbnNlEgwKBHRleHQYASABKAkSDQoFcmVzZXQYAiABKAgSEgoKc2Vzc2lvbl9pZBgDIAEoCSIwChpDbGVhclN1YmplY3RDb250ZXh0UmVxdWVzdBISCgpzdWJqZWN0X2lkGAEgASgJMrgCChZOYXR1cmFsTGFuZ3VhZ2VTZXJ2aWNlElQKA0FzaxIlLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdBomLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVzcG9uc2USYgoJQXNrU3RyZWFtEiUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXF1ZXN0GiwucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tTdHJlYW1SZXNwb25zZTABEmQKE0NsZWFyU3ViamVjdENvbnRleHQSNS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkNsZWFyU3ViamVjdENvbnRleHRSZXF1ZXN0GhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5YgZwcm90bzM", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
+  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEikgEKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEhQKCnNlc3Npb25faWQYAyABKAlIABIZCg9sYXN0X3Nlc3Npb25faWQYBCABKAlIAEITChFzZXNzaW9uX3JlZmVyZW5jZSIvCgtBc2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkiRAoRQXNrU3RyZWFtUmVzcG9uc2USDAoEdGV4dBgBIAEoCRINCgVyZXNldBgCIAEoCBISCgpzZXNzaW9uX2lkGAMgASgJIjAKGkNsZWFyU3ViamVjdENvbnRleHRSZXF1ZXN0EhIKCnN1YmplY3RfaWQYASABKAkyuAIKFk5hdHVyYWxMYW5ndWFnZVNlcnZpY2USVAoDQXNrEiUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXF1ZXN0GiYucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXNwb25zZRJiCglBc2tTdHJlYW0SJS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1JlcXVlc3QaLC5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1N0cmVhbVJlc3BvbnNlMAESZAoTQ2xlYXJTdWJqZWN0Q29udGV4dBI1LnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQ2xlYXJTdWJqZWN0Q29udGV4dFJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHliBnByb3RvMw", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
 
 /**
  * Request for asking the replica natural language subsystem.
@@ -36,14 +36,6 @@ export type AskRequest = Message<"reside.interaction.nls.v1.AskRequest"> & {
   subjectId?: string;
 
   /**
-   * The information about the subject that should be included in the request context.
-   * This is used by the replica to personalize responses based on the subject's attributes.
-   *
-   * @generated from field: map<string, string> subject_info = 3;
-   */
-  subjectInfo: { [key: string]: string };
-
-  /**
    * Optional conversation session reference.
    * If omitted, the replica starts a new session.
    *
@@ -53,7 +45,7 @@ export type AskRequest = Message<"reside.interaction.nls.v1.AskRequest"> & {
     /**
      * Opaque session identifier that must be continued explicitly.
      *
-     * @generated from field: string session_id = 4;
+     * @generated from field: string session_id = 3;
      */
     value: string;
     case: "sessionId";
@@ -61,7 +53,7 @@ export type AskRequest = Message<"reside.interaction.nls.v1.AskRequest"> & {
     /**
      * Opaque previous session identifier that the replica may continue when the prompt needs context.
      *
-     * @generated from field: string last_session_id = 5;
+     * @generated from field: string last_session_id = 4;
      */
     value: string;
     case: "lastSessionId";
@@ -90,24 +82,16 @@ export type AskRequestJson = {
   subjectId?: StringValueJson;
 
   /**
-   * The information about the subject that should be included in the request context.
-   * This is used by the replica to personalize responses based on the subject's attributes.
-   *
-   * @generated from field: map<string, string> subject_info = 3;
-   */
-  subjectInfo?: { [key: string]: string };
-
-  /**
    * Opaque session identifier that must be continued explicitly.
    *
-   * @generated from field: string session_id = 4;
+   * @generated from field: string session_id = 3;
    */
   sessionId?: string;
 
   /**
    * Opaque previous session identifier that the replica may continue when the prompt needs context.
    *
-   * @generated from field: string last_session_id = 5;
+   * @generated from field: string last_session_id = 4;
    */
   lastSessionId?: string;
 };

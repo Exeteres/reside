@@ -30,6 +30,7 @@ The following values are not personal information by themselves:
 
 - Identifiers and usernames of replica-managed bots, because these bots represent replicas and not users.
 - Replica subject identifiers, including notification `callingSubjectId` and `sendAsSubjectId` values that can only refer to replicas.
+- Canonical Telegram subject identifiers in the format `telegram:{id}`, where `{id}` is the Telegram replica database `User.id` and not a Telegram platform user ID.
 - Approval request titles, approval request content, and approval resolution text.
 - Operation titles, descriptions, failure messages, and custom data.
 - Notification content and action rows when they are replica-sent message content with personal information replaced by ECIDs.
