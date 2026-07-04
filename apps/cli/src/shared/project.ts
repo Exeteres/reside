@@ -35,7 +35,16 @@ export async function getWorkspacePackagePaths(rootPath: string): Promise<Worksp
 
   for (const workspacePattern of workspaces) {
     if (!workspacePattern.endsWith("/*")) {
-      throw new Error(`Unsupported workspace pattern "${workspacePattern}"`)
+      const packageJsonPath = resolve(rootPath, workspacePattern, "package.json")
+
+      try {
+        await access(packageJsonPath)
+      } catch {
+        throw new Error(`Unsupported workspace pattern "${workspacePattern}"`)
+      }
+
+      paths.push({ path: workspacePattern })
+      continue
     }
 
     const workspaceDirectory = workspacePattern.slice(0, -2)
