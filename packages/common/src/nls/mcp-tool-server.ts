@@ -70,15 +70,6 @@ export async function startNlsMcpToolServer({
 
   app.post(MCP_PATH, async (request: McpRequest, response: McpResponse) => {
     const requestSummary = summarizeMcpRequest(request.body)
-    logger.debug(
-      'nls mcp request received session_id="%s" method="%s" request_id="%s" request_count="%s" tools_count="%s" tools="%s"',
-      sessionId,
-      requestSummary.method,
-      requestSummary.requestId,
-      requestSummary.requestCount,
-      requestSummary.method === "tools/list" ? String(tools.length) : "unknown",
-      requestSummary.method === "tools/list" ? tools.map(tool => tool.name).join(",") : "unknown",
-    )
 
     const server = createToolServer(sessionId, tools)
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
@@ -98,12 +89,6 @@ export async function startNlsMcpToolServer({
         request as unknown as IncomingMessage & { auth?: never },
         response as unknown as ServerResponse,
         request.body,
-      )
-      logger.debug(
-        'nls mcp request handled session_id="%s" method="%s" request_id="%s"',
-        sessionId,
-        requestSummary.method,
-        requestSummary.requestId,
       )
       response.on("close", close)
     } catch (error) {

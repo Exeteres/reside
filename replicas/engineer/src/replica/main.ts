@@ -69,6 +69,7 @@ await setupLanguageSubsystem({
 
 await startServer(server)
 
+process.env.RESIDE_NON_INTERACTIVE = "1"
 const taskLanguageEngine = await createLanguageEngine({
   services,
   model: "smart",

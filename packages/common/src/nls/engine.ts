@@ -1,4 +1,10 @@
-import type { Config, Part, SessionPromptResponse } from "@opencode-ai/sdk/v2"
+import type {
+  Config,
+  Event as OpenCodeEvent,
+  OpencodeClient,
+  Part,
+  SessionPromptResponse,
+} from "@opencode-ai/sdk/v2"
 import type { Pool } from "pg"
 import type { CommonServices } from "../services"
 import type { Tool } from "./tool"
@@ -418,6 +424,7 @@ async function runOpenCodeSession({
   sessionId: string
 }): Promise<string> {
   const abortController = new AbortController()
+  const eventAbortController = new AbortController()
   const stopCancellationWatcher = watchLanguageSessionCancellation({
     abortController,
     shouldCancel,
@@ -435,6 +442,7 @@ async function runOpenCodeSession({
     providerBaseUrl,
     apiKey,
   })
+  let eventWatcher: Promise<void> | undefined
   const opencode = await createOpencode({
     port: 0,
     signal: serverAbortController.signal,
@@ -463,6 +471,13 @@ async function runOpenCodeSession({
     onSessionId(activeOpenCodeSessionId)
     turnMetrics.turnStartedAt = Date.now()
     logger.info('nls turn started session_id="%s"', sessionId)
+    eventWatcher = watchOpenCodeEvents({
+      opencode,
+      sessionId,
+      opencodeSessionId: activeOpenCodeSessionId,
+      workingDirectory,
+      signal: eventAbortController.signal,
+    })
 
     const abortPromise = waitForAbort(abortController.signal).then(async () => {
       await opencode.client.session.abort({
@@ -498,6 +513,10 @@ async function runOpenCodeSession({
     status = "completed"
     return finalResponse
   } finally {
+    eventAbortController.abort()
+    await eventWatcher?.catch(error => {
+      logger.warn({ error: normalizeError(error) }, "nls opencode event watcher failed")
+    })
     timeout.stop()
     stopCancellationWatcher()
     opencode.server.close()
@@ -624,6 +643,127 @@ function collectOpenCodeMetrics(
       read: response.info.tokens.cache.read,
     },
   }
+}
+
+async function watchOpenCodeEvents({
+  opencode,
+  sessionId,
+  opencodeSessionId,
+  workingDirectory,
+  signal,
+}: {
+  opencode: { client: OpencodeClient }
+  sessionId: string
+  opencodeSessionId: string
+  workingDirectory: string
+  signal: AbortSignal
+}): Promise<void> {
+  const events = await opencode.client.event.subscribe(
+    { directory: workingDirectory },
+    {
+      signal,
+      sseMaxRetryAttempts: 0,
+    },
+  )
+
+  try {
+    for await (const event of events.stream) {
+      if (signal.aborted) {
+        return
+      }
+
+      logOpenCodeEvent(event, sessionId, opencodeSessionId)
+    }
+  } catch (error) {
+    if (signal.aborted) {
+      return
+    }
+
+    throw error
+  }
+}
+
+function logOpenCodeEvent(
+  event: OpenCodeEvent,
+  sessionId: string,
+  opencodeSessionId: string,
+): void {
+  if (!isEventForSession(event, opencodeSessionId)) {
+    return
+  }
+
+  if (event.type === "session.next.tool.called") {
+    logger.info(
+      'nls opencode tool called session_id="%s" opencode_session_id="%s" tool_name="%s" tool_call_id="%s" provider_executed="%s"',
+      sessionId,
+      opencodeSessionId,
+      event.properties.tool,
+      event.properties.callID,
+      String(event.properties.provider.executed),
+    )
+    return
+  }
+
+  if (event.type === "session.next.tool.success") {
+    logger.info(
+      'nls opencode tool completed session_id="%s" opencode_session_id="%s" tool_call_id="%s" provider_executed="%s" output_paths_count="%s"',
+      sessionId,
+      opencodeSessionId,
+      event.properties.callID,
+      String(event.properties.provider.executed),
+      String(event.properties.outputPaths?.length ?? 0),
+    )
+    return
+  }
+
+  if (event.type === "session.next.tool.failed") {
+    logger.warn(
+      'nls opencode tool failed session_id="%s" opencode_session_id="%s" tool_call_id="%s" provider_executed="%s" error_name="%s"',
+      sessionId,
+      opencodeSessionId,
+      event.properties.callID,
+      String(event.properties.provider.executed),
+      getOpenCodeEventErrorName(event.properties.error),
+    )
+    return
+  }
+
+  if (event.type === "message.part.updated" && event.properties.part.type === "patch") {
+    logger.info(
+      'nls opencode file change session_id="%s" opencode_session_id="%s" message_id="%s" part_id="%s" files_count="%s"',
+      sessionId,
+      opencodeSessionId,
+      event.properties.part.messageID,
+      event.properties.part.id,
+      String(event.properties.part.files.length),
+    )
+  }
+}
+
+function isEventForSession(event: OpenCodeEvent, opencodeSessionId: string): boolean {
+  return getOpenCodeEventSessionId(event) === opencodeSessionId
+}
+
+function getOpenCodeEventSessionId(event: OpenCodeEvent): string | undefined {
+  if (
+    !event.properties ||
+    typeof event.properties !== "object" ||
+    !("sessionID" in event.properties)
+  ) {
+    return undefined
+  }
+
+  const sessionId = event.properties.sessionID
+  return typeof sessionId === "string" ? sessionId : undefined
+}
+
+function getOpenCodeEventErrorName(error: unknown): string {
+  if (!error || typeof error !== "object" || !("name" in error)) {
+    return "unknown"
+  }
+
+  const name = error.name
+  return typeof name === "string" ? name : "unknown"
 }
 
 async function logOpenCodeParts(
