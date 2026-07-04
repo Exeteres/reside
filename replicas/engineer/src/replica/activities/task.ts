@@ -48,6 +48,7 @@ import {
 const ENGINEER_WORKSPACE_PREFIX = "reside-task"
 const ENGINEER_SESSION_DIR = "session"
 const ENGINEER_NLS_IDLE_TIMEOUT_MS = 20 * 60_000
+const ENGINEER_NLS_REASONING_EFFORT = "high"
 const NLS_HOME_DIR = ".reside-nls"
 const ENGINEER_TASKS_DIR = "tasks"
 const ENGINEER_TASK_SESSIONS_DIR = ".task-sessions"
@@ -1625,6 +1626,7 @@ async function runPlanningLanguageStream({
       {
         workingDirectory: environment.repositoryPath,
         configDir: environment.sessionDirPath,
+        reasoningEffort: ENGINEER_NLS_REASONING_EFFORT,
         idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
       },
@@ -1691,6 +1693,7 @@ async function runImplementationLanguageStream({
       {
         workingDirectory: environment.repositoryPath,
         configDir: environment.sessionDirPath,
+        reasoningEffort: ENGINEER_NLS_REASONING_EFFORT,
         idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [
           createCommitChangesTool({

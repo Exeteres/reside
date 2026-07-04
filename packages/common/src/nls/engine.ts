@@ -49,6 +49,10 @@ const COMMAND_OUTPUT_TAIL_MAX_LENGTH = 2000
 
 export type LanguageEngineModelTier = "light" | "smart"
 
+type CodexReasoningEffort = "low" | "medium" | "high" | "xhigh"
+
+export type LanguageEngineReasoningEffort = "minimal" | CodexReasoningEffort
+
 export type LanguageEngineServices = Pick<
   CommonServices<"access" | "infra">,
   | "authzService"
@@ -77,6 +81,7 @@ export type LanguageEngineAskOptions = {
   systemPrompt?: string
   workingDirectory?: string
   configDir?: string
+  reasoningEffort?: LanguageEngineReasoningEffort
   tools?: Tool[]
   idleTimeoutMs?: number
   shouldCancel?: () => Promise<boolean>
@@ -110,8 +115,6 @@ type CodexDebugLog = {
   wrapperPath: string
   logPath: string
 }
-
-type CodexReasoningEffort = "low" | "medium" | "high" | "xhigh"
 
 type CodexReasoningLevel = {
   effort: CodexReasoningEffort
@@ -228,6 +231,7 @@ export async function createLanguageEngine(
         systemPrompt: options?.systemPrompt,
         workingDirectory: options?.workingDirectory,
         configDir: options?.configDir,
+        reasoningEffort: options?.reasoningEffort,
         tools: options?.tools,
         idleTimeoutMs: options?.idleTimeoutMs,
         shouldCancel: options?.shouldCancel,
@@ -242,6 +246,7 @@ export async function createLanguageEngine(
         systemPrompt: options?.systemPrompt,
         workingDirectory: options?.workingDirectory,
         configDir: options?.configDir,
+        reasoningEffort: options?.reasoningEffort,
         tools: options?.tools,
         idleTimeoutMs: options?.idleTimeoutMs,
         shouldCancel: options?.shouldCancel,
@@ -271,6 +276,7 @@ export async function createLanguageEngine(
     systemPrompt?: string
     workingDirectory?: string
     configDir?: string
+    reasoningEffort?: LanguageEngineReasoningEffort
     tools?: Tool[]
     idleTimeoutMs?: number
     shouldCancel?: () => Promise<boolean>
@@ -329,6 +335,7 @@ export async function createLanguageEngine(
           providerBaseUrl: llmSecret.endpoint,
           apiKey: llmSecret["api-key"],
           workingDirectory: sessionWorkingDirectory,
+          reasoningEffort: args.reasoningEffort,
           prompt: buildCodexPrompt({
             systemPrompt,
             requestSystemPrompt: args.systemPrompt,
@@ -436,6 +443,7 @@ async function runCodexThread({
   providerBaseUrl,
   apiKey,
   workingDirectory,
+  reasoningEffort,
   prompt,
   idleTimeoutMs,
   shouldCancel,
@@ -451,6 +459,7 @@ async function runCodexThread({
   providerBaseUrl: string
   apiKey: string
   workingDirectory: string
+  reasoningEffort?: LanguageEngineReasoningEffort
   prompt: string
   idleTimeoutMs: number
   shouldCancel?: () => Promise<boolean>
@@ -490,6 +499,7 @@ async function runCodexThread({
       webSearchMode: "live" as const,
       workingDirectory,
       skipGitRepoCheck: true,
+      ...(reasoningEffort ? { modelReasoningEffort: reasoningEffort } : {}),
     }
     const thread = restoredThreadId
       ? codex.resumeThread(restoredThreadId, threadOptions)
@@ -538,6 +548,7 @@ async function runCodexThread({
       sessionId,
       codexThreadId,
       model,
+      reasoningEffort,
       mcpServer,
       responseText: finalResponse,
       metrics: turnMetrics,
@@ -941,6 +952,7 @@ function logCodexTurnSummary({
   sessionId,
   codexThreadId,
   model,
+  reasoningEffort,
   mcpServer,
   responseText,
   metrics,
@@ -951,6 +963,7 @@ function logCodexTurnSummary({
   sessionId: string
   codexThreadId?: string
   model: string
+  reasoningEffort?: LanguageEngineReasoningEffort
   mcpServer: NlsMcpToolServer
   responseText: string
   metrics: CodexTurnMetrics
@@ -959,10 +972,11 @@ function logCodexTurnSummary({
   status: CodexTurnStatus
 }): void {
   logger.info(
-    'nls turn summary session_id="%s" codex_thread_id="%s" model="%s" server_name="%s" tool_count="%s" response_length="%s" input_tokens="%s" cached_input_tokens="%s" output_tokens="%s" reasoning_output_tokens="%s" duration_ms="%s" codex_debug_log_path="%s" status="%s" tool_calls_count="%s" failed_tool_calls_count="%s" commands_count="%s" failed_commands_count="%s" total_command_output_length="%s" largest_command_output_length="%s"',
+    'nls turn summary session_id="%s" codex_thread_id="%s" model="%s" reasoning_effort="%s" server_name="%s" tool_count="%s" response_length="%s" input_tokens="%s" cached_input_tokens="%s" output_tokens="%s" reasoning_output_tokens="%s" duration_ms="%s" codex_debug_log_path="%s" status="%s" tool_calls_count="%s" failed_tool_calls_count="%s" commands_count="%s" failed_commands_count="%s" total_command_output_length="%s" largest_command_output_length="%s"',
     sessionId,
     codexThreadId ?? "unknown",
     model,
+    reasoningEffort ?? "default",
     mcpServer.name,
     String(mcpServer.toolNames.length),
     String(responseText.trim().length),
