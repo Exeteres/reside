@@ -1,0 +1,21 @@
+{
+  "name": "@reside/skill-reside-core",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./process": "./src/lib/process.ts",
+    "./repository": "./src/lib/repository.ts"
+  },
+  "scripts": {
+    "check:skills": "bun src/validate-skills.ts",
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:"
+  }
+}
