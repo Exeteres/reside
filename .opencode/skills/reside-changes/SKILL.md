@@ -40,7 +40,9 @@ enforcement:
 - Keep commit messages lowercased as a single line string without extra details.
 - Do not create commit bodies or trailers.
 - Group changes logically and create separate commits for separate logical changes.
+- Do not bundle unrelated changes into the same commit, even when they were made in the same session.
 - For simple or tightly related changes, prefer a single commit.
 - For larger or clearly separable phases, prefer multiple focused commits.
+- Before committing, inspect the staged paths and split the commit if the staged set contains unrelated concerns.
 - For commit scope, use package or replica names when a commit affects a single package or replica.
 - If one logical change affects multiple packages or replicas, omit the commit scope.
