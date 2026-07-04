@@ -32,6 +32,19 @@ export const SkillEnforcementPlugin: Plugin = async ({ worktree }) => {
     },
 
     "tool.execute.before": async (input, output) => {
+      if (
+        isInteractiveSession &&
+        input.tool !== "skill" &&
+        !loadedSkills.has(interactiveSkillName)
+      ) {
+        throw new Error(
+          [
+            "Skill enforcement blocked this tool call.",
+            `Load the "${interactiveSkillName}" skill before using other tools in interactive sessions.`,
+          ].join("\n"),
+        )
+      }
+
       if (input.tool === "skill") {
         const skillName = getSkillName(output.args)
 
