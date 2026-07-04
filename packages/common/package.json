@@ -48,6 +48,7 @@
     "cbor2": "catalog:",
     "fastify": "catalog:",
     "jose": "catalog:",
+    "opencode-ai": "catalog:",
     "pg": "catalog:",
     "pino": "catalog:",
     "prisma": "catalog:",
