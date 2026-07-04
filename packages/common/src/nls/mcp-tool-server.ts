@@ -48,9 +48,11 @@ type McpRequestSummary = {
 }
 
 export async function startNlsMcpToolServer({
+  invocationId,
   sessionId,
   tools,
 }: {
+  invocationId: string
   sessionId: string
   tools: Tool[]
 }): Promise<NlsMcpToolServer> {
@@ -71,7 +73,7 @@ export async function startNlsMcpToolServer({
   app.post(MCP_PATH, async (request: McpRequest, response: McpResponse) => {
     const requestSummary = summarizeMcpRequest(request.body)
 
-    const server = createToolServer(sessionId, tools)
+    const server = createToolServer(invocationId, sessionId, tools)
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
 
     const close = () => {
@@ -135,7 +137,7 @@ export async function startNlsMcpToolServer({
   }
 }
 
-function createToolServer(sessionId: string, tools: Tool[]): McpServer {
+function createToolServer(invocationId: string, sessionId: string, tools: Tool[]): McpServer {
   const server = new McpServer(
     {
       name: "reside-nls-tools",
@@ -165,6 +167,7 @@ function createToolServer(sessionId: string, tools: Tool[]): McpServer {
 
         try {
           const result = await tool.handler(args, {
+            invocationId,
             sessionId,
             toolCallId,
             toolName: tool.name,

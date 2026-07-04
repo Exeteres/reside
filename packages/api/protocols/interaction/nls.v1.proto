@@ -23,6 +23,10 @@ message AskRequest {
     // Opaque previous session identifier that the replica may continue when the prompt needs context.
     string last_session_id = 4;
   }
+
+  // Opaque stable identifier of the user-level invocation that caused this prompt.
+  // Callers should reuse the same value for all work caused by the same user turn.
+  string invocation_id = 5;
 }
 
 // Response from the natural language subsystem.

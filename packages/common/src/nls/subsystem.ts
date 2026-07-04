@@ -128,19 +128,20 @@ function createNaturalLanguageService(
 ): NaturalLanguageServiceImplementation {
   return {
     async ask(request, context: HandlerContext) {
-      const { subjectId, prompt, sessionReference } = await authorizeAskRequest(
+      const { subjectId, prompt, invocationId, sessionReference } = await authorizeAskRequest(
         services,
         request,
         context,
       )
       const sessionId = await resolveRequestSessionId(prompt, sessionReference)
       const text = await subsystem.ask(sessionId, prompt, {
-        systemPrompt: buildRequestSystemPrompt(subjectId),
+        invocationId,
+        systemPrompt: buildRequestSystemPrompt(subjectId, invocationId),
       })
       return create(AskResponseSchema, { text, sessionId })
     },
     async *askStream(request, context: HandlerContext) {
-      const { subjectId, prompt, sessionReference } = await authorizeAskRequest(
+      const { subjectId, prompt, invocationId, sessionReference } = await authorizeAskRequest(
         services,
         request,
         context,
@@ -171,7 +172,8 @@ function createNaturalLanguageService(
             notifyQueue()
           },
           {
-            systemPrompt: buildRequestSystemPrompt(subjectId),
+            invocationId,
+            systemPrompt: buildRequestSystemPrompt(subjectId, invocationId),
           },
         )
         .catch(error => {
@@ -220,6 +222,7 @@ async function authorizeAskRequest(
   services: LanguageEngineServices,
   request: {
     text: string
+    invocationId: string
     subjectId?: string
     sessionReference: {
       case: "sessionId" | "lastSessionId" | undefined
@@ -230,6 +233,7 @@ async function authorizeAskRequest(
 ): Promise<{
   subjectId: string
   prompt: string
+  invocationId: string
   sessionReference: NlsSessionReference
 }> {
   const requester = await authenticate(context)
@@ -280,8 +284,18 @@ async function authorizeAskRequest(
   return {
     subjectId: effectiveFromSubjectId,
     prompt,
+    invocationId: normalizeApiInvocationId(request.invocationId),
     sessionReference: parseSessionReference(request.sessionReference),
   }
+}
+
+function normalizeApiInvocationId(invocationId: string): string {
+  const normalized = invocationId.trim()
+  if (normalized.length === 0) {
+    throw new ConnectError("invocation_id must not be empty", Code.InvalidArgument)
+  }
+
+  return normalized
 }
 
 type NlsSessionReference =
@@ -470,9 +484,10 @@ function buildReplicaSystemPrompt(args: {
   ].join("\n")
 }
 
-function buildRequestSystemPrompt(subjectId: string): string {
+function buildRequestSystemPrompt(subjectId: string, invocationId: string): string {
   return [
     "Current interaction context:",
+    `- Invocation ID for this interaction: ${invocationId}`,
     `- Subject ID for this interaction: ${subjectId}`,
     "- If your answer can use ECIDs directly without complex transformations, reply naturally as if you know the value and provide ECIDs in place of plaintext values.",
     "- For simple identity-style questions (for example: who is them), answer directly using the available ECID-based references instead of saying that the value is inaccessible.",
@@ -493,7 +508,7 @@ function createAskReplicaTool(args: {
       replicaName: z.string().min(1),
       prompt: z.string().min(1),
     }),
-    handler: async ({ replicaName, prompt }) => {
+    handler: async ({ replicaName, prompt }, context) => {
       const normalizedReplicaName = replicaName.trim()
       const currentReplicaSubjectId = `replica:${getReplicaName()}`
 
@@ -537,6 +552,7 @@ function createAskReplicaTool(args: {
 
       const askResponse = await client.ask({
         text: prompt.trim(),
+        invocationId: context.invocationId,
       })
 
       return {

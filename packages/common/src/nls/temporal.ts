@@ -30,8 +30,10 @@ export async function createLanguageActivities({
   })
 
   return {
-    async askLanguageEngine({ sessionId, text }) {
-      const responseText = await languageEngine.ask(sessionId, text)
+    async askLanguageEngine({ invocationId, sessionId, text }) {
+      const responseText = await languageEngine.ask(sessionId, text, {
+        invocationId,
+      })
       return {
         text: responseText,
       }

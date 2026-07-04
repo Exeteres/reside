@@ -18,17 +18,36 @@ export type ToolResultObject = {
 
 export type ToolResult = string | ToolResultObject
 
-export type ToolInvocation = {
+export type ToolCallContext = {
+  /**
+   * Stable identifier of the user-level invocation that caused this tool call.
+   * Multiple tool calls may share one invocation ID when they happen during the same user turn.
+   */
+  invocationId: string
+
+  /**
+   * Stable identifier of the NLS conversation session that owns this tool call.
+   */
   sessionId: string
+
+  /**
+   * Provider-assigned identifier of this concrete LLM tool call.
+   */
   toolCallId: string
+
+  /**
+   * Registered ReSide NLS tool name selected by the LLM.
+   */
   toolName: string
+
+  /**
+   * Raw arguments received for this concrete tool call after MCP schema parsing.
+   */
   arguments: unknown
-  traceparent?: string
-  tracestate?: string
 }
 
 export type ToolHandler<TArgs = unknown> = {
-  bivarianceHack(args: TArgs, invocation: ToolInvocation): Promise<unknown> | unknown
+  bivarianceHack(args: TArgs, context: ToolCallContext): Promise<unknown> | unknown
 }["bivarianceHack"]
 
 export type ZodSchema<T = unknown> = {

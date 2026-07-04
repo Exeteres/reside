@@ -11,6 +11,7 @@ import type { PrismaClient } from "../../database"
 import { fromJson } from "@bufbuild/protobuf"
 import { CommandInvocationSchema } from "@reside/api/interaction/command.v1"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
+import { rhid } from "@reside/common"
 import { strings } from "../../locale"
 import { canInvokeCommand, requestCommandInvokePermission } from "./authorization"
 import {
@@ -118,7 +119,7 @@ export async function handleCommandInvocation(args: {
     )
 
     const invocation: CommandInvocationJson = {
-      invocationId: `${args.chatId}:${args.messageId}`,
+      invocationId: rhid({ chatId: args.chatId, messageId: args.messageId }),
       command: {
         id: commandDefinition.id,
         name: commandDefinition.name,

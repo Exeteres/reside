@@ -55,7 +55,7 @@ const { listReaperHandlers, previewHandlerActions, executeHandlerActions, getRes
 
 export const killCommandHandler = defineCommandHandler({
   command: killCommand,
-  async handler({ params, invocation }) {
+  async handler({ params, context }) {
     const targetReplicaName = normalizeReplicaName(params.replicaName)
     const { handlers } = await listReaperHandlers()
     const targetHandlers = handlers.filter(
@@ -69,7 +69,7 @@ export const killCommandHandler = defineCommandHandler({
     const targetPlan = await requestHandlerActionPlan({
       handlers: targetHandlers,
       targetReplicaName,
-      contextToken: invocation.context?.token,
+      contextToken: context.context?.token,
     })
     if (targetPlan) {
       plans.push(targetPlan)
@@ -85,7 +85,7 @@ export const killCommandHandler = defineCommandHandler({
     const otherPlan = await requestHandlerActionPlan({
       handlers: otherHandlers,
       targetReplicaName,
-      contextToken: invocation.context?.token,
+      contextToken: context.context?.token,
     })
     if (otherPlan) {
       plans.push(otherPlan)
@@ -96,8 +96,8 @@ export const killCommandHandler = defineCommandHandler({
 
     if (trackedActions.length === 0) {
       await sendNotification({
-        contextToken: invocation.context?.token,
-        system: invocation.context?.token === undefined,
+        contextToken: context.context?.token,
+        system: context.context?.token === undefined,
         channel: ReaperNotificationChannels.COMMAND,
         title: strings.notifications.kill.emptyTitle(targetReplicaName),
       })

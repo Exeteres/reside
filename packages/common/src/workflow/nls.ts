@@ -1,5 +1,10 @@
 export type AskLanguageEngineInput = {
   /**
+   * Stable identifier of the user-level invocation that caused this prompt.
+   */
+  invocationId: string
+
+  /**
    * Stable identifier of the language session to continue or create.
    */
   sessionId: string

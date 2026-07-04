@@ -30,7 +30,7 @@ describe("rateCommandHandler", () => {
 
     await rateCommandHandler.handler({
       definition: rateCommandHandler.command,
-      invocation: {
+      context: {
         invocationId: "id",
         subjectId: "subject",
         parameters: {},
@@ -55,7 +55,7 @@ describe("rateCommandHandler", () => {
 
     await rateCommandHandler.handler({
       definition: rateCommandHandler.command,
-      invocation: {
+      context: {
         invocationId: "id-2",
         subjectId: "subject",
         parameters: {},

@@ -80,6 +80,7 @@ export type LanguageEngine = {
 }
 
 export type LanguageEngineAskOptions = {
+  invocationId?: string
   systemPrompt?: string
   workingDirectory?: string
   configDir?: string
@@ -177,6 +178,7 @@ export async function createLanguageEngine(
       return await runLanguageEngineSession({
         sessionId,
         text,
+        invocationId: options?.invocationId,
         systemPrompt: options?.systemPrompt,
         workingDirectory: options?.workingDirectory,
         configDir: options?.configDir,
@@ -192,6 +194,7 @@ export async function createLanguageEngine(
         sessionId,
         text,
         onFrame,
+        invocationId: options?.invocationId,
         systemPrompt: options?.systemPrompt,
         workingDirectory: options?.workingDirectory,
         configDir: options?.configDir,
@@ -222,6 +225,7 @@ export async function createLanguageEngine(
   async function runLanguageEngineSession(args: {
     sessionId: string
     text: string
+    invocationId?: string
     systemPrompt?: string
     workingDirectory?: string
     configDir?: string
@@ -246,6 +250,7 @@ export async function createLanguageEngine(
       await mkdir(sessionDirPath, { recursive: true })
 
       const sessionTools = [...engineTools, ...(args.tools ?? [])]
+      const invocationId = args.invocationId ?? randomUUID()
       const restoredThreadId = await restoreSessionArchive(
         storageBucketService,
         sessionDirPath,
@@ -257,6 +262,7 @@ export async function createLanguageEngine(
       await mkdir(opencodeStatePath, { recursive: true })
 
       const mcpServer = await startNlsMcpToolServer({
+        invocationId,
         sessionId: normalizedSessionId,
         tools: sessionTools,
       })
@@ -291,6 +297,7 @@ export async function createLanguageEngine(
           systemPrompt: buildOpenCodeSystemPrompt({
             systemPrompt,
             requestSystemPrompt: args.systemPrompt,
+            invocationId,
           }),
           userPrompt: normalizedText,
           idleTimeoutMs: args.idleTimeoutMs ?? DEFAULT_LANGUAGE_ENGINE_IDLE_TIMEOUT_MS,
@@ -1041,12 +1048,19 @@ function createFrameQueue(
 function buildOpenCodeSystemPrompt({
   systemPrompt,
   requestSystemPrompt,
+  invocationId,
 }: {
   systemPrompt: string
   requestSystemPrompt?: string
+  invocationId: string
 }): string {
   return [
     "System instructions for this ReSide NLS session:",
+    [
+      "Current turn context:",
+      `- Invocation ID for this user turn: ${invocationId}`,
+      "- Pass this invocation ID through unchanged when a tool or downstream operation asks for it.",
+    ].join("\n"),
     [systemPrompt, requestSystemPrompt?.trim()].filter(Boolean).join("\n\n"),
   ].join("\n\n")
 }

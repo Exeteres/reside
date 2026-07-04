@@ -32,6 +32,7 @@ import {
   getReplicaNamespace,
   kubeConfig,
   logger,
+  rhid,
 } from "@reside/common"
 import { alphaReplica, WellKnownPermissions } from "@reside/registry"
 import {
@@ -198,7 +199,7 @@ export function createTelegramActivities({
         kind: "invoke",
         callbackEndpoint: commandDefinition.callbackEndpoint,
         invocation: {
-          invocationId: `${input.chatId}:${input.messageId}`,
+          invocationId: rhid({ chatId: input.chatId, messageId: input.messageId }),
           command: {
             id: commandDefinition.id,
             name: commandDefinition.name,
@@ -380,6 +381,7 @@ export function createTelegramActivities({
       const askResponse = await getNaturalLanguageClient(endpointResponse.endpoint).ask({
         text: input.prompt,
         subjectId: input.fromSubjectId,
+        invocationId: input.invocationId,
       })
 
       return {

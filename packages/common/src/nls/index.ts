@@ -18,8 +18,8 @@ export {
   defineTool,
   type SessionConfig,
   type Tool,
+  type ToolCallContext,
   type ToolHandler,
-  type ToolInvocation,
   type ToolResult,
   type ToolResultObject,
 } from "./tool"

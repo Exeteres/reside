@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/nls.v1.proto.
  */
 export const file_interaction_nls_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEikgEKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEhQKCnNlc3Npb25faWQYAyABKAlIABIZCg9sYXN0X3Nlc3Npb25faWQYBCABKAlIAEITChFzZXNzaW9uX3JlZmVyZW5jZSIvCgtBc2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkiRAoRQXNrU3RyZWFtUmVzcG9uc2USDAoEdGV4dBgBIAEoCRINCgVyZXNldBgCIAEoCBISCgpzZXNzaW9uX2lkGAMgASgJIjAKGkNsZWFyU3ViamVjdENvbnRleHRSZXF1ZXN0EhIKCnN1YmplY3RfaWQYASABKAkyuAIKFk5hdHVyYWxMYW5ndWFnZVNlcnZpY2USVAoDQXNrEiUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXF1ZXN0GiYucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5Bc2tSZXNwb25zZRJiCglBc2tTdHJlYW0SJS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1JlcXVlc3QaLC5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1N0cmVhbVJlc3BvbnNlMAESZAoTQ2xlYXJTdWJqZWN0Q29udGV4dBI1LnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQ2xlYXJTdWJqZWN0Q29udGV4dFJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHliBnByb3RvMw", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
+  fileDesc("ChhpbnRlcmFjdGlvbi9ubHMudjEucHJvdG8SGXJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEiqQEKCkFza1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIwCgpzdWJqZWN0X2lkGAIgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEhQKCnNlc3Npb25faWQYAyABKAlIABIZCg9sYXN0X3Nlc3Npb25faWQYBCABKAlIABIVCg1pbnZvY2F0aW9uX2lkGAUgASgJQhMKEXNlc3Npb25fcmVmZXJlbmNlIi8KC0Fza1Jlc3BvbnNlEgwKBHRleHQYASABKAkSEgoKc2Vzc2lvbl9pZBgCIAEoCSJEChFBc2tTdHJlYW1SZXNwb25zZRIMCgR0ZXh0GAEgASgJEg0KBXJlc2V0GAIgASgIEhIKCnNlc3Npb25faWQYAyABKAkiMAoaQ2xlYXJTdWJqZWN0Q29udGV4dFJlcXVlc3QSEgoKc3ViamVjdF9pZBgBIAEoCTK4AgoWTmF0dXJhbExhbmd1YWdlU2VydmljZRJUCgNBc2sSJS5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1JlcXVlc3QaJi5yZXNpZGUuaW50ZXJhY3Rpb24ubmxzLnYxLkFza1Jlc3BvbnNlEmIKCUFza1N0cmVhbRIlLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrUmVxdWVzdBosLnJlc2lkZS5pbnRlcmFjdGlvbi5ubHMudjEuQXNrU3RyZWFtUmVzcG9uc2UwARJkChNDbGVhclN1YmplY3RDb250ZXh0EjUucmVzaWRlLmludGVyYWN0aW9uLm5scy52MS5DbGVhclN1YmplY3RDb250ZXh0UmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_empty, file_google_protobuf_wrappers]);
 
 /**
  * Request for asking the replica natural language subsystem.
@@ -58,6 +58,14 @@ export type AskRequest = Message<"reside.interaction.nls.v1.AskRequest"> & {
     value: string;
     case: "lastSessionId";
   } | { case: undefined; value?: undefined };
+
+  /**
+   * Opaque stable identifier of the user-level invocation that caused this prompt.
+   * Callers should reuse the same value for all work caused by the same user turn.
+   *
+   * @generated from field: string invocation_id = 5;
+   */
+  invocationId: string;
 };
 
 /**
@@ -94,6 +102,14 @@ export type AskRequestJson = {
    * @generated from field: string last_session_id = 4;
    */
   lastSessionId?: string;
+
+  /**
+   * Opaque stable identifier of the user-level invocation that caused this prompt.
+   * Callers should reuse the same value for all work caused by the same user turn.
+   *
+   * @generated from field: string invocation_id = 5;
+   */
+  invocationId?: string;
 };
 
 /**

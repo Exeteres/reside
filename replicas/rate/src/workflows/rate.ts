@@ -14,10 +14,10 @@ const { fetchKeyRate, updateChatTitleRate } = proxyActivities<RateActivities>({
 
 export const rateCommandHandler = defineCommandHandler({
   command: rateCommand,
-  async handler({ invocation }) {
+  async handler({ context }) {
     try {
       const { rate } = await fetchKeyRate()
-      const contextToken = invocation.context?.token
+      const contextToken = context.context?.token
 
       if (contextToken) {
         await updateChatTitleRate({

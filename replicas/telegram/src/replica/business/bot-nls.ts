@@ -161,6 +161,7 @@ export async function handleNlsMessage(args: {
   })
   const groupChat = isGroupChat(args.chatId)
   const draftId = resolveNlsReplyDraftId(args.message.message_id)
+  const invocationId = rhid({ chatId: args.chatId, messageId: args.message.message_id })
 
   if (!groupChat) {
     await sendNlsReplyDraftMessage({
@@ -194,6 +195,7 @@ export async function handleNlsMessage(args: {
     const nlsFrames = args.getNaturalLanguageClient(endpoint.endpoint).askStream({
       text: args.text,
       subjectId: fromSubjectId,
+      invocationId,
       ...(sessionReference === undefined ? {} : { sessionReference }),
     })
 

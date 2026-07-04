@@ -54,23 +54,23 @@ const {
 
 export const createTaskCommandHandler = defineCommandHandler({
   command: createTaskCommand,
-  async handler({ params, invocation }) {
-    if (!invocation.subjectId) {
+  async handler({ params, context }) {
+    if (!context.subjectId) {
       throw new Error("Command invocation is missing subjectId")
     }
 
-    const mode = invocation.parameters?.mode === "implement" ? "implement" : "plan"
+    const mode = context.parameters?.mode === "implement" ? "implement" : "plan"
     let preparation: PrepareTaskWorkflowOutput
     try {
       preparation = await startTaskPreparationChild({
-        subjectId: invocation.subjectId,
+        subjectId: context.subjectId,
         prompt: params.task,
         mode,
       })
     } catch (error) {
       await sendNotification({
-        contextToken: invocation.context?.token,
-        system: invocation.context?.token === undefined,
+        contextToken: context.context?.token,
+        system: context.context?.token === undefined,
         channel: EngineerNotificationChannels.TASKS,
         title: strings.notifications.taskCreationFailed.title,
         message: block(
@@ -82,8 +82,8 @@ export const createTaskCommandHandler = defineCommandHandler({
     }
 
     await sendNotification({
-      contextToken: invocation.context?.token,
-      system: invocation.context?.token === undefined,
+      contextToken: context.context?.token,
+      system: context.context?.token === undefined,
       channel: EngineerNotificationChannels.TASKS,
       title: strings.notifications.taskCreated.title,
       actions: {
@@ -95,7 +95,7 @@ export const createTaskCommandHandler = defineCommandHandler({
     })
 
     await startTaskWorkflowChild({
-      subjectId: invocation.subjectId,
+      subjectId: context.subjectId,
       prompt: params.task,
       mode,
       ...preparation,

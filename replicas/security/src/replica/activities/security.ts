@@ -41,6 +41,7 @@ export function createSecurityActivities({
       const maskedContent = maskNonReplicaSubjectIds(approvalRequest.content, MASKED_SUBJECT_SUFFIX)
 
       await askLanguageEngine({
+        invocationId: decisionToken,
         sessionId,
         text: buildJudgementPrompt({
           decisionToken,

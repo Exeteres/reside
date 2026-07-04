@@ -96,9 +96,9 @@ export type CommandHandlerContext<TDefinition extends CommandDefinition> = {
   definition: TDefinition
 
   /**
-   * The underlying command invocation that triggered the command handler workflow.
+   * The underlying command call context that triggered the command handler workflow.
    */
-  invocation: CommandInvocationJson
+  context: CommandInvocationJson
 
   /**
    * The parsed parameters from the command invocation, validated against the command definition.
@@ -155,7 +155,7 @@ export function createCommandHandlerWorkflow(definitions: CommandHandlerDefiniti
 
     await definition.handler({
       definition: definition.command,
-      invocation,
+      context: invocation,
       params,
     })
   }

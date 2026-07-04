@@ -172,6 +172,11 @@ export type SetNlsInProgressReactionInput = {
 
 export type AskReplicaNlsInput = {
   /**
+   * Stable identifier of the user-level invocation that caused this prompt.
+   */
+  invocationId: string
+
+  /**
    * Target subject identifier.
    */
   toSubjectId: string
