@@ -1,10 +1,13 @@
 import type { Plugin } from "@opencode-ai/plugin"
+import path from "node:path"
 import { getMissingSkills } from "./enforcement"
 import { getSkillName, loadSkillRules } from "./skills"
 import { getTargetCommands, getTargetPaths } from "./targets"
 
 const interactiveSkillName = "reside-interactive"
 const engineerSkillName = "reside-engineer"
+const preInteractiveReadTools = new Set(["read"])
+const preInteractiveReadablePaths = new Set(["README.md", "AGENTS.md"])
 const interactiveSessionReminder = [
   "This is an interactive ReSide session.",
   `Before working with the user's request, load the "${interactiveSkillName}" skill.`,
@@ -54,6 +57,7 @@ export const SkillEnforcementPlugin: Plugin = async ({ worktree }) => {
       if (
         isInteractiveSession &&
         input.tool !== "skill" &&
+        !isPreInteractiveAllowedRead(input.tool, output.args, worktree) &&
         !loadedSkills.has(interactiveSkillName)
       ) {
         throw new Error(
@@ -106,4 +110,28 @@ export const SkillEnforcementPlugin: Plugin = async ({ worktree }) => {
       )
     },
   }
+}
+
+function isPreInteractiveAllowedRead(tool: string, args: unknown, worktree: string): boolean {
+  if (!preInteractiveReadTools.has(tool) || !isRecord(args)) {
+    return false
+  }
+
+  if (typeof args.filePath !== "string") {
+    return false
+  }
+
+  return preInteractiveReadablePaths.has(normalizePath(args.filePath, worktree))
+}
+
+function normalizePath(targetPath: string, worktree: string): string {
+  const relativePath = path.isAbsolute(targetPath)
+    ? path.relative(worktree, targetPath)
+    : targetPath
+
+  return relativePath.replace(/^\.\//, "")
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
 }
