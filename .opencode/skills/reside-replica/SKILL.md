@@ -138,7 +138,7 @@ export const ru = {
 
 - Telegram subject IDs use the format `telegram:{id}`, where `{id}` is the Telegram replica database `User.id`, not a Telegram platform user ID.
 - Canonical Telegram subject IDs are not private and must not be wrapped in RHIDs.
-- When a field or parameter previously contained an RHID and now contains a canonical subject ID, rename it from `*Rhid` to `*Id`.
+- Fields and parameters that contain canonical subject IDs must use `*Id` names, not `*Rhid` names.
 - Replicas should pass displayable subject references as isolated subject ID words, for example `Subject: telegram:1` or `Subject: replica:alpha`.
 - Telegram-facing display titles are resolved at the Telegram replica output boundary; other replicas should not pre-render subject titles for Telegram messages.
 
