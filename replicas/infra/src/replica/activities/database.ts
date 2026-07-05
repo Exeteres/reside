@@ -17,6 +17,7 @@ import {
   buildMathesarBaseUrl,
   connectMathesarDatabaseAsAdmin,
   deleteMinioBucketAccess,
+  disconnectMathesarDatabaseAsAdmin,
   ensureMinioBucketAccess,
   ensureTemporalNamespace,
   loadInfraGatewayConfig,
@@ -62,6 +63,17 @@ export function createDatabaseActivities({
         username: adminCredentials.username,
         password: adminCredentials.password,
         database: postgresDatabase,
+        adminConfig,
+      })
+    },
+
+    async disconnectMathesarDatabase({ postgresDatabase }) {
+      const adminCredentials = await loadMathesarAdminCredentials(coreApi, namespace)
+      await disconnectMathesarDatabaseAsAdmin({
+        baseUrl: buildMathesarBaseUrl(namespace),
+        username: adminCredentials.username,
+        password: adminCredentials.password,
+        database: postgresDatabase.database,
         adminConfig,
       })
     },

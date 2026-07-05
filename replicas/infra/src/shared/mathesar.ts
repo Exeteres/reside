@@ -30,6 +30,20 @@ type MathesarConnectExistingDatabaseInput = {
   adminConfig: PostgresAdminConfig
 }
 
+type MathesarDisconnectDatabaseInput = {
+  baseUrl: string
+  username: string
+  password: string
+  database: string
+  adminConfig: PostgresAdminConfig
+}
+
+type MathesarConfiguredDatabase = {
+  id: number
+  name: string
+  nickname?: string | null
+}
+
 export type MathesarDatabaseTarget = {
   id: number | string
   database: string
@@ -204,6 +218,42 @@ export async function connectMathesarDatabaseAsAdmin(
   }
 }
 
+export async function disconnectMathesarDatabaseAsAdmin(
+  input: MathesarDisconnectDatabaseInput,
+): Promise<void> {
+  const { baseUrl, username, password, database, adminConfig } = input
+  const cookieJar = new Map<string, string>()
+
+  await loginToMathesarAsAdmin({ baseUrl, username, password, adminConfig, cookieJar })
+
+  const configuredDatabases = await requestMathesarRpc<MathesarConfiguredDatabase[]>({
+    baseUrl,
+    cookieJar,
+    method: "databases.configured.list",
+    params: {},
+    context: "databases.configured.list",
+  })
+  const configuredDatabase = configuredDatabases.find(
+    configured => configured.name === database || configured.nickname === database,
+  )
+  if (!configuredDatabase) {
+    return
+  }
+
+  await requestMathesarRpc({
+    baseUrl,
+    cookieJar,
+    method: "databases.configured.disconnect",
+    params: {
+      database_id: configuredDatabase.id,
+      strict: false,
+      role_name: adminConfig.username,
+      password: adminConfig.password,
+    },
+    context: "databases.configured.disconnect",
+  })
+}
+
 function isDatabaseAlreadyConnectedError(message: string): boolean {
   const normalized = message.toLowerCase()
 
@@ -264,6 +314,86 @@ async function loginToMathesar(
   }
 
   return "ok"
+}
+
+async function loginToMathesarAsAdmin({
+  baseUrl,
+  username,
+  password,
+  adminConfig,
+  cookieJar,
+}: {
+  baseUrl: string
+  username: string
+  password: string
+  adminConfig: PostgresAdminConfig
+  cookieJar: Map<string, string>
+}): Promise<void> {
+  const loginStatus = await loginToMathesar(baseUrl, username, password, cookieJar)
+  if (loginStatus !== "invalid-credentials") {
+    return
+  }
+
+  await updateMathesarUserPassword(adminConfig, username, password)
+
+  cookieJar.clear()
+
+  const retryLoginStatus = await loginToMathesar(baseUrl, username, password, cookieJar)
+  if (retryLoginStatus === "invalid-credentials") {
+    throw new Error("Mathesar login failed with provided admin credentials")
+  }
+}
+
+async function requestMathesarRpc<T = unknown>({
+  baseUrl,
+  cookieJar,
+  method,
+  params,
+  context,
+}: {
+  baseUrl: string
+  cookieJar: Map<string, string>
+  method: string
+  params: Record<string, unknown>
+  context: string
+}): Promise<T> {
+  const csrfToken = cookieJar.get("csrftoken")
+  if (!csrfToken) {
+    throw new Error("Mathesar did not provide CSRF token after login")
+  }
+
+  const response = await fetch(`${baseUrl}/api/rpc/v0/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrfToken,
+      Cookie: buildCookieHeader(cookieJar),
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: context,
+      method,
+      params,
+    }),
+    redirect: "manual",
+  })
+  appendResponseCookies(cookieJar, response)
+
+  ensureSuccessStatus(response, context)
+
+  const result = await response.json()
+  if (!isRecord(result)) {
+    throw new Error(`Mathesar RPC returned invalid response for ${context}`)
+  }
+
+  if (isRecord(result.error)) {
+    const code = typeof result.error.code === "number" ? result.error.code : "unknown"
+    const message = typeof result.error.message === "string" ? result.error.message : "unknown"
+
+    throw new Error(`Mathesar RPC ${context} failed (${code}): ${message}`)
+  }
+
+  return result.result as T
 }
 
 async function updateMathesarUserPassword(

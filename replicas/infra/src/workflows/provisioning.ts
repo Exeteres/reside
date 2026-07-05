@@ -21,6 +21,7 @@ const {
   getProvisionOperationById,
   provisionPostgresDatabase,
   connectMathesarDatabase,
+  disconnectMathesarDatabase,
   provisionTemporalNamespace,
   provisionStorageBucket,
   ensureGateway,
@@ -203,6 +204,7 @@ export async function deletePostgresDatabaseWorkflow({
   }
 
   try {
+    await disconnectMathesarDatabase({ postgresDatabase: operation.postgresDatabase })
     await deletePostgresDatabase({ name: operation.postgresDatabase.database })
     await setOperationCompleted({ operationId: operation.id })
   } catch (error) {

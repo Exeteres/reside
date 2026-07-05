@@ -47,6 +47,13 @@ export type ConnectMathesarDatabaseInput = {
   postgresDatabase: PostgresDatabase
 }
 
+export type DisconnectMathesarDatabaseInput = {
+  /**
+   * The PostgreSQL database resource to unregister from Mathesar.
+   */
+  postgresDatabase: PostgresDatabase
+}
+
 export type ProvisionTemporalNamespaceInput = {
   /**
    * The Temporal namespace resource to provision.
@@ -154,6 +161,11 @@ export type InfraActivities = {
    * Connects a PostgreSQL database to Mathesar.
    */
   connectMathesarDatabase: (input: ConnectMathesarDatabaseInput) => Promise<void>
+
+  /**
+   * Disconnects a PostgreSQL database from Mathesar.
+   */
+  disconnectMathesarDatabase: (input: DisconnectMathesarDatabaseInput) => Promise<void>
 
   /**
    * Provisions a Temporal namespace resource.
