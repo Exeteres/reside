@@ -207,7 +207,9 @@ async function runLedgerWrite<T>(
   write: (prisma: BankPrisma) => Promise<T>,
 ): Promise<T> {
   return await prisma.$transaction(async tx => await write(tx as BankPrisma), {
-    isolationLevel: "Serializable",
+    // crypto.encrypt persists EncryptedContent through the root Prisma client;
+    // each ledger statement must see those rows before referencing their ECIDs.
+    isolationLevel: "ReadCommitted",
   })
 }
 
