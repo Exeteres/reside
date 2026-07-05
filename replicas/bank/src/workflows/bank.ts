@@ -21,7 +21,7 @@ const { getBalance, issueReplicaFunds, listTransactions, transfer } =
   })
 
 const { fundTelegramAccount } = proxyActivities<BankActivities>({
-  scheduleToCloseTimeout: "1 day",
+  scheduleToCloseTimeout: "365 days",
   retry: {
     initialInterval: "3 seconds",
     backoffCoefficient: 2,
