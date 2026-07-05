@@ -104,6 +104,11 @@ export enum WellKnownPermissions {
   ENCRYPTION_TRANSFER = "encryption:transfer",
 
   /**
+   * Allows issuing bank funds to any replica account.
+   */
+  BANK_ISSUE_REPLICA_FUNDS = "bank:issue-replica-funds",
+
+  /**
    * Allows to manage the specific gateway in the Infra Replica.
    * The scope is the name of the gateway.
    */

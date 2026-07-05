@@ -1,0 +1,10 @@
+model EncryptedContent {
+  /// The ECID of the encrypted content.
+  ecid String @id
+
+  /// The encrypted content data.
+  data String
+
+  accountBalance Account? @relation(name: "AccountBalance")
+  transactionAmount Transaction? @relation(name: "TransactionAmount")
+}

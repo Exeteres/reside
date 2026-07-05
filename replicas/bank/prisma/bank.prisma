@@ -1,0 +1,46 @@
+enum TransactionKind {
+  ISSUE
+  TRANSFER
+}
+
+/// A ledger account owned by a canonical subject such as `telegram:1` or `replica:alpha`.
+model Account {
+  subject_id String @id
+
+  /// The ECID of the encrypted account balance.
+  balanceEcid String @unique
+
+  /// The encrypted account balance stored as a decimal string.
+  balance EncryptedContent @relation(name: "AccountBalance", fields: [balanceEcid], references: [ecid], onDelete: Restrict)
+
+  sentTransactions Transaction[] @relation("TransactionSender")
+  receivedTransactions Transaction[] @relation("TransactionRecipient")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// An immutable ledger transaction.
+model Transaction {
+  id BigInt @id @default(autoincrement())
+  kind TransactionKind
+
+  sender_subject_id String?
+  sender Account? @relation("TransactionSender", fields: [sender_subject_id], references: [subject_id], onDelete: Restrict)
+
+  recipient_subject_id String
+  recipient Account @relation("TransactionRecipient", fields: [recipient_subject_id], references: [subject_id], onDelete: Restrict)
+
+  /// The ECID of the encrypted transaction amount.
+  amountEcid String @unique
+
+  /// The encrypted transaction amount stored as a decimal string.
+  amount EncryptedContent @relation(name: "TransactionAmount", fields: [amountEcid], references: [ecid], onDelete: Restrict)
+
+  idempotencyKey String @unique
+  comment String?
+  createdAt DateTime @default(now())
+
+  @@index([sender_subject_id, createdAt])
+  @@index([recipient_subject_id, createdAt])
+}
