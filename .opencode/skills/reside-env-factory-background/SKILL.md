@@ -40,6 +40,9 @@ description: Use when operating as the Engineer factory background implementatio
 ## Code-Changing Tasks
 
 - Only call `reside_commit_changes`, `reside_deliver_changes`, or `reside_deploy_replica` for code-changing tasks with actual repository changes.
+- If this session is running in the main git repository instead of a workspace, do not edit repository files; advise the user to create a new workspace for this repository and request the changes there.
+- Do not edit files outside the current session worktree or `/tmp`.
+- If the user requests changes outside the current session worktree or `/tmp`, advise them to create a new workspace for that target and request the changes there.
 - Prefer create/edit tools for source-file content changes.
 - Use bash for inspection, generators, checks, git recovery, and simple filesystem operations.
 - Avoid shell heredocs, `cat >`, `sed -i`, `perl -pi`, and one-off Node/Python scripts for writing repository source files unless a structured edit tool cannot express the change.

@@ -1,5 +1,7 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import type { SkillRule } from "./types"
+import { existsSync, lstatSync } from "node:fs"
+import { tmpdir } from "node:os"
 import path from "node:path"
 import { getMissingSkills } from "./enforcement"
 import { createMigrationCreationError, getBlockedMigrationCreations } from "./prisma-migrations"
@@ -146,6 +148,18 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
         const targets = editTools.has(input.tool) ? getTargetPaths(input.tool, output.args) : []
         const commands = getTargetCommands(input.tool, output.args)
 
+        if (isFactoryEnvironment(environment)) {
+          if (!isGitLinkedWorktree(worktree) && targets.length > 0) {
+            throw new Error(createFactoryMainRepositoryEditError(targets))
+          }
+
+          const blockedEditTargets = getBlockedFactoryEditTargets(targets, worktree)
+
+          if (blockedEditTargets.length > 0) {
+            throw new Error(createFactoryEditBoundaryError(blockedEditTargets))
+          }
+        }
+
         const blockedMigrationCreations = getBlockedMigrationCreations(
           input.tool,
           output.args,
@@ -254,6 +268,46 @@ function normalizePath(targetPath: string, worktree: string): string {
     : targetPath
 
   return relativePath.replace(/^\.\//, "")
+}
+
+function getBlockedFactoryEditTargets(targets: string[], worktree: string): string[] {
+  return targets.filter(target => !isFactoryEditablePath(target, worktree))
+}
+
+function isFactoryEditablePath(targetPath: string, worktree: string): boolean {
+  const absolutePath = path.resolve(worktree, targetPath)
+
+  return isPathInside(absolutePath, worktree) || isPathInside(absolutePath, tmpdir())
+}
+
+function isPathInside(targetPath: string, directory: string): boolean {
+  const relativePath = path.relative(path.resolve(directory), path.resolve(targetPath))
+
+  return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
+}
+
+function createFactoryEditBoundaryError(targets: string[]): string {
+  return [
+    "Skill enforcement blocked this edit.",
+    "Factory environments may edit files only inside the session worktree or /tmp.",
+    "Create a new workspace for the target repository and request the changes there.",
+    `Blocked target files: ${targets.join(", ")}.`,
+  ].join("\n")
+}
+
+function isGitLinkedWorktree(worktree: string): boolean {
+  const gitPath = path.join(worktree, ".git")
+
+  return existsSync(gitPath) && lstatSync(gitPath).isFile()
+}
+
+function createFactoryMainRepositoryEditError(targets: string[]): string {
+  return [
+    "Skill enforcement blocked this edit.",
+    "Factory environments may edit repository files only from a workspace, not from the main git repository.",
+    "Create a new workspace for this repository and request the changes there.",
+    `Blocked target files: ${targets.join(", ")}.`,
+  ].join("\n")
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

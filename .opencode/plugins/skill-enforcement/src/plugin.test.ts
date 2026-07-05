@@ -124,6 +124,54 @@ describe("createSkillEnforcementPlugin", () => {
     )
   })
 
+  test("blocks factory edits outside the worktree and tmp", async () => {
+    const worktree = createLinkedWorktreeFixture()
+    const outsidePath = path.resolve(process.cwd(), "..", "outside.ts")
+    const hooks = await createHooks({ environment: "factory-background", worktree })
+
+    await loadFactoryEnvironmentSkill(hooks)
+    await runFactoryInstall(hooks)
+
+    expect(
+      hooks["tool.execute.before"]?.(
+        { tool: "write", sessionID: "session-1", callID: "call-3" },
+        { args: { filePath: outsidePath } },
+      ),
+    ).rejects.toThrow(
+      "Factory environments may edit files only inside the session worktree or /tmp",
+    )
+  })
+
+  test("allows factory edits inside tmp", async () => {
+    const worktree = createLinkedWorktreeFixture()
+    const hooks = await createHooks({ environment: "factory-background", worktree })
+    const tmpPath = path.join(tmpdir(), "skill-enforcement-output.txt")
+
+    await loadFactoryEnvironmentSkill(hooks)
+    await runFactoryInstall(hooks)
+
+    await hooks["tool.execute.before"]?.(
+      { tool: "write", sessionID: "session-1", callID: "call-3" },
+      { args: { filePath: tmpPath } },
+    )
+  })
+
+  test("blocks factory edits from the main git repository", async () => {
+    const worktree = mkdtempSync(path.join(tmpdir(), "skill-enforcement-main-repo-"))
+    mkdirSync(path.join(worktree, ".git"))
+    const hooks = await createHooks({ environment: "factory-background", worktree })
+
+    await loadFactoryEnvironmentSkill(hooks)
+    await runFactoryInstall(hooks)
+
+    expect(
+      hooks["tool.execute.before"]?.(
+        { tool: "write", sessionID: "session-1", callID: "call-3" },
+        { args: { filePath: "src/index.ts" } },
+      ),
+    ).rejects.toThrow("only from a workspace, not from the main git repository")
+  })
+
   test("blocks edits until matching required skills are loaded", async () => {
     const hooks = await createHooks({
       environment: "interactive",
@@ -204,6 +252,20 @@ async function loadEnvironmentSkill(hooks: Hooks): Promise<void> {
   )
 }
 
+async function loadFactoryEnvironmentSkill(hooks: Hooks): Promise<void> {
+  await hooks["tool.execute.before"]?.(
+    { tool: "skill", sessionID: "session-1", callID: "load-environment" },
+    { args: { name: "reside-env-factory-background" } },
+  )
+}
+
+async function runFactoryInstall(hooks: Hooks): Promise<void> {
+  await hooks["tool.execute.before"]?.(
+    { tool: "bash", sessionID: "session-1", callID: "install" },
+    { args: { command: "bun install --frozen-lockfile" } },
+  )
+}
+
 type ChatMessageOutput = Parameters<NonNullable<Hooks["chat.message"]>>[1]
 
 async function createHooks(options: CreateHooksOptions): Promise<Hooks> {
@@ -236,4 +298,14 @@ function createChatOutput(text: string): ChatMessageOutput {
       },
     ],
   }
+}
+
+function createLinkedWorktreeFixture(): string {
+  const worktree = mkdtempSync(path.join(tmpdir(), "skill-enforcement-worktree-"))
+
+  writeFileSync(path.join(worktree, ".git"), "gitdir: /tmp/test/.git/worktrees/test\n", {
+    flush: true,
+  })
+
+  return worktree
 }
