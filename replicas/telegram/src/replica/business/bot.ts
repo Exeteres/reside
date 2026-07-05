@@ -218,6 +218,12 @@ export async function createTelegramBot(args: {
     })
   })
 
+  bot.command("ping", async context => {
+    await sendSystemMessage(context, {
+      text: strings.worker.bot.pong,
+    })
+  })
+
   bot.command("info", async context => {
     const chatId = context.chat?.id
     const messageId = context.message?.message_id

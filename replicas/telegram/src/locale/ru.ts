@@ -151,6 +151,7 @@ export const ru = {
       commandExecutionFailed: "Не удалось выполнить команду",
       commandReplicaUnavailable: "Реплика не отвечает (что-то там про плохой шлюз)",
       commandReplicaBroken: "Реплика ответила с ошибкой",
+      pong: "pong",
       nlsReplicaUnavailable: "Реплика не отвечает на NLS-запрос (что-то там про плохой шлюз)",
       nlsReplicaBroken: "Реплика вернула ошибку при обработке NLS-запроса",
       nlsSessionOwnedByAnotherUser: (replicaName: string) =>
