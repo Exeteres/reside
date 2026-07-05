@@ -19,6 +19,8 @@
     "./alpha/registration.v1": "./src/_generated/alpha/registration.v1.ts",
     "./alpha/replica.v1_pb": "./src/_generated/alpha/replica.v1_pb.ts",
     "./alpha/replica.v1": "./src/_generated/alpha/replica.v1.ts",
+    "./bank/bank.v1_pb": "./src/_generated/bank/bank.v1_pb.ts",
+    "./bank/bank.v1": "./src/_generated/bank/bank.v1.ts",
     "./common/approval.v1_pb": "./src/_generated/common/approval.v1_pb.ts",
     "./common/approval.v1": "./src/_generated/common/approval.v1.ts",
     "./common/encryption.v1_pb": "./src/_generated/common/encryption.v1_pb.ts",
