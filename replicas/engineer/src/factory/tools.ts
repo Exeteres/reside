@@ -237,6 +237,7 @@ export function createDeliverChangesTool({
         "-C",
         workingDir,
         "push",
+        "--force-with-lease",
         "--set-upstream",
         "origin",
         targetBranchName,
@@ -309,7 +310,11 @@ export function createDeliverChangesTool({
   })
 }
 
-export function createCommitChangesTool() {
+export function createCommitChangesTool({
+  refreshRepository,
+}: {
+  refreshRepository?: () => Promise<void>
+}) {
   return defineTool("reside_commit_changes", {
     description:
       "Stages repository paths and creates a validated conventional commit without a commit body",
@@ -330,8 +335,12 @@ export function createCommitChangesTool() {
 
       validateBranchCommitLogOutput(`0000000000000000000000000000000000000000\0${message}\0\0`)
 
+      await refreshRepository?.()
+      await runCommand(["git", "-C", workingDir, "fetch", "origin", "main"])
+      await runCommand(["git", "-C", workingDir, "pull", "--ff-only", "origin", "main"])
       await runCommand(["git", "-C", workingDir, "add", "--", ...paths])
       await runCommand(["git", "-C", workingDir, "commit", "-m", message])
+      await runCommand(["git", "-C", workingDir, "rebase", "origin/main"])
       await validateBranchCommitMessages(workingDir, targetBranchName)
 
       const { stdout } = await runCommandWithOutput([

@@ -172,7 +172,7 @@ async function startSharedFactoryMcpServer({
     invocationId: "factory",
     token: process.env[FACTORY_MCP_TOKEN_ENV_VAR],
     tools: [
-      createCommitChangesTool(),
+      createCommitChangesTool({ refreshRepository }),
       createDeliverChangesTool({
         github,
         owner,
