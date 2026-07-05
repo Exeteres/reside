@@ -42,6 +42,7 @@ description: Use when operating in the Engineer factory web OpenCode environment
 
 - Use `reside_commit_changes` when the user asks you to commit or when a completed code-changing task should be committed.
 - Use `reside_deliver_changes` only after checking that delivery is appropriate for the user's request.
+- If the user asks to both deliver and deploy, always deliver the committed changes first, then deploy from the delivered main branch state.
 - Do not deploy unless the user explicitly requests deployment or the loaded task-scoped rules require it.
 
 ## Validation
