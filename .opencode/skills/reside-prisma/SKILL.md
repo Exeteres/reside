@@ -118,6 +118,8 @@ data Json
 - Do not run `devenv` for migration work unless the task explicitly changes or tests devenv configuration.
 - If another migration was created in the same session, reset first with `bun prisma migrate reset --force`.
 - Create migrations with `bun prisma migrate dev --name <name>`.
+- If `migrate dev` refuses because the tool environment is non-interactive, run it through a pseudo-TTY and pipe the explicit confirmation, for example `printf 'y\n' | script -q -c "bun prisma migrate dev --name <name>" /dev/null`.
+- Use the pseudo-TTY confirmation only after the user approves any destructive/data-loss warning or the migration warning is already acceptable under this skill's safety rules.
 - Do not author migrations from scratch by hand.
 - Generate the migration with Prisma first.
 - Manual SQL edits are allowed only when Prisma's generated SQL is not deployable or cannot express the required migration safely, for example nullable-add/backfill/set-not-null sequences, data backfills, or provider-specific DDL.
