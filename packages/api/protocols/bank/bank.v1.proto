@@ -6,45 +6,80 @@ import "google/protobuf/empty.proto";
 
 // A bank ledger transaction visible through the public API.
 message Transaction {
+  // Opaque transaction ID.
   string id = 1;
+
+  // The transaction kind.
   TransactionKind kind = 2;
+
+  // The sender subject ID for transfers.
+  // Missing for issued funds.
   optional string sender_subject_id = 3;
+
+  // The recipient subject ID.
   string recipient_subject_id = 4;
+
+  // The transaction amount in ∅ as a decimal string.
   string amount = 5;
+
+  // The transaction comment, returned as plaintext through this API.
+  // The bank replica stores this value encrypted at rest.
   optional string comment = 6;
+
+  // The transaction creation timestamp in ISO 8601 format.
   string created_at = 7;
 }
 
 enum TransactionKind {
+  // The transaction kind is unknown.
   TRANSACTION_KIND_UNSPECIFIED = 0;
+
+  // Funds were issued to a subject.
   ISSUE = 1;
+
+  // Funds were transferred between subjects.
   TRANSFER = 2;
 }
 
 message GetBalanceResponse {
+  // The authenticated replica subject balance in ∅ as a decimal string.
   string balance = 1;
 }
 
 message ListTransactionsRequest {
+  // The maximum number of transactions to return.
+  // The server may cap this value.
   uint32 page_size = 1;
+
+  // Opaque pagination token returned by a previous list response.
   optional string page_token = 2;
 }
 
 message ListTransactionsResponse {
+  // Transactions visible to the authenticated replica subject.
   repeated Transaction transactions = 1;
+
+  // Opaque pagination token for the next page.
   optional string next_page_token = 2;
 }
 
 message TransferRequest {
+  // The recipient subject ID.
   string recipient_subject_id = 1;
+
+  // The transfer amount in ∅ as a positive decimal string.
   string amount = 2;
+
+  // Opaque idempotency key for the transfer.
   string idempotency_key = 3;
-  // Plaintext comment for the recipient-facing transaction.
-  // The bank replica encrypts this value before storing it and never returns it as plaintext.
+
+  // Optional plaintext transaction comment.
+  // The bank replica stores this value encrypted at rest and returns it as plaintext through this API.
   optional string comment = 4;
 }
 
 message TransferResponse {
+  // The resulting transaction.
   Transaction transaction = 1;
 }
 

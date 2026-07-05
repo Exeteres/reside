@@ -21,36 +21,52 @@ export const file_bank_bank_v1: GenFile = /*@__PURE__*/
  */
 export type Transaction = Message<"reside.bank.v1.Transaction"> & {
   /**
+   * Opaque transaction ID.
+   *
    * @generated from field: string id = 1;
    */
   id: string;
 
   /**
+   * The transaction kind.
+   *
    * @generated from field: reside.bank.v1.TransactionKind kind = 2;
    */
   kind: TransactionKind;
 
   /**
+   * The sender subject ID for transfers.
+   * Missing for issued funds.
+   *
    * @generated from field: optional string sender_subject_id = 3;
    */
   senderSubjectId?: string;
 
   /**
+   * The recipient subject ID.
+   *
    * @generated from field: string recipient_subject_id = 4;
    */
   recipientSubjectId: string;
 
   /**
+   * The transaction amount in ∅ as a decimal string.
+   *
    * @generated from field: string amount = 5;
    */
   amount: string;
 
   /**
+   * The transaction comment, returned as plaintext through this API.
+   * The bank replica stores this value encrypted at rest.
+   *
    * @generated from field: optional string comment = 6;
    */
   comment?: string;
 
   /**
+   * The transaction creation timestamp in ISO 8601 format.
+   *
    * @generated from field: string created_at = 7;
    */
   createdAt: string;
@@ -63,36 +79,52 @@ export type Transaction = Message<"reside.bank.v1.Transaction"> & {
  */
 export type TransactionJson = {
   /**
+   * Opaque transaction ID.
+   *
    * @generated from field: string id = 1;
    */
   id?: string;
 
   /**
+   * The transaction kind.
+   *
    * @generated from field: reside.bank.v1.TransactionKind kind = 2;
    */
   kind?: TransactionKindJson;
 
   /**
+   * The sender subject ID for transfers.
+   * Missing for issued funds.
+   *
    * @generated from field: optional string sender_subject_id = 3;
    */
   senderSubjectId?: string;
 
   /**
+   * The recipient subject ID.
+   *
    * @generated from field: string recipient_subject_id = 4;
    */
   recipientSubjectId?: string;
 
   /**
+   * The transaction amount in ∅ as a decimal string.
+   *
    * @generated from field: string amount = 5;
    */
   amount?: string;
 
   /**
+   * The transaction comment, returned as plaintext through this API.
+   * The bank replica stores this value encrypted at rest.
+   *
    * @generated from field: optional string comment = 6;
    */
   comment?: string;
 
   /**
+   * The transaction creation timestamp in ISO 8601 format.
+   *
    * @generated from field: string created_at = 7;
    */
   createdAt?: string;
@@ -110,6 +142,8 @@ export const TransactionSchema: GenMessage<Transaction, {jsonType: TransactionJs
  */
 export type GetBalanceResponse = Message<"reside.bank.v1.GetBalanceResponse"> & {
   /**
+   * The authenticated replica subject balance in ∅ as a decimal string.
+   *
    * @generated from field: string balance = 1;
    */
   balance: string;
@@ -120,6 +154,8 @@ export type GetBalanceResponse = Message<"reside.bank.v1.GetBalanceResponse"> & 
  */
 export type GetBalanceResponseJson = {
   /**
+   * The authenticated replica subject balance in ∅ as a decimal string.
+   *
    * @generated from field: string balance = 1;
    */
   balance?: string;
@@ -137,11 +173,16 @@ export const GetBalanceResponseSchema: GenMessage<GetBalanceResponse, {jsonType:
  */
 export type ListTransactionsRequest = Message<"reside.bank.v1.ListTransactionsRequest"> & {
   /**
+   * The maximum number of transactions to return.
+   * The server may cap this value.
+   *
    * @generated from field: uint32 page_size = 1;
    */
   pageSize: number;
 
   /**
+   * Opaque pagination token returned by a previous list response.
+   *
    * @generated from field: optional string page_token = 2;
    */
   pageToken?: string;
@@ -152,11 +193,16 @@ export type ListTransactionsRequest = Message<"reside.bank.v1.ListTransactionsRe
  */
 export type ListTransactionsRequestJson = {
   /**
+   * The maximum number of transactions to return.
+   * The server may cap this value.
+   *
    * @generated from field: uint32 page_size = 1;
    */
   pageSize?: number;
 
   /**
+   * Opaque pagination token returned by a previous list response.
+   *
    * @generated from field: optional string page_token = 2;
    */
   pageToken?: string;
@@ -174,11 +220,15 @@ export const ListTransactionsRequestSchema: GenMessage<ListTransactionsRequest, 
  */
 export type ListTransactionsResponse = Message<"reside.bank.v1.ListTransactionsResponse"> & {
   /**
+   * Transactions visible to the authenticated replica subject.
+   *
    * @generated from field: repeated reside.bank.v1.Transaction transactions = 1;
    */
   transactions: Transaction[];
 
   /**
+   * Opaque pagination token for the next page.
+   *
    * @generated from field: optional string next_page_token = 2;
    */
   nextPageToken?: string;
@@ -189,11 +239,15 @@ export type ListTransactionsResponse = Message<"reside.bank.v1.ListTransactionsR
  */
 export type ListTransactionsResponseJson = {
   /**
+   * Transactions visible to the authenticated replica subject.
+   *
    * @generated from field: repeated reside.bank.v1.Transaction transactions = 1;
    */
   transactions?: TransactionJson[];
 
   /**
+   * Opaque pagination token for the next page.
+   *
    * @generated from field: optional string next_page_token = 2;
    */
   nextPageToken?: string;
@@ -211,23 +265,29 @@ export const ListTransactionsResponseSchema: GenMessage<ListTransactionsResponse
  */
 export type TransferRequest = Message<"reside.bank.v1.TransferRequest"> & {
   /**
+   * The recipient subject ID.
+   *
    * @generated from field: string recipient_subject_id = 1;
    */
   recipientSubjectId: string;
 
   /**
+   * The transfer amount in ∅ as a positive decimal string.
+   *
    * @generated from field: string amount = 2;
    */
   amount: string;
 
   /**
+   * Opaque idempotency key for the transfer.
+   *
    * @generated from field: string idempotency_key = 3;
    */
   idempotencyKey: string;
 
   /**
-   * Plaintext comment for the recipient-facing transaction.
-   * The bank replica encrypts this value before storing it and never returns it as plaintext.
+   * Optional plaintext transaction comment.
+   * The bank replica stores this value encrypted at rest and returns it as plaintext through this API.
    *
    * @generated from field: optional string comment = 4;
    */
@@ -239,23 +299,29 @@ export type TransferRequest = Message<"reside.bank.v1.TransferRequest"> & {
  */
 export type TransferRequestJson = {
   /**
+   * The recipient subject ID.
+   *
    * @generated from field: string recipient_subject_id = 1;
    */
   recipientSubjectId?: string;
 
   /**
+   * The transfer amount in ∅ as a positive decimal string.
+   *
    * @generated from field: string amount = 2;
    */
   amount?: string;
 
   /**
+   * Opaque idempotency key for the transfer.
+   *
    * @generated from field: string idempotency_key = 3;
    */
   idempotencyKey?: string;
 
   /**
-   * Plaintext comment for the recipient-facing transaction.
-   * The bank replica encrypts this value before storing it and never returns it as plaintext.
+   * Optional plaintext transaction comment.
+   * The bank replica stores this value encrypted at rest and returns it as plaintext through this API.
    *
    * @generated from field: optional string comment = 4;
    */
@@ -274,6 +340,8 @@ export const TransferRequestSchema: GenMessage<TransferRequest, {jsonType: Trans
  */
 export type TransferResponse = Message<"reside.bank.v1.TransferResponse"> & {
   /**
+   * The resulting transaction.
+   *
    * @generated from field: reside.bank.v1.Transaction transaction = 1;
    */
   transaction?: Transaction;
@@ -284,6 +352,8 @@ export type TransferResponse = Message<"reside.bank.v1.TransferResponse"> & {
  */
 export type TransferResponseJson = {
   /**
+   * The resulting transaction.
+   *
    * @generated from field: reside.bank.v1.Transaction transaction = 1;
    */
   transaction?: TransactionJson;
@@ -301,16 +371,22 @@ export const TransferResponseSchema: GenMessage<TransferResponse, {jsonType: Tra
  */
 export enum TransactionKind {
   /**
+   * The transaction kind is unknown.
+   *
    * @generated from enum value: TRANSACTION_KIND_UNSPECIFIED = 0;
    */
   TRANSACTION_KIND_UNSPECIFIED = 0,
 
   /**
+   * Funds were issued to a subject.
+   *
    * @generated from enum value: ISSUE = 1;
    */
   ISSUE = 1,
 
   /**
+   * Funds were transferred between subjects.
+   *
    * @generated from enum value: TRANSFER = 2;
    */
   TRANSFER = 2,
