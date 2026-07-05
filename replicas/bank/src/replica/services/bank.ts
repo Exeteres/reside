@@ -10,12 +10,15 @@ type BankServiceDependencies = Pick<BankServices, "prisma">
 
 export function createBankService({ prisma }: BankServiceDependencies): BankServiceImplementation {
   return {
-    async getBalance(request) {
-      return { balance: await getBalance(crypto, prisma, request.subjectId) }
+    async getBalance(_request, context: HandlerContext) {
+      const identity = await authenticateReplica(context)
+
+      return { balance: await getBalance(crypto, prisma, identity.subjectId) }
     },
-    async listTransactions(request) {
+    async listTransactions(request, context: HandlerContext) {
+      const identity = await authenticateReplica(context)
       const result = await listTransactions(crypto, prisma, {
-        subjectId: request.subjectId,
+        subjectId: identity.subjectId,
         pageSize: request.pageSize,
         pageToken: request.pageToken,
       })

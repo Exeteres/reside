@@ -90,7 +90,7 @@ export const TransactionScalarFieldEnum = {
   recipient_subject_id: 'recipient_subject_id',
   amountEcid: 'amountEcid',
   idempotencyKey: 'idempotencyKey',
-  comment: 'comment',
+  commentEcid: 'commentEcid',
   createdAt: 'createdAt'
 } as const
 

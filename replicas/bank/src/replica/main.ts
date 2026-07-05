@@ -42,7 +42,8 @@ await setupLanguageSubsystem({
   description: strings.bootstrap.registration.description,
   instructions:
     "Help users manage the ∅ virtual currency. " +
-    "Use bank tools for balance, transaction history, and transfers. " +
+    "Use bank tools only for the current interaction subject from the system prompt. " +
+    "Use transaction amount ECIDs exactly as returned instead of plaintext amounts. " +
     "Do not invent balances or claim that a transfer succeeded unless the tool result confirms it.",
   tools: createBankTools(services),
 })

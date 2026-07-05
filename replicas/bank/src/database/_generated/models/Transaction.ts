@@ -41,7 +41,7 @@ export type TransactionMinAggregateOutputType = {
   recipient_subject_id: string | null
   amountEcid: string | null
   idempotencyKey: string | null
-  comment: string | null
+  commentEcid: string | null
   createdAt: Date | null
 }
 
@@ -52,7 +52,7 @@ export type TransactionMaxAggregateOutputType = {
   recipient_subject_id: string | null
   amountEcid: string | null
   idempotencyKey: string | null
-  comment: string | null
+  commentEcid: string | null
   createdAt: Date | null
 }
 
@@ -63,7 +63,7 @@ export type TransactionCountAggregateOutputType = {
   recipient_subject_id: number
   amountEcid: number
   idempotencyKey: number
-  comment: number
+  commentEcid: number
   createdAt: number
   _all: number
 }
@@ -84,7 +84,7 @@ export type TransactionMinAggregateInputType = {
   recipient_subject_id?: true
   amountEcid?: true
   idempotencyKey?: true
-  comment?: true
+  commentEcid?: true
   createdAt?: true
 }
 
@@ -95,7 +95,7 @@ export type TransactionMaxAggregateInputType = {
   recipient_subject_id?: true
   amountEcid?: true
   idempotencyKey?: true
-  comment?: true
+  commentEcid?: true
   createdAt?: true
 }
 
@@ -106,7 +106,7 @@ export type TransactionCountAggregateInputType = {
   recipient_subject_id?: true
   amountEcid?: true
   idempotencyKey?: true
-  comment?: true
+  commentEcid?: true
   createdAt?: true
   _all?: true
 }
@@ -204,7 +204,7 @@ export type TransactionGroupByOutputType = {
   recipient_subject_id: string
   amountEcid: string
   idempotencyKey: string
-  comment: string | null
+  commentEcid: string | null
   createdAt: Date
   _count: TransactionCountAggregateOutputType | null
   _avg: TransactionAvgAggregateOutputType | null
@@ -238,11 +238,12 @@ export type TransactionWhereInput = {
   recipient_subject_id?: Prisma.StringFilter<"Transaction"> | string
   amountEcid?: Prisma.StringFilter<"Transaction"> | string
   idempotencyKey?: Prisma.StringFilter<"Transaction"> | string
-  comment?: Prisma.StringNullableFilter<"Transaction"> | string | null
+  commentEcid?: Prisma.StringNullableFilter<"Transaction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   sender?: Prisma.XOR<Prisma.AccountNullableScalarRelationFilter, Prisma.AccountWhereInput> | null
   recipient?: Prisma.XOR<Prisma.AccountScalarRelationFilter, Prisma.AccountWhereInput>
   amount?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
+  comment?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
 }
 
 export type TransactionOrderByWithRelationInput = {
@@ -252,29 +253,31 @@ export type TransactionOrderByWithRelationInput = {
   recipient_subject_id?: Prisma.SortOrder
   amountEcid?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
-  comment?: Prisma.SortOrderInput | Prisma.SortOrder
+  commentEcid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   sender?: Prisma.AccountOrderByWithRelationInput
   recipient?: Prisma.AccountOrderByWithRelationInput
   amount?: Prisma.EncryptedContentOrderByWithRelationInput
+  comment?: Prisma.EncryptedContentOrderByWithRelationInput
 }
 
 export type TransactionWhereUniqueInput = Prisma.AtLeast<{
   id?: bigint | number
   amountEcid?: string
   idempotencyKey?: string
+  commentEcid?: string
   AND?: Prisma.TransactionWhereInput | Prisma.TransactionWhereInput[]
   OR?: Prisma.TransactionWhereInput[]
   NOT?: Prisma.TransactionWhereInput | Prisma.TransactionWhereInput[]
   kind?: Prisma.EnumTransactionKindFilter<"Transaction"> | $Enums.TransactionKind
   sender_subject_id?: Prisma.StringNullableFilter<"Transaction"> | string | null
   recipient_subject_id?: Prisma.StringFilter<"Transaction"> | string
-  comment?: Prisma.StringNullableFilter<"Transaction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   sender?: Prisma.XOR<Prisma.AccountNullableScalarRelationFilter, Prisma.AccountWhereInput> | null
   recipient?: Prisma.XOR<Prisma.AccountScalarRelationFilter, Prisma.AccountWhereInput>
   amount?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
-}, "id" | "amountEcid" | "idempotencyKey">
+  comment?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
+}, "id" | "amountEcid" | "idempotencyKey" | "commentEcid">
 
 export type TransactionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -283,7 +286,7 @@ export type TransactionOrderByWithAggregationInput = {
   recipient_subject_id?: Prisma.SortOrder
   amountEcid?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
-  comment?: Prisma.SortOrderInput | Prisma.SortOrder
+  commentEcid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.TransactionCountOrderByAggregateInput
   _avg?: Prisma.TransactionAvgOrderByAggregateInput
@@ -302,7 +305,7 @@ export type TransactionScalarWhereWithAggregatesInput = {
   recipient_subject_id?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   amountEcid?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   idempotencyKey?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
-  comment?: Prisma.StringNullableWithAggregatesFilter<"Transaction"> | string | null
+  commentEcid?: Prisma.StringNullableWithAggregatesFilter<"Transaction"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Transaction"> | Date | string
 }
 
@@ -310,11 +313,11 @@ export type TransactionCreateInput = {
   id?: bigint | number
   kind: $Enums.TransactionKind
   idempotencyKey: string
-  comment?: string | null
   createdAt?: Date | string
   sender?: Prisma.AccountCreateNestedOneWithoutSentTransactionsInput
   recipient: Prisma.AccountCreateNestedOneWithoutReceivedTransactionsInput
   amount: Prisma.EncryptedContentCreateNestedOneWithoutTransactionAmountInput
+  comment?: Prisma.EncryptedContentCreateNestedOneWithoutTransactionCommentInput
 }
 
 export type TransactionUncheckedCreateInput = {
@@ -324,7 +327,7 @@ export type TransactionUncheckedCreateInput = {
   recipient_subject_id: string
   amountEcid: string
   idempotencyKey: string
-  comment?: string | null
+  commentEcid?: string | null
   createdAt?: Date | string
 }
 
@@ -332,11 +335,11 @@ export type TransactionUpdateInput = {
   id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kind?: Prisma.EnumTransactionKindFieldUpdateOperationsInput | $Enums.TransactionKind
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sender?: Prisma.AccountUpdateOneWithoutSentTransactionsNestedInput
   recipient?: Prisma.AccountUpdateOneRequiredWithoutReceivedTransactionsNestedInput
   amount?: Prisma.EncryptedContentUpdateOneRequiredWithoutTransactionAmountNestedInput
+  comment?: Prisma.EncryptedContentUpdateOneWithoutTransactionCommentNestedInput
 }
 
 export type TransactionUncheckedUpdateInput = {
@@ -346,7 +349,7 @@ export type TransactionUncheckedUpdateInput = {
   recipient_subject_id?: Prisma.StringFieldUpdateOperationsInput | string
   amountEcid?: Prisma.StringFieldUpdateOperationsInput | string
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -357,7 +360,7 @@ export type TransactionCreateManyInput = {
   recipient_subject_id: string
   amountEcid: string
   idempotencyKey: string
-  comment?: string | null
+  commentEcid?: string | null
   createdAt?: Date | string
 }
 
@@ -365,7 +368,6 @@ export type TransactionUpdateManyMutationInput = {
   id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kind?: Prisma.EnumTransactionKindFieldUpdateOperationsInput | $Enums.TransactionKind
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -376,7 +378,7 @@ export type TransactionUncheckedUpdateManyInput = {
   recipient_subject_id?: Prisma.StringFieldUpdateOperationsInput | string
   amountEcid?: Prisma.StringFieldUpdateOperationsInput | string
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -397,7 +399,7 @@ export type TransactionCountOrderByAggregateInput = {
   recipient_subject_id?: Prisma.SortOrder
   amountEcid?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
-  comment?: Prisma.SortOrder
+  commentEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -412,7 +414,7 @@ export type TransactionMaxOrderByAggregateInput = {
   recipient_subject_id?: Prisma.SortOrder
   amountEcid?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
-  comment?: Prisma.SortOrder
+  commentEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -423,7 +425,7 @@ export type TransactionMinOrderByAggregateInput = {
   recipient_subject_id?: Prisma.SortOrder
   amountEcid?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
-  comment?: Prisma.SortOrder
+  commentEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -542,9 +544,21 @@ export type TransactionCreateNestedOneWithoutAmountInput = {
   connect?: Prisma.TransactionWhereUniqueInput
 }
 
+export type TransactionCreateNestedOneWithoutCommentInput = {
+  create?: Prisma.XOR<Prisma.TransactionCreateWithoutCommentInput, Prisma.TransactionUncheckedCreateWithoutCommentInput>
+  connectOrCreate?: Prisma.TransactionCreateOrConnectWithoutCommentInput
+  connect?: Prisma.TransactionWhereUniqueInput
+}
+
 export type TransactionUncheckedCreateNestedOneWithoutAmountInput = {
   create?: Prisma.XOR<Prisma.TransactionCreateWithoutAmountInput, Prisma.TransactionUncheckedCreateWithoutAmountInput>
   connectOrCreate?: Prisma.TransactionCreateOrConnectWithoutAmountInput
+  connect?: Prisma.TransactionWhereUniqueInput
+}
+
+export type TransactionUncheckedCreateNestedOneWithoutCommentInput = {
+  create?: Prisma.XOR<Prisma.TransactionCreateWithoutCommentInput, Prisma.TransactionUncheckedCreateWithoutCommentInput>
+  connectOrCreate?: Prisma.TransactionCreateOrConnectWithoutCommentInput
   connect?: Prisma.TransactionWhereUniqueInput
 }
 
@@ -558,6 +572,16 @@ export type TransactionUpdateOneWithoutAmountNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TransactionUpdateToOneWithWhereWithoutAmountInput, Prisma.TransactionUpdateWithoutAmountInput>, Prisma.TransactionUncheckedUpdateWithoutAmountInput>
 }
 
+export type TransactionUpdateOneWithoutCommentNestedInput = {
+  create?: Prisma.XOR<Prisma.TransactionCreateWithoutCommentInput, Prisma.TransactionUncheckedCreateWithoutCommentInput>
+  connectOrCreate?: Prisma.TransactionCreateOrConnectWithoutCommentInput
+  upsert?: Prisma.TransactionUpsertWithoutCommentInput
+  disconnect?: Prisma.TransactionWhereInput | boolean
+  delete?: Prisma.TransactionWhereInput | boolean
+  connect?: Prisma.TransactionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TransactionUpdateToOneWithWhereWithoutCommentInput, Prisma.TransactionUpdateWithoutCommentInput>, Prisma.TransactionUncheckedUpdateWithoutCommentInput>
+}
+
 export type TransactionUncheckedUpdateOneWithoutAmountNestedInput = {
   create?: Prisma.XOR<Prisma.TransactionCreateWithoutAmountInput, Prisma.TransactionUncheckedCreateWithoutAmountInput>
   connectOrCreate?: Prisma.TransactionCreateOrConnectWithoutAmountInput
@@ -568,14 +592,24 @@ export type TransactionUncheckedUpdateOneWithoutAmountNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TransactionUpdateToOneWithWhereWithoutAmountInput, Prisma.TransactionUpdateWithoutAmountInput>, Prisma.TransactionUncheckedUpdateWithoutAmountInput>
 }
 
+export type TransactionUncheckedUpdateOneWithoutCommentNestedInput = {
+  create?: Prisma.XOR<Prisma.TransactionCreateWithoutCommentInput, Prisma.TransactionUncheckedCreateWithoutCommentInput>
+  connectOrCreate?: Prisma.TransactionCreateOrConnectWithoutCommentInput
+  upsert?: Prisma.TransactionUpsertWithoutCommentInput
+  disconnect?: Prisma.TransactionWhereInput | boolean
+  delete?: Prisma.TransactionWhereInput | boolean
+  connect?: Prisma.TransactionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TransactionUpdateToOneWithWhereWithoutCommentInput, Prisma.TransactionUpdateWithoutCommentInput>, Prisma.TransactionUncheckedUpdateWithoutCommentInput>
+}
+
 export type TransactionCreateWithoutSenderInput = {
   id?: bigint | number
   kind: $Enums.TransactionKind
   idempotencyKey: string
-  comment?: string | null
   createdAt?: Date | string
   recipient: Prisma.AccountCreateNestedOneWithoutReceivedTransactionsInput
   amount: Prisma.EncryptedContentCreateNestedOneWithoutTransactionAmountInput
+  comment?: Prisma.EncryptedContentCreateNestedOneWithoutTransactionCommentInput
 }
 
 export type TransactionUncheckedCreateWithoutSenderInput = {
@@ -584,7 +618,7 @@ export type TransactionUncheckedCreateWithoutSenderInput = {
   recipient_subject_id: string
   amountEcid: string
   idempotencyKey: string
-  comment?: string | null
+  commentEcid?: string | null
   createdAt?: Date | string
 }
 
@@ -602,10 +636,10 @@ export type TransactionCreateWithoutRecipientInput = {
   id?: bigint | number
   kind: $Enums.TransactionKind
   idempotencyKey: string
-  comment?: string | null
   createdAt?: Date | string
   sender?: Prisma.AccountCreateNestedOneWithoutSentTransactionsInput
   amount: Prisma.EncryptedContentCreateNestedOneWithoutTransactionAmountInput
+  comment?: Prisma.EncryptedContentCreateNestedOneWithoutTransactionCommentInput
 }
 
 export type TransactionUncheckedCreateWithoutRecipientInput = {
@@ -614,7 +648,7 @@ export type TransactionUncheckedCreateWithoutRecipientInput = {
   sender_subject_id?: string | null
   amountEcid: string
   idempotencyKey: string
-  comment?: string | null
+  commentEcid?: string | null
   createdAt?: Date | string
 }
 
@@ -654,7 +688,7 @@ export type TransactionScalarWhereInput = {
   recipient_subject_id?: Prisma.StringFilter<"Transaction"> | string
   amountEcid?: Prisma.StringFilter<"Transaction"> | string
   idempotencyKey?: Prisma.StringFilter<"Transaction"> | string
-  comment?: Prisma.StringNullableFilter<"Transaction"> | string | null
+  commentEcid?: Prisma.StringNullableFilter<"Transaction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
 }
 
@@ -678,10 +712,10 @@ export type TransactionCreateWithoutAmountInput = {
   id?: bigint | number
   kind: $Enums.TransactionKind
   idempotencyKey: string
-  comment?: string | null
   createdAt?: Date | string
   sender?: Prisma.AccountCreateNestedOneWithoutSentTransactionsInput
   recipient: Prisma.AccountCreateNestedOneWithoutReceivedTransactionsInput
+  comment?: Prisma.EncryptedContentCreateNestedOneWithoutTransactionCommentInput
 }
 
 export type TransactionUncheckedCreateWithoutAmountInput = {
@@ -690,13 +724,38 @@ export type TransactionUncheckedCreateWithoutAmountInput = {
   sender_subject_id?: string | null
   recipient_subject_id: string
   idempotencyKey: string
-  comment?: string | null
+  commentEcid?: string | null
   createdAt?: Date | string
 }
 
 export type TransactionCreateOrConnectWithoutAmountInput = {
   where: Prisma.TransactionWhereUniqueInput
   create: Prisma.XOR<Prisma.TransactionCreateWithoutAmountInput, Prisma.TransactionUncheckedCreateWithoutAmountInput>
+}
+
+export type TransactionCreateWithoutCommentInput = {
+  id?: bigint | number
+  kind: $Enums.TransactionKind
+  idempotencyKey: string
+  createdAt?: Date | string
+  sender?: Prisma.AccountCreateNestedOneWithoutSentTransactionsInput
+  recipient: Prisma.AccountCreateNestedOneWithoutReceivedTransactionsInput
+  amount: Prisma.EncryptedContentCreateNestedOneWithoutTransactionAmountInput
+}
+
+export type TransactionUncheckedCreateWithoutCommentInput = {
+  id?: bigint | number
+  kind: $Enums.TransactionKind
+  sender_subject_id?: string | null
+  recipient_subject_id: string
+  amountEcid: string
+  idempotencyKey: string
+  createdAt?: Date | string
+}
+
+export type TransactionCreateOrConnectWithoutCommentInput = {
+  where: Prisma.TransactionWhereUniqueInput
+  create: Prisma.XOR<Prisma.TransactionCreateWithoutCommentInput, Prisma.TransactionUncheckedCreateWithoutCommentInput>
 }
 
 export type TransactionUpsertWithoutAmountInput = {
@@ -714,10 +773,10 @@ export type TransactionUpdateWithoutAmountInput = {
   id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kind?: Prisma.EnumTransactionKindFieldUpdateOperationsInput | $Enums.TransactionKind
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sender?: Prisma.AccountUpdateOneWithoutSentTransactionsNestedInput
   recipient?: Prisma.AccountUpdateOneRequiredWithoutReceivedTransactionsNestedInput
+  comment?: Prisma.EncryptedContentUpdateOneWithoutTransactionCommentNestedInput
 }
 
 export type TransactionUncheckedUpdateWithoutAmountInput = {
@@ -726,7 +785,38 @@ export type TransactionUncheckedUpdateWithoutAmountInput = {
   sender_subject_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recipient_subject_id?: Prisma.StringFieldUpdateOperationsInput | string
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type TransactionUpsertWithoutCommentInput = {
+  update: Prisma.XOR<Prisma.TransactionUpdateWithoutCommentInput, Prisma.TransactionUncheckedUpdateWithoutCommentInput>
+  create: Prisma.XOR<Prisma.TransactionCreateWithoutCommentInput, Prisma.TransactionUncheckedCreateWithoutCommentInput>
+  where?: Prisma.TransactionWhereInput
+}
+
+export type TransactionUpdateToOneWithWhereWithoutCommentInput = {
+  where?: Prisma.TransactionWhereInput
+  data: Prisma.XOR<Prisma.TransactionUpdateWithoutCommentInput, Prisma.TransactionUncheckedUpdateWithoutCommentInput>
+}
+
+export type TransactionUpdateWithoutCommentInput = {
+  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  kind?: Prisma.EnumTransactionKindFieldUpdateOperationsInput | $Enums.TransactionKind
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sender?: Prisma.AccountUpdateOneWithoutSentTransactionsNestedInput
+  recipient?: Prisma.AccountUpdateOneRequiredWithoutReceivedTransactionsNestedInput
+  amount?: Prisma.EncryptedContentUpdateOneRequiredWithoutTransactionAmountNestedInput
+}
+
+export type TransactionUncheckedUpdateWithoutCommentInput = {
+  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  kind?: Prisma.EnumTransactionKindFieldUpdateOperationsInput | $Enums.TransactionKind
+  sender_subject_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recipient_subject_id?: Prisma.StringFieldUpdateOperationsInput | string
+  amountEcid?: Prisma.StringFieldUpdateOperationsInput | string
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -736,7 +826,7 @@ export type TransactionCreateManySenderInput = {
   recipient_subject_id: string
   amountEcid: string
   idempotencyKey: string
-  comment?: string | null
+  commentEcid?: string | null
   createdAt?: Date | string
 }
 
@@ -746,7 +836,7 @@ export type TransactionCreateManyRecipientInput = {
   sender_subject_id?: string | null
   amountEcid: string
   idempotencyKey: string
-  comment?: string | null
+  commentEcid?: string | null
   createdAt?: Date | string
 }
 
@@ -754,10 +844,10 @@ export type TransactionUpdateWithoutSenderInput = {
   id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kind?: Prisma.EnumTransactionKindFieldUpdateOperationsInput | $Enums.TransactionKind
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   recipient?: Prisma.AccountUpdateOneRequiredWithoutReceivedTransactionsNestedInput
   amount?: Prisma.EncryptedContentUpdateOneRequiredWithoutTransactionAmountNestedInput
+  comment?: Prisma.EncryptedContentUpdateOneWithoutTransactionCommentNestedInput
 }
 
 export type TransactionUncheckedUpdateWithoutSenderInput = {
@@ -766,7 +856,7 @@ export type TransactionUncheckedUpdateWithoutSenderInput = {
   recipient_subject_id?: Prisma.StringFieldUpdateOperationsInput | string
   amountEcid?: Prisma.StringFieldUpdateOperationsInput | string
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -776,7 +866,7 @@ export type TransactionUncheckedUpdateManyWithoutSenderInput = {
   recipient_subject_id?: Prisma.StringFieldUpdateOperationsInput | string
   amountEcid?: Prisma.StringFieldUpdateOperationsInput | string
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -784,10 +874,10 @@ export type TransactionUpdateWithoutRecipientInput = {
   id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   kind?: Prisma.EnumTransactionKindFieldUpdateOperationsInput | $Enums.TransactionKind
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sender?: Prisma.AccountUpdateOneWithoutSentTransactionsNestedInput
   amount?: Prisma.EncryptedContentUpdateOneRequiredWithoutTransactionAmountNestedInput
+  comment?: Prisma.EncryptedContentUpdateOneWithoutTransactionCommentNestedInput
 }
 
 export type TransactionUncheckedUpdateWithoutRecipientInput = {
@@ -796,7 +886,7 @@ export type TransactionUncheckedUpdateWithoutRecipientInput = {
   sender_subject_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   amountEcid?: Prisma.StringFieldUpdateOperationsInput | string
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -806,7 +896,7 @@ export type TransactionUncheckedUpdateManyWithoutRecipientInput = {
   sender_subject_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   amountEcid?: Prisma.StringFieldUpdateOperationsInput | string
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
-  comment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  commentEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -819,11 +909,12 @@ export type TransactionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   recipient_subject_id?: boolean
   amountEcid?: boolean
   idempotencyKey?: boolean
-  comment?: boolean
+  commentEcid?: boolean
   createdAt?: boolean
   sender?: boolean | Prisma.Transaction$senderArgs<ExtArgs>
   recipient?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
   amount?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  comment?: boolean | Prisma.Transaction$commentArgs<ExtArgs>
 }, ExtArgs["result"]["transaction"]>
 
 export type TransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -833,11 +924,12 @@ export type TransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   recipient_subject_id?: boolean
   amountEcid?: boolean
   idempotencyKey?: boolean
-  comment?: boolean
+  commentEcid?: boolean
   createdAt?: boolean
   sender?: boolean | Prisma.Transaction$senderArgs<ExtArgs>
   recipient?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
   amount?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  comment?: boolean | Prisma.Transaction$commentArgs<ExtArgs>
 }, ExtArgs["result"]["transaction"]>
 
 export type TransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -847,11 +939,12 @@ export type TransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   recipient_subject_id?: boolean
   amountEcid?: boolean
   idempotencyKey?: boolean
-  comment?: boolean
+  commentEcid?: boolean
   createdAt?: boolean
   sender?: boolean | Prisma.Transaction$senderArgs<ExtArgs>
   recipient?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
   amount?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  comment?: boolean | Prisma.Transaction$commentArgs<ExtArgs>
 }, ExtArgs["result"]["transaction"]>
 
 export type TransactionSelectScalar = {
@@ -861,25 +954,28 @@ export type TransactionSelectScalar = {
   recipient_subject_id?: boolean
   amountEcid?: boolean
   idempotencyKey?: boolean
-  comment?: boolean
+  commentEcid?: boolean
   createdAt?: boolean
 }
 
-export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "kind" | "sender_subject_id" | "recipient_subject_id" | "amountEcid" | "idempotencyKey" | "comment" | "createdAt", ExtArgs["result"]["transaction"]>
+export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "kind" | "sender_subject_id" | "recipient_subject_id" | "amountEcid" | "idempotencyKey" | "commentEcid" | "createdAt", ExtArgs["result"]["transaction"]>
 export type TransactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   sender?: boolean | Prisma.Transaction$senderArgs<ExtArgs>
   recipient?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
   amount?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  comment?: boolean | Prisma.Transaction$commentArgs<ExtArgs>
 }
 export type TransactionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   sender?: boolean | Prisma.Transaction$senderArgs<ExtArgs>
   recipient?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
   amount?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  comment?: boolean | Prisma.Transaction$commentArgs<ExtArgs>
 }
 export type TransactionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   sender?: boolean | Prisma.Transaction$senderArgs<ExtArgs>
   recipient?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
   amount?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  comment?: boolean | Prisma.Transaction$commentArgs<ExtArgs>
 }
 
 export type $TransactionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -891,6 +987,10 @@ export type $TransactionPayload<ExtArgs extends runtime.Types.Extensions.Interna
      * The encrypted transaction amount stored as a decimal string.
      */
     amount: Prisma.$EncryptedContentPayload<ExtArgs>
+    /**
+     * The optional encrypted transaction comment.
+     */
+    comment: Prisma.$EncryptedContentPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: bigint
@@ -902,7 +1002,10 @@ export type $TransactionPayload<ExtArgs extends runtime.Types.Extensions.Interna
      */
     amountEcid: string
     idempotencyKey: string
-    comment: string | null
+    /**
+     * The ECID of the optional encrypted transaction comment.
+     */
+    commentEcid: string | null
     createdAt: Date
   }, ExtArgs["result"]["transaction"]>
   composites: {}
@@ -1301,6 +1404,7 @@ export interface Prisma__TransactionClient<T, Null = never, ExtArgs extends runt
   sender<T extends Prisma.Transaction$senderArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Transaction$senderArgs<ExtArgs>>): Prisma.Prisma__AccountClient<runtime.Types.Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   recipient<T extends Prisma.AccountDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AccountDefaultArgs<ExtArgs>>): Prisma.Prisma__AccountClient<runtime.Types.Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   amount<T extends Prisma.EncryptedContentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContentDefaultArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  comment<T extends Prisma.Transaction$commentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Transaction$commentArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1336,7 +1440,7 @@ export interface TransactionFieldRefs {
   readonly recipient_subject_id: Prisma.FieldRef<"Transaction", 'String'>
   readonly amountEcid: Prisma.FieldRef<"Transaction", 'String'>
   readonly idempotencyKey: Prisma.FieldRef<"Transaction", 'String'>
-  readonly comment: Prisma.FieldRef<"Transaction", 'String'>
+  readonly commentEcid: Prisma.FieldRef<"Transaction", 'String'>
   readonly createdAt: Prisma.FieldRef<"Transaction", 'DateTime'>
 }
     
@@ -1750,6 +1854,25 @@ export type Transaction$senderArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   include?: Prisma.AccountInclude<ExtArgs> | null
   where?: Prisma.AccountWhereInput
+}
+
+/**
+ * Transaction.comment
+ */
+export type Transaction$commentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EncryptedContent
+   */
+  select?: Prisma.EncryptedContentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EncryptedContent
+   */
+  omit?: Prisma.EncryptedContentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EncryptedContentInclude<ExtArgs> | null
+  where?: Prisma.EncryptedContentWhereInput
 }
 
 /**

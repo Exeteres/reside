@@ -9,6 +9,7 @@ import { BankError } from "../../definitions"
 import { strings } from "../../locale"
 
 const encryptedAmountSchema = z.string().regex(/^\d+$/)
+const encryptedCommentSchema = z.string()
 const DEFAULT_PAGE_SIZE = 10
 const MAX_PAGE_SIZE = 50
 const TELEGRAM_WELCOME_IDEMPOTENCY_PREFIX = "telegram-welcome:"
@@ -21,7 +22,7 @@ type TransactionRecord = {
   sender_subject_id: string | null
   recipient_subject_id: string
   amountEcid: string
-  comment: string | null
+  commentEcid: string | null
   createdAt: Date
 }
 
@@ -31,6 +32,11 @@ export type TransferInput = {
   amount: string
   idempotencyKey: string
   comment?: string
+}
+
+export type BankTransactionAmountReference = Omit<BankTransaction, "amount" | "comment"> & {
+  amountEcid: string
+  commentEcid?: string
 }
 
 export type IssueReplicaFundsInput = {
@@ -79,40 +85,28 @@ export async function listTransactions(
   input: { subjectId: string; pageSize?: number; pageToken?: string },
   startTelegramWelcomeFunding?: StartTelegramWelcomeFunding,
 ): Promise<{ transactions: BankTransaction[]; nextPageToken?: string }> {
-  await ensureAccount(crypto, prisma, input.subjectId, startTelegramWelcomeFunding)
-
-  const pageSize = Math.min(input.pageSize ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
-  const cursorId = input.pageToken ? parseBigInt(input.pageToken, "page_token") : undefined
-  const rows = await prisma.transaction.findMany({
-    where: {
-      OR: [{ sender_subject_id: input.subjectId }, { recipient_subject_id: input.subjectId }],
-    },
-    orderBy: [{ id: "desc" }],
-    take: pageSize + 1,
-    ...(cursorId === undefined
-      ? {}
-      : {
-          cursor: { id: cursorId },
-          skip: 1,
-        }),
-  })
-
-  const visibleRows = rows.slice(0, pageSize)
+  const result = await listTransactionRecords(crypto, prisma, input, startTelegramWelcomeFunding)
   const transactions = await Promise.all(
-    visibleRows.map(async row => ({
-      id: row.id.toString(),
-      kind: row.kind,
-      senderSubjectId: row.sender_subject_id ?? undefined,
-      recipientSubjectId: row.recipient_subject_id,
-      amount: await decryptAmount(crypto, row.amountEcid),
-      comment: row.comment ?? undefined,
-      createdAt: row.createdAt.toISOString(),
-    })),
+    result.transactions.map(async transaction => await mapTransaction(crypto, transaction)),
   )
 
   return {
     transactions,
-    nextPageToken: rows.length > pageSize ? visibleRows.at(-1)?.id.toString() : undefined,
+    nextPageToken: result.nextPageToken,
+  }
+}
+
+export async function listTransactionAmountReferences(
+  crypto: ResideCrypto,
+  prisma: BankPrisma,
+  input: { subjectId: string; pageSize?: number; pageToken?: string },
+  startTelegramWelcomeFunding?: StartTelegramWelcomeFunding,
+): Promise<{ transactions: BankTransactionAmountReference[]; nextPageToken?: string }> {
+  const result = await listTransactionRecords(crypto, prisma, input, startTelegramWelcomeFunding)
+
+  return {
+    transactions: result.transactions.map(mapTransactionAmountReference),
+    nextPageToken: result.nextPageToken,
   }
 }
 
@@ -160,6 +154,7 @@ export async function transfer(
     const senderBalanceEcid = await crypto.encrypt((senderBalance - amount).toString())
     const recipientBalanceEcid = await crypto.encrypt((recipientBalance + amount).toString())
     const amountEcid = await crypto.encrypt(amount.toString())
+    const commentEcid = input.comment ? await crypto.encrypt(input.comment) : undefined
 
     await ledgerPrisma.account.update({
       where: { subject_id: input.senderSubjectId },
@@ -177,7 +172,7 @@ export async function transfer(
         recipient_subject_id: input.recipientSubjectId,
         amountEcid,
         idempotencyKey: input.idempotencyKey,
-        comment: input.comment,
+        commentEcid,
       },
     })
 
@@ -207,6 +202,7 @@ export async function issueReplicaFunds(
     )
     const recipientBalanceEcid = await crypto.encrypt((recipientBalance + amount).toString())
     const amountEcid = await crypto.encrypt(amount.toString())
+    const commentEcid = input.comment ? await crypto.encrypt(input.comment) : undefined
 
     await ledgerPrisma.account.update({
       where: { subject_id: recipientSubjectId },
@@ -219,7 +215,7 @@ export async function issueReplicaFunds(
         recipient_subject_id: recipientSubjectId,
         amountEcid,
         idempotencyKey: input.idempotencyKey,
-        comment: input.comment,
+        commentEcid,
       },
     })
 
@@ -266,6 +262,38 @@ async function runLedgerWrite<T>(
   })
 }
 
+async function listTransactionRecords(
+  crypto: ResideCrypto,
+  prisma: BankPrisma,
+  input: { subjectId: string; pageSize?: number; pageToken?: string },
+  startTelegramWelcomeFunding?: StartTelegramWelcomeFunding,
+): Promise<{ transactions: TransactionRecord[]; nextPageToken?: string }> {
+  await ensureAccount(crypto, prisma, input.subjectId, startTelegramWelcomeFunding)
+
+  const pageSize = Math.min(input.pageSize ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
+  const cursorId = input.pageToken ? parseBigInt(input.pageToken, "page_token") : undefined
+  const rows = await prisma.transaction.findMany({
+    where: {
+      OR: [{ sender_subject_id: input.subjectId }, { recipient_subject_id: input.subjectId }],
+    },
+    orderBy: [{ id: "desc" }],
+    take: pageSize + 1,
+    ...(cursorId === undefined
+      ? {}
+      : {
+          cursor: { id: cursorId },
+          skip: 1,
+        }),
+  })
+
+  const visibleRows = rows.slice(0, pageSize)
+
+  return {
+    transactions: visibleRows,
+    nextPageToken: rows.length > pageSize ? visibleRows.at(-1)?.id.toString() : undefined,
+  }
+}
+
 async function mapTransaction(
   crypto: ResideCrypto,
   transaction: TransactionRecord,
@@ -276,7 +304,23 @@ async function mapTransaction(
     senderSubjectId: transaction.sender_subject_id ?? undefined,
     recipientSubjectId: transaction.recipient_subject_id,
     amount: await decryptAmount(crypto, transaction.amountEcid),
-    comment: transaction.comment ?? undefined,
+    comment: transaction.commentEcid
+      ? await crypto.decrypt(encryptedCommentSchema, transaction.commentEcid)
+      : undefined,
+    createdAt: transaction.createdAt.toISOString(),
+  }
+}
+
+function mapTransactionAmountReference(
+  transaction: TransactionRecord,
+): BankTransactionAmountReference {
+  return {
+    id: transaction.id.toString(),
+    kind: transaction.kind,
+    senderSubjectId: transaction.sender_subject_id ?? undefined,
+    recipientSubjectId: transaction.recipient_subject_id,
+    amountEcid: transaction.amountEcid,
+    commentEcid: transaction.commentEcid ?? undefined,
     createdAt: transaction.createdAt.toISOString(),
   }
 }

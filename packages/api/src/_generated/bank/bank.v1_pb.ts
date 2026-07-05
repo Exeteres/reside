@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "@bufbuild/protobuf/wkt";
+import { file_google_protobuf_empty } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file bank/bank.v1.proto.
  */
 export const file_bank_bank_v1: GenFile = /*@__PURE__*/
-  fileDesc("ChJiYW5rL2JhbmsudjEucHJvdG8SDnJlc2lkZS5iYW5rLnYxIuIBCgtUcmFuc2FjdGlvbhIKCgJpZBgBIAEoCRItCgRraW5kGAIgASgOMh8ucmVzaWRlLmJhbmsudjEuVHJhbnNhY3Rpb25LaW5kEh4KEXNlbmRlcl9zdWJqZWN0X2lkGAMgASgJSACIAQESHAoUcmVjaXBpZW50X3N1YmplY3RfaWQYBCABKAkSDgoGYW1vdW50GAUgASgJEhQKB2NvbW1lbnQYBiABKAlIAYgBARISCgpjcmVhdGVkX2F0GAcgASgJQhQKEl9zZW5kZXJfc3ViamVjdF9pZEIKCghfY29tbWVudCInChFHZXRCYWxhbmNlUmVxdWVzdBISCgpzdWJqZWN0X2lkGAEgASgJIiUKEkdldEJhbGFuY2VSZXNwb25zZRIPCgdiYWxhbmNlGAEgASgJImgKF0xpc3RUcmFuc2FjdGlvbnNSZXF1ZXN0EhIKCnN1YmplY3RfaWQYASABKAkSEQoJcGFnZV9zaXplGAIgASgNEhcKCnBhZ2VfdG9rZW4YAyABKAlIAIgBAUINCgtfcGFnZV90b2tlbiJ/ChhMaXN0VHJhbnNhY3Rpb25zUmVzcG9uc2USMQoMdHJhbnNhY3Rpb25zGAEgAygLMhsucmVzaWRlLmJhbmsudjEuVHJhbnNhY3Rpb24SHAoPbmV4dF9wYWdlX3Rva2VuGAIgASgJSACIAQFCEgoQX25leHRfcGFnZV90b2tlbiJ6Cg9UcmFuc2ZlclJlcXVlc3QSHAoUcmVjaXBpZW50X3N1YmplY3RfaWQYASABKAkSDgoGYW1vdW50GAIgASgJEhcKD2lkZW1wb3RlbmN5X2tleRgDIAEoCRIUCgdjb21tZW50GAQgASgJSACIAQFCCgoIX2NvbW1lbnQiRAoQVHJhbnNmZXJSZXNwb25zZRIwCgt0cmFuc2FjdGlvbhgBIAEoCzIbLnJlc2lkZS5iYW5rLnYxLlRyYW5zYWN0aW9uKkwKD1RyYW5zYWN0aW9uS2luZBIgChxUUkFOU0FDVElPTl9LSU5EX1VOU1BFQ0lGSUVEEAASCQoFSVNTVUUQARIMCghUUkFOU0ZFUhACMpgCCgtCYW5rU2VydmljZRJTCgpHZXRCYWxhbmNlEiEucmVzaWRlLmJhbmsudjEuR2V0QmFsYW5jZVJlcXVlc3QaIi5yZXNpZGUuYmFuay52MS5HZXRCYWxhbmNlUmVzcG9uc2USZQoQTGlzdFRyYW5zYWN0aW9ucxInLnJlc2lkZS5iYW5rLnYxLkxpc3RUcmFuc2FjdGlvbnNSZXF1ZXN0GigucmVzaWRlLmJhbmsudjEuTGlzdFRyYW5zYWN0aW9uc1Jlc3BvbnNlEk0KCFRyYW5zZmVyEh8ucmVzaWRlLmJhbmsudjEuVHJhbnNmZXJSZXF1ZXN0GiAucmVzaWRlLmJhbmsudjEuVHJhbnNmZXJSZXNwb25zZWIGcHJvdG8z");
+  fileDesc("ChJiYW5rL2JhbmsudjEucHJvdG8SDnJlc2lkZS5iYW5rLnYxIuIBCgtUcmFuc2FjdGlvbhIKCgJpZBgBIAEoCRItCgRraW5kGAIgASgOMh8ucmVzaWRlLmJhbmsudjEuVHJhbnNhY3Rpb25LaW5kEh4KEXNlbmRlcl9zdWJqZWN0X2lkGAMgASgJSACIAQESHAoUcmVjaXBpZW50X3N1YmplY3RfaWQYBCABKAkSDgoGYW1vdW50GAUgASgJEhQKB2NvbW1lbnQYBiABKAlIAYgBARISCgpjcmVhdGVkX2F0GAcgASgJQhQKEl9zZW5kZXJfc3ViamVjdF9pZEIKCghfY29tbWVudCIlChJHZXRCYWxhbmNlUmVzcG9uc2USDwoHYmFsYW5jZRgBIAEoCSJUChdMaXN0VHJhbnNhY3Rpb25zUmVxdWVzdBIRCglwYWdlX3NpemUYASABKA0SFwoKcGFnZV90b2tlbhgCIAEoCUgAiAEBQg0KC19wYWdlX3Rva2VuIn8KGExpc3RUcmFuc2FjdGlvbnNSZXNwb25zZRIxCgx0cmFuc2FjdGlvbnMYASADKAsyGy5yZXNpZGUuYmFuay52MS5UcmFuc2FjdGlvbhIcCg9uZXh0X3BhZ2VfdG9rZW4YAiABKAlIAIgBAUISChBfbmV4dF9wYWdlX3Rva2VuInoKD1RyYW5zZmVyUmVxdWVzdBIcChRyZWNpcGllbnRfc3ViamVjdF9pZBgBIAEoCRIOCgZhbW91bnQYAiABKAkSFwoPaWRlbXBvdGVuY3lfa2V5GAMgASgJEhQKB2NvbW1lbnQYBCABKAlIAIgBAUIKCghfY29tbWVudCJEChBUcmFuc2ZlclJlc3BvbnNlEjAKC3RyYW5zYWN0aW9uGAEgASgLMhsucmVzaWRlLmJhbmsudjEuVHJhbnNhY3Rpb24qTAoPVHJhbnNhY3Rpb25LaW5kEiAKHFRSQU5TQUNUSU9OX0tJTkRfVU5TUEVDSUZJRUQQABIJCgVJU1NVRRABEgwKCFRSQU5TRkVSEAIyjQIKC0JhbmtTZXJ2aWNlEkgKCkdldEJhbGFuY2USFi5nb29nbGUucHJvdG9idWYuRW1wdHkaIi5yZXNpZGUuYmFuay52MS5HZXRCYWxhbmNlUmVzcG9uc2USZQoQTGlzdFRyYW5zYWN0aW9ucxInLnJlc2lkZS5iYW5rLnYxLkxpc3RUcmFuc2FjdGlvbnNSZXF1ZXN0GigucmVzaWRlLmJhbmsudjEuTGlzdFRyYW5zYWN0aW9uc1Jlc3BvbnNlEk0KCFRyYW5zZmVyEh8ucmVzaWRlLmJhbmsudjEuVHJhbnNmZXJSZXF1ZXN0GiAucmVzaWRlLmJhbmsudjEuVHJhbnNmZXJSZXNwb25zZWIGcHJvdG8z", [file_google_protobuf_empty]);
 
 /**
  * A bank ledger transaction visible through the public API.
@@ -104,33 +106,6 @@ export const TransactionSchema: GenMessage<Transaction, {jsonType: TransactionJs
   messageDesc(file_bank_bank_v1, 0);
 
 /**
- * @generated from message reside.bank.v1.GetBalanceRequest
- */
-export type GetBalanceRequest = Message<"reside.bank.v1.GetBalanceRequest"> & {
-  /**
-   * @generated from field: string subject_id = 1;
-   */
-  subjectId: string;
-};
-
-/**
- * @generated from message reside.bank.v1.GetBalanceRequest
- */
-export type GetBalanceRequestJson = {
-  /**
-   * @generated from field: string subject_id = 1;
-   */
-  subjectId?: string;
-};
-
-/**
- * Describes the message reside.bank.v1.GetBalanceRequest.
- * Use `create(GetBalanceRequestSchema)` to create a new message.
- */
-export const GetBalanceRequestSchema: GenMessage<GetBalanceRequest, {jsonType: GetBalanceRequestJson}> = /*@__PURE__*/
-  messageDesc(file_bank_bank_v1, 1);
-
-/**
  * @generated from message reside.bank.v1.GetBalanceResponse
  */
 export type GetBalanceResponse = Message<"reside.bank.v1.GetBalanceResponse"> & {
@@ -155,24 +130,19 @@ export type GetBalanceResponseJson = {
  * Use `create(GetBalanceResponseSchema)` to create a new message.
  */
 export const GetBalanceResponseSchema: GenMessage<GetBalanceResponse, {jsonType: GetBalanceResponseJson}> = /*@__PURE__*/
-  messageDesc(file_bank_bank_v1, 2);
+  messageDesc(file_bank_bank_v1, 1);
 
 /**
  * @generated from message reside.bank.v1.ListTransactionsRequest
  */
 export type ListTransactionsRequest = Message<"reside.bank.v1.ListTransactionsRequest"> & {
   /**
-   * @generated from field: string subject_id = 1;
-   */
-  subjectId: string;
-
-  /**
-   * @generated from field: uint32 page_size = 2;
+   * @generated from field: uint32 page_size = 1;
    */
   pageSize: number;
 
   /**
-   * @generated from field: optional string page_token = 3;
+   * @generated from field: optional string page_token = 2;
    */
   pageToken?: string;
 };
@@ -182,17 +152,12 @@ export type ListTransactionsRequest = Message<"reside.bank.v1.ListTransactionsRe
  */
 export type ListTransactionsRequestJson = {
   /**
-   * @generated from field: string subject_id = 1;
-   */
-  subjectId?: string;
-
-  /**
-   * @generated from field: uint32 page_size = 2;
+   * @generated from field: uint32 page_size = 1;
    */
   pageSize?: number;
 
   /**
-   * @generated from field: optional string page_token = 3;
+   * @generated from field: optional string page_token = 2;
    */
   pageToken?: string;
 };
@@ -202,7 +167,7 @@ export type ListTransactionsRequestJson = {
  * Use `create(ListTransactionsRequestSchema)` to create a new message.
  */
 export const ListTransactionsRequestSchema: GenMessage<ListTransactionsRequest, {jsonType: ListTransactionsRequestJson}> = /*@__PURE__*/
-  messageDesc(file_bank_bank_v1, 3);
+  messageDesc(file_bank_bank_v1, 2);
 
 /**
  * @generated from message reside.bank.v1.ListTransactionsResponse
@@ -239,7 +204,7 @@ export type ListTransactionsResponseJson = {
  * Use `create(ListTransactionsResponseSchema)` to create a new message.
  */
 export const ListTransactionsResponseSchema: GenMessage<ListTransactionsResponse, {jsonType: ListTransactionsResponseJson}> = /*@__PURE__*/
-  messageDesc(file_bank_bank_v1, 4);
+  messageDesc(file_bank_bank_v1, 3);
 
 /**
  * @generated from message reside.bank.v1.TransferRequest
@@ -261,6 +226,9 @@ export type TransferRequest = Message<"reside.bank.v1.TransferRequest"> & {
   idempotencyKey: string;
 
   /**
+   * Plaintext comment for the recipient-facing transaction.
+   * The bank replica encrypts this value before storing it and never returns it as plaintext.
+   *
    * @generated from field: optional string comment = 4;
    */
   comment?: string;
@@ -286,6 +254,9 @@ export type TransferRequestJson = {
   idempotencyKey?: string;
 
   /**
+   * Plaintext comment for the recipient-facing transaction.
+   * The bank replica encrypts this value before storing it and never returns it as plaintext.
+   *
    * @generated from field: optional string comment = 4;
    */
   comment?: string;
@@ -296,7 +267,7 @@ export type TransferRequestJson = {
  * Use `create(TransferRequestSchema)` to create a new message.
  */
 export const TransferRequestSchema: GenMessage<TransferRequest, {jsonType: TransferRequestJson}> = /*@__PURE__*/
-  messageDesc(file_bank_bank_v1, 5);
+  messageDesc(file_bank_bank_v1, 4);
 
 /**
  * @generated from message reside.bank.v1.TransferResponse
@@ -323,7 +294,7 @@ export type TransferResponseJson = {
  * Use `create(TransferResponseSchema)` to create a new message.
  */
 export const TransferResponseSchema: GenMessage<TransferResponse, {jsonType: TransferResponseJson}> = /*@__PURE__*/
-  messageDesc(file_bank_bank_v1, 6);
+  messageDesc(file_bank_bank_v1, 5);
 
 /**
  * @generated from enum reside.bank.v1.TransactionKind
@@ -363,17 +334,17 @@ export const TransactionKindSchema: GenEnum<TransactionKind, TransactionKindJson
  */
 export const BankService: GenService<{
   /**
-   * Gets a subject balance and lazily creates an account when it is missing.
+   * Gets the authenticated replica subject balance and lazily creates an account when it is missing.
    *
    * @generated from rpc reside.bank.v1.BankService.GetBalance
    */
   getBalance: {
     methodKind: "unary";
-    input: typeof GetBalanceRequestSchema;
+    input: typeof EmptySchema;
     output: typeof GetBalanceResponseSchema;
   },
   /**
-   * Lists subject transactions with cursor pagination.
+   * Lists transactions for the authenticated replica subject with cursor pagination.
    *
    * @generated from rpc reside.bank.v1.BankService.ListTransactions
    */

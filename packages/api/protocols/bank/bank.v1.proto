@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package reside.bank.v1;
 
+import "google/protobuf/empty.proto";
+
 // A bank ledger transaction visible through the public API.
 message Transaction {
   string id = 1;
@@ -19,18 +21,13 @@ enum TransactionKind {
   TRANSFER = 2;
 }
 
-message GetBalanceRequest {
-  string subject_id = 1;
-}
-
 message GetBalanceResponse {
   string balance = 1;
 }
 
 message ListTransactionsRequest {
-  string subject_id = 1;
-  uint32 page_size = 2;
-  optional string page_token = 3;
+  uint32 page_size = 1;
+  optional string page_token = 2;
 }
 
 message ListTransactionsResponse {
@@ -42,6 +39,8 @@ message TransferRequest {
   string recipient_subject_id = 1;
   string amount = 2;
   string idempotency_key = 3;
+  // Plaintext comment for the recipient-facing transaction.
+  // The bank replica encrypts this value before storing it and never returns it as plaintext.
   optional string comment = 4;
 }
 
@@ -51,10 +50,10 @@ message TransferResponse {
 
 // The synchronous bank API for replicas.
 service BankService {
-  // Gets a subject balance and lazily creates an account when it is missing.
-  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+  // Gets the authenticated replica subject balance and lazily creates an account when it is missing.
+  rpc GetBalance(google.protobuf.Empty) returns (GetBalanceResponse);
 
-  // Lists subject transactions with cursor pagination.
+  // Lists transactions for the authenticated replica subject with cursor pagination.
   rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
 
   // Transfers funds from the authenticated replica subject.

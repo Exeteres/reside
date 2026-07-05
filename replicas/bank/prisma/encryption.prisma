@@ -7,4 +7,5 @@ model EncryptedContent {
 
   accountBalance Account? @relation(name: "AccountBalance")
   transactionAmount Transaction? @relation(name: "TransactionAmount")
+  transactionComment Transaction? @relation(name: "TransactionComment")
 }

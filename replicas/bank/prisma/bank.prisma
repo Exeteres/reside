@@ -38,7 +38,12 @@ model Transaction {
   amount EncryptedContent @relation(name: "TransactionAmount", fields: [amountEcid], references: [ecid], onDelete: Restrict)
 
   idempotencyKey String @unique
-  comment String?
+  /// The ECID of the optional encrypted transaction comment.
+  commentEcid String? @unique
+
+  /// The optional encrypted transaction comment.
+  comment EncryptedContent? @relation(name: "TransactionComment", fields: [commentEcid], references: [ecid], onDelete: Restrict)
+
   createdAt DateTime @default(now())
 
   @@index([sender_subject_id, createdAt])
