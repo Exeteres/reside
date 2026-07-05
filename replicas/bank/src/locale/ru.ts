@@ -71,7 +71,7 @@ export const ru = {
   },
   errors: {
     differentTransferSubjects: "Отправитель и получатель должны отличаться",
-    insufficientFunds: "Недостаточно средств",
+    insufficientFunds: "Недостаточно нихуя",
     positiveAmount: "Сумма должна быть положительной",
     integerAmount: "Сумма должна быть целым числом",
     integerField: (fieldName: string) => `Поле "${fieldName}" должно быть целым числом`,
