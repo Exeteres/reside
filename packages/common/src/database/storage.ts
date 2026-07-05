@@ -40,7 +40,7 @@ export async function createStorageBucketService(
 
   return {
     client: new S3Client({
-      endpoint: `http://${credentials.endpoint}`,
+      endpoint: credentials.endpoint,
       region: "us-east-1",
       forcePathStyle: true,
       credentials: {

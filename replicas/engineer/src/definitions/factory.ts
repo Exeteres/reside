@@ -1,0 +1,9 @@
+export const ENGINEER_FACTORY_NAME = "factory"
+export const ENGINEER_FACTORY_PORT = 4096
+export const ENGINEER_FACTORY_PASSWORD_SECRET_NAME = "factory-password"
+export const ENGINEER_FACTORY_PASSWORD_SECRET_KEY = "password"
+export const ENGINEER_FACTORY_STORAGE_PREFIX = "factory"
+export const ENGINEER_FACTORY_INTERNAL_ENDPOINT = `http://${ENGINEER_FACTORY_NAME}:${ENGINEER_FACTORY_PORT}`
+export const FACTORY_HOME_DIR = "/root"
+export const FACTORY_ROOT_DIR = "factory"
+export const FACTORY_REPOSITORY_DIR = "repository"

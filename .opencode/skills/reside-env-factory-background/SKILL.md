@@ -1,16 +1,13 @@
 ---
-name: reside-engineer
-description: Use when operating as the Engineer replica implementation agent, executing GitHub issue work, classifying tasks, committing, delivering PRs, deploying replicas, or using engineer-specific tools.
-enforcement:
-  files:
-    - "replicas/engineer/**"
+name: reside-env-factory-background
+description: Use when operating as the Engineer factory background implementation agent for managed tasks, GitHub issue work, commits, PR delivery, deployments, or Engineer task workflows.
 ---
 
-# ReSide Engineer Session Rules
+# ReSide Factory Background Environment Rules
 
 ## When To Use
 
-- Use this skill in Engineer replica implementation-phase sessions.
+- Use this skill in Engineer replica background task sessions created by the task workflow.
 - Use this skill when executing work from a GitHub issue or implementation-only task through Engineer replica tooling.
 - Use this skill when deciding whether Engineer should commit, deliver, create a PR, or deploy.
 
@@ -24,9 +21,15 @@ enforcement:
 
 ## Required First Steps
 
+- Run `bun install --frozen-lockfile` before serving the user's request.
 - Classify the current request and issue body as either code-changing or research-only.
 - Treat audits, investigations, reviews, analysis, reports, and recommendations as research-only unless they explicitly ask to implement fixes or add product behavior.
 - Load `reside-core` and any task-scoped skills before editing.
+
+## Working Directory For Engineer Tools
+
+- When calling Engineer tools, pass `workingDir` as the absolute path of the current repository directory for this session.
+- Engineer tools derive branch state from `workingDir`; do not pass branch names manually.
 
 ## Research-Only Tasks
 

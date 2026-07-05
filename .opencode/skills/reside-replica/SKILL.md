@@ -55,18 +55,22 @@ Each replica package must follow this structure:
 - `prisma.config.ts` is required when the replica has a DB.
 - `package.json` must define `name`, `exports`, and `dependencies` and must not define `version`, `reside`, `main`, or `types`.
 - `reside.manifest.json` is required by `reside-changes`.
+- Extra replica components are declared in `reside.manifest.json` as `extraComponents` and each listed component must have a matching `src/<component>/main.ts` entrypoint.
+- Extra component folders under `src/<component>/` contain component-only runtime code and run with `RESIDE_BIN` set to `<component>` and `REPLICA_COMPONENT_NAME` set to `<replica>-<component>`.
 - `CHANGELOG.md` is required by `reside-changes`.
 - `tsconfig.json` extends `../../tsconfig.base.json` and includes `src` and `prisma.config.ts` when present.
 
-Replica package root must not contain extra top-level files or directories outside this contract.
+Replica package root must not contain extra top-level files or directories outside this contract. Extra components are not an exception; they live under `src/<component>/`.
 
 ## Import Boundaries
 
 - Top-level directories are `bootstrap`, `replica`, `workflows`, `database`, `e2e`, `definitions`, `locale`, and `shared`.
+- Extra component directories listed in `reside.manifest.json` `extraComponents` are also allowed under `src/<component>/`.
 - Cross-boundary imports must go through the target directory `index.ts`.
 - Direct file-to-file imports across top-level directories are forbidden.
 - `shared/services.ts` is the central dependency composition point.
 - Inside `src/replica/`, feature logic belongs to `src/replica/business/`.
+- Other replica runtime parts must not import extra component folders. If the main replica needs to talk to an extra component, put client/business code under `src/replica/business/` or workflow-safe constants under `src/definitions/`.
 - Do not create additional ad-hoc folders such as `feature`, `reconcile`, or `utils` unless this skill is updated first to explicitly allow them.
 - Runtime wiring in `src/replica/main.ts` must import service factories from `src/replica/services/index.ts`, not from individual service files.
 

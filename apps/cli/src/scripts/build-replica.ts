@@ -1,9 +1,23 @@
-import { copyFile, lstat, mkdir, readdir, readlink, rm, stat, writeFile } from "node:fs/promises"
+import {
+  copyFile,
+  lstat,
+  mkdir,
+  readdir,
+  readFile,
+  readlink,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { bundleWorkflowCode } from "build-temporal-workflow"
 
 type BuildReplicaArgs = {
   replicaPath: string
+}
+
+type ResideManifest = {
+  extraComponents?: string[]
 }
 
 async function main(): Promise<void> {
@@ -25,12 +39,17 @@ async function main(): Promise<void> {
     recursive: true,
   })
 
+  const extraComponents = await loadExtraComponents(packagePath)
+
+  await mkdir(dirname(runtimeOutputPath), { recursive: true })
+
   const runtimeResult = await Bun.build({
     root: packagePath,
     entrypoints: ["__reside_virtual_main.ts"],
     files: {
       "__reside_virtual_main.ts": createVirtualRuntimeMainSource(
         packagePath,
+        extraComponents,
         await pathExists(e2eSourcePath),
       ),
     },
@@ -47,7 +66,7 @@ async function main(): Promise<void> {
 
   assertBuildResult(runtimeResult, "runtime artifact")
 
-  if (await pathExists(workflowsSourcePath)) {
+  if (workflowsSourcePath && (await pathExists(workflowsSourcePath))) {
     const workflowsResult = await bundleWorkflowCode({
       workflowsPath: workflowsSourcePath,
     })
@@ -151,10 +170,19 @@ function assertBuildResult(result: Bun.BuildOutput, artifactName: string): void 
   throw new Error(`Failed to build ${artifactName} with Bun.build`)
 }
 
-function createVirtualRuntimeMainSource(packagePath: string, hasE2EEntrypoint: boolean): string {
+function createVirtualRuntimeMainSource(
+  packagePath: string,
+  extraComponents: string[],
+  hasE2EEntrypoint: boolean,
+): string {
   const bootstrapPath = resolve(packagePath, "src/bootstrap/main.ts")
   const replicaPath = resolve(packagePath, "src/replica/main.ts")
   const e2ePath = resolve(packagePath, "src/e2e/main.ts")
+  const componentCaseLines = extraComponents.flatMap(componentName => {
+    const componentPath = resolve(packagePath, "src", componentName, "main.ts")
+
+    return [`  case "${componentName}":`, `    await import("${componentPath}")`, "    break"]
+  })
   const e2eCaseLines = hasE2EEntrypoint
     ? [`    await import("${e2ePath}")`, "    break"]
     : ['    throw new Error("Replica does not define an e2e entrypoint")']
@@ -171,10 +199,21 @@ function createVirtualRuntimeMainSource(packagePath: string, hasE2EEntrypoint: b
     "    break",
     '  case "e2e":',
     ...e2eCaseLines,
+    ...componentCaseLines,
     "  default:",
     '    throw new Error("Unsupported RESIDE_BIN " + resideBin)',
     "}",
   ].join("\n")
+}
+
+async function loadExtraComponents(packagePath: string): Promise<string[]> {
+  const manifestPath = resolve(packagePath, "reside.manifest.json")
+  if (!(await pathExists(manifestPath))) {
+    return []
+  }
+
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as ResideManifest
+  return manifest.extraComponents ?? []
 }
 
 async function pathExists(path: string): Promise<boolean> {

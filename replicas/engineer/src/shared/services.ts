@@ -13,6 +13,8 @@ import {
 import { engineerReplica } from "@reside/registry"
 import { PrismaClient } from "../database"
 
+export type EngineerServices = Awaited<ReturnType<typeof createServices>>
+
 export async function createServices() {
   const services = await createCommonServices(engineerReplica.endpoints)
 

@@ -24,18 +24,19 @@ export type GithubRepositoryTarget = {
   cloneUrl: string
 }
 
-export type EngineerAiRuntime = {
-  getOctokit: () => Octokit
+export type GitHubService = {
+  getOctokit: () => Promise<Octokit>
   getRepositoryTarget: () => Promise<GithubRepositoryTarget>
   stop: () => Promise<void>
 }
 
-export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
+export async function startGitHubService(): Promise<GitHubService> {
   ensureWebCryptoGlobals()
 
   let currentOctokit: Octokit | undefined
   let currentRepositoryTarget: GithubRepositoryTarget | undefined
-  let lastOctokitError: string | undefined
+  let rejectOctokitPromise: ((reason?: unknown) => void) | undefined
+  let resolveOctokitPromise: ((value: Octokit) => void) | undefined
   let resolveRepositoryTargetPromise: ((value: GithubRepositoryTarget) => void) | undefined
 
   const stopRepositorySubscription = startSubscription(
@@ -86,13 +87,21 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
 
         const app = await octokit.rest.apps.getAuthenticated()
         currentOctokit = octokit
-        lastOctokitError = undefined
+        if (resolveOctokitPromise) {
+          resolveOctokitPromise(octokit)
+          resolveOctokitPromise = undefined
+          rejectOctokitPromise = undefined
+        }
         const appSlug = app.data?.slug ?? "unknown"
 
         logger.info('engineer github app client updated slug="%s"', appSlug)
       } catch (error) {
         const errorValue = toError(error)
-        lastOctokitError = errorValue.message
+        if (rejectOctokitPromise) {
+          rejectOctokitPromise(errorValue)
+          resolveOctokitPromise = undefined
+          rejectOctokitPromise = undefined
+        }
 
         logger.error({ error: errorValue }, "failed to configure engineer github app client")
       }
@@ -102,17 +111,18 @@ export async function startEngineerAiRuntime(): Promise<EngineerAiRuntime> {
   const repositoryTargetPromise = new Promise<GithubRepositoryTarget>(resolve => {
     resolveRepositoryTargetPromise = resolve
   })
+  const octokitPromise = new Promise<Octokit>((resolve, reject) => {
+    resolveOctokitPromise = resolve
+    rejectOctokitPromise = reject
+  })
 
   return {
-    getOctokit: () => {
-      if (!currentOctokit) {
-        const reason = lastOctokitError ? ` Last error: ${lastOctokitError}` : ""
-        throw new Error(
-          `GitHub App client is not ready: secret "github-app" is not configured.${reason}`,
-        )
+    getOctokit: async () => {
+      if (currentOctokit) {
+        return currentOctokit
       }
 
-      return currentOctokit
+      return await octokitPromise
     },
 
     getRepositoryTarget: async () => {

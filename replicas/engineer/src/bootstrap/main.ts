@@ -6,9 +6,14 @@ import {
   runPrismaMigrations,
 } from "@reside/common"
 import { engineerReplica, WellKnownPermissions } from "@reside/registry"
-import { createTaskCommand, EngineerNotificationChannels } from "../definitions"
+import {
+  createTaskCommand,
+  ENGINEER_FACTORY_NAME,
+  EngineerNotificationChannels,
+} from "../definitions"
 import { strings } from "../locale"
 import { createServices } from "../shared"
+import { bootstrapFactory } from "./factory"
 
 const services = await createServices()
 
@@ -41,22 +46,27 @@ await defineCommonResources({
   ],
 })
 
-const temporaryDatabasePermission = await services.permissionRequestService.requestPermissions({
-  reason:
-    "Для создания временных баз данных PostgreSQL при выполнении инженерных задач и проверок.",
-  permissionSetName: "engineer-temporary-postgres-databases",
+const infraBootstrapPermission = await services.permissionRequestService.requestPermissions({
+  reason: "Для создания временных баз данных PostgreSQL и управления шлюзом инженерной фабрики.",
+  permissionSetName: "engineer-bootstrap-infra",
   items: [
     {
       permissionName: WellKnownPermissions.INFRA_TEMPORARY_POSTGRES_DATABASE_CREATE,
     },
+    {
+      permissionName: WellKnownPermissions.INFRA_GATEWAY_MANAGE,
+      scope: ENGINEER_FACTORY_NAME,
+    },
   ],
 })
 
-if (temporaryDatabasePermission.operation) {
-  await waitForOperationSuccess(temporaryDatabasePermission.operation, {
+if (infraBootstrapPermission.operation) {
+  await waitForOperationSuccess(infraBootstrapPermission.operation, {
     operationService: services.accessOperationService,
   })
 }
+
+await bootstrapFactory({ services })
 
 await bootstrapService({ longRunning: true })
 

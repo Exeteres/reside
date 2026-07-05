@@ -5,7 +5,7 @@ const runtimePathLine = 'ENV PATH="/app/node_modules/.bin:$' + '{PATH}"'
 
 describe("createDockerfile", () => {
   const baseArgs = {
-    baseDockerfile: "FROM scratch",
+    runtimeDockerfile: "FROM scratch",
     workspacePackages: [
       {
         name: "@replicas/test",
@@ -94,5 +94,40 @@ describe("createDockerfile", () => {
     })
 
     expect(dockerfile).toContain("RUN cd node_modules/opencode-ai && node postinstall.mjs")
+  })
+
+  test("embeds shared runtime stage before app runtime setup", () => {
+    const dockerfile = createDockerfile({
+      ...baseArgs,
+      hasChangelog: false,
+    })
+
+    expect(dockerfile).toContain("# runtime stage\nFROM scratch")
+    expect(dockerfile).toContain("FROM scratch\n\nWORKDIR /app")
+  })
+
+  test("appends package runtime dockerfile after shared runtime", () => {
+    const dockerfile = createDockerfile({
+      ...baseArgs,
+      hasChangelog: false,
+      customRuntimeDockerfile: "RUN apt-get update",
+    })
+
+    expect(dockerfile).toContain("# runtime stage\nFROM scratch")
+    expect(dockerfile).toContain("# custom runtime setup\nRUN apt-get update")
+    expect(dockerfile).toContain("RUN apt-get update\n\nWORKDIR /app")
+  })
+
+  test("builds and copies shared runtime artifact", () => {
+    const dockerfile = createDockerfile({
+      ...baseArgs,
+      hasChangelog: false,
+    })
+
+    expect(dockerfile).toContain(
+      "RUN bun apps/cli/src/scripts/build-replica.ts --replica-path replicas/test",
+    )
+    expect(dockerfile).not.toContain("--component")
+    expect(dockerfile).toContain("COPY --from=build /app/replicas/test/dist/main /app/main")
   })
 })

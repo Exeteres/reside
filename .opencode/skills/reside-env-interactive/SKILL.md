@@ -1,13 +1,13 @@
 ---
-name: reside-interactive
-description: Use when operating in an interactive ReSide repository session with direct user collaboration, local edits, tool calls, validation, or user-visible progress updates.
+name: reside-env-interactive
+description: Use when operating in a local interactive ReSide repository session launched by a user, with direct collaboration, local edits, tool calls, validation, or user-visible progress updates.
 ---
 
-# ReSide Interactive Session Rules
+# ReSide Local Interactive Environment Rules
 
 ## When To Use
 
-- Use this skill in direct interactive coding sessions in this repository.
+- Use this skill in direct local interactive coding sessions in this repository.
 - Use this skill when collaborating with the user through chat while editing files or running tools.
 
 ## Agent Capabilities

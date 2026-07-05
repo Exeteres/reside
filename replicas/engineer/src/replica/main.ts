@@ -18,17 +18,18 @@ import {
   startServer,
   startTemporalWorker,
 } from "@reside/common"
+import { ENGINEER_FACTORY_INTERNAL_ENDPOINT } from "../definitions"
 import { strings } from "../locale"
 import { createServices } from "../shared"
 import { createTaskActivities } from "./activities"
-import { startEngineerAiRuntime } from "./business"
+import { createFactoryEnvironment, startGitHubService } from "./business"
 import { createCreateTaskTool } from "./nls"
 import { createReaperService } from "./services/reaper"
 
 const services = await createServices()
-const runtime = await startEngineerAiRuntime()
+const github = await startGitHubService()
 registerGracefulShutdown(async () => {
-  await runtime.stop()
+  await github.stop()
 })
 
 const server = await createServer(services)
@@ -69,28 +70,23 @@ await setupLanguageSubsystem({
 
 await startServer(server)
 
-process.env.RESIDE_NON_INTERACTIVE = "1"
 const taskLanguageEngine = await createLanguageEngine({
   services,
   model: "smart",
   sessionPrefix: "tasks",
   systemPrompt: "You implement engineer replica tasks inside prepared repository workspaces.",
+  opencodeEndpoint: ENGINEER_FACTORY_INTERNAL_ENDPOINT,
 })
 registerGracefulShutdown(async () => {
   await taskLanguageEngine.stop()
 })
 
 const taskActivities = createTaskActivities({
-  runtime,
+  github,
+  createFactoryEnvironment,
   languageEngine: taskLanguageEngine,
   prisma: services.prisma,
   notificationService: services.notificationService,
-  permissionRequestService: services.permissionRequestService,
-  accessOperationService: services.accessOperationService,
-  provisionService: services.provisionService,
-  infraOperationService: services.infraOperationService,
-  loadService: services.alphaLoadService,
-  alphaOperationService: services.alphaOperationService,
   operationService: services.operationService,
 })
 

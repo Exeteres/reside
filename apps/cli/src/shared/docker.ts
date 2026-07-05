@@ -3,7 +3,8 @@ import type { WorkspacePackagePath } from "./project"
 const runtimePathLine = 'ENV PATH="/app/node_modules/.bin:$' + '{PATH}"'
 
 export type CreateDockerfileArgs = {
-  baseDockerfile: string
+  runtimeDockerfile: string
+  customRuntimeDockerfile?: string
   workspacePackages: WorkspacePackagePath[]
   replicaPath: string
   hasChangelog: boolean
@@ -16,8 +17,6 @@ export type CreateDockerfileArgs = {
 }
 
 export function createDockerfile(args: CreateDockerfileArgs): string {
-  const prefixLines = args.baseDockerfile.trimEnd().split("\n")
-
   const lines: string[] = []
 
   lines.push("FROM oven/bun:1.3.10 AS deps")
@@ -63,11 +62,21 @@ export function createDockerfile(args: CreateDockerfileArgs): string {
   lines.push("")
   lines.push("# copy full workspace sources and build replica artifacts inside container")
   lines.push("COPY . /app/")
-  lines.push(`RUN bun apps/cli/src/scripts/build-replica.ts --replica-path ${args.replicaPath}`)
+  lines.push(
+    ["RUN bun apps/cli/src/scripts/build-replica.ts", `--replica-path ${args.replicaPath}`]
+      .flat()
+      .join(" "),
+  )
 
   lines.push("")
-  lines.push("# final stage")
-  lines.push(...prefixLines)
+  lines.push("# runtime stage")
+  lines.push(...args.runtimeDockerfile.trimEnd().split("\n"))
+
+  if (args.customRuntimeDockerfile) {
+    lines.push("")
+    lines.push("# custom runtime setup")
+    lines.push(...args.customRuntimeDockerfile.trimEnd().split("\n"))
+  }
 
   lines.push("")
   lines.push("WORKDIR /app")

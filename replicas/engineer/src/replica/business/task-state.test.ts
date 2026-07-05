@@ -1,5 +1,5 @@
 import type { PrismaClient } from "../../database"
-import type { EngineerAiRuntime } from "./ai-runtime"
+import type { GitHubService } from "./github"
 import { describe, expect, test } from "bun:test"
 import { type DeepMockProxy, mockDeepFn } from "@reside/common/testing"
 import {
@@ -73,7 +73,7 @@ describe("isTaskCancellationRequested", () => {
 describe("upsertTaskIssue", () => {
   test("creates repository issue and stores issue number when task has no issue", async () => {
     const prisma = mockDeepFn<PrismaClient>()
-    const { runtime, octokit } = createFixture()
+    const { github, octokit } = createFixture()
     prisma.task.findUnique.mockResolvedValue({ issueId: null } as never)
     octokit.rest.issues.create.mockResolvedValue({
       data: {
@@ -87,7 +87,7 @@ describe("upsertTaskIssue", () => {
 
     const issue = await upsertTaskIssue(
       prisma,
-      runtime,
+      github,
       7,
       "exeteres",
       "reside4",
@@ -115,7 +115,7 @@ describe("upsertTaskIssue", () => {
 
   test("updates existing repository issue", async () => {
     const prisma = mockDeepFn<PrismaClient>()
-    const { runtime, octokit } = createFixture()
+    const { github, octokit } = createFixture()
     prisma.task.findUnique.mockResolvedValue({ issueId: 55 } as never)
     octokit.rest.issues.update.mockResolvedValue({
       data: {
@@ -129,7 +129,7 @@ describe("upsertTaskIssue", () => {
 
     const issue = await upsertTaskIssue(
       prisma,
-      runtime,
+      github,
       7,
       "exeteres",
       "reside4",
@@ -152,20 +152,20 @@ describe("upsertTaskIssue", () => {
 describe("syncTaskIssueState", () => {
   test("does nothing when task has no issue", async () => {
     const prisma = mockDeepFn<PrismaClient>()
-    const { runtime, octokit } = createFixture()
+    const { github, octokit } = createFixture()
     prisma.task.findUnique.mockResolvedValue({ issueId: null } as never)
 
-    await syncTaskIssueState(prisma, runtime, 7, "CLOSED", "NOT_PLANNED")
+    await syncTaskIssueState(prisma, github, 7, "CLOSED", "NOT_PLANNED")
 
     expect(octokit.rest.issues.update.spy()).not.toHaveBeenCalled()
   })
 
   test("updates repository issue state with mapped reason", async () => {
     const prisma = mockDeepFn<PrismaClient>()
-    const { runtime, octokit } = createFixture()
+    const { github, octokit } = createFixture()
     prisma.task.findUnique.mockResolvedValue({ issueId: 55 } as never)
 
-    await syncTaskIssueState(prisma, runtime, 7, "CLOSED", "COMPLETED")
+    await syncTaskIssueState(prisma, github, 7, "CLOSED", "COMPLETED")
 
     expect(octokit.rest.issues.update.spy()).toHaveBeenCalledWith({
       owner: "exeteres",
@@ -185,20 +185,23 @@ describe("mapIssueStateReason", () => {
 })
 
 function createFixture(): {
-  runtime: EngineerAiRuntime
+  github: GitHubService
   octokit: DeepMockProxy<MockOctokit>
 } {
-  const runtime = mockDeepFn<EngineerAiRuntime>()
   const octokit = mockDeepFn<MockOctokit>()
-  runtime.getOctokit.mockReturnValue(octokit as never)
-  runtime.getRepositoryTarget.mockResolvedValue({
-    owner: "exeteres",
-    name: "reside4",
-    cloneUrl: "https://github.com/exeteres/reside4.git",
-  })
+  const githubOctokit = { rest: octokit.rest } as never
+  const github: GitHubService = {
+    getOctokit: async () => githubOctokit,
+    getRepositoryTarget: async () => ({
+      owner: "exeteres",
+      name: "reside4",
+      cloneUrl: "https://github.com/exeteres/reside4.git",
+    }),
+    stop: async () => undefined,
+  }
 
   return {
-    runtime,
+    github,
     octokit,
   }
 }

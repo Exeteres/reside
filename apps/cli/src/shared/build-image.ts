@@ -14,6 +14,7 @@ export type BuildImageArgs = {
   tag?: string
   push: boolean
   interactiveDockerOutput?: boolean
+  dump?: boolean
 }
 
 export async function buildCurrentPackageImage(args: BuildImageArgs): Promise<string> {
@@ -24,16 +25,24 @@ export async function buildPackageImage(
   packagePath: string,
   args: BuildImageArgs,
 ): Promise<string> {
-  const config = await loadPackageConfig(args.logger, packagePath)
-
-  args.logger.info('building image for package "%s"', config.packageName)
+  if (!args.dump) {
+    const config = await loadPackageConfig(args.logger, packagePath)
+    args.logger.info('building image for package "%s"', config.packageName)
+  }
 
   const rootPath = await getRootPath()
-  args.logger.info("monorepo root path: %s", rootPath)
+  if (!args.dump) {
+    args.logger.info("monorepo root path: %s", rootPath)
+  }
 
   const workspacePackages = await getWorkspacePackagePaths(rootPath)
-  const baseDockerfilePath = resolve(rootPath, "apps/cli/assets/runtime.dockerfile")
-  const baseDockerfile = await Bun.file(baseDockerfilePath).text()
+  const sharedRuntimeDockerfilePath = resolve(rootPath, "apps/cli/assets/runtime.dockerfile")
+  const sharedRuntimeDockerfile = await Bun.file(sharedRuntimeDockerfilePath).text()
+  const packageRuntimeDockerfilePath = resolve(packagePath, "runtime.dockerfile")
+  const hasPackageRuntimeDockerfile = await pathExists(packageRuntimeDockerfilePath)
+  const customRuntimeDockerfile = hasPackageRuntimeDockerfile
+    ? await Bun.file(packageRuntimeDockerfilePath).text()
+    : undefined
   const replicaPath = relative(rootPath, packagePath).replaceAll("\\", "/")
   const hasPrismaDirectory = await pathExists(resolve(packagePath, "prisma"))
   const hasPrismaConfig = await pathExists(resolve(packagePath, "prisma.config.ts"))
@@ -47,8 +56,11 @@ export async function buildPackageImage(
     throw new Error(`${RESIDE_MANIFEST_FILE} with image and version is required to build an image`)
   }
 
+  await validateExtraComponents(packagePath, manifest.extraComponents)
+
   const dockerfile = createDockerfile({
-    baseDockerfile,
+    runtimeDockerfile: sharedRuntimeDockerfile,
+    customRuntimeDockerfile,
     workspacePackages,
     replicaPath,
     hasChangelog,
@@ -59,6 +71,11 @@ export async function buildPackageImage(
     hasAssetsDirectory,
     hasOpenCodeConfig,
   })
+  if (args.dump) {
+    process.stdout.write(`${dockerfile}\n`)
+    return ""
+  }
+
   args.logger.debug("generated Dockerfile:\n%s", dockerfile)
 
   const tag = await resolveBuildImageTag(packagePath, args.tag)
@@ -109,6 +126,18 @@ export async function buildPackageImage(
   } finally {
     if (metadataDir) {
       await rm(metadataDir, { recursive: true, force: true })
+    }
+  }
+}
+
+async function validateExtraComponents(
+  packagePath: string,
+  extraComponents: string[],
+): Promise<void> {
+  for (const componentName of extraComponents) {
+    const componentPath = resolve(packagePath, "src", componentName)
+    if (!(await pathExists(componentPath))) {
+      throw new Error(`Component "${componentName}" directory does not exist: ${componentPath}`)
     }
   }
 }

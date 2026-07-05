@@ -1,57 +1,29 @@
-import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
-import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
-import type { OperationServiceClient } from "@reside/api/common/operation.v1"
-import type {
-  PostgresDatabaseCredentials,
-  ProvisionServiceClient,
-} from "@reside/api/infra/provision.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { GenericOperationService } from "@reside/common"
 import type { Operation, PrismaClient } from "../../database"
 import type { EngineerTaskActivities } from "../../definitions"
-import type { EngineerAiRuntime } from "../business"
-import { mkdir, rm } from "node:fs/promises"
-import { homedir } from "node:os"
-import { join } from "node:path"
-import { waitForOperationSuccess, waitForResult } from "@reside/api"
-import {
-  defineTool,
-  type LanguageEngine,
-  link,
-  logger,
-  parseResideManifest,
-  RESIDE_MANIFEST_FILE,
-} from "@reside/common"
+import type { GitHubService } from "../business"
+import { defineTool, type LanguageEngine, logger } from "@reside/common"
 import { crypto as resideCrypto } from "@reside/common/encryption"
-import { WellKnownPermissions } from "@reside/registry"
 import OpenAI from "openai"
 import { z } from "zod"
 import { strings } from "../../locale"
 import {
+  createEnvironmentPrompt,
   createImplementationPrompt,
   createPlanningPrompt,
   createProgressReporter,
-  extractFailureMessageFromLog,
   extractSummaryFromFinalMessage,
-  extractWorkflowRunId,
   getNextIterationNumber,
   getRepositoryIssueByNumber,
-  hasIssueClosingTagAtBodyEnd,
   isTaskCancellationRequested,
   parseDbTaskId,
   syncTaskIssueState,
   upsertTaskIssue,
-  validateBranchCommitLogOutput,
-  validatePullRequestTitle,
 } from "../business"
 
-const ENGINEER_WORKSPACE_PREFIX = "reside-task"
-const ENGINEER_SESSION_DIR = "session"
 const ENGINEER_NLS_IDLE_TIMEOUT_MS = 20 * 60_000
 const ENGINEER_NLS_REASONING_EFFORT = "high"
-const NLS_HOME_DIR = ".reside-nls"
-const ENGINEER_TASKS_DIR = "tasks"
-const ENGINEER_TASK_SESSIONS_DIR = ".task-sessions"
 
 const issueDraftSchema = z.object({
   title: z.string().min(1),
@@ -120,39 +92,38 @@ const implementationResultSchema = z.object({
   errorMessage: z.string().optional(),
 })
 
-type CopilotEnvironment = {
+type CopilotEnvironment = FactoryEnvironment
+
+export type FactoryEnvironment = {
   workingDirectory: string
   repositoryPath: string
-  sessionDirPath: string
+  opencodeSessionId: string
   taskId: number
+  branchName: string
   dispose: () => Promise<void>
 }
 
+export type CreateFactoryEnvironment = (args: {
+  github: GitHubService
+  taskId: number
+  iterationId: number
+}) => Promise<FactoryEnvironment>
+
 type TaskActivityServices = {
-  runtime: EngineerAiRuntime
+  github: GitHubService
+  createFactoryEnvironment: CreateFactoryEnvironment
   languageEngine: LanguageEngine
   prisma: PrismaClient
   notificationService: NotificationServiceClient
-  permissionRequestService: PermissionRequestServiceClient
-  accessOperationService: OperationServiceClient
-  provisionService: ProvisionServiceClient
-  infraOperationService: OperationServiceClient
-  loadService: LoadServiceClient
-  alphaOperationService: OperationServiceClient
   operationService: GenericOperationService<Operation>
 }
 
 export function createTaskActivities({
-  runtime,
+  github,
+  createFactoryEnvironment,
   languageEngine,
   prisma,
   notificationService,
-  permissionRequestService,
-  accessOperationService,
-  provisionService,
-  infraOperationService,
-  loadService,
-  alphaOperationService,
   operationService,
 }: TaskActivityServices): EngineerTaskActivities {
   return {
@@ -207,7 +178,7 @@ export function createTaskActivities({
         topicId,
         previewTitle,
       })
-      const repository = await runtime.getRepositoryTarget()
+      const repository = await github.getRepositoryTarget()
       const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`
 
       const task = await prisma.task.create({
@@ -234,7 +205,11 @@ export function createTaskActivities({
       let environment: CopilotEnvironment | undefined
 
       try {
-        environment = await createCopilotEnvironment(runtime, task.id, iteration.id)
+        environment = await createFactoryEnvironment({
+          github,
+          taskId: task.id,
+          iterationId: iteration.id,
+        })
 
         const draft = await runPlanningSession({
           languageEngine,
@@ -249,7 +224,7 @@ export function createTaskActivities({
 
         const issue = await upsertTaskIssue(
           prisma,
-          runtime,
+          github,
           task.id,
           repository.owner,
           repository.name,
@@ -306,7 +281,7 @@ export function createTaskActivities({
           },
         })
 
-        await syncTaskIssueState(prisma, runtime, task.id, "CLOSED", "NOT_PLANNED")
+        await syncTaskIssueState(prisma, github, task.id, "CLOSED", "NOT_PLANNED")
 
         return interactionResultSchema.parse({
           taskId: String(task.id),
@@ -326,7 +301,7 @@ export function createTaskActivities({
         feedback,
         progressNotificationId,
       })
-      const repository = await runtime.getRepositoryTarget()
+      const repository = await github.getRepositoryTarget()
       const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`
       const dbTaskId = parseDbTaskId(parsedInput.taskId)
       const task = await prisma.task.findUnique({
@@ -354,7 +329,11 @@ export function createTaskActivities({
         },
       })
 
-      const environment = await createCopilotEnvironment(runtime, dbTaskId, iteration.id)
+      const environment = await createFactoryEnvironment({
+        github,
+        taskId: dbTaskId,
+        iterationId: iteration.id,
+      })
 
       try {
         const draft = await runPlanningSession({
@@ -370,7 +349,7 @@ export function createTaskActivities({
 
         const issue = await upsertTaskIssue(
           prisma,
-          runtime,
+          github,
           dbTaskId,
           repository.owner,
           repository.name,
@@ -426,7 +405,7 @@ export function createTaskActivities({
           },
         })
 
-        await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+        await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "NOT_PLANNED")
 
         return interactionResultSchema.parse({
           taskId: parsedInput.taskId,
@@ -481,7 +460,7 @@ export function createTaskActivities({
         },
       })
 
-      await syncTaskIssueState(prisma, runtime, dbTaskId, "OPEN")
+      await syncTaskIssueState(prisma, github, dbTaskId, "OPEN")
     },
 
     async requestCancellation({ taskId }) {
@@ -521,7 +500,7 @@ export function createTaskActivities({
 
         if (updateResult.count > 0) {
           logger.info('engineer cancellation marked as requested task_id="%s"', String(dbTaskId))
-          await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+          await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "NOT_PLANNED")
         } else {
           const currentTask = await prisma.task.findUnique({
             where: {
@@ -539,7 +518,7 @@ export function createTaskActivities({
           )
 
           if (currentTask?.status === "REQUESTED_CANCELLATION") {
-            await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+            await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "NOT_PLANNED")
           }
         }
 
@@ -548,7 +527,7 @@ export function createTaskActivities({
 
       if (task.status === "REQUESTED_CANCELLATION") {
         logger.info('engineer cancellation already requested task_id="%s"', String(dbTaskId))
-        await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+        await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "NOT_PLANNED")
 
         return
       }
@@ -564,7 +543,7 @@ export function createTaskActivities({
 
       logger.info('engineer cancellation completed immediately task_id="%s"', String(dbTaskId))
 
-      await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+      await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "NOT_PLANNED")
     },
 
     async runImplementationInteraction({ taskId, prompt, progressNotificationId }) {
@@ -573,7 +552,7 @@ export function createTaskActivities({
         prompt,
         progressNotificationId,
       })
-      const repository = await runtime.getRepositoryTarget()
+      const repository = await github.getRepositoryTarget()
       const dbTaskId = parseDbTaskId(parsedInput.taskId)
       const task = await prisma.task.findUnique({
         where: {
@@ -604,10 +583,14 @@ export function createTaskActivities({
         },
       })
 
-      const environment = await createCopilotEnvironment(runtime, dbTaskId, iteration.id)
+      const environment = await createFactoryEnvironment({
+        github,
+        taskId: dbTaskId,
+        iterationId: iteration.id,
+      })
       const [owner, repo] = [repository.owner, repository.name]
       const issue = task.issueId
-        ? await getRepositoryIssueByNumber(runtime.getOctokit(), owner, repo, task.issueId)
+        ? await getRepositoryIssueByNumber(await github.getOctokit(), owner, repo, task.issueId)
         : undefined
 
       let summary = ""
@@ -630,13 +613,6 @@ export function createTaskActivities({
           languageEngine,
           reportImplementationProgress,
           environment,
-          runtime,
-          permissionRequestService,
-          accessOperationService,
-          provisionService,
-          infraOperationService,
-          loadService,
-          alphaOperationService,
           owner,
           repo,
           dbTaskId,
@@ -690,7 +666,7 @@ export function createTaskActivities({
             },
           })
 
-          await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+          await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "NOT_PLANNED")
 
           await environment.dispose()
 
@@ -721,7 +697,7 @@ export function createTaskActivities({
           },
         })
 
-        await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "COMPLETED")
+        await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "COMPLETED")
 
         await environment.dispose()
 
@@ -754,7 +730,7 @@ export function createTaskActivities({
             },
           })
 
-          await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+          await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "NOT_PLANNED")
 
           await environment.dispose()
 
@@ -783,7 +759,7 @@ export function createTaskActivities({
           },
         })
 
-        await syncTaskIssueState(prisma, runtime, dbTaskId, "CLOSED", "NOT_PLANNED")
+        await syncTaskIssueState(prisma, github, dbTaskId, "CLOSED", "NOT_PLANNED")
 
         await environment.dispose()
 
@@ -819,12 +795,12 @@ export function createTaskActivities({
         },
       })
 
-      await syncTaskIssueState(prisma, runtime, dbTaskId, "OPEN")
+      await syncTaskIssueState(prisma, github, dbTaskId, "OPEN")
     },
 
     async getTaskSnapshot({ taskId }) {
       const dbTaskId = parseDbTaskId(taskId)
-      const repository = await runtime.getRepositoryTarget()
+      const repository = await github.getRepositoryTarget()
       const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`
 
       const task = await prisma.task.findUnique({
@@ -842,7 +818,7 @@ export function createTaskActivities({
       }
 
       const issue = await getRepositoryIssueByNumber(
-        runtime.getOctokit(),
+        await github.getOctokit(),
         repository.owner,
         repository.name,
         task.issueId,
@@ -881,668 +857,6 @@ export function parseGeneratedTaskPreviewTitle(content: string): { title: string
   return generatedTitleSchema.parse(parsedContent)
 }
 
-function createDevDatabaseTool({
-  provisionService,
-  infraOperationService,
-}: {
-  provisionService: ProvisionServiceClient
-  infraOperationService: OperationServiceClient
-}) {
-  return defineTool("reside_create_dev_database", {
-    description:
-      "Creates a temporary PostgreSQL development database that is automatically deleted after 24 hours",
-    parameters: z.object({}),
-    handler: async () => {
-      logger.info("engineer create_dev_database started")
-
-      const response = await provisionService.createTemporaryPostgresDatabase({})
-
-      if (!response.credentials || response.credentials.case === undefined) {
-        throw new Error("Infra did not return temporary database credentials")
-      }
-
-      const credentials = await waitForResult<PostgresDatabaseCredentials>(response.credentials, {
-        operationService: infraOperationService,
-      })
-      const databaseUrl = buildTemporaryDatabaseUrl(credentials)
-
-      logger.info(
-        'engineer create_dev_database completed host="%s" database="%s"',
-        credentials.host,
-        credentials.database,
-      )
-
-      return [
-        "Temporary PostgreSQL database created.",
-        "It will be deleted automatically after 24 hours.",
-        "If this session is resumed after a long time and the database no longer exists, call reside_create_dev_database again.",
-        `host=${credentials.host}`,
-        `port=${credentials.port}`,
-        `database=${credentials.database}`,
-        `username=${credentials.username}`,
-        `password=${credentials.password}`,
-        `DATABASE_URL=${databaseUrl}`,
-      ].join("\n")
-    },
-  })
-}
-
-function buildTemporaryDatabaseUrl(credentials: PostgresDatabaseCredentials): string {
-  const connectionUrl = new URL("postgresql://placeholder")
-  connectionUrl.hostname = credentials.host
-  connectionUrl.port = String(credentials.port)
-  connectionUrl.username = credentials.username
-  connectionUrl.password = credentials.password
-  connectionUrl.pathname = `/${credentials.database}`
-
-  return connectionUrl.toString()
-}
-
-function createDeployReplicaTool({
-  runtime,
-  permissionRequestService,
-  accessOperationService,
-  loadService,
-  alphaOperationService,
-  owner,
-  repo,
-  branchName,
-  issueNumber,
-}: {
-  runtime: EngineerAiRuntime
-  permissionRequestService: PermissionRequestServiceClient
-  accessOperationService: OperationServiceClient
-  loadService: LoadServiceClient
-  alphaOperationService: OperationServiceClient
-  owner: string
-  repo: string
-  branchName: string
-  issueNumber?: number
-}) {
-  return defineTool("reside_deploy_replica", {
-    description:
-      "Builds and pushes replica image via workflow dispatch from main, waits for completion, then loads replica through alpha",
-    parameters: z.object({
-      replicaName: z.string().min(1),
-    }),
-    handler: async ({ replicaName }) => {
-      logger.info(
-        'engineer deploy_replica started replica="%s" branch="%s"',
-        replicaName,
-        branchName,
-      )
-
-      const octokit = runtime.getOctokit()
-      const startedAt = new Date()
-
-      const mergedPullRequest = await getMergedPullRequestForBranch({
-        octokit,
-        owner,
-        repo,
-        branchName,
-      })
-
-      if (mergedPullRequest) {
-        if (mergedPullRequest.title.trim().length === 0) {
-          throw new Error(
-            `Merged pull request for branch "${branchName}" has empty title. Use a descriptive PR title and retry.`,
-          )
-        }
-
-        if (issueNumber && !hasIssueClosingTagAtBodyEnd(mergedPullRequest.body, issueNumber)) {
-          throw new Error(
-            `Merged pull request #${mergedPullRequest.number} must end body with "Closes #${issueNumber}".`,
-          )
-        }
-      } else {
-        logger.info(
-          'engineer deploy_replica proceeding without merged PR replica="%s" branch="%s"',
-          replicaName,
-          branchName,
-        )
-      }
-
-      await octokit.rest.actions.createWorkflowDispatch({
-        owner,
-        repo,
-        workflow_id: "build-replica.yml",
-        ref: "main",
-        inputs: {
-          replica_name: replicaName,
-        },
-      })
-
-      const run = await waitForWorkflowRun({
-        octokit,
-        owner,
-        repo,
-        startedAt,
-      })
-      if (run.conclusion !== "success") {
-        throw new Error(
-          `Replica build workflow failed with conclusion "${run.conclusion}" (run: ${run.url}).`,
-        )
-      }
-
-      const manifest = await loadReplicaManifestFromRepository({
-        octokit,
-        owner,
-        repo,
-        replicaName,
-      })
-
-      await requestReplicaLoadPermission({
-        permissionRequestService,
-        accessOperationService,
-        replicaName,
-        issueUrl: issueNumber
-          ? `https://github.com/${owner}/${repo}/issues/${issueNumber}`
-          : undefined,
-      })
-
-      const loadReplicaResponse = await loadService.loadReplica({
-        name: replicaName,
-        image: `${manifest.image}:${manifest.version}`,
-      })
-
-      if (!loadReplicaResponse.operation) {
-        throw new Error("Alpha load operation was not returned")
-      }
-
-      await waitForOperationSuccess(loadReplicaResponse.operation, {
-        operationService: alphaOperationService,
-      })
-
-      logger.info(
-        'engineer deploy_replica completed replica="%s" branch="%s"',
-        replicaName,
-        branchName,
-      )
-
-      return `Replica ${replicaName} deployed successfully`
-    },
-  })
-}
-
-async function requestReplicaLoadPermission(input: {
-  permissionRequestService: PermissionRequestServiceClient
-  accessOperationService: OperationServiceClient
-  replicaName: string
-  issueUrl?: string
-}): Promise<void> {
-  const permissionSetName = `engineer:deploy:${input.replicaName}`
-  const reason = input.issueUrl
-    ? `Для деплоя реплики ${input.replicaName} в рамках ${link("задачи", input.issueUrl).html}.`
-    : `Для деплоя реплики ${input.replicaName} в рамках задачи.`
-
-  const response = await input.permissionRequestService.requestPermissions({
-    reason,
-    permissionSetName,
-    items: [
-      {
-        permissionName: WellKnownPermissions.ALPHA_REPLICA_LOAD,
-        scope: input.replicaName,
-      },
-    ],
-  })
-
-  if (!response.operation) {
-    return
-  }
-
-  await waitForOperationSuccess(response.operation, {
-    operationService: input.accessOperationService,
-  })
-}
-
-function createDeliverChangesTool({
-  runtime,
-  owner,
-  repo,
-  repositoryPath,
-  branchName,
-  issueNumber,
-}: {
-  runtime: EngineerAiRuntime
-  owner: string
-  repo: string
-  repositoryPath: string
-  branchName: string
-  issueNumber?: number
-}) {
-  return defineTool("reside_deliver_changes", {
-    description:
-      "Validates commits, pushes current branch, creates or updates pull request, waits for ci:check, merges it with rebase, and deletes source branch",
-    parameters: z.object({
-      title: z.string().min(1),
-      body: z.string().min(1),
-    }),
-    handler: async ({ title, body }) => {
-      logger.info(
-        'engineer deliver_changes started branch="%s" title="%s"',
-        branchName,
-        truncateOneLine(title, 160),
-      )
-
-      const octokit = runtime.getOctokit()
-      const currentBranch = await getCurrentGitBranch(repositoryPath)
-
-      if (currentBranch !== branchName) {
-        throw new Error(
-          `Before reside_deliver_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
-        )
-      }
-
-      validatePullRequestTitle(title)
-
-      if (issueNumber && !hasIssueClosingTagAtBodyEnd(body, issueNumber)) {
-        throw new Error(`Pull request body must end with "Closes #${issueNumber}".`)
-      }
-
-      await validateBranchCommitMessages(repositoryPath, branchName)
-
-      await runCommand([
-        "git",
-        "-C",
-        repositoryPath,
-        "push",
-        "--set-upstream",
-        "origin",
-        branchName,
-      ])
-
-      const existingPullRequests = await octokit.rest.pulls.list({
-        owner,
-        repo,
-        state: "open",
-        head: `${owner}:${branchName}`,
-      })
-
-      const existingPullRequest = existingPullRequests.data[0]
-      const pullRequest = existingPullRequest
-        ? (
-            await octokit.rest.pulls.update({
-              owner,
-              repo,
-              pull_number: existingPullRequest.number,
-              title,
-              body,
-            })
-          ).data
-        : (
-            await octokit.rest.pulls.create({
-              owner,
-              repo,
-              base: "main",
-              head: branchName,
-              title,
-              body,
-            })
-          ).data
-
-      const ciCheckResult = await waitForPullRequestCiCheck({
-        octokit,
-        owner,
-        repo,
-        pullRequestNumber: pullRequest.number,
-      })
-
-      if (ciCheckResult.status !== "success") {
-        throw new Error(`PR check ci:check failed: ${ciCheckResult.failureMessage}`)
-      }
-
-      await octokit.rest.pulls.merge({
-        owner,
-        repo,
-        pull_number: pullRequest.number,
-        merge_method: "rebase",
-      })
-
-      await octokit.rest.git
-        .deleteRef({
-          owner,
-          repo,
-          ref: `heads/${branchName}`,
-        })
-        .catch(() => undefined)
-
-      logger.info(
-        'engineer deliver_changes completed branch="%s" pr_number="%s"',
-        branchName,
-        String(pullRequest.number),
-      )
-
-      return `Pull request #${pullRequest.number} merged: ${pullRequest.html_url}`
-    },
-  })
-}
-
-function createCommitChangesTool({
-  repositoryPath,
-  branchName,
-}: {
-  repositoryPath: string
-  branchName: string
-}) {
-  return defineTool("reside_commit_changes", {
-    description:
-      "Stages repository paths and creates a validated conventional commit without a commit body",
-    parameters: z.object({
-      message: z.string().min(1),
-      paths: z.array(z.string().min(1)).min(1).default(["."]),
-    }),
-    handler: async ({ message, paths }) => {
-      logger.info(
-        'engineer commit_changes started branch="%s" message="%s" paths_count="%s"',
-        branchName,
-        truncateOneLine(message, 160),
-        String(paths.length),
-      )
-
-      const currentBranch = await getCurrentGitBranch(repositoryPath)
-      if (currentBranch !== branchName) {
-        throw new Error(
-          `Before reside_commit_changes, switch git branch to "${branchName}" (current: "${currentBranch || "<detached>"}").`,
-        )
-      }
-
-      validateBranchCommitLogOutput(`0000000000000000000000000000000000000000\0${message}\0\0`)
-
-      await runCommand(["git", "-C", repositoryPath, "add", "--", ...paths])
-      await runCommand(["git", "-C", repositoryPath, "commit", "-m", message])
-      await validateBranchCommitMessages(repositoryPath, branchName)
-
-      const { stdout } = await runCommandWithOutput([
-        "git",
-        "-C",
-        repositoryPath,
-        "rev-parse",
-        "--short",
-        "HEAD",
-      ])
-      const commitHash = stdout.trim()
-
-      logger.info(
-        'engineer commit_changes completed branch="%s" commit="%s"',
-        branchName,
-        commitHash,
-      )
-
-      return `Created validated commit ${commitHash}.`
-    },
-  })
-}
-
-async function waitForWorkflowRun(input: {
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
-  owner: string
-  repo: string
-  startedAt: Date
-}): Promise<{ conclusion: string | null; url: string }> {
-  const minCreatedAt = input.startedAt.getTime() - 15_000
-
-  for (let attempt = 0; attempt < 180; attempt += 1) {
-    const runs = await input.octokit.rest.actions.listWorkflowRuns({
-      owner: input.owner,
-      repo: input.repo,
-      workflow_id: "build-replica.yml",
-      branch: "main",
-      event: "workflow_dispatch",
-      per_page: 10,
-    })
-
-    const run = runs.data.workflow_runs.find(
-      candidate => new Date(candidate.created_at).getTime() >= minCreatedAt,
-    )
-
-    if (!run) {
-      await sleep(2000)
-      continue
-    }
-
-    if (run.status !== "completed") {
-      await sleep(5000)
-      continue
-    }
-
-    return {
-      conclusion: run.conclusion,
-      url: run.html_url,
-    }
-  }
-
-  throw new Error("Timed out waiting for build-replica workflow completion")
-}
-
-async function loadReplicaManifestFromRepository(input: {
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
-  owner: string
-  repo: string
-  replicaName: string
-}) {
-  const manifestPath = `replicas/${input.replicaName}/${RESIDE_MANIFEST_FILE}`
-  const response = await input.octokit.rest.repos.getContent({
-    owner: input.owner,
-    repo: input.repo,
-    path: manifestPath,
-    ref: "main",
-  })
-
-  if (Array.isArray(response.data) || response.data.type !== "file") {
-    throw new Error(`Replica manifest "${manifestPath}" on main is not a file`)
-  }
-
-  if (typeof response.data.content !== "string") {
-    throw new Error(`Replica manifest "${manifestPath}" on main has no file content`)
-  }
-
-  const content = Buffer.from(response.data.content, "base64").toString("utf8")
-  const manifest = parseResideManifest(content)
-  if (!manifest) {
-    throw new Error(`Replica manifest "${manifestPath}" on main must define image and version`)
-  }
-
-  return manifest
-}
-
-async function waitForPullRequestCiCheck(input: {
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
-  owner: string
-  repo: string
-  pullRequestNumber: number
-}): Promise<{ status: "success" } | { status: "failed"; failureMessage: string }> {
-  for (let attempt = 0; attempt < 180; attempt += 1) {
-    const pullRequest = await input.octokit.rest.pulls.get({
-      owner: input.owner,
-      repo: input.repo,
-      pull_number: input.pullRequestNumber,
-    })
-
-    const checkRunsResponse = await input.octokit.rest.checks.listForRef({
-      owner: input.owner,
-      repo: input.repo,
-      ref: pullRequest.data.head.sha,
-      filter: "latest",
-      per_page: 100,
-    })
-
-    const ciCheckRun = checkRunsResponse.data.check_runs.find(checkRun => {
-      const checkRunName = checkRun.name.toLowerCase()
-      return checkRunName === "ci:check" || checkRunName.includes("ci:check")
-    })
-
-    if (!ciCheckRun) {
-      await sleep(2000)
-      continue
-    }
-
-    if (ciCheckRun.status !== "completed") {
-      await sleep(5000)
-      continue
-    }
-
-    if (ciCheckRun.conclusion === "success") {
-      return { status: "success" }
-    }
-
-    const failureMessage = await getCiCheckFailureMessage({
-      octokit: input.octokit,
-      owner: input.owner,
-      repo: input.repo,
-      checkRunDetailsUrl: ciCheckRun.details_url ?? "",
-      checkRunName: ciCheckRun.name,
-      checkRunSummary: ciCheckRun.output?.summary ?? "",
-      checkRunText: ciCheckRun.output?.text ?? "",
-      checkRunTitle: ciCheckRun.output?.title ?? "",
-    })
-
-    return {
-      status: "failed",
-      failureMessage,
-    }
-  }
-
-  return {
-    status: "failed",
-    failureMessage: "Timed out waiting for ci:check status",
-  }
-}
-
-async function getCiCheckFailureMessage(input: {
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
-  owner: string
-  repo: string
-  checkRunDetailsUrl: string
-  checkRunName: string
-  checkRunSummary: string
-  checkRunText: string
-  checkRunTitle: string
-}): Promise<string> {
-  const runId = extractWorkflowRunId(input.checkRunDetailsUrl)
-  if (runId) {
-    const logsMessage = await getWorkflowRunFailureLogMessage({
-      octokit: input.octokit,
-      owner: input.owner,
-      repo: input.repo,
-      runId,
-      checkRunName: input.checkRunName,
-    })
-
-    if (logsMessage) {
-      return logsMessage
-    }
-  }
-
-  const checkRunMessage = [input.checkRunTitle, input.checkRunSummary, input.checkRunText]
-    .map(value => value.trim())
-    .find(value => value.length > 0)
-
-  if (checkRunMessage) {
-    return truncateOneLine(checkRunMessage, 1200)
-  }
-
-  return `ci:check failed (run details: ${input.checkRunDetailsUrl || "unavailable"})`
-}
-
-async function getWorkflowRunFailureLogMessage(input: {
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
-  owner: string
-  repo: string
-  runId: number
-  checkRunName: string
-}): Promise<string | undefined> {
-  const jobsResponse = await input.octokit.rest.actions.listJobsForWorkflowRun({
-    owner: input.owner,
-    repo: input.repo,
-    run_id: input.runId,
-    per_page: 100,
-  })
-
-  const failedJob =
-    jobsResponse.data.jobs.find(job => {
-      return job.name.toLowerCase().includes("ci:check") && job.conclusion === "failure"
-    }) ?? jobsResponse.data.jobs.find(job => job.conclusion === "failure")
-
-  if (!failedJob) {
-    return undefined
-  }
-
-  const logsResponse = await input.octokit.rest.actions.downloadJobLogsForWorkflowRun({
-    owner: input.owner,
-    repo: input.repo,
-    job_id: failedJob.id,
-  })
-
-  const logDownloadUrl = logsResponse.url
-  if (!logDownloadUrl) {
-    return failedJob.steps?.find(step => step.conclusion === "failure")?.name
-  }
-
-  const response = await fetch(logDownloadUrl)
-  if (!response.ok) {
-    return failedJob.steps?.find(step => step.conclusion === "failure")?.name
-  }
-
-  const logText = (await response.text()).trim()
-  if (logText.length === 0) {
-    return failedJob.steps?.find(step => step.conclusion === "failure")?.name
-  }
-
-  return extractFailureMessageFromLog(logText)
-}
-
-async function getMergedPullRequestForBranch({
-  octokit,
-  owner,
-  repo,
-  branchName,
-}: {
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>
-  owner: string
-  repo: string
-  branchName: string
-}): Promise<{ number: number; title: string; body: string } | undefined> {
-  const pulls = await octokit.rest.pulls.list({
-    owner,
-    repo,
-    state: "closed",
-    head: `${owner}:${branchName}`,
-    per_page: 20,
-    sort: "updated",
-    direction: "desc",
-  })
-
-  const mergedPullRequest = pulls.data.find(pull => {
-    return Boolean(pull.merged_at)
-  })
-
-  if (!mergedPullRequest) {
-    return undefined
-  }
-
-  return {
-    number: mergedPullRequest.number,
-    title: mergedPullRequest.title ?? "",
-    body: mergedPullRequest.body ?? "",
-  }
-}
-
-async function validateBranchCommitMessages(
-  repositoryPath: string,
-  branchName: string,
-): Promise<void> {
-  const { stdout } = await runCommandWithOutput([
-    "git",
-    "-C",
-    repositoryPath,
-    "log",
-    "--format=%H%x00%s%x00%b%x00",
-    `main..${branchName}`,
-  ])
-
-  validateBranchCommitLogOutput(stdout)
-}
-
 async function runPlanningSession({
   languageEngine,
   environment,
@@ -1559,7 +873,7 @@ async function runPlanningSession({
   progressNotificationId: string
   prompt: string
   previewTitle: string
-  repository: Awaited<ReturnType<EngineerAiRuntime["getRepositoryTarget"]>>
+  repository: Awaited<ReturnType<GitHubService["getRepositoryTarget"]>>
   taskId: number
 }): Promise<{ title: string; body: string; summary: string }> {
   const draftStatesBySessionId = new Map<
@@ -1611,7 +925,7 @@ async function runPlanningLanguageStream({
   environment: CopilotEnvironment
   reportPlanningProgress: ReturnType<typeof createProgressReporter>
   draftStatesBySessionId: Map<string, { submittedDraft?: z.infer<typeof issueDraftSchema> }>
-  repository: Awaited<ReturnType<EngineerAiRuntime["getRepositoryTarget"]>>
+  repository: Awaited<ReturnType<GitHubService["getRepositoryTarget"]>>
   prompt: string
   previewTitle: string
   taskId: number
@@ -1619,13 +933,16 @@ async function runPlanningLanguageStream({
   try {
     return await languageEngine.askStream(
       `task-${taskId}`,
-      createPlanningPrompt(repository, prompt, previewTitle),
+      createEnvironmentPrompt(
+        "reside-env-factory-background",
+        createPlanningPrompt(repository, prompt, previewTitle),
+      ),
       async frame => {
         await reportPlanningProgress.report(frame)
       },
       {
         workingDirectory: environment.repositoryPath,
-        configDir: environment.sessionDirPath,
+        opencodeSessionId: environment.opencodeSessionId,
         reasoningEffort: ENGINEER_NLS_REASONING_EFFORT,
         idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
         tools: [createSubmitIssueDraftTool(draftStatesBySessionId)],
@@ -1640,13 +957,6 @@ async function runImplementationLanguageStream({
   languageEngine,
   reportImplementationProgress,
   environment,
-  runtime,
-  permissionRequestService,
-  accessOperationService,
-  provisionService,
-  infraOperationService,
-  loadService,
-  alphaOperationService,
   owner,
   repo,
   dbTaskId,
@@ -1658,13 +968,6 @@ async function runImplementationLanguageStream({
   languageEngine: LanguageEngine
   reportImplementationProgress: ReturnType<typeof createProgressReporter>
   environment: CopilotEnvironment
-  runtime: EngineerAiRuntime
-  permissionRequestService: PermissionRequestServiceClient
-  accessOperationService: OperationServiceClient
-  provisionService: ProvisionServiceClient
-  infraOperationService: OperationServiceClient
-  loadService: LoadServiceClient
-  alphaOperationService: OperationServiceClient
   owner: string
   repo: string
   dbTaskId: number
@@ -1680,50 +983,27 @@ async function runImplementationLanguageStream({
   try {
     return await languageEngine.askStream(
       `task-${dbTaskId}`,
-      createImplementationPrompt(
-        owner,
-        repo,
-        `replica/task-${dbTaskId}/${iterationId}`,
-        issue,
-        prompt,
+      createEnvironmentPrompt(
+        "reside-env-factory-background",
+        [
+          createImplementationPrompt(
+            owner,
+            repo,
+            `replica/task-${dbTaskId}/${iterationId}`,
+            issue,
+            prompt,
+          ),
+          `When calling Engineer tools, pass workingDir exactly as the current repository directory for this session.`,
+        ].join("\n\n"),
       ),
       async frame => {
         await reportImplementationProgress.report(frame)
       },
       {
         workingDirectory: environment.repositoryPath,
-        configDir: environment.sessionDirPath,
+        opencodeSessionId: environment.opencodeSessionId,
         reasoningEffort: ENGINEER_NLS_REASONING_EFFORT,
         idleTimeoutMs: ENGINEER_NLS_IDLE_TIMEOUT_MS,
-        tools: [
-          createCommitChangesTool({
-            repositoryPath: environment.repositoryPath,
-            branchName: `replica/task-${dbTaskId}/${iterationId}`,
-          }),
-          createDeliverChangesTool({
-            runtime,
-            owner,
-            repo,
-            repositoryPath: environment.repositoryPath,
-            branchName: `replica/task-${dbTaskId}/${iterationId}`,
-            issueNumber: issue?.number,
-          }),
-          createDeployReplicaTool({
-            runtime,
-            permissionRequestService,
-            accessOperationService,
-            loadService,
-            alphaOperationService,
-            owner,
-            repo,
-            branchName: `replica/task-${dbTaskId}/${iterationId}`,
-            issueNumber: issue?.number,
-          }),
-          createDevDatabaseTool({
-            provisionService,
-            infraOperationService,
-          }),
-        ],
         shouldCancel: async () => await isTaskCancellationRequested(prisma, dbTaskId),
         cancelPollIntervalMs: 1000,
       },
@@ -1740,191 +1020,10 @@ function createSubmitIssueDraftTool(
     description: "Submit final GitHub issue draft title and body",
     parameters: issueDraftSchema,
     handler: async (parsedDraft, context) => {
-      const existing = draftStatesBySessionId.get(context.sessionId) ?? {}
+      const existing = draftStatesBySessionId.get(context.invocationId) ?? {}
       existing.submittedDraft = parsedDraft
-      draftStatesBySessionId.set(context.sessionId, existing)
+      draftStatesBySessionId.set(context.invocationId, existing)
       return "Issue draft accepted"
     },
   })
-}
-
-async function createCopilotEnvironment(
-  runtime: EngineerAiRuntime,
-  taskId: number,
-  iterationId: number,
-): Promise<CopilotEnvironment> {
-  const repository = await runtime.getRepositoryTarget()
-  const authenticatedCloneUrl = await createAuthenticatedCloneUrl(
-    runtime.getOctokit(),
-    repository.cloneUrl,
-  )
-  const tempRoot = join(
-    getNlsRootPath(),
-    ENGINEER_TASKS_DIR,
-    `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`,
-  )
-  const worktreePath = join(tempRoot, "workspace")
-  const repositoryPath = join(worktreePath, repository.name)
-  const branchName = `replica/task-${taskId}/${iterationId}`
-  const sessionDirPath = getEngineerSessionDirPath(taskId)
-
-  await rm(tempRoot, { recursive: true, force: true })
-  await mkdir(worktreePath, { recursive: true })
-
-  await runCommand([
-    "git",
-    "clone",
-    "--branch",
-    "main",
-    "--single-branch",
-    authenticatedCloneUrl,
-    repositoryPath,
-  ])
-  await runCommand(["git", "-C", repositoryPath, "checkout", "-b", branchName])
-  await runCommand(["git", "-C", repositoryPath, "config", "user.name", "reside-agent[bot]"])
-  await runCommand([
-    "git",
-    "-C",
-    repositoryPath,
-    "config",
-    "user.email",
-    "248754993+reside-agent[bot]@users.noreply.github.com",
-  ])
-  await runCommand(["bun", "install", "--frozen-lockfile"], { cwd: repositoryPath })
-
-  await mkdir(sessionDirPath, { recursive: true })
-  const environment: CopilotEnvironment = {
-    workingDirectory: worktreePath,
-    repositoryPath,
-    sessionDirPath,
-    taskId,
-    dispose: async () => {
-      await rm(tempRoot, { recursive: true, force: true })
-      await rm(sessionDirPath, { recursive: true, force: true })
-    },
-  }
-
-  return environment
-}
-
-function getEngineerSessionDirPath(taskId: number): string {
-  return join(
-    getNlsRootPath(),
-    ENGINEER_TASK_SESSIONS_DIR,
-    `${ENGINEER_WORKSPACE_PREFIX}-${taskId}`,
-    ENGINEER_SESSION_DIR,
-  )
-}
-
-function getNlsRootPath(): string {
-  return join(homedir(), NLS_HOME_DIR)
-}
-
-function truncateOneLine(value: string, maxLength: number): string {
-  const normalized = value.replace(/\s+/g, " ").trim()
-  if (normalized.length <= maxLength) {
-    return normalized
-  }
-
-  return `${normalized.slice(0, maxLength)}...`
-}
-
-async function runCommand(command: string[], options?: { cwd?: string }): Promise<void> {
-  const result = await runCommandWithOutput(command, options)
-  if (result.exitCode === 0) {
-    return
-  }
-}
-
-async function getCurrentGitBranch(repositoryPath: string): Promise<string> {
-  const { stdout } = await runCommandWithOutput([
-    "git",
-    "-C",
-    repositoryPath,
-    "branch",
-    "--show-current",
-  ])
-
-  return stdout.trim()
-}
-
-async function runCommandWithOutput(
-  command: string[],
-  options?: { cwd?: string },
-): Promise<{
-  stdout: string
-  stderr: string
-  exitCode: number
-}> {
-  const commandText = sanitizeSensitiveLogText(truncateOneLine(command.join(" "), 300))
-  const cwdText = options?.cwd ? truncateOneLine(options.cwd, 180) : ""
-  logger.info('engineer command started command="%s" cwd="%s"', commandText, cwdText)
-
-  const process = Bun.spawn(command, {
-    stdout: "pipe",
-    stderr: "pipe",
-    cwd: options?.cwd,
-  })
-
-  const [stdout, stderr, exitCode] = await Promise.all([
-    process.stdout.text(),
-    process.stderr.text(),
-    process.exited,
-  ])
-
-  if (exitCode === 0) {
-    logger.info('engineer command completed command="%s" cwd="%s"', commandText, cwdText)
-    return {
-      stdout,
-      stderr,
-      exitCode,
-    }
-  }
-
-  const stdoutText = sanitizeSensitiveLogText(truncateOneLine(stdout.trim(), 800))
-  const stderrText = sanitizeSensitiveLogText(truncateOneLine(stderr.trim(), 800))
-  logger.error(
-    'engineer command failed command="%s" cwd="%s" exit_code="%s" stdout="%s" stderr="%s"',
-    commandText,
-    cwdText,
-    String(exitCode),
-    stdoutText,
-    stderrText,
-  )
-
-  throw new Error(
-    `Command failed (exit ${exitCode}): ${commandText}; stdout: ${stdoutText || "<empty>"}; stderr: ${stderrText || "<empty>"}`,
-  )
-}
-
-async function createAuthenticatedCloneUrl(
-  octokit: ReturnType<EngineerAiRuntime["getOctokit"]>,
-  cloneUrl: string,
-): Promise<string> {
-  const authResult = await octokit.auth({
-    type: "installation",
-  })
-
-  const token =
-    typeof authResult === "object" && authResult !== null && "token" in authResult
-      ? String(authResult.token ?? "").trim()
-      : ""
-
-  if (token.length === 0) {
-    throw new Error("GitHub installation token is empty")
-  }
-
-  const encodedToken = encodeURIComponent(token)
-  return cloneUrl.replace(
-    "https://github.com/",
-    `https://x-access-token:${encodedToken}@github.com/`,
-  )
-}
-
-function sanitizeSensitiveLogText(value: string): string {
-  return value.replace(/x-access-token:[^@\s]+@github\.com/gi, "x-access-token:***@github.com")
-}
-
-async function sleep(ms: number): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, ms))
 }

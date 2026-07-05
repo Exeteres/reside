@@ -1,4 +1,4 @@
-import type { GithubRepositoryTarget } from "./ai-runtime"
+import type { GithubRepositoryTarget } from "./github"
 import { describe, expect, test } from "bun:test"
 import {
   createImplementationPrompt,

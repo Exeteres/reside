@@ -25,6 +25,18 @@ export type NlsMcpToolServer = {
   stop: () => Promise<void>
 }
 
+export type McpToolServer = NlsMcpToolServer
+
+export type StartMcpToolServerOptions = {
+  name: string
+  invocationId: string
+  tools: Tool[]
+  token?: string
+  host?: string
+  path?: string
+  instructions?: string
+}
+
 type McpRequest = {
   body: unknown
   header: (name: string) => string | undefined
@@ -49,15 +61,30 @@ type McpRequestSummary = {
 
 export async function startNlsMcpToolServer({
   invocationId,
-  sessionId,
   tools,
 }: {
   invocationId: string
-  sessionId: string
   tools: Tool[]
 }): Promise<NlsMcpToolServer> {
-  const token = randomUUID()
-  const app = createMcpExpressApp({ host: MCP_HOST })
+  return await startMcpToolServer({
+    name: "reside",
+    invocationId,
+    tools,
+    instructions:
+      "Use these tools only for ReSide replica operations. Treat returned IDs, ECIDs, RHIDs, and credentials as sensitive operational data.",
+  })
+}
+
+export async function startMcpToolServer({
+  name,
+  invocationId,
+  tools,
+  token = randomUUID(),
+  host = MCP_HOST,
+  path = MCP_PATH,
+  instructions = "Use these tools only for ReSide replica operations.",
+}: StartMcpToolServerOptions): Promise<McpToolServer> {
+  const app = createMcpExpressApp({ host })
 
   app.use((request: McpRequest, response: McpResponse, next: McpNext) => {
     const authorization = request.header("authorization") ?? ""
@@ -66,14 +93,14 @@ export async function startNlsMcpToolServer({
       return
     }
 
-    logger.warn('nls mcp request unauthorized session_id="%s"', sessionId)
+    logger.warn('nls mcp request unauthorized invocation_id="%s"', invocationId)
     response.status(401).json({ error: "unauthorized" })
   })
 
-  app.post(MCP_PATH, async (request: McpRequest, response: McpResponse) => {
+  app.post(path, async (request: McpRequest, response: McpResponse) => {
     const requestSummary = summarizeMcpRequest(request.body)
 
-    const server = createToolServer(invocationId, sessionId, tools)
+    const server = createToolServer({ invocationId, tools, instructions })
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
 
     const close = () => {
@@ -96,8 +123,8 @@ export async function startNlsMcpToolServer({
     } catch (error) {
       logger.warn(
         { error: normalizeError(error) },
-        'nls mcp request failed session_id="%s" method="%s" request_id="%s"',
-        sessionId,
+        'nls mcp request failed invocation_id="%s" method="%s" request_id="%s"',
+        invocationId,
         requestSummary.method,
         requestSummary.requestId,
       )
@@ -115,11 +142,11 @@ export async function startNlsMcpToolServer({
     }
   })
 
-  app.all(MCP_PATH, (_request: McpRequest, response: McpResponse) => {
+  app.all(path, (_request: McpRequest, response: McpResponse) => {
     response.status(405).set("Allow", "POST").send("Method Not Allowed")
   })
 
-  const httpServer = await listen(app, MCP_HOST)
+  const httpServer = await listen(app, host)
   const address = httpServer.address()
   if (!address || typeof address === "string") {
     await closeHttpServer(httpServer)
@@ -127,8 +154,8 @@ export async function startNlsMcpToolServer({
   }
 
   return {
-    name: "reside",
-    url: `http://${MCP_HOST}:${address.port}${MCP_PATH}`,
+    name,
+    url: `http://${host}:${address.port}${path}`,
     token,
     toolNames: tools.map(tool => tool.name),
     stop: async () => {
@@ -137,15 +164,22 @@ export async function startNlsMcpToolServer({
   }
 }
 
-function createToolServer(invocationId: string, sessionId: string, tools: Tool[]): McpServer {
+function createToolServer({
+  invocationId,
+  tools,
+  instructions,
+}: {
+  invocationId: string
+  tools: Tool[]
+  instructions: string
+}): McpServer {
   const server = new McpServer(
     {
       name: "reside-nls-tools",
       version: "1.0.0",
     },
     {
-      instructions:
-        "Use these tools only for ReSide replica operations. Treat returned IDs, ECIDs, RHIDs, and credentials as sensitive operational data.",
+      instructions,
     },
   )
 
@@ -168,10 +202,6 @@ function createToolServer(invocationId: string, sessionId: string, tools: Tool[]
         try {
           const result = await tool.handler(args, {
             invocationId,
-            sessionId,
-            toolCallId,
-            toolName: tool.name,
-            arguments: args,
           })
 
           return toCallToolResult(result)
@@ -179,8 +209,8 @@ function createToolServer(invocationId: string, sessionId: string, tools: Tool[]
           const errorMessage = describeToolError(error)
           logger.warn(
             { error: normalizeError(error) },
-            'nls tool execution failed session_id="%s" tool_name="%s" tool_call_id="%s"',
-            sessionId,
+            'nls tool execution failed invocation_id="%s" tool_name="%s" tool_call_id="%s"',
+            invocationId,
             tool.name,
             toolCallId,
           )

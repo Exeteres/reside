@@ -1,4 +1,4 @@
-import type { GithubRepositoryTarget } from "./ai-runtime"
+import type { GithubRepositoryTarget } from "./github"
 import { strings } from "../../locale"
 
 export type ImplementationIssueContext = {
@@ -67,7 +67,6 @@ export function createImplementationPrompt(
     `Branch: ${branchName}`,
     ...issueContext,
     "You are in Engineer replica implementation phase.",
-    "Load and follow `reside-engineer` before classifying the task or changing repository files.",
     `Current user request: ${userPrompt}`,
   ].join("\n")
 }

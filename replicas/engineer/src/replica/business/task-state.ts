@@ -1,6 +1,6 @@
 import type { Octokit } from "octokit"
 import type { PrismaClient } from "../../database"
-import type { EngineerAiRuntime } from "./ai-runtime"
+import type { GitHubService } from "./github"
 
 export type RepositoryIssue = {
   id: string
@@ -15,14 +15,14 @@ export type RepositoryIssueStateReason = "COMPLETED" | "NOT_PLANNED"
 
 export async function upsertTaskIssue(
   prisma: PrismaClient,
-  runtime: EngineerAiRuntime,
+  github: GitHubService,
   taskId: number,
   owner: string,
   repo: string,
   issueTitle: string,
   issueBody: string,
 ): Promise<RepositoryIssue> {
-  const octokit = runtime.getOctokit()
+  const octokit = await github.getOctokit()
   const task = await prisma.task.findUnique({
     where: {
       id: taskId,
@@ -133,7 +133,7 @@ export async function updateRepositoryIssue(
 
 export async function syncTaskIssueState(
   prisma: PrismaClient,
-  runtime: EngineerAiRuntime,
+  github: GitHubService,
   taskId: number,
   state: RepositoryIssueState,
   stateReason?: RepositoryIssueStateReason,
@@ -151,9 +151,9 @@ export async function syncTaskIssueState(
     return
   }
 
-  const repository = await runtime.getRepositoryTarget()
+  const repository = await github.getRepositoryTarget()
   await updateRepositoryIssueState(
-    runtime.getOctokit(),
+    await github.getOctokit(),
     repository.owner,
     repository.name,
     task.issueId,

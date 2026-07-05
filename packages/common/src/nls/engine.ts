@@ -18,7 +18,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3"
-import { createOpencode } from "@opencode-ai/sdk/v2"
+import { createOpencode, createOpencodeClient } from "@opencode-ai/sdk/v2"
 import { z } from "zod"
 import { createStorageBucketService, type StorageBucketService } from "../database"
 import { crypto } from "../encryption"
@@ -82,6 +82,7 @@ export type LanguageEngine = {
 
 export type LanguageEngineAskOptions = {
   invocationId?: string
+  opencodeSessionId?: string
   systemPrompt?: string
   workingDirectory?: string
   configDir?: string
@@ -107,6 +108,7 @@ export type CreateLanguageEngineOptions = {
   tools?: Tool[]
   tags?: MemoryToolTagDefinitions
   storageCredentials?: LanguageEngineStorageCredentials
+  opencodeEndpoint?: string
 }
 
 type OpenCodeTurnStatus = "completed" | "failed"
@@ -147,10 +149,12 @@ export async function createLanguageEngine(
 
   const llmSecret = await crypto.getSecret(llmSecretSchema, LLM_SECRET_NAME)
   const model = selectLlmModel(llmSecret, args.model)
-  const opencodeConfig = await loadOpenCodeConfig(model)
   const sessionPrefix = normalizeSessionPrefix(args.sessionPrefix)
   const baseSystemPrompt = args.systemPrompt.trim()
   const systemPrompt = [baseSystemPrompt, createLanguageMemorySystemPrompt(args.tags)].join("\n\n")
+  const opencodeEndpoint = args.opencodeEndpoint
+  const usesRemoteOpenCode = opencodeEndpoint !== undefined
+  const opencodeConfig = usesRemoteOpenCode ? {} : await loadOpenCodeConfig(model)
   if (systemPrompt.length === 0) {
     throw new Error("createLanguageEngine systemPrompt must not be empty")
   }
@@ -180,6 +184,7 @@ export async function createLanguageEngine(
         sessionId,
         text,
         invocationId: options?.invocationId,
+        opencodeSessionId: options?.opencodeSessionId,
         systemPrompt: options?.systemPrompt,
         workingDirectory: options?.workingDirectory,
         configDir: options?.configDir,
@@ -196,6 +201,7 @@ export async function createLanguageEngine(
         text,
         onFrame,
         invocationId: options?.invocationId,
+        opencodeSessionId: options?.opencodeSessionId,
         systemPrompt: options?.systemPrompt,
         workingDirectory: options?.workingDirectory,
         configDir: options?.configDir,
@@ -227,6 +233,7 @@ export async function createLanguageEngine(
     sessionId: string
     text: string
     invocationId?: string
+    opencodeSessionId?: string
     systemPrompt?: string
     workingDirectory?: string
     configDir?: string
@@ -247,24 +254,29 @@ export async function createLanguageEngine(
       const sessionWorkingDirectory =
         args.workingDirectory ?? join(workspacePath, NLS_CHAT_WORKSPACE_DIR)
       const sessionDirPath = args.configDir ?? join(workspacePath, NLS_SESSION_DIR)
-      await mkdir(sessionWorkingDirectory, { recursive: true })
+      if (!usesRemoteOpenCode) {
+        await mkdir(sessionWorkingDirectory, { recursive: true })
+      }
       await mkdir(sessionDirPath, { recursive: true })
 
       const sessionTools = [...engineTools, ...(args.tools ?? [])]
       const invocationId = args.invocationId ?? randomUUID()
-      const restoredThreadId = await restoreSessionArchive(
-        storageBucketService,
-        sessionDirPath,
-        sessionPrefix,
-        normalizedSessionId,
-      )
+      const restoredThreadId =
+        args.opencodeSessionId ??
+        (usesRemoteOpenCode
+          ? undefined
+          : await restoreSessionArchive(
+              storageBucketService,
+              sessionDirPath,
+              sessionPrefix,
+              normalizedSessionId,
+            ))
       let opencodeSessionId = restoredThreadId ?? randomUUID()
       let opencodeStatePath = getSessionStatePath(sessionDirPath, opencodeSessionId)
       await mkdir(opencodeStatePath, { recursive: true })
 
       const mcpServer = await startNlsMcpToolServer({
         invocationId,
-        sessionId: normalizedSessionId,
         tools: sessionTools,
       })
       logger.debug(
@@ -292,6 +304,7 @@ export async function createLanguageEngine(
           opencodeConfig,
           providerBaseUrl: llmSecret.endpoint,
           apiKey: llmSecret["api-key"],
+          opencodeEndpoint,
           homeDir: opencodeStatePath,
           workingDirectory: sessionWorkingDirectory,
           reasoningEffort: args.reasoningEffort,
@@ -346,7 +359,7 @@ export async function createLanguageEngine(
         })
 
         const currentSessionId = currentOpenCodeSessionId?.trim()
-        if (currentSessionId) {
+        if (currentSessionId && !usesRemoteOpenCode) {
           const archiveUploadStartedAt = Date.now()
           try {
             if (currentSessionId !== opencodeSessionId) {
@@ -404,6 +417,7 @@ async function runOpenCodeSession({
   opencodeConfig,
   providerBaseUrl,
   apiKey,
+  opencodeEndpoint,
   homeDir,
   workingDirectory,
   reasoningEffort,
@@ -424,6 +438,7 @@ async function runOpenCodeSession({
   opencodeConfig: Config
   providerBaseUrl: string
   apiKey: string
+  opencodeEndpoint?: string
   homeDir: string
   workingDirectory: string
   reasoningEffort?: LanguageEngineReasoningEffort
@@ -451,17 +466,16 @@ async function runOpenCodeSession({
   let finalResponse = ""
   let status: OpenCodeTurnStatus = "failed"
   const serverAbortController = new AbortController()
-  const restoreEnvironment = setOpenCodeEnvironment({
+  let eventWatcher: Promise<void> | undefined
+  const opencode = await createOpenCodeSessionBackend({
+    endpoint: opencodeEndpoint,
     providerBaseUrl,
     apiKey,
     homeDir,
-  })
-  let eventWatcher: Promise<void> | undefined
-  const opencode = await createOpencode({
-    port: 0,
+    workingDirectory,
     signal: serverAbortController.signal,
     config: createOpenCodeSessionConfig(opencodeConfig, mcpServer, model),
-  }).finally(restoreEnvironment)
+  })
 
   try {
     await mkdir(opencodeStatePath, { recursive: true })
@@ -535,7 +549,7 @@ async function runOpenCodeSession({
     })
     timeout.stop()
     stopCancellationWatcher()
-    opencode.server.close()
+    opencode.close()
     serverAbortController.abort()
     logOpenCodeTurnSummary({
       sessionId,
@@ -548,6 +562,52 @@ async function runOpenCodeSession({
       durationMs: Date.now() - sessionStartedAt,
       status,
     })
+  }
+}
+
+async function createOpenCodeSessionBackend({
+  endpoint,
+  providerBaseUrl,
+  apiKey,
+  homeDir,
+  workingDirectory,
+  signal,
+  config,
+}: {
+  endpoint?: string
+  providerBaseUrl: string
+  apiKey: string
+  homeDir: string
+  workingDirectory: string
+  signal: AbortSignal
+  config: Config
+}): Promise<{ client: OpencodeClient; close: () => void }> {
+  if (endpoint !== undefined) {
+    const client = createOpencodeClient({
+      baseUrl: endpoint,
+      directory: workingDirectory,
+    })
+
+    return {
+      client,
+      close: () => undefined,
+    }
+  }
+
+  const restoreEnvironment = setOpenCodeEnvironment({
+    providerBaseUrl,
+    apiKey,
+    homeDir,
+  })
+  const opencode = await createOpencode({
+    port: 0,
+    signal,
+    config,
+  }).finally(restoreEnvironment)
+
+  return {
+    client: opencode.client,
+    close: () => opencode.server.close(),
   }
 }
 
@@ -1306,7 +1366,7 @@ function createStorageBucketServiceFromCredentials(
 ): StorageBucketService {
   return {
     client: new S3Client({
-      endpoint: `http://${credentials.endpoint}`,
+      endpoint: credentials.endpoint,
       region: "us-east-1",
       forcePathStyle: true,
       credentials: {

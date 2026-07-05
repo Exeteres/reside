@@ -6,6 +6,7 @@ export const RESIDE_MANIFEST_FILE = "reside.manifest.json"
 export type ResideManifest = {
   version: string
   image: string
+  extraComponents: string[]
 }
 
 /**
@@ -28,6 +29,7 @@ export function parseResideManifest(content: string): ResideManifest | undefined
   const parsed = JSON.parse(content) as {
     version?: unknown
     image?: unknown
+    extraComponents?: unknown
   }
 
   if (typeof parsed.version !== "string") {
@@ -48,5 +50,30 @@ export function parseResideManifest(content: string): ResideManifest | undefined
     return undefined
   }
 
-  return { version, image }
+  const extraComponents = parseExtraComponents(parsed.extraComponents)
+  if (!extraComponents) {
+    return undefined
+  }
+
+  return { version, image, extraComponents }
+}
+
+function parseExtraComponents(value: unknown): string[] | undefined {
+  if (value === undefined) {
+    return []
+  }
+
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const components = value.map(component => {
+    return typeof component === "string" ? component.trim() : ""
+  })
+
+  if (components.some(component => component.length === 0)) {
+    return undefined
+  }
+
+  return components
 }

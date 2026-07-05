@@ -11,6 +11,12 @@ export const ru = {
           "Позволяет создавать и обновлять инженерные задачи через команду /create_task.",
       },
     },
+    factory: {
+      gateway: {
+        title: "Инженерная фабрика",
+        description: "Веб-интерфейс общей сессии OpenCode для инженерных задач.",
+      },
+    },
   },
   commands: {
     createTask: {

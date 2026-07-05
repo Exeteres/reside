@@ -6,6 +6,13 @@ export {
   type LanguageEngineStorageCredentials,
 } from "./engine"
 export {
+  type McpToolServer,
+  type NlsMcpToolServer,
+  type StartMcpToolServerOptions,
+  startMcpToolServer,
+  startNlsMcpToolServer,
+} from "./mcp-tool-server"
+export {
   createMemoryTools,
   languageMemorySystemPrompt,
   type MemoryToolServices,

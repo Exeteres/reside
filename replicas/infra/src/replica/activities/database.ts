@@ -23,8 +23,6 @@ import {
   loadInfraGatewayConfig,
   loadMathesarAdminCredentials,
   loadMinioAdminConfig,
-  MINIO_SERVICE_NAME,
-  MINIO_SERVICE_PORT,
   type PostgresAdminConfig,
   provisionPostgresDatabase,
   quoteIdentifier,
@@ -110,11 +108,9 @@ export function createDatabaseActivities({
       })
 
       logger.info(
-        'provisioned storage bucket name="%s" endpoint="%s.%s.svc.cluster.local:%d"',
+        'provisioned storage bucket name="%s" endpoint="%s"',
         storageBucket.bucket,
-        MINIO_SERVICE_NAME,
-        namespace,
-        MINIO_SERVICE_PORT,
+        minioAdminConfig.endpoint,
       )
     },
 

@@ -66,4 +66,6 @@ Replica services generally use TypeScript/Bun, Prisma ORM, PostgreSQL, Temporal,
 - For the key rate replica external API and `get_rate` behavior, load `reside-rate-api`.
 - For skill authoring, skill packages, skill-owned scripts, and `.opencode/skills` workspace rules, load `reside-skills`.
 - For CI commands, root package scripts, Nx targets, and repository check behavior, load `reside-ci`.
-- For Engineer replica implementation-phase sessions, issue execution, commits, PR delivery, and deployments, load `reside-engineer`.
+- For local user-launched OpenCode sessions, load `reside-env-interactive`.
+- For Engineer factory web sessions created manually by a user, load `reside-env-factory-interactive`.
+- For Engineer factory background task sessions, issue execution, commits, PR delivery, and deployments, load `reside-env-factory-background`.

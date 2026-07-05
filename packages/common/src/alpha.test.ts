@@ -14,7 +14,36 @@ describe("parseResideManifest", () => {
     ).toEqual({
       version: "1.2.3",
       image: "ghcr.io/exeteres/reside/replicas/test",
+      extraComponents: [],
     })
+  })
+
+  test("loads extra components", () => {
+    expect(
+      parseResideManifest(
+        JSON.stringify({
+          version: "1.2.3",
+          image: "ghcr.io/exeteres/reside/replicas/test",
+          extraComponents: [" factory "],
+        }),
+      ),
+    ).toEqual({
+      version: "1.2.3",
+      image: "ghcr.io/exeteres/reside/replicas/test",
+      extraComponents: ["factory"],
+    })
+  })
+
+  test("rejects invalid extra components", () => {
+    expect(
+      parseResideManifest(
+        JSON.stringify({
+          version: "1.2.3",
+          image: "ghcr.io/exeteres/reside/replicas/test",
+          extraComponents: [""],
+        }),
+      ),
+    ).toBeUndefined()
   })
 
   test("returns undefined when version is missing", () => {

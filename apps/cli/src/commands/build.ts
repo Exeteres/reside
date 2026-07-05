@@ -12,6 +12,11 @@ export const buildCommand = defineCommand({
       type: "boolean",
       default: false,
     },
+    dump: {
+      description: "Print the generated Dockerfile to stdout without building the image",
+      type: "boolean",
+      default: false,
+    },
   },
   async run({ args }) {
     await buildCurrentPackageImage({
@@ -19,6 +24,7 @@ export const buildCommand = defineCommand({
       tag: args.tag,
       push: args.push,
       interactiveDockerOutput: true,
+      dump: args.dump,
     })
   },
 })

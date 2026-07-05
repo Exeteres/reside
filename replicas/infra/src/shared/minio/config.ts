@@ -5,7 +5,6 @@ import {
   MINIO_ADMIN_PASSWORD_KEY,
   MINIO_ADMIN_SECRET_NAME,
   MINIO_ADMIN_USERNAME_KEY,
-  MINIO_SERVICE_PORT,
 } from "./constants"
 
 export type MinioAdminConfig = {
@@ -35,29 +34,46 @@ export async function loadMinioAdminConfig(
     secret.data?.[MINIO_ADMIN_ENDPOINT_KEY],
     `Secret "${MINIO_ADMIN_SECRET_NAME}" is missing "${MINIO_ADMIN_ENDPOINT_KEY}"`,
   )
-  const normalizedEndpoint = normalizeEndpoint(endpoint)
+  const parsedEndpoint = parseEndpoint(endpoint)
 
   return {
-    endpoint: normalizedEndpoint,
+    endpoint: buildEndpoint(parsedEndpoint),
     username,
     password,
   }
 }
 
-function normalizeEndpoint(endpoint: string): string {
-  const normalizedEndpoint = endpoint.includes("://") ? endpoint : `http://${endpoint}`
-  const parsedEndpoint = new URL(normalizedEndpoint)
+function parseEndpoint(endpoint: string): URL {
+  const parsedEndpoint = new URL(endpoint)
 
   if (!parsedEndpoint.hostname) {
     throw new Error(`Secret "${MINIO_ADMIN_SECRET_NAME}" has invalid endpoint value`)
   }
 
-  const port =
-    parsedEndpoint.port.length > 0 ? Number.parseInt(parsedEndpoint.port, 10) : MINIO_SERVICE_PORT
+  if (parsedEndpoint.protocol !== "http:" && parsedEndpoint.protocol !== "https:") {
+    throw new Error(`Secret "${MINIO_ADMIN_SECRET_NAME}" has unsupported endpoint protocol`)
+  }
+
+  return parsedEndpoint
+}
+
+function buildEndpoint(parsedEndpoint: URL): string {
+  const port = getEndpointPort(parsedEndpoint)
+  const portSuffix = port === undefined ? "" : `:${port}`
+
+  return `${parsedEndpoint.protocol}//${parsedEndpoint.hostname}${portSuffix}`
+}
+
+function getEndpointPort(parsedEndpoint: URL): number | undefined {
+  if (parsedEndpoint.port.length === 0) {
+    return undefined
+  }
+
+  const port = Number.parseInt(parsedEndpoint.port, 10)
 
   if (!Number.isInteger(port) || port <= 0) {
     throw new Error(`Secret "${MINIO_ADMIN_SECRET_NAME}" has invalid endpoint port`)
   }
 
-  return `${parsedEndpoint.hostname}:${port}`
+  return port
 }

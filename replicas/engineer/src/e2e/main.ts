@@ -6,7 +6,7 @@ import { createOpencode } from "@opencode-ai/sdk/v2"
 import { logger, subscribeToSecret } from "@reside/common"
 import { toError } from "@reside/utils"
 import { z } from "zod"
-import { startEngineerAiRuntime } from "../replica"
+import { startGitHubService } from "../replica"
 
 const llmSecretSchema = z.object({
   endpoint: z.string().trim().min(1),
@@ -15,7 +15,7 @@ const llmSecretSchema = z.object({
   "smart-model": z.string().trim().min(1),
 })
 
-const runtime = await startEngineerAiRuntime()
+const github = await startGitHubService()
 const OPENCODE_MODEL_PROVIDER_ID = "reside"
 const OPENCODE_CONFIG_PATH = ".opencode/opencode.json"
 const RESIDE_LLM_ENDPOINT_ENV_VAR = "RESIDE_LLM_ENDPOINT"
@@ -27,13 +27,13 @@ try {
   logger.info("starting engineer e2e")
 
   const repository = await withTimeout(
-    runtime.getRepositoryTarget(),
+    github.getRepositoryTarget(),
     30_000,
     'Timed out waiting for config map "github-repository"',
   )
 
   const octokit = await withTimeout(
-    waitForReadyValue(() => runtime.getOctokit()),
+    github.getOctokit(),
     30_000,
     'Timed out waiting for secret "github-app" to initialize octokit',
   )
@@ -121,9 +121,9 @@ try {
   }
 
   try {
-    await withTimeout(runtime.stop(), 5_000, "Timed out waiting for runtime stop")
+    await withTimeout(github.stop(), 5_000, "Timed out waiting for github service stop")
   } catch (error) {
-    logger.warn({ error: toError(error) }, "engineer e2e runtime stop warning")
+    logger.warn({ error: toError(error) }, "engineer e2e github service stop warning")
   }
 
   await Bun.sleep(50)
@@ -144,16 +144,6 @@ async function waitForLlmSecret(): Promise<z.infer<typeof llmSecretSchema>> {
     }
   } finally {
     await iterator.return?.()
-  }
-}
-
-async function waitForReadyValue<T>(factory: () => T): Promise<T> {
-  while (true) {
-    try {
-      return factory()
-    } catch {
-      await Bun.sleep(250)
-    }
   }
 }
 

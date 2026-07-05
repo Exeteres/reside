@@ -24,26 +24,6 @@ export type ToolCallContext = {
    * Multiple tool calls may share one invocation ID when they happen during the same user turn.
    */
   invocationId: string
-
-  /**
-   * Stable identifier of the NLS conversation session that owns this tool call.
-   */
-  sessionId: string
-
-  /**
-   * Provider-assigned identifier of this concrete LLM tool call.
-   */
-  toolCallId: string
-
-  /**
-   * Registered ReSide NLS tool name selected by the LLM.
-   */
-  toolName: string
-
-  /**
-   * Raw arguments received for this concrete tool call after MCP schema parsing.
-   */
-  arguments: unknown
 }
 
 export type ToolHandler<TArgs = unknown> = {

@@ -1,12 +1,8 @@
-import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
-import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
-import type { OperationServiceClient } from "@reside/api/common/operation.v1"
-import type { ProvisionServiceClient } from "@reside/api/infra/provision.v1"
 import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { GenericOperationService, LanguageEngine } from "@reside/common"
 import type { DeepMockProxy } from "@reside/common/testing"
 import type { Operation, PrismaClient } from "../../database"
-import type { EngineerAiRuntime } from "../business"
+import type { GitHubService } from "../business"
 import { describe, expect, test } from "bun:test"
 import { mockDeepFn } from "@reside/common/testing"
 import { createTaskActivities, parseGeneratedTaskPreviewTitle } from "./task"
@@ -146,38 +142,37 @@ function createFixture(): {
   prisma: DeepMockProxy<PrismaClient>
   octokit: DeepMockProxy<MockOctokit>
 } {
-  const runtime = mockDeepFn<EngineerAiRuntime>()
   const languageEngine = mockDeepFn<LanguageEngine>()
   const prisma = mockDeepFn<PrismaClient>()
   const notificationService = mockDeepFn<NotificationServiceClient>()
-  const permissionRequestService = mockDeepFn<PermissionRequestServiceClient>()
-  const accessOperationService = mockDeepFn<OperationServiceClient>()
-  const provisionService = mockDeepFn<ProvisionServiceClient>()
-  const infraOperationService = mockDeepFn<OperationServiceClient>()
-  const loadService = mockDeepFn<LoadServiceClient>()
-  const alphaOperationService = mockDeepFn<OperationServiceClient>()
   const operationService = mockDeepFn<GenericOperationService<Operation>>()
   const octokit = mockDeepFn<MockOctokit>()
-
-  runtime.getOctokit.mockReturnValue(octokit as never)
-  runtime.getRepositoryTarget.mockResolvedValue({
-    owner: "exeteres",
-    name: "reside4",
-    cloneUrl: "https://github.com/exeteres/reside4.git",
+  const githubOctokit = { rest: octokit.rest } as never
+  const github: GitHubService = {
+    getOctokit: async () => githubOctokit,
+    getRepositoryTarget: async () => ({
+      owner: "exeteres",
+      name: "reside4",
+      cloneUrl: "https://github.com/exeteres/reside4.git",
+    }),
+    stop: async () => undefined,
+  }
+  const createFactoryEnvironment = async () => ({
+    workingDirectory: "/factory/worktree",
+    repositoryPath: "/factory/worktree",
+    opencodeSessionId: "session-1",
+    taskId: 1,
+    branchName: "replica/task-1/1",
+    dispose: async () => undefined,
   })
 
   return {
     activities: createTaskActivities({
-      runtime,
+      github,
+      createFactoryEnvironment,
       languageEngine,
       prisma,
       notificationService,
-      permissionRequestService,
-      accessOperationService,
-      provisionService,
-      infraOperationService,
-      loadService,
-      alphaOperationService,
       operationService,
     }),
     prisma,
