@@ -20,6 +20,7 @@ const { getBalance, issueReplicaFunds, listTransactions, transfer } =
       initialInterval: "3 seconds",
       backoffCoefficient: 2,
       maximumAttempts: 3,
+      nonRetryableErrorTypes: [BankError.name],
     },
   })
 
