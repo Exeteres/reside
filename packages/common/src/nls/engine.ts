@@ -489,6 +489,8 @@ async function runOpenCodeSession({
       sessionId,
       opencodeSessionId: activeOpenCodeSessionId,
       workingDirectory,
+      frameQueue,
+      onActivity: timeout.reset,
       signal: eventAbortController.signal,
     })
 
@@ -668,12 +670,16 @@ async function watchOpenCodeEvents({
   sessionId,
   opencodeSessionId,
   workingDirectory,
+  frameQueue,
+  onActivity,
   signal,
 }: {
   opencode: { client: OpencodeClient }
   sessionId: string
   opencodeSessionId: string
   workingDirectory: string
+  frameQueue: LanguageEngineFrameQueue
+  onActivity: () => void
   signal: AbortSignal
 }): Promise<void> {
   const events = await opencode.client.event.subscribe(
@@ -690,7 +696,9 @@ async function watchOpenCodeEvents({
         return
       }
 
-      logOpenCodeEvent(event, sessionId, opencodeSessionId)
+      if (logOpenCodeEvent(event, sessionId, opencodeSessionId, frameQueue)) {
+        onActivity()
+      }
     }
   } catch (error) {
     if (signal.aborted) {
@@ -705,57 +713,83 @@ function logOpenCodeEvent(
   event: OpenCodeEvent,
   sessionId: string,
   opencodeSessionId: string,
-): void {
+  frameQueue: LanguageEngineFrameQueue,
+): boolean {
   if (!isEventForSession(event, opencodeSessionId)) {
-    return
+    return false
   }
 
-  if (event.type === "session.next.tool.called") {
-    logger.info(
-      'nls opencode tool called session_id="%s" opencode_session_id="%s" tool_name="%s" tool_call_id="%s" provider_executed="%s"',
-      sessionId,
-      opencodeSessionId,
-      event.properties.tool,
-      event.properties.callID,
-      String(event.properties.provider.executed),
-    )
-    return
-  }
+  if (event.type === "message.part.updated") {
+    const part = event.properties.part
+    if (part.type === "text") {
+      frameQueue.push(part.messageID, part.text)
+      logger.debug(
+        'nls opencode assistant message updated session_id="%s" opencode_session_id="%s" message_id="%s" part_id="%s" content_length="%s"',
+        sessionId,
+        opencodeSessionId,
+        part.messageID,
+        part.id,
+        String(part.text.length),
+      )
+      return true
+    }
 
-  if (event.type === "session.next.tool.success") {
-    logger.info(
-      'nls opencode tool completed session_id="%s" opencode_session_id="%s" tool_call_id="%s" provider_executed="%s" output_paths_count="%s"',
-      sessionId,
-      opencodeSessionId,
-      event.properties.callID,
-      String(event.properties.provider.executed),
-      String(event.properties.outputPaths?.length ?? 0),
-    )
-    return
-  }
+    if (part.type === "tool") {
+      logOpenCodeToolPartUpdate(part, sessionId, opencodeSessionId)
+      return true
+    }
 
-  if (event.type === "session.next.tool.failed") {
-    logger.warn(
-      'nls opencode tool failed session_id="%s" opencode_session_id="%s" tool_call_id="%s" provider_executed="%s" error_name="%s"',
-      sessionId,
-      opencodeSessionId,
-      event.properties.callID,
-      String(event.properties.provider.executed),
-      getOpenCodeEventErrorName(event.properties.error),
-    )
-    return
-  }
+    if (part.type !== "patch") {
+      return true
+    }
 
-  if (event.type === "message.part.updated" && event.properties.part.type === "patch") {
     logger.info(
       'nls opencode file change session_id="%s" opencode_session_id="%s" message_id="%s" part_id="%s" files_count="%s"',
       sessionId,
       opencodeSessionId,
       event.properties.part.messageID,
       event.properties.part.id,
-      String(event.properties.part.files.length),
+      String(part.files.length),
     )
+    return true
   }
+
+  return true
+}
+
+function logOpenCodeToolPartUpdate(
+  part: Extract<Part, { type: "tool" }>,
+  sessionId: string,
+  opencodeSessionId: string,
+): void {
+  const durationMs = getOpenCodeToolDuration(part)
+  logger.info(
+    'nls opencode tool update session_id="%s" opencode_session_id="%s" message_id="%s" part_id="%s" tool_name="%s" tool_call_id="%s" status="%s" duration_ms="%s"',
+    sessionId,
+    opencodeSessionId,
+    part.messageID,
+    part.id,
+    part.tool,
+    part.callID,
+    part.state.status,
+    durationMs,
+  )
+
+  if (part.tool !== "bash" && part.tool !== "shell") {
+    return
+  }
+
+  logger.info(
+    'nls opencode command update session_id="%s" opencode_session_id="%s" command_id="%s" command="%s" status="%s" duration_ms="%s" output_length="%s" output_tail="%s"',
+    sessionId,
+    opencodeSessionId,
+    part.callID,
+    formatCommandForLog(getOpenCodeToolCommand(part)),
+    part.state.status,
+    durationMs,
+    String(getOpenCodeToolOutput(part).length),
+    formatCommandOutputTailForLog(getOpenCodeToolOutput(part)),
+  )
 }
 
 function isEventForSession(event: OpenCodeEvent, opencodeSessionId: string): boolean {
