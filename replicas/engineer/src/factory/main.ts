@@ -35,6 +35,7 @@ const FACTORY_SHUTDOWN_TIMEOUT_MS = 120_000
 const FACTORY_MCP_TOKEN_ENV_VAR = "ENGINEER_FACTORY_MCP_TOKEN"
 const RESIDE_LLM_ENDPOINT_ENV_VAR = "RESIDE_LLM_ENDPOINT"
 const RESIDE_LLM_API_KEY_ENV_VAR = "RESIDE_LLM_API_KEY"
+const GITHUB_MCP_URL = "https://api.githubcopilot.com/mcp/"
 const SIGNOZ_MCP_BINARY_PATH = "/usr/local/bin/signoz-mcp-server"
 const SIGNOZ_URL = "http://signoz.replica-infra.svc.cluster.local:8080"
 const OPENCODE_REPOSITORY_CONFIG_PATH = ".opencode/opencode.json"
@@ -120,7 +121,7 @@ async function main(): Promise<void> {
     repo: repository.name,
     refreshRepository: repositoryRefresh.refresh,
   })
-  await configureFactoryOpenCode(homeDir, repositoryPath, sharedMcpServer)
+  await configureFactoryOpenCode(homeDir, repositoryPath, sharedMcpServer, github)
   const opencode = startOpenCodeServer(repositoryPath)
   const syncLoop = startSyncLoop({ homeDir, factoryRoot, rcloneConfigPath, storageCredentials })
   const repositoryPullLoop = startRepositoryPullLoop(repositoryRefresh.refresh)
@@ -202,13 +203,14 @@ async function configureFactoryOpenCode(
   homeDir: string,
   repositoryPath: string,
   mcpServer: { name: string; url: string; token: string },
+  github: Awaited<ReturnType<typeof startGitHubService>>,
 ): Promise<void> {
   const configPath = join(homeDir, OPENCODE_CONFIG_DIR, OPENCODE_CONFIG_FILE)
   const repositoryConfigPath = join(repositoryPath, OPENCODE_REPOSITORY_CONFIG_PATH)
   const config = await readOpenCodeConfig(repositoryConfigPath, true)
 
   await mkdir(dirname(configPath), { recursive: true })
-  const openCodeConfig = await createFactoryOpenCodeConfig(config, mcpServer)
+  const openCodeConfig = await createFactoryOpenCodeConfig(config, mcpServer, github)
 
   await writeFile(configPath, `${JSON.stringify(openCodeConfig, null, 2)}\n`)
   logger.info(
@@ -300,7 +302,9 @@ function stripJsonCommentsAndTrailingCommas(value: string): string {
 async function createFactoryOpenCodeConfig(
   config: OpenCodeConfig,
   mcpServer: { name: string; url: string; token: string },
+  github: Awaited<ReturnType<typeof startGitHubService>>,
 ): Promise<OpenCodeConfig> {
+  const githubToken = await createGitHubInstallationToken(github)
   const signozSecret = await crypto.getSecret(signozSecretSchema, "signoz")
 
   return {
@@ -314,6 +318,16 @@ async function createFactoryOpenCodeConfig(
         enabled: true,
         headers: {
           authorization: `Bearer ${mcpServer.token}`,
+        },
+        oauth: false,
+        timeout: 600_000,
+      },
+      github: {
+        type: "remote",
+        url: GITHUB_MCP_URL,
+        enabled: true,
+        headers: {
+          authorization: `Bearer ${githubToken}`,
         },
         oauth: false,
         timeout: 600_000,
@@ -597,6 +611,17 @@ async function createAuthenticatedCloneUrl(
   github: Awaited<ReturnType<typeof startGitHubService>>,
   cloneUrl: string,
 ): Promise<string> {
+  const token = await createGitHubInstallationToken(github)
+
+  return cloneUrl.replace(
+    "https://github.com/",
+    `https://x-access-token:${encodeURIComponent(token)}@github.com/`,
+  )
+}
+
+async function createGitHubInstallationToken(
+  github: Awaited<ReturnType<typeof startGitHubService>>,
+): Promise<string> {
   const octokit = await github.getOctokit()
   const authResult = await octokit.auth({
     type: "installation",
@@ -610,10 +635,7 @@ async function createAuthenticatedCloneUrl(
     throw new Error("GitHub installation token is empty")
   }
 
-  return cloneUrl.replace(
-    "https://github.com/",
-    `https://x-access-token:${encodeURIComponent(token)}@github.com/`,
-  )
+  return token
 }
 
 async function pathExists(path: string): Promise<boolean> {
