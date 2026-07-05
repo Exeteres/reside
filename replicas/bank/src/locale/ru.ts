@@ -63,8 +63,11 @@ export const ru = {
         empty: "Пока пусто",
       },
       transfer: (amount: string) => `Переведено ${amount} ∅`,
-      issue: (amount: string, replicaName: string) => `Выпущено ${amount} ∅ для ${replicaName}`,
-      failure: "Банковская операция не выполнена",
+      issue: (amount: string, subjectId: string) => `Выпущено ${amount} ∅ для ${subjectId}`,
+      failure: {
+        title: "Банковская операция не выполнена",
+        message: (error: string) => `Ошибка: ${error}`,
+      },
     },
   },
 }

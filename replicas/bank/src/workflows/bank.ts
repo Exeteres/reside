@@ -44,7 +44,14 @@ export const balanceCommandHandler = defineCommandHandler({
     if (!context.subjectId) {
       throw new Error("Command invocation is missing subjectId")
     }
-    const result = await getBalance({ subjectId: context.subjectId })
+
+    let result: { balance: string }
+    try {
+      result = await getBalance({ subjectId: context.subjectId })
+    } catch (error) {
+      await sendBankFailureNotification(error)
+      return
+    }
 
     await sendNotification({
       channel: BankNotificationChannels.COMMAND,
@@ -61,11 +68,18 @@ export const transactionsCommandHandler = defineCommandHandler({
     }
     const subjectId = context.subjectId
     const page = params.page ?? 1
-    const result = await listTransactions({
-      subjectId,
-      pageSize: 10,
-      pageToken: page > 1 ? String((page - 1) * 10) : undefined,
-    })
+    let result: { transactions: BankTransaction[]; nextPageToken?: string }
+    try {
+      result = await listTransactions({
+        subjectId,
+        pageSize: 10,
+        pageToken: page > 1 ? String((page - 1) * 10) : undefined,
+      })
+    } catch (error) {
+      await sendBankFailureNotification(error)
+      return
+    }
+
     const lines = result.transactions
       .map(transaction => formatTransactionHistoryLine(transaction, subjectId))
       .join("\n")
@@ -91,12 +105,18 @@ export const transferCommandHandler = defineCommandHandler({
       throw new Error("Transfer command is missing required parameters")
     }
 
-    const result = await transfer({
-      senderSubjectId: context.subjectId,
-      recipientSubjectId: params.user,
-      amount: params.amount,
-      idempotencyKey: context.invocationId,
-    })
+    let result: { transaction: BankTransaction }
+    try {
+      result = await transfer({
+        senderSubjectId: context.subjectId,
+        recipientSubjectId: params.user,
+        amount: params.amount,
+        idempotencyKey: context.invocationId,
+      })
+    } catch (error) {
+      await sendBankFailureNotification(error)
+      return
+    }
 
     await sendNotification({
       channel: BankNotificationChannels.COMMAND,
@@ -126,16 +146,40 @@ export const issueReplicaFundsCommandHandler = defineCommandHandler({
       throw new Error("Issue command is missing required parameters")
     }
 
-    const result = await issueReplicaFunds({
-      callerSubjectId: context.subjectId,
-      replicaName: params.replicaName,
-      amount: params.amount,
-      idempotencyKey: context.invocationId,
-    })
+    let result: { transaction: BankTransaction }
+    try {
+      result = await issueReplicaFunds({
+        callerSubjectId: context.subjectId,
+        replicaName: params.replicaName,
+        amount: params.amount,
+        idempotencyKey: context.invocationId,
+      })
+    } catch (error) {
+      await sendBankFailureNotification(error)
+      return
+    }
+
+    const recipientSubjectId = `replica:${params.replicaName}`
 
     await sendNotification({
       channel: BankNotificationChannels.COMMAND,
-      title: strings.notifications.bank.issue(result.transaction.amount, params.replicaName),
+      title: strings.notifications.bank.issue(result.transaction.amount, recipientSubjectId),
     })
   },
 })
+
+async function sendBankFailureNotification(error: unknown): Promise<void> {
+  await sendNotification({
+    channel: BankNotificationChannels.COMMAND,
+    title: strings.notifications.bank.failure.title,
+    message: strings.notifications.bank.failure.message(formatErrorMessage(error)),
+  })
+}
+
+function formatErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return String(error)
+}
