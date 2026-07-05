@@ -2,10 +2,11 @@ import type { ResideCrypto } from "@reside/common"
 import type { Client as TemporalClient } from "@temporalio/client"
 import type { PrismaClient } from "../../database"
 import type { BankTransaction } from "../../definitions"
-import { Code, ConnectError } from "@connectrpc/connect"
 import { DEFAULT_TEMPORAL_TASK_QUEUE } from "@reside/common"
 import { WorkflowIdReusePolicy } from "@temporalio/client"
 import { z } from "zod"
+import { BankError } from "../../definitions"
+import { strings } from "../../locale"
 
 const encryptedAmountSchema = z.string().regex(/^\d+$/)
 const DEFAULT_PAGE_SIZE = 10
@@ -124,7 +125,7 @@ export async function transfer(
   const amount = parsePositiveAmount(input.amount)
 
   if (input.senderSubjectId === input.recipientSubjectId) {
-    throw new ConnectError("Sender and recipient must be different", Code.InvalidArgument)
+    throw new BankError(strings.errors.differentTransferSubjects)
   }
 
   return await runLedgerWrite(prisma, async ledgerPrisma => {
@@ -153,7 +154,7 @@ export async function transfer(
     )
 
     if (senderBalance < amount) {
-      throw new ConnectError("Insufficient funds", Code.FailedPrecondition)
+      throw new BankError(strings.errors.insufficientFunds)
     }
 
     const senderBalanceEcid = await crypto.encrypt((senderBalance - amount).toString())
@@ -288,7 +289,7 @@ function parsePositiveAmount(value: string): bigint {
   const amount = parsePositiveOrZeroAmount(value)
 
   if (amount <= 0n) {
-    throw new ConnectError("Amount must be positive", Code.InvalidArgument)
+    throw new BankError(strings.errors.positiveAmount)
   }
 
   return amount
@@ -296,7 +297,7 @@ function parsePositiveAmount(value: string): bigint {
 
 function parsePositiveOrZeroAmount(value: string): bigint {
   if (!/^\d+$/.test(value)) {
-    throw new ConnectError("Amount must be an integer string", Code.InvalidArgument)
+    throw new BankError(strings.errors.integerAmount)
   }
 
   return BigInt(value)
@@ -304,7 +305,7 @@ function parsePositiveOrZeroAmount(value: string): bigint {
 
 function parseBigInt(value: string, fieldName: string): bigint {
   if (!/^\d+$/.test(value)) {
-    throw new ConnectError(`${fieldName} must be an integer string`, Code.InvalidArgument)
+    throw new BankError(strings.errors.integerField(fieldName))
   }
 
   return BigInt(value)

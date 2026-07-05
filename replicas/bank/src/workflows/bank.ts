@@ -1,8 +1,10 @@
 import type { BankTransaction } from "../definitions"
+import { isResideError } from "@reside/common/definitions"
 import { defineCommandHandler, sendNotification } from "@reside/common/workflow"
 import { proxyActivities } from "@temporalio/workflow"
 import {
   type BankActivities,
+  BankError,
   BankNotificationChannels,
   balanceCommand,
   issueReplicaFundsCommand,
@@ -130,7 +132,7 @@ function formatTransactionHistoryLine(transaction: BankTransaction, subjectId: s
   const to = transaction.recipientSubjectId
   const sign = transaction.recipientSubjectId === subjectId ? "+" : "-"
 
-  return `[${transaction.id}] ${from} -> ${to}: ${sign} ${transaction.amount} ∅`
+  return `[${transaction.id}] ${from} -> ${to}: ${sign}${transaction.amount} ∅`
 }
 
 export const issueReplicaFundsCommandHandler = defineCommandHandler({
@@ -172,14 +174,47 @@ async function sendBankFailureNotification(error: unknown): Promise<void> {
   await sendNotification({
     channel: BankNotificationChannels.COMMAND,
     title: strings.notifications.bank.failure.title,
-    message: strings.notifications.bank.failure.message(formatErrorMessage(error)),
+    message: formatErrorMessage(error),
   })
 }
 
 function formatErrorMessage(error: unknown): string {
+  if (isResideError(error, BankError.name)) {
+    return getBankErrorMessage(error) ?? strings.notifications.bank.failure.title
+  }
+
   if (error instanceof Error) {
     return error.message
   }
 
   return String(error)
+}
+
+function getBankErrorMessage(error: unknown): string | undefined {
+  if (error instanceof BankError && error.message.length > 0) {
+    return error.message
+  }
+
+  if (error === null || typeof error !== "object") {
+    return undefined
+  }
+
+  const isSerializedBankError =
+    ("type" in error && error.type === BankError.name) ||
+    ("name" in error && error.name === BankError.name)
+
+  if (
+    isSerializedBankError &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.length > 0
+  ) {
+    return error.message
+  }
+
+  if ("cause" in error) {
+    return getBankErrorMessage(error.cause)
+  }
+
+  return undefined
 }

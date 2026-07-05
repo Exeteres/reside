@@ -4,7 +4,8 @@ import type { SubjectServiceClientLike } from "./notification-types"
 import { telegramUserDataSchema } from "../../definitions"
 import { parseTelegramSubjectId, toTelegramUserTitle } from "./subject"
 
-const SUBJECT_TOKEN_PATTERN = /(^|\s)((?:telegram|replica):[a-zA-Z0-9._-]+)(?=$|\s)/g
+const SUBJECT_TOKEN_PATTERN =
+  /(^|[^a-zA-Z0-9._-])((?:telegram|replica):[a-zA-Z0-9._-]+)(?=$|[^a-zA-Z0-9._-])/g
 
 export async function replaceSubjectIdsWithTitles(
   crypto: ResideCrypto,

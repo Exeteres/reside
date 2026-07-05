@@ -6,6 +6,7 @@ import {
   resolveTelegramSubjectDisplayInfo,
   toTelegramUserTitle,
 } from "./subject"
+import { replaceSubjectIdsWithTitles } from "./subject-display"
 
 process.env.REPLICA_NAME = "telegram"
 
@@ -73,5 +74,27 @@ describe("resolveTelegramSubjectDisplayInfo", () => {
       'Subject "telegram:404" was not found',
     )
     expect(prisma.user.findUnique.spy()).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("replaceSubjectIdsWithTitles", () => {
+  test("replaces telegram subject before punctuation", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const dataEcid = await testCrypto.encrypt({ username: "nick" })
+
+    prisma.user.findUnique.mockResolvedValue({ dataEcid } as never)
+
+    const result = await replaceSubjectIdsWithTitles(
+      testCrypto,
+      prisma,
+      {
+        async getSubjectDisplayInfo({ subjectId }) {
+          return { title: subjectId === "replica:bank" ? "Банковская Реплика" : subjectId }
+        },
+      },
+      "[2] replica:bank -> telegram:1: +100 ∅",
+    )
+
+    expect(result).toBe("[2] Банковская Реплика -> nick: +100 ∅")
   })
 })

@@ -15,7 +15,7 @@ describe("bank ledger", () => {
         amount: "0",
         idempotencyKey: "test:zero",
       }),
-    ).rejects.toThrow("Amount must be positive")
+    ).rejects.toThrow("Сумма должна быть положительной")
   })
 
   test("rejects self transfers", () => {
@@ -26,6 +26,6 @@ describe("bank ledger", () => {
         amount: "1",
         idempotencyKey: "test:self",
       }),
-    ).rejects.toThrow("Sender and recipient must be different")
+    ).rejects.toThrow("Отправитель и получатель должны отличаться")
   })
 })

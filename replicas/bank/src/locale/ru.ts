@@ -66,8 +66,14 @@ export const ru = {
       issue: (amount: string, subjectId: string) => `Выпущено ${amount} ∅ для ${subjectId}`,
       failure: {
         title: "Банковская операция не выполнена",
-        message: (error: string) => `Ошибка: ${error}`,
       },
     },
+  },
+  errors: {
+    differentTransferSubjects: "Отправитель и получатель должны отличаться",
+    insufficientFunds: "Недостаточно средств",
+    positiveAmount: "Сумма должна быть положительной",
+    integerAmount: "Сумма должна быть целым числом",
+    integerField: (fieldName: string) => `Поле "${fieldName}" должно быть целым числом`,
   },
 }
