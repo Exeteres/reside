@@ -48,6 +48,7 @@ const RESIDE_LLM_ENDPOINT_ENV_VAR = "RESIDE_LLM_ENDPOINT"
 const RESIDE_LLM_API_KEY_ENV_VAR = "RESIDE_LLM_API_KEY"
 const COMMAND_LOG_MAX_LENGTH = 500
 const COMMAND_OUTPUT_TAIL_MAX_LENGTH = 2000
+const OPENCODE_EVENT_DIAGNOSTIC_INTERVAL_MS = 60_000
 
 export type LanguageEngineModelTier = "light" | "smart"
 
@@ -689,6 +690,7 @@ async function watchOpenCodeEvents({
       sseMaxRetryAttempts: 0,
     },
   )
+  const diagnosticLoggedAtByKey = new Map<string, number>()
 
   try {
     for await (const event of events.stream) {
@@ -696,7 +698,18 @@ async function watchOpenCodeEvents({
         return
       }
 
-      if (logOpenCodeEvent(event, sessionId, opencodeSessionId, frameQueue)) {
+      const eventSessionId = getOpenCodeEventSessionId(event)
+      const eventLogged = logOpenCodeEvent(event, sessionId, opencodeSessionId, frameQueue)
+      logOpenCodeEventDiagnostic({
+        event,
+        eventSessionId,
+        expectedOpenCodeSessionId: opencodeSessionId,
+        sessionId,
+        matchedSession: eventLogged,
+        loggedAtByKey: diagnosticLoggedAtByKey,
+      })
+
+      if (eventLogged) {
         onActivity()
       }
     }
@@ -707,6 +720,46 @@ async function watchOpenCodeEvents({
 
     throw error
   }
+}
+
+function logOpenCodeEventDiagnostic({
+  event,
+  eventSessionId,
+  expectedOpenCodeSessionId,
+  sessionId,
+  matchedSession,
+  loggedAtByKey,
+}: {
+  event: OpenCodeEvent
+  eventSessionId?: string
+  expectedOpenCodeSessionId: string
+  sessionId: string
+  matchedSession: boolean
+  loggedAtByKey: Map<string, number>
+}): void {
+  const eventPartType = getOpenCodeEventPartType(event)
+  const key = [
+    event.type,
+    eventSessionId ?? "missing",
+    eventPartType ?? "none",
+    matchedSession ? "matched" : "unmatched",
+  ].join(":")
+  const now = Date.now()
+  const loggedAt = loggedAtByKey.get(key)
+  if (loggedAt !== undefined && now - loggedAt < OPENCODE_EVENT_DIAGNOSTIC_INTERVAL_MS) {
+    return
+  }
+
+  loggedAtByKey.set(key, now)
+  logger.debug(
+    'nls opencode event observed session_id="%s" opencode_session_id="%s" event_type="%s" event_session_id="%s" part_type="%s" matched_session="%s"',
+    sessionId,
+    expectedOpenCodeSessionId,
+    event.type,
+    eventSessionId ?? "unknown",
+    eventPartType ?? "none",
+    String(matchedSession),
+  )
 }
 
 function logOpenCodeEvent(
@@ -809,7 +862,15 @@ function getOpenCodeEventSessionId(event: OpenCodeEvent): string | undefined {
   return typeof sessionId === "string" ? sessionId : undefined
 }
 
-function getOpenCodeEventErrorName(error: unknown): string {
+function getOpenCodeEventPartType(event: OpenCodeEvent): string | undefined {
+  if (event.type !== "message.part.updated") {
+    return undefined
+  }
+
+  return event.properties.part.type
+}
+
+function _getOpenCodeEventErrorName(error: unknown): string {
   if (!error || typeof error !== "object" || !("name" in error)) {
     return "unknown"
   }
