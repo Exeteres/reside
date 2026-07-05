@@ -1,3 +1,4 @@
+import type { BankTransaction } from "../definitions"
 import { defineCommandHandler, sendNotification } from "@reside/common/workflow"
 import { proxyActivities } from "@temporalio/workflow"
 import {
@@ -58,19 +59,21 @@ export const transactionsCommandHandler = defineCommandHandler({
     if (!context.subjectId) {
       throw new Error("Command invocation is missing subjectId")
     }
+    const subjectId = context.subjectId
     const page = params.page ?? 1
     const result = await listTransactions({
-      subjectId: context.subjectId,
+      subjectId,
       pageSize: 10,
       pageToken: page > 1 ? String((page - 1) * 10) : undefined,
     })
     const lines = result.transactions
-      .map(transaction => `${transaction.id}: ${transaction.kind} ${transaction.amount} ∅`)
+      .map(transaction => formatTransactionHistoryLine(transaction, subjectId))
       .join("\n")
 
     await sendNotification({
       channel: BankNotificationChannels.COMMAND,
-      title: strings.notifications.bank.transactions(lines || "Пока пусто"),
+      title: strings.notifications.bank.transactions.title,
+      message: lines || strings.notifications.bank.transactions.empty,
     })
   },
 })
@@ -101,6 +104,14 @@ export const transferCommandHandler = defineCommandHandler({
     })
   },
 })
+
+function formatTransactionHistoryLine(transaction: BankTransaction, subjectId: string): string {
+  const from = transaction.senderSubjectId ?? "-"
+  const to = transaction.recipientSubjectId
+  const sign = transaction.recipientSubjectId === subjectId ? "+" : "-"
+
+  return `[${transaction.id}] ${from} -> ${to}: ${sign} ${transaction.amount} ∅`
+}
 
 export const issueReplicaFundsCommandHandler = defineCommandHandler({
   command: issueReplicaFundsCommand,

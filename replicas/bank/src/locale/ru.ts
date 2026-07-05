@@ -58,7 +58,10 @@ export const ru = {
     },
     bank: {
       balance: (amount: string) => `Баланс: ${amount} ∅`,
-      transactions: (lines: string) => `История транзакций:\n${lines}`,
+      transactions: {
+        title: "История транзакций",
+        empty: "Пока пусто",
+      },
       transfer: (amount: string) => `Переведено ${amount} ∅`,
       issue: (amount: string, replicaName: string) => `Выпущено ${amount} ∅ для ${replicaName}`,
       failure: "Банковская операция не выполнена",
