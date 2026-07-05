@@ -3,7 +3,12 @@ import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 import { waitForResult } from "@reside/api"
-import { logger, setupEncryption, startMcpToolServer } from "@reside/common"
+import {
+  configureGracefulShutdown,
+  logger,
+  setupEncryption,
+  startMcpToolServer,
+} from "@reside/common"
 import { crypto } from "@reside/common/encryption"
 import { z } from "zod"
 import {
@@ -68,6 +73,11 @@ const signozSecretSchema = z.object({
 })
 
 async function main(): Promise<void> {
+  configureGracefulShutdown({
+    forcedExitDelayMs: null,
+    exitOnComplete: false,
+  })
+
   const services = await createServices()
   await setupEncryption(services)
   const github = await startGitHubService()

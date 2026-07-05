@@ -1,9 +1,18 @@
 export type ShutdownHandler = () => Promise<void>
 
+export type GracefulShutdownOptions = {
+  forcedExitDelayMs?: number | null
+  exitOnComplete?: boolean
+}
+
 const shutdownHandlers: ShutdownHandler[] = []
 let listenersRegistered = false
 let shutdownPromise: Promise<void> | null = null
 const FORCED_EXIT_DELAY_MS = 5000
+let gracefulShutdownOptions: Required<GracefulShutdownOptions> = {
+  forcedExitDelayMs: FORCED_EXIT_DELAY_MS,
+  exitOnComplete: true,
+}
 
 async function runShutdownHandlers(): Promise<void> {
   if (shutdownPromise !== null) {
@@ -32,18 +41,27 @@ function ensureShutdownListeners(): void {
   listenersRegistered = true
 
   const handleSignal = (signal: NodeJS.Signals) => {
-    const forcedExitTimeout = setTimeout(() => {
-      console.error(
-        `forced process exit after ${FORCED_EXIT_DELAY_MS}ms timeout while handling ${signal}`,
-      )
-      process.exit(1)
-    }, FORCED_EXIT_DELAY_MS)
-    forcedExitTimeout.unref()
+    const forcedExitTimeout =
+      gracefulShutdownOptions.forcedExitDelayMs === null
+        ? null
+        : setTimeout(() => {
+            console.error(
+              `forced process exit after ${gracefulShutdownOptions.forcedExitDelayMs}ms ` +
+                `timeout while handling ${signal}`,
+            )
+            process.exit(1)
+          }, gracefulShutdownOptions.forcedExitDelayMs)
+    forcedExitTimeout?.unref()
 
     void (async () => {
       await runShutdownHandlers()
-      clearTimeout(forcedExitTimeout)
-      process.exit(0)
+      if (forcedExitTimeout !== null) {
+        clearTimeout(forcedExitTimeout)
+      }
+
+      if (gracefulShutdownOptions.exitOnComplete) {
+        process.exit(0)
+      }
     })()
   }
 
@@ -54,6 +72,21 @@ function ensureShutdownListeners(): void {
   process.once("SIGTERM", () => {
     handleSignal("SIGTERM")
   })
+}
+
+/**
+ * Configures global graceful shutdown signal handling.
+ *
+ * Pass `null` as `forcedExitDelayMs` to disable the forced process exit timer.
+ * Set `exitOnComplete` to `false` when another signal handler owns process exit.
+ *
+ * @param options The shutdown options to apply.
+ */
+export function configureGracefulShutdown(options: GracefulShutdownOptions): void {
+  gracefulShutdownOptions = {
+    ...gracefulShutdownOptions,
+    ...options,
+  }
 }
 
 /**
