@@ -237,7 +237,7 @@ export function createDeliverChangesTool({
         "-C",
         workingDir,
         "push",
-        "--force-with-lease",
+        "--force",
         "--set-upstream",
         "origin",
         targetBranchName,
@@ -336,11 +336,9 @@ export function createCommitChangesTool({
       validateBranchCommitLogOutput(`0000000000000000000000000000000000000000\0${message}\0\0`)
 
       await refreshRepository?.()
-      await runCommand(["git", "-C", workingDir, "fetch", "origin", "main"])
-      await runCommand(["git", "-C", workingDir, "pull", "--ff-only", "origin", "main"])
       await runCommand(["git", "-C", workingDir, "add", "--", ...paths])
       await runCommand(["git", "-C", workingDir, "commit", "-m", message])
-      await runCommand(["git", "-C", workingDir, "rebase", "origin/main"])
+      await runCommand(["git", "-C", workingDir, "rebase", "main"])
       await validateBranchCommitMessages(workingDir, targetBranchName)
 
       const { stdout } = await runCommandWithOutput([
