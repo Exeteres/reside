@@ -7,25 +7,37 @@ import { getSkillName, loadSkillRules } from "./skills"
 import { getTargetCommands, getTargetPaths } from "./targets"
 
 type SkillEnforcementOptions = {
-  isInteractive?: boolean
+  environment?: ResideEnvironment
   loadRules?: (worktree: string) => Promise<SkillRule[]>
 }
 
-const interactiveSkillName = "reside-interactive"
-const engineerSkillName = "reside-engineer"
+type ResideEnvironment = "interactive" | "factory-interactive" | "factory-background"
+
+const environmentSkillNames = {
+  interactive: "reside-env-interactive",
+  "factory-interactive": "reside-env-factory-interactive",
+  "factory-background": "reside-env-factory-background",
+} satisfies Record<ResideEnvironment, string>
+
+const skillEnvironments = new Map<string, ResideEnvironment>(
+  Object.entries(environmentSkillNames).map(([environment, skillName]) => [
+    skillName,
+    environment as ResideEnvironment,
+  ]),
+)
 const preInteractiveReadTools = new Set(["read"])
 const preInteractiveReadablePaths = new Set(["README.md", "AGENTS.md"])
-const interactiveSessionReminder = [
-  "This is an interactive ReSide session.",
-  `Before working with the user's request, load the "${interactiveSkillName}" skill.`,
-].join("\n")
+const environmentBootstrapPrefix = `Before working with the user's request, load the "`
+const environmentBootstrapSuffix = `" skill.`
 const editTools = new Set(["apply_patch", "edit", "multiedit", "patch", "write"])
 
 export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = {}): Plugin {
   return async ({ worktree }) => {
     const rules = await (options.loadRules ?? loadSkillRules)(worktree)
     const loadedSkillsBySession = new Map<string, Set<string>>()
-    const isInteractiveSession = options.isInteractive ?? !process.env.RESIDE_NON_INTERACTIVE
+    const environmentBySession = new Map<string, ResideEnvironment>()
+    const installedFactoryDependenciesBySession = new Set<string>()
+    const defaultEnvironment = options.environment ?? getConfiguredEnvironment()
 
     function getLoadedSkills(sessionID: string): Set<string> {
       let loadedSkills = loadedSkillsBySession.get(sessionID)
@@ -38,15 +50,27 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
       return loadedSkills
     }
 
+    function getSessionEnvironment(sessionID: string): ResideEnvironment {
+      return environmentBySession.get(sessionID) ?? defaultEnvironment
+    }
+
+    function setSessionEnvironment(sessionID: string, environment: ResideEnvironment): void {
+      environmentBySession.set(sessionID, environment)
+    }
+
     return {
       dispose: async () => {
         loadedSkillsBySession.clear()
+        environmentBySession.clear()
+        installedFactoryDependenciesBySession.clear()
       },
 
       "chat.message": async (input, output) => {
         const loadedSkills = getLoadedSkills(input.sessionID)
+        const environment = getSessionEnvironment(input.sessionID)
+        const requiredSkillName = environmentSkillNames[environment]
 
-        if (!isInteractiveSession || loadedSkills.has(interactiveSkillName)) {
+        if (loadedSkills.has(requiredSkillName)) {
           return
         }
 
@@ -56,22 +80,33 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
           return
         }
 
-        textPart.text = `${interactiveSessionReminder}\n\n${textPart.text}`
+        const requestedEnvironment = getPromptRequestedEnvironment(textPart.text)
+        if (requestedEnvironment) {
+          if (requestedEnvironment !== environment) {
+            throw new Error(createWrongEnvironmentError(requestedEnvironment, environment))
+          }
+
+          setSessionEnvironment(input.sessionID, requestedEnvironment)
+          return
+        }
+
+        textPart.text = `${createEnvironmentReminder(requiredSkillName)}\n\n${textPart.text}`
       },
 
       "tool.execute.before": async (input, output) => {
         const loadedSkills = getLoadedSkills(input.sessionID)
+        const environment = getSessionEnvironment(input.sessionID)
+        const requiredSkillName = environmentSkillNames[environment]
 
         if (
-          isInteractiveSession &&
           input.tool !== "skill" &&
           !isPreInteractiveAllowedRead(input.tool, output.args, worktree) &&
-          !loadedSkills.has(interactiveSkillName)
+          !loadedSkills.has(requiredSkillName)
         ) {
           throw new Error(
             [
               "Skill enforcement blocked this tool call.",
-              `Load the "${interactiveSkillName}" skill before using other tools in interactive sessions.`,
+              `Load the "${requiredSkillName}" skill before using other tools in the "${environment}" environment.`,
             ].join("\n"),
           )
         }
@@ -79,20 +114,33 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
         if (input.tool === "skill") {
           const skillName = getSkillName(output.args)
 
-          if (isInteractiveSession && skillName === engineerSkillName) {
-            throw new Error(
-              [
-                "Skill enforcement blocked this skill load.",
-                `The "${engineerSkillName}" skill is only allowed in non-interactive sessions.`,
-              ].join("\n"),
-            )
-          }
-
           if (skillName) {
+            const skillEnvironment = skillEnvironments.get(skillName)
+            if (skillEnvironment) {
+              if (skillEnvironment !== environment) {
+                throw new Error(createWrongEnvironmentError(skillEnvironment, environment))
+              }
+
+              setSessionEnvironment(input.sessionID, skillEnvironment)
+            }
+
             loadedSkills.add(skillName)
           }
 
           return
+        }
+
+        if (isFactoryEnvironment(environment)) {
+          if (input.tool === "bash" && isBunInstallCommand(output.args)) {
+            installedFactoryDependenciesBySession.add(input.sessionID)
+          } else if (!installedFactoryDependenciesBySession.has(input.sessionID)) {
+            throw new Error(
+              [
+                "Skill enforcement blocked this tool call.",
+                `Run "bun install --frozen-lockfile" before serving user requests in the "${environment}" environment.`,
+              ].join("\n"),
+            )
+          }
         }
 
         const targets = editTools.has(input.tool) ? getTargetPaths(input.tool, output.args) : []
@@ -131,6 +179,61 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
   }
 }
 
+function getConfiguredEnvironment(): ResideEnvironment {
+  const value = process.env.RESIDE_ENVIRONMENT?.trim()
+  if (!value) {
+    return "interactive"
+  }
+
+  if (isResideEnvironment(value)) {
+    return value
+  }
+
+  throw new Error(
+    `Invalid RESIDE_ENVIRONMENT "${value}". Expected one of: interactive, factory-interactive, factory-background`,
+  )
+}
+
+function isResideEnvironment(value: string): value is ResideEnvironment {
+  return (
+    value === "interactive" || value === "factory-interactive" || value === "factory-background"
+  )
+}
+
+function isFactoryEnvironment(environment: ResideEnvironment): boolean {
+  return environment === "factory-interactive" || environment === "factory-background"
+}
+
+function createEnvironmentReminder(skillName: string): string {
+  return `${environmentBootstrapPrefix}${skillName}${environmentBootstrapSuffix}`
+}
+
+function createWrongEnvironmentError(
+  requestedEnvironment: ResideEnvironment,
+  detectedEnvironment: ResideEnvironment,
+): string {
+  return [
+    "Skill enforcement blocked this skill load.",
+    `Detected environment is "${detectedEnvironment}".`,
+    `Requested environment skill belongs to "${requestedEnvironment}".`,
+    `Load the "${environmentSkillNames[detectedEnvironment]}" skill instead.`,
+  ].join("\n")
+}
+
+function getPromptRequestedEnvironment(text: string): ResideEnvironment | undefined {
+  if (!text.startsWith(environmentBootstrapPrefix)) {
+    return undefined
+  }
+
+  const suffixStart = text.indexOf(environmentBootstrapSuffix, environmentBootstrapPrefix.length)
+  if (suffixStart === -1) {
+    return undefined
+  }
+
+  const skillName = text.slice(environmentBootstrapPrefix.length, suffixStart)
+  return skillEnvironments.get(skillName)
+}
+
 export const SkillEnforcementPlugin: Plugin = createSkillEnforcementPlugin()
 
 function isPreInteractiveAllowedRead(tool: string, args: unknown, worktree: string): boolean {
@@ -155,4 +258,12 @@ function normalizePath(targetPath: string, worktree: string): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
+}
+
+function isBunInstallCommand(args: unknown): boolean {
+  if (!isRecord(args) || typeof args.command !== "string") {
+    return false
+  }
+
+  return /(^|&&|;)\s*bun\s+install(\s|$)/.test(args.command)
 }

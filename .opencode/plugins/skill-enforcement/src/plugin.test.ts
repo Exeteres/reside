@@ -10,7 +10,7 @@ const emptyRules: SkillRule[] = []
 
 describe("createSkillEnforcementPlugin", () => {
   test("injects the interactive skill reminder before the skill is loaded", async () => {
-    const hooks = await createHooks({ isInteractive: true })
+    const hooks = await createHooks({ environment: "interactive" })
     const output = createChatOutput("make a change")
 
     await hooks["chat.message"]?.({ sessionID: "session-1" }, output)
@@ -23,17 +23,66 @@ describe("createSkillEnforcementPlugin", () => {
       throw new Error("Expected text part")
     }
 
-    expect(textPart.text).toContain("This is an interactive ReSide session.")
-    expect(textPart.text).toContain('load the "reside-interactive" skill')
+    expect(textPart.text).toContain('load the "reside-env-interactive" skill')
+  })
+
+  test("uses prompt-provided factory background environment", async () => {
+    const hooks = await createHooks({ environment: "factory-background" })
+    const output = createChatOutput(
+      'Before working with the user\'s request, load the "reside-env-factory-background" skill.\nmake a change',
+    )
+
+    await hooks["chat.message"]?.({ sessionID: "session-1" }, output)
+
+    const textPart = output.parts[0]
+
+    expect(textPart?.type).toBe("text")
+
+    if (textPart?.type !== "text") {
+      throw new Error("Expected text part")
+    }
+
+    expect(textPart.text).toBe(
+      'Before working with the user\'s request, load the "reside-env-factory-background" skill.\nmake a change',
+    )
+
+    expect(
+      hooks["tool.execute.before"]?.(
+        { tool: "read", sessionID: "session-1", callID: "call-1" },
+        { args: { filePath: "src/index.ts" } },
+      ),
+    ).rejects.toThrow('Load the "reside-env-factory-background" skill')
+  })
+
+  test("blocks prompt-provided environment skills outside the detected environment", async () => {
+    const hooks = await createHooks({ environment: "interactive" })
+    const output = createChatOutput(
+      'Before working with the user\'s request, load the "reside-env-factory-background" skill.\nmake a change',
+    )
+
+    expect(hooks["chat.message"]?.({ sessionID: "session-1" }, output)).rejects.toThrow(
+      'Load the "reside-env-interactive" skill instead',
+    )
+  })
+
+  test("blocks loading environment skills outside the detected environment", async () => {
+    const hooks = await createHooks({ environment: "interactive" })
+
+    expect(
+      hooks["tool.execute.before"]?.(
+        { tool: "skill", sessionID: "session-1", callID: "call-1" },
+        { args: { name: "reside-env-factory-background" } },
+      ),
+    ).rejects.toThrow('Load the "reside-env-interactive" skill instead')
   })
 
   test("keeps loaded skills scoped to each plugin instance", async () => {
-    const firstHooks = await createHooks({ isInteractive: true })
-    const secondHooks = await createHooks({ isInteractive: true })
+    const firstHooks = await createHooks({ environment: "interactive" })
+    const secondHooks = await createHooks({ environment: "interactive" })
 
     await firstHooks["tool.execute.before"]?.(
       { tool: "skill", sessionID: "session-1", callID: "call-1" },
-      { args: { name: "reside-interactive" } },
+      { args: { name: "reside-env-interactive" } },
     )
 
     await firstHooks["tool.execute.before"]?.(
@@ -46,23 +95,42 @@ describe("createSkillEnforcementPlugin", () => {
         { tool: "read", sessionID: "session-1", callID: "call-2" },
         { args: { filePath: "src/index.ts" } },
       ),
-    ).rejects.toThrow('Load the "reside-interactive" skill')
+    ).rejects.toThrow('Load the "reside-env-interactive" skill')
   })
 
-  test("allows engineer skill in non-interactive mode", async () => {
-    const hooks = await createHooks({ isInteractive: false })
+  test("requires bun install in factory environments", async () => {
+    const hooks = await createHooks({ environment: "factory-background" })
 
     await hooks["tool.execute.before"]?.(
       { tool: "skill", sessionID: "session-1", callID: "call-1" },
-      { args: { name: "reside-engineer" } },
+      { args: { name: "reside-env-factory-background" } },
+    )
+
+    expect(
+      hooks["tool.execute.before"]?.(
+        { tool: "read", sessionID: "session-1", callID: "call-2" },
+        { args: { filePath: "src/index.ts" } },
+      ),
+    ).rejects.toThrow('Run "bun install --frozen-lockfile"')
+
+    await hooks["tool.execute.before"]?.(
+      { tool: "bash", sessionID: "session-1", callID: "call-3" },
+      { args: { command: "bun install --frozen-lockfile" } },
+    )
+
+    await hooks["tool.execute.before"]?.(
+      { tool: "read", sessionID: "session-1", callID: "call-4" },
+      { args: { filePath: "src/index.ts" } },
     )
   })
 
   test("blocks edits until matching required skills are loaded", async () => {
     const hooks = await createHooks({
-      isInteractive: false,
+      environment: "interactive",
       rules: [{ name: "reside-typescript", files: ["src/**/*.ts"], commands: [] }],
     })
+
+    await loadEnvironmentSkill(hooks)
 
     expect(
       hooks["tool.execute.before"]?.(
@@ -83,7 +151,9 @@ describe("createSkillEnforcementPlugin", () => {
   })
 
   test("blocks creating new Prisma migration files directly", async () => {
-    const hooks = await createHooks({ isInteractive: false })
+    const hooks = await createHooks({ environment: "interactive" })
+
+    await loadEnvironmentSkill(hooks)
 
     expect(
       hooks["tool.execute.before"]?.(
@@ -110,7 +180,9 @@ describe("createSkillEnforcementPlugin", () => {
     mkdirSync(path.dirname(absoluteMigrationPath), { recursive: true })
     writeFileSync(absoluteMigrationPath, "select 1;", { flush: true })
 
-    const hooks = await createHooks({ isInteractive: false, worktree })
+    const hooks = await createHooks({ environment: "interactive", worktree })
+
+    await loadEnvironmentSkill(hooks)
 
     await hooks["tool.execute.before"]?.(
       { tool: "write", sessionID: "session-1", callID: "call-1" },
@@ -120,9 +192,16 @@ describe("createSkillEnforcementPlugin", () => {
 })
 
 type CreateHooksOptions = {
-  isInteractive: boolean
+  environment: "interactive" | "factory-interactive" | "factory-background"
   rules?: SkillRule[]
   worktree?: string
+}
+
+async function loadEnvironmentSkill(hooks: Hooks): Promise<void> {
+  await hooks["tool.execute.before"]?.(
+    { tool: "skill", sessionID: "session-1", callID: "load-environment" },
+    { args: { name: "reside-env-interactive" } },
+  )
 }
 
 type ChatMessageOutput = Parameters<NonNullable<Hooks["chat.message"]>>[1]
@@ -130,7 +209,7 @@ type ChatMessageOutput = Parameters<NonNullable<Hooks["chat.message"]>>[1]
 async function createHooks(options: CreateHooksOptions): Promise<Hooks> {
   const worktree = options.worktree ?? process.cwd()
   const plugin = createSkillEnforcementPlugin({
-    isInteractive: options.isInteractive,
+    environment: options.environment,
     loadRules: async () => options.rules ?? emptyRules,
   })
 
