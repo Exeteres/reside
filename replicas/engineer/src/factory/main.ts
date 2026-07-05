@@ -329,6 +329,15 @@ async function ensureRepository({
     logger.info('engineer factory repository clone skipped repository_path="%s"', repositoryPath)
   }
 
+  await runCommand([
+    "git",
+    "-C",
+    repositoryPath,
+    "remote",
+    "set-url",
+    "origin",
+    authenticatedCloneUrl,
+  ])
   await runCommand(["git", "-C", repositoryPath, "fetch", "origin", "main"])
   await discardRepositoryChanges(repositoryPath)
   await runCommand(["git", "-C", repositoryPath, "config", "user.name", "reside-agent[bot]"])
