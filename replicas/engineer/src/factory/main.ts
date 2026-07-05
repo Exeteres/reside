@@ -327,6 +327,7 @@ async function createFactoryOpenCodeConfig(
         url: GITHUB_MCP_URL,
         enabled: true,
         headers: {
+          "X-MCP-Toolsets": "default,actions",
           authorization: `Bearer ${githubToken}`,
         },
         oauth: false,

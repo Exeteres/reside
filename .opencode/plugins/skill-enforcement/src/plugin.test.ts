@@ -98,7 +98,7 @@ describe("createSkillEnforcementPlugin", () => {
     ).rejects.toThrow('Load the "reside-env-interactive" skill')
   })
 
-  test("requires bun install in factory environments", async () => {
+  test("allows repository reads before bun install in factory environments", async () => {
     const hooks = await createHooks({ environment: "factory-background" })
 
     await hooks["tool.execute.before"]?.(
@@ -106,9 +106,26 @@ describe("createSkillEnforcementPlugin", () => {
       { args: { name: "reside-env-factory-background" } },
     )
 
+    await hooks["tool.execute.before"]?.(
+      { tool: "read", sessionID: "session-1", callID: "call-2" },
+      { args: { filePath: "src/index.ts" } },
+    )
+
+    await hooks["tool.execute.before"]?.(
+      { tool: "grep", sessionID: "session-1", callID: "call-3" },
+      { args: { pattern: "test", path: ".", include: "*.ts" } },
+    )
+  })
+
+  test("requires bun install before factory edits", async () => {
+    const worktree = createLinkedWorktreeFixture()
+    const hooks = await createHooks({ environment: "factory-background", worktree })
+
+    await loadFactoryEnvironmentSkill(hooks)
+
     expect(
       hooks["tool.execute.before"]?.(
-        { tool: "read", sessionID: "session-1", callID: "call-2" },
+        { tool: "write", sessionID: "session-1", callID: "call-2" },
         { args: { filePath: "src/index.ts" } },
       ),
     ).rejects.toThrow('Run "bun install --frozen-lockfile"')
@@ -119,7 +136,7 @@ describe("createSkillEnforcementPlugin", () => {
     )
 
     await hooks["tool.execute.before"]?.(
-      { tool: "read", sessionID: "session-1", callID: "call-4" },
+      { tool: "write", sessionID: "session-1", callID: "call-4" },
       { args: { filePath: "src/index.ts" } },
     )
   })

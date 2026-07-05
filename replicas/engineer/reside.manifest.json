@@ -1,5 +1,7 @@
 {
-  "version": "0.6.0",
+  "version": "0.6.1",
   "image": "ghcr.io/exeteres/reside/replicas/engineer",
-  "extraComponents": ["factory"]
+  "extraComponents": [
+    "factory"
+  ]
 }

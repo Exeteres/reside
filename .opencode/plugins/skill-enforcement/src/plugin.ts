@@ -28,6 +28,7 @@ const skillEnvironments = new Map<string, ResideEnvironment>(
   ]),
 )
 const preInteractiveReadTools = new Set(["read"])
+const factoryPreInstallReadTools = new Set(["glob", "grep", "list", "read"])
 const preInteractiveReadablePaths = new Set(["README.md", "AGENTS.md"])
 const environmentBootstrapPrefix = `Before working with the user's request, load the "`
 const environmentBootstrapSuffix = `" skill.`
@@ -135,7 +136,10 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
         if (isFactoryEnvironment(environment)) {
           if (input.tool === "bash" && isBunInstallCommand(output.args)) {
             installedFactoryDependenciesBySession.add(input.sessionID)
-          } else if (!installedFactoryDependenciesBySession.has(input.sessionID)) {
+          } else if (
+            !installedFactoryDependenciesBySession.has(input.sessionID) &&
+            !isFactoryPreInstallAllowedRead(input.tool, output.args, worktree)
+          ) {
             throw new Error(
               [
                 "Skill enforcement blocked this tool call.",
@@ -260,6 +264,31 @@ function isPreInteractiveAllowedRead(tool: string, args: unknown, worktree: stri
   }
 
   return preInteractiveReadablePaths.has(normalizePath(args.filePath, worktree))
+}
+
+function isFactoryPreInstallAllowedRead(tool: string, args: unknown, worktree: string): boolean {
+  if (!factoryPreInstallReadTools.has(tool) || !isRecord(args)) {
+    return false
+  }
+
+  const targetPath = getReadToolPath(tool, args)
+  if (targetPath === undefined) {
+    return true
+  }
+
+  return isFactoryEditablePath(targetPath, worktree)
+}
+
+function getReadToolPath(tool: string, args: Record<string, unknown>): string | undefined {
+  if (tool === "read" || tool === "list") {
+    return typeof args.filePath === "string" ? args.filePath : undefined
+  }
+
+  if (tool === "glob" || tool === "grep") {
+    return typeof args.path === "string" ? args.path : undefined
+  }
+
+  return undefined
 }
 
 function normalizePath(targetPath: string, worktree: string): string {
