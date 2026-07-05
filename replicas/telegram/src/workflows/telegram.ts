@@ -1,4 +1,10 @@
-import { block, html, sendNotification, updateNotification } from "@reside/common/workflow"
+import {
+  block,
+  html,
+  safeSleep,
+  sendNotification,
+  updateNotification,
+} from "@reside/common/workflow"
 import { condition, isCancellation, log, proxyActivities, setHandler } from "@temporalio/workflow"
 import {
   approvalCancelSignal,
@@ -11,6 +17,8 @@ import {
 } from "../definitions"
 import { strings } from "../locale"
 
+const ACTIVITY_REWARD_INTERVAL_MS = 24 * 60 * 60 * 1000
+
 const {
   completeApprovalOperation,
   failApprovalOperation,
@@ -19,9 +27,38 @@ const {
   completeAvatarProvisionOperation,
   deleteAvatar,
   failAvatarProvisionOperation,
+  listActivityRewardIntervals,
+  rewardActivityInterval,
 } = proxyActivities<TelegramActivities>({
   scheduleToCloseTimeout: "5 minutes",
 })
+
+export async function rewardActivityWorkflow(): Promise<void> {
+  while (true) {
+    try {
+      const { intervals } = await listActivityRewardIntervals()
+
+      for (const interval of intervals) {
+        try {
+          await rewardActivityInterval(interval)
+        } catch (error) {
+          log.warn("activity reward interval failed", {
+            userId: interval.userId,
+            fromMessageNumber: interval.fromMessageNumber,
+            toMessageNumber: interval.toMessageNumber,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
+      }
+    } catch (error) {
+      log.warn("activity reward cycle failed", {
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+
+    await safeSleep(ACTIVITY_REWARD_INTERVAL_MS)
+  }
+}
 
 export async function handleApprovalRequestWorkflow({
   operationId,

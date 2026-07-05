@@ -461,6 +461,17 @@ export async function createTelegramBot(args: {
     await next()
   })
 
+  bot.use(async (context, next) => {
+    if (context.message !== undefined && context.from !== undefined) {
+      const entities = await ensureTelegramEntities(args.crypto, args.prisma, context)
+      if (entities.user !== null) {
+        await incrementUserMessageCounter(args.prisma, entities.user.id)
+      }
+    }
+
+    await next()
+  })
+
   bot.on("message:text", async (context: Context) => {
     const message = context.message
     if (!message?.text) {
@@ -916,6 +927,19 @@ async function ensureTelegramEntities(
     chat: chatEntity,
     user: userEntity,
   }
+}
+
+async function incrementUserMessageCounter(prisma: PrismaClient, userId: number): Promise<void> {
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      totalMessages: {
+        increment: 1,
+      },
+    },
+  })
 }
 
 async function upsertTelegramChat(

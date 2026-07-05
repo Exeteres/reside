@@ -132,6 +132,9 @@ export const ru = {
         openCreationLink: "Создать аватар",
         timeoutMessage: "Не удалось дождаться создания аватара за отведенное время (24 часа).",
       },
+      activityReward: {
+        transactionTitle: "Награда за активность",
+      },
     },
     activities: {
       approvalResolutionApproved: "Запрос подтвержден в Telegram",

@@ -371,6 +371,8 @@ export const UserScalarFieldEnum = {
   usernameRhid: 'usernameRhid',
   dataEcid: 'dataEcid',
   dataRhid: 'dataRhid',
+  totalMessages: 'totalMessages',
+  rewardedMessages: 'rewardedMessages',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

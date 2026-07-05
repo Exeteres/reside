@@ -1,3 +1,4 @@
+export * from "./activity-reward"
 export * from "./approval"
 export * from "./authorization"
 export * from "./avatar"
