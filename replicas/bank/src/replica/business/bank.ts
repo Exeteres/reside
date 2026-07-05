@@ -1,12 +1,16 @@
 import type { ResideCrypto } from "@reside/common"
+import type { Client as TemporalClient } from "@temporalio/client"
 import type { PrismaClient } from "../../database"
 import type { BankTransaction } from "../../definitions"
 import { Code, ConnectError } from "@connectrpc/connect"
+import { DEFAULT_TEMPORAL_TASK_QUEUE } from "@reside/common"
+import { WorkflowIdReusePolicy } from "@temporalio/client"
 import { z } from "zod"
 
 const encryptedAmountSchema = z.string().regex(/^\d+$/)
 const DEFAULT_PAGE_SIZE = 10
 const MAX_PAGE_SIZE = 50
+const TELEGRAM_WELCOME_IDEMPOTENCY_PREFIX = "telegram-welcome:"
 
 export type BankPrisma = PrismaClient
 
@@ -35,12 +39,35 @@ export type IssueReplicaFundsInput = {
   comment?: string
 }
 
+export type StartTelegramWelcomeFunding = (subjectId: string) => Promise<void>
+
+export function getTelegramWelcomeIdempotencyKey(subjectId: string): string {
+  return `${TELEGRAM_WELCOME_IDEMPOTENCY_PREFIX}${subjectId}`
+}
+
+export async function startTelegramWelcomeFundingWorkflow(
+  temporalClient: TemporalClient,
+  subjectId: string,
+): Promise<void> {
+  if (!subjectId.startsWith("telegram:")) {
+    return
+  }
+
+  await temporalClient.workflow.start("fundTelegramAccountWorkflow", {
+    args: [{ subjectId }],
+    taskQueue: DEFAULT_TEMPORAL_TASK_QUEUE,
+    workflowId: getTelegramWelcomeFundingWorkflowId(subjectId),
+    workflowIdReusePolicy: WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+  })
+}
+
 export async function getBalance(
   crypto: ResideCrypto,
   prisma: BankPrisma,
   subjectId: string,
+  startTelegramWelcomeFunding?: StartTelegramWelcomeFunding,
 ): Promise<string> {
-  const account = await ensureAccount(crypto, prisma, subjectId)
+  const account = await ensureAccount(crypto, prisma, subjectId, startTelegramWelcomeFunding)
 
   return await decryptAmount(crypto, account.balanceEcid)
 }
@@ -49,8 +76,9 @@ export async function listTransactions(
   crypto: ResideCrypto,
   prisma: BankPrisma,
   input: { subjectId: string; pageSize?: number; pageToken?: string },
+  startTelegramWelcomeFunding?: StartTelegramWelcomeFunding,
 ): Promise<{ transactions: BankTransaction[]; nextPageToken?: string }> {
-  await ensureAccount(crypto, prisma, input.subjectId)
+  await ensureAccount(crypto, prisma, input.subjectId, startTelegramWelcomeFunding)
 
   const pageSize = Math.min(input.pageSize ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
   const cursorId = input.pageToken ? parseBigInt(input.pageToken, "page_token") : undefined
@@ -91,6 +119,7 @@ export async function transfer(
   crypto: ResideCrypto,
   prisma: BankPrisma,
   input: TransferInput,
+  startTelegramWelcomeFunding?: StartTelegramWelcomeFunding,
 ): Promise<BankTransaction> {
   const amount = parsePositiveAmount(input.amount)
 
@@ -106,8 +135,18 @@ export async function transfer(
       return await mapTransaction(crypto, existing)
     }
 
-    const sender = await ensureAccount(crypto, ledgerPrisma, input.senderSubjectId)
-    const recipient = await ensureAccount(crypto, ledgerPrisma, input.recipientSubjectId)
+    const sender = await ensureAccount(
+      crypto,
+      ledgerPrisma,
+      input.senderSubjectId,
+      startTelegramWelcomeFunding,
+    )
+    const recipient = await ensureAccount(
+      crypto,
+      ledgerPrisma,
+      input.recipientSubjectId,
+      startTelegramWelcomeFunding,
+    )
     const senderBalance = parsePositiveOrZeroAmount(await decryptAmount(crypto, sender.balanceEcid))
     const recipientBalance = parsePositiveOrZeroAmount(
       await decryptAmount(crypto, recipient.balanceEcid),
@@ -187,7 +226,12 @@ export async function issueReplicaFunds(
   })
 }
 
-async function ensureAccount(crypto: ResideCrypto, prisma: BankPrisma, subjectId: string) {
+async function ensureAccount(
+  crypto: ResideCrypto,
+  prisma: BankPrisma,
+  subjectId: string,
+  startTelegramWelcomeFunding?: StartTelegramWelcomeFunding,
+) {
   const existing = await prisma.account.findUnique({ where: { subject_id: subjectId } })
   if (existing) {
     return existing
@@ -195,11 +239,19 @@ async function ensureAccount(crypto: ResideCrypto, prisma: BankPrisma, subjectId
 
   const balanceEcid = await crypto.encrypt("0")
 
-  return await prisma.account.upsert({
+  const account = await prisma.account.upsert({
     where: { subject_id: subjectId },
     create: { subject_id: subjectId, balanceEcid },
     update: {},
   })
+
+  await startTelegramWelcomeFunding?.(subjectId)
+
+  return account
+}
+
+function getTelegramWelcomeFundingWorkflowId(subjectId: string): string {
+  return `fund-telegram-account-${subjectId}`
 }
 
 async function runLedgerWrite<T>(

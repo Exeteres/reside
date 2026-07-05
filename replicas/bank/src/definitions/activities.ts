@@ -27,4 +27,5 @@ export type BankActivities = {
     amount: string
     idempotencyKey: string
   }) => Promise<{ transaction: BankTransaction }>
+  fundTelegramAccount: (input: { subjectId: string }) => Promise<{ transaction: BankTransaction }>
 }

@@ -20,6 +20,23 @@ const { getBalance, issueReplicaFunds, listTransactions, transfer } =
     },
   })
 
+const { fundTelegramAccount } = proxyActivities<BankActivities>({
+  scheduleToCloseTimeout: "1 day",
+  retry: {
+    initialInterval: "3 seconds",
+    backoffCoefficient: 2,
+    maximumInterval: "1 minute",
+  },
+})
+
+export async function fundTelegramAccountWorkflow({
+  subjectId,
+}: {
+  subjectId: string
+}): Promise<void> {
+  await fundTelegramAccount({ subjectId })
+}
+
 export const balanceCommandHandler = defineCommandHandler({
   command: balanceCommand,
   async handler({ context }) {
