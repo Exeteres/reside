@@ -30,6 +30,8 @@ const FACTORY_SHUTDOWN_TIMEOUT_MS = 120_000
 const FACTORY_MCP_TOKEN_ENV_VAR = "ENGINEER_FACTORY_MCP_TOKEN"
 const RESIDE_LLM_ENDPOINT_ENV_VAR = "RESIDE_LLM_ENDPOINT"
 const RESIDE_LLM_API_KEY_ENV_VAR = "RESIDE_LLM_API_KEY"
+const SIGNOZ_MCP_BINARY_PATH = "/usr/local/bin/signoz-mcp-server"
+const SIGNOZ_URL = "http://signoz.replica-infra.svc.cluster.local:8080"
 const OPENCODE_REPOSITORY_CONFIG_PATH = ".opencode/opencode.json"
 const OPENCODE_CONFIG_DIR = ".config/opencode"
 const OPENCODE_CONFIG_FILE = "opencode.json"
@@ -59,6 +61,10 @@ const llmSecretSchema = z.object({
   "api-key": z.string().trim().min(1),
   "light-model": z.string().trim().min(1),
   "smart-model": z.string().trim().min(1),
+})
+
+const signozSecretSchema = z.object({
+  "api-key": z.string().trim().min(1),
 })
 
 async function main(): Promise<void> {
@@ -192,10 +198,9 @@ async function configureFactoryOpenCode(
   const config = await readOpenCodeConfig(repositoryConfigPath, true)
 
   await mkdir(dirname(configPath), { recursive: true })
-  await writeFile(
-    configPath,
-    `${JSON.stringify(createFactoryOpenCodeConfig(config, mcpServer), null, 2)}\n`,
-  )
+  const openCodeConfig = await createFactoryOpenCodeConfig(config, mcpServer)
+
+  await writeFile(configPath, `${JSON.stringify(openCodeConfig, null, 2)}\n`)
   logger.info(
     'engineer factory opencode configured config_path="%s" repository_config_path="%s" mcp_name="%s"',
     configPath,
@@ -282,10 +287,12 @@ function stripJsonCommentsAndTrailingCommas(value: string): string {
   return output.replaceAll(/,\s*([}\]])/g, "$1")
 }
 
-function createFactoryOpenCodeConfig(
+async function createFactoryOpenCodeConfig(
   config: OpenCodeConfig,
   mcpServer: { name: string; url: string; token: string },
-): OpenCodeConfig {
+): Promise<OpenCodeConfig> {
+  const signozSecret = await crypto.getSecret(signozSecretSchema, "signoz")
+
   return {
     ...config,
     enabled_providers: ["reside"],
@@ -299,6 +306,17 @@ function createFactoryOpenCodeConfig(
           authorization: `Bearer ${mcpServer.token}`,
         },
         oauth: false,
+        timeout: 600_000,
+      },
+      signoz: {
+        type: "local",
+        command: [SIGNOZ_MCP_BINARY_PATH],
+        enabled: true,
+        environment: {
+          SIGNOZ_URL,
+          SIGNOZ_API_KEY: signozSecret["api-key"],
+          LOG_LEVEL: "info",
+        },
         timeout: 600_000,
       },
     },
