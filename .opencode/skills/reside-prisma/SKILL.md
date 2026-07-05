@@ -121,6 +121,8 @@ data Json
 - Do not author migrations from scratch by hand.
 - Generate the migration with Prisma first.
 - Manual SQL edits are allowed only when Prisma's generated SQL is not deployable or cannot express the required migration safely, for example nullable-add/backfill/set-not-null sequences, data backfills, or provider-specific DDL.
+- When Prisma diff shows schema drift beyond the immediate error, do not create a partial migration silently.
+  Either cover the full drift in the migration or ask the user before intentionally splitting it.
 - New migrations must be safe to apply to non-empty tables.
 - Do not add a required column without either a database default or an explicit backfill step that adds it nullable, fills all existing rows, and only then marks it `NOT NULL`.
 - Warnings for unique indexes on nullable columns created in the same migration are acceptable when existing rows cannot contain duplicates for that new column.
