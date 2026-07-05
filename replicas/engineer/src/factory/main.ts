@@ -329,9 +329,8 @@ async function ensureRepository({
     logger.info('engineer factory repository clone skipped repository_path="%s"', repositoryPath)
   }
 
-  await runCommand(["git", "-C", repositoryPath, "checkout", "main"])
   await runCommand(["git", "-C", repositoryPath, "fetch", "origin", "main"])
-  await runCommand(["git", "-C", repositoryPath, "pull", "--ff-only", "origin", "main"])
+  await discardRepositoryChanges(repositoryPath)
   await runCommand(["git", "-C", repositoryPath, "config", "user.name", "reside-agent[bot]"])
   await runCommand([
     "git",
@@ -341,6 +340,20 @@ async function ensureRepository({
     "user.email",
     "248754993+reside-agent[bot]@users.noreply.github.com",
   ])
+}
+
+async function discardRepositoryChanges(repositoryPath: string): Promise<void> {
+  logger.info(
+    'engineer factory repository local changes discard started repository_path="%s"',
+    repositoryPath,
+  )
+  await runCommand(["git", "-C", repositoryPath, "checkout", "-B", "main", "origin/main"])
+  await runCommand(["git", "-C", repositoryPath, "reset", "--hard", "origin/main"])
+  await runCommand(["git", "-C", repositoryPath, "clean", "-fd"])
+  logger.info(
+    'engineer factory repository local changes discard completed repository_path="%s"',
+    repositoryPath,
+  )
 }
 
 function createRepositoryRefresh({
