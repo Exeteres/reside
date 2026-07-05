@@ -342,6 +342,35 @@ export type CompleteApprovalOperationInput = {
   actionName: ApprovalActionName
 }
 
+export type ActivityRewardInterval = {
+  /**
+   * Internal Telegram replica user record identifier.
+   */
+  userId: number
+
+  /**
+   * First message number included in this reward interval.
+   */
+  fromMessageNumber: number
+
+  /**
+   * Last message number included in this reward interval.
+   */
+  toMessageNumber: number
+
+  /**
+   * Number of messages included in this reward interval.
+   */
+  messageCount: number
+}
+
+export type ListActivityRewardIntervalsOutput = {
+  /**
+   * Reward intervals fixed for this workflow iteration.
+   */
+  intervals: ActivityRewardInterval[]
+}
+
 export type TelegramActivities = {
   /**
    * Validates a Telegram command message and prepares invocation payload.
@@ -421,4 +450,14 @@ export type TelegramActivities = {
    * Marks approval operation as failed.
    */
   failApprovalOperation: (input: FailOperationInput) => Promise<void>
+
+  /**
+   * Lists fixed user message intervals that should be rewarded.
+   */
+  listActivityRewardIntervals: () => Promise<ListActivityRewardIntervalsOutput>
+
+  /**
+   * Rewards one fixed user message interval.
+   */
+  rewardActivityInterval: (input: ActivityRewardInterval) => Promise<void>
 }

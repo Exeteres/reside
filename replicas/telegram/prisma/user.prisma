@@ -18,6 +18,12 @@ model User {
   /// The encrypted raw Telegram payload for the user.
   data EncryptedContent? @relation(name: "UserData", fields: [dataEcid], references: [ecid])
 
+  /// The total number of Telegram messages received from this user.
+  totalMessages Int @default(0)
+
+  /// The number of Telegram messages already rewarded with bank funds.
+  rewardedMessages Int @default(0)
+
   /// The avatars created by this user.
   createdAvatars Avatar[]
 

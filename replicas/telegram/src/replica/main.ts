@@ -15,6 +15,7 @@ import {
   createOperationSubscriptionService,
   createPingService,
   createServer,
+  createSleepActivities,
   crypto,
   defineGateway,
   getReplicaNamespace,
@@ -29,6 +30,7 @@ import { TELEGRAM_GATEWAY_NAME, TELEGRAM_WEBHOOK_PATH } from "../definitions"
 import { strings } from "../locale"
 import { createServices } from "../shared"
 import { createTelegramActivities } from "./activities"
+import { startActivityRewardWorkflow } from "./business/activity-reward"
 import { createBotRuntime, createWebhookUrl } from "./business/bot-runtime"
 import { loadTelegramConfigState } from "./business/config"
 import { loadTelegramSecretState } from "./business/secret"
@@ -131,6 +133,7 @@ if (stopSignal.stopped) {
         services.interactionOperationService,
         services.topicService,
       ),
+      ...createSleepActivities(services.timerService),
       ...createTelegramActivities({
         prisma: services.prisma,
         operationService: services.operationService,
@@ -143,6 +146,8 @@ if (stopSignal.stopped) {
       }),
     },
   })
+
+  await startActivityRewardWorkflow(services.temporalClient)
 
   if (stopSignal.stopped) {
     logger.info({ namespace }, "stop requested during telegram runtime startup")

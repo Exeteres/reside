@@ -1,6 +1,7 @@
 import type { AuthzServiceClient } from "@reside/api/access/authz.v1"
 import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { DiscoveryServiceClient } from "@reside/api/alpha/discovery.v1"
+import type { BankServiceClient } from "@reside/api/bank/bank.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { GatewayServiceClient } from "@reside/api/infra/gateway.v1"
 import type { ResideCrypto } from "@reside/common/encryption"
@@ -10,6 +11,7 @@ import { createHash } from "node:crypto"
 import { fromJson } from "@bufbuild/protobuf"
 import { CoreV1Api } from "@kubernetes/client-node"
 import { ReplicaService } from "@reside/api/alpha/replica.v1"
+import { BankService } from "@reside/api/bank/bank.v1"
 import {
   CommandHandlerService,
   type CommandHandlerServiceClient,
@@ -75,6 +77,7 @@ export function createTelegramActivities({
 
   const commandHandlerClients = new Map<string, CommandHandlerServiceClient>()
   const nlsClients = new Map<string, NaturalLanguageServiceClient>()
+  let bankClient: BankServiceClient | undefined
 
   const namespace = getReplicaNamespace()
   const coreApi = kubeConfig.makeApiClient(CoreV1Api)
@@ -122,6 +125,20 @@ export function createTelegramActivities({
     nlsClients.set(endpoint, createdClient)
 
     return createdClient
+  }
+
+  const getBankClient = async (): Promise<BankServiceClient> => {
+    if (bankClient) {
+      return bankClient
+    }
+
+    const { endpoint } = await discoveryService.getSubjectEndpoint({
+      subjectId: "replica:bank",
+    })
+
+    bankClient = createClient(BankService, createChannel(endpoint))
+
+    return bankClient
   }
 
   return {
@@ -228,6 +245,98 @@ export function createTelegramActivities({
         },
         reply_parameters: {
           message_id: input.replyToMessageId,
+        },
+      })
+    },
+
+    async listActivityRewardIntervals() {
+      const users = await prisma.user.findMany({
+        where: {
+          totalMessages: {
+            gt: 0,
+          },
+        },
+        orderBy: {
+          id: "asc",
+        },
+        select: {
+          id: true,
+          totalMessages: true,
+          rewardedMessages: true,
+        },
+      })
+
+      return {
+        intervals: users
+          .map(user => {
+            const messageCount = user.totalMessages - user.rewardedMessages
+            if (messageCount <= 0) {
+              return undefined
+            }
+
+            return {
+              userId: user.id,
+              fromMessageNumber: user.rewardedMessages + 1,
+              toMessageNumber: user.totalMessages,
+              messageCount,
+            }
+          })
+          .filter(interval => interval !== undefined),
+      }
+    },
+
+    async rewardActivityInterval(input) {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: input.userId,
+        },
+        select: {
+          id: true,
+          totalMessages: true,
+          rewardedMessages: true,
+        },
+      })
+
+      if (user === null || user.rewardedMessages >= input.toMessageNumber) {
+        return
+      }
+
+      if (
+        user.rewardedMessages !== input.fromMessageNumber - 1 ||
+        user.totalMessages < input.toMessageNumber
+      ) {
+        return
+      }
+
+      const bank = await getBankClient()
+      const transfer = await bank.transfer({
+        recipientSubjectId: `telegram:${input.userId}`,
+        amount: String(input.messageCount),
+        idempotencyKey: rhid({
+          kind: "telegram-activity-reward",
+          userId: input.userId,
+          fromMessageNumber: input.fromMessageNumber,
+        }),
+        comment: strings.worker.workflows.activityReward.transactionTitle,
+      })
+
+      const paidMessageCount = Number(transfer.transaction?.amount ?? 0)
+      if (!Number.isSafeInteger(paidMessageCount) || paidMessageCount <= 0) {
+        return
+      }
+
+      const rewardedToMessageNumber = input.fromMessageNumber + paidMessageCount - 1
+
+      await prisma.user.updateMany({
+        where: {
+          id: input.userId,
+          totalMessages: {
+            gte: rewardedToMessageNumber,
+          },
+          rewardedMessages: input.fromMessageNumber - 1,
+        },
+        data: {
+          rewardedMessages: rewardedToMessageNumber,
         },
       })
     },
