@@ -197,8 +197,8 @@ export type UserGroupByOutputType = {
   id: number
   telegramRhid: string
   usernameRhid: string | null
-  dataEcid: string
-  dataRhid: string
+  dataEcid: string | null
+  dataRhid: string | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -230,11 +230,11 @@ export type UserWhereInput = {
   id?: Prisma.IntFilter<"User"> | number
   telegramRhid?: Prisma.StringFilter<"User"> | string
   usernameRhid?: Prisma.StringNullableFilter<"User"> | string | null
-  dataEcid?: Prisma.StringFilter<"User"> | string
-  dataRhid?: Prisma.StringFilter<"User"> | string
+  dataEcid?: Prisma.StringNullableFilter<"User"> | string | null
+  dataRhid?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
-  data?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
+  data?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
   createdAvatars?: Prisma.AvatarListRelationFilter
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestListRelationFilter
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarListRelationFilter
@@ -246,8 +246,8 @@ export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   telegramRhid?: Prisma.SortOrder
   usernameRhid?: Prisma.SortOrderInput | Prisma.SortOrder
-  dataEcid?: Prisma.SortOrder
-  dataRhid?: Prisma.SortOrder
+  dataEcid?: Prisma.SortOrderInput | Prisma.SortOrder
+  dataRhid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   data?: Prisma.EncryptedContentOrderByWithRelationInput
@@ -269,7 +269,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
-  data?: Prisma.XOR<Prisma.EncryptedContentScalarRelationFilter, Prisma.EncryptedContentWhereInput>
+  data?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
   createdAvatars?: Prisma.AvatarListRelationFilter
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestListRelationFilter
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarListRelationFilter
@@ -281,8 +281,8 @@ export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   telegramRhid?: Prisma.SortOrder
   usernameRhid?: Prisma.SortOrderInput | Prisma.SortOrder
-  dataEcid?: Prisma.SortOrder
-  dataRhid?: Prisma.SortOrder
+  dataEcid?: Prisma.SortOrderInput | Prisma.SortOrder
+  dataRhid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -299,8 +299,8 @@ export type UserScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"User"> | number
   telegramRhid?: Prisma.StringWithAggregatesFilter<"User"> | string
   usernameRhid?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
-  dataEcid?: Prisma.StringWithAggregatesFilter<"User"> | string
-  dataRhid?: Prisma.StringWithAggregatesFilter<"User"> | string
+  dataEcid?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  dataRhid?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -308,10 +308,10 @@ export type UserScalarWhereWithAggregatesInput = {
 export type UserCreateInput = {
   telegramRhid: string
   usernameRhid?: string | null
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  data: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
+  data?: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
@@ -323,8 +323,8 @@ export type UserUncheckedCreateInput = {
   id?: number
   telegramRhid: string
   usernameRhid?: string | null
-  dataEcid: string
-  dataRhid: string
+  dataEcid?: string | null
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -337,10 +337,10 @@ export type UserUncheckedCreateInput = {
 export type UserUpdateInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  data?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserDataNestedInput
+  data?: Prisma.EncryptedContentUpdateOneWithoutUserDataNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
@@ -352,8 +352,8 @@ export type UserUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -367,8 +367,8 @@ export type UserCreateManyInput = {
   id?: number
   telegramRhid: string
   usernameRhid?: string | null
-  dataEcid: string
-  dataRhid: string
+  dataEcid?: string | null
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -376,7 +376,7 @@ export type UserCreateManyInput = {
 export type UserUpdateManyMutationInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -385,8 +385,8 @@ export type UserUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -550,10 +550,10 @@ export type UserUpdateOneRequiredWithoutNotificationTaskPlanningPollsNestedInput
 export type UserCreateWithoutCreatedAvatarsInput = {
   telegramRhid: string
   usernameRhid?: string | null
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  data: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
+  data?: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
@@ -564,8 +564,8 @@ export type UserUncheckedCreateWithoutCreatedAvatarsInput = {
   id?: number
   telegramRhid: string
   usernameRhid?: string | null
-  dataEcid: string
-  dataRhid: string
+  dataEcid?: string | null
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -593,10 +593,10 @@ export type UserUpdateToOneWithWhereWithoutCreatedAvatarsInput = {
 export type UserUpdateWithoutCreatedAvatarsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  data?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserDataNestedInput
+  data?: Prisma.EncryptedContentUpdateOneWithoutUserDataNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
@@ -607,8 +607,8 @@ export type UserUncheckedUpdateWithoutCreatedAvatarsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -620,10 +620,10 @@ export type UserUncheckedUpdateWithoutCreatedAvatarsInput = {
 export type UserCreateWithoutAvatarProvisionRequestsInput = {
   telegramRhid: string
   usernameRhid?: string | null
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  data: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
+  data?: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
@@ -634,8 +634,8 @@ export type UserUncheckedCreateWithoutAvatarProvisionRequestsInput = {
   id?: number
   telegramRhid: string
   usernameRhid?: string | null
-  dataEcid: string
-  dataRhid: string
+  dataEcid?: string | null
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -663,10 +663,10 @@ export type UserUpdateToOneWithWhereWithoutAvatarProvisionRequestsInput = {
 export type UserUpdateWithoutAvatarProvisionRequestsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  data?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserDataNestedInput
+  data?: Prisma.EncryptedContentUpdateOneWithoutUserDataNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
@@ -677,8 +677,8 @@ export type UserUncheckedUpdateWithoutAvatarProvisionRequestsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -690,10 +690,10 @@ export type UserUncheckedUpdateWithoutAvatarProvisionRequestsInput = {
 export type UserCreateWithoutUnauthorizedAvatarsInput = {
   telegramRhid: string
   usernameRhid?: string | null
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  data: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
+  data?: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionCreateNestedManyWithoutUserInput
@@ -704,8 +704,8 @@ export type UserUncheckedCreateWithoutUnauthorizedAvatarsInput = {
   id?: number
   telegramRhid: string
   usernameRhid?: string | null
-  dataEcid: string
-  dataRhid: string
+  dataEcid?: string | null
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -733,10 +733,10 @@ export type UserUpdateToOneWithWhereWithoutUnauthorizedAvatarsInput = {
 export type UserUpdateWithoutUnauthorizedAvatarsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  data?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserDataNestedInput
+  data?: Prisma.EncryptedContentUpdateOneWithoutUserDataNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   naturalLanguageInteractions?: Prisma.NaturalLanguageInteractionUpdateManyWithoutUserNestedInput
@@ -747,8 +747,8 @@ export type UserUncheckedUpdateWithoutUnauthorizedAvatarsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -760,7 +760,7 @@ export type UserUncheckedUpdateWithoutUnauthorizedAvatarsInput = {
 export type UserCreateWithoutDataInput = {
   telegramRhid: string
   usernameRhid?: string | null
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
@@ -774,7 +774,7 @@ export type UserUncheckedCreateWithoutDataInput = {
   id?: number
   telegramRhid: string
   usernameRhid?: string | null
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -803,7 +803,7 @@ export type UserUpdateToOneWithWhereWithoutDataInput = {
 export type UserUpdateWithoutDataInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
@@ -817,7 +817,7 @@ export type UserUncheckedUpdateWithoutDataInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -830,10 +830,10 @@ export type UserUncheckedUpdateWithoutDataInput = {
 export type UserCreateWithoutNaturalLanguageInteractionsInput = {
   telegramRhid: string
   usernameRhid?: string | null
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  data: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
+  data?: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
@@ -844,8 +844,8 @@ export type UserUncheckedCreateWithoutNaturalLanguageInteractionsInput = {
   id?: number
   telegramRhid: string
   usernameRhid?: string | null
-  dataEcid: string
-  dataRhid: string
+  dataEcid?: string | null
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -873,10 +873,10 @@ export type UserUpdateToOneWithWhereWithoutNaturalLanguageInteractionsInput = {
 export type UserUpdateWithoutNaturalLanguageInteractionsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  data?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserDataNestedInput
+  data?: Prisma.EncryptedContentUpdateOneWithoutUserDataNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
@@ -887,8 +887,8 @@ export type UserUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -900,10 +900,10 @@ export type UserUncheckedUpdateWithoutNaturalLanguageInteractionsInput = {
 export type UserCreateWithoutNotificationTaskPlanningPollsInput = {
   telegramRhid: string
   usernameRhid?: string | null
-  dataRhid: string
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  data: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
+  data?: Prisma.EncryptedContentCreateNestedOneWithoutUserDataInput
   createdAvatars?: Prisma.AvatarCreateNestedManyWithoutCreatedByUserInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestCreateNestedManyWithoutCreatedByUserInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput
@@ -914,8 +914,8 @@ export type UserUncheckedCreateWithoutNotificationTaskPlanningPollsInput = {
   id?: number
   telegramRhid: string
   usernameRhid?: string | null
-  dataEcid: string
-  dataRhid: string
+  dataEcid?: string | null
+  dataRhid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdAvatars?: Prisma.AvatarUncheckedCreateNestedManyWithoutCreatedByUserInput
@@ -943,10 +943,10 @@ export type UserUpdateToOneWithWhereWithoutNotificationTaskPlanningPollsInput = 
 export type UserUpdateWithoutNotificationTaskPlanningPollsInput = {
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  data?: Prisma.EncryptedContentUpdateOneRequiredWithoutUserDataNestedInput
+  data?: Prisma.EncryptedContentUpdateOneWithoutUserDataNestedInput
   createdAvatars?: Prisma.AvatarUpdateManyWithoutCreatedByUserNestedInput
   avatarProvisionRequests?: Prisma.AvatarProvisionRequestUpdateManyWithoutCreatedByUserNestedInput
   unauthorizedAvatars?: Prisma.UnauthorizedAvatarUpdateManyWithoutCreatedByUserNestedInput
@@ -957,8 +957,8 @@ export type UserUncheckedUpdateWithoutNotificationTaskPlanningPollsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   telegramRhid?: Prisma.StringFieldUpdateOperationsInput | string
   usernameRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dataEcid?: Prisma.StringFieldUpdateOperationsInput | string
-  dataRhid?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dataRhid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAvatars?: Prisma.AvatarUncheckedUpdateManyWithoutCreatedByUserNestedInput
@@ -1042,7 +1042,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   dataRhid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  data?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  data?: boolean | Prisma.User$dataArgs<ExtArgs>
   createdAvatars?: boolean | Prisma.User$createdAvatarsArgs<ExtArgs>
   avatarProvisionRequests?: boolean | Prisma.User$avatarProvisionRequestsArgs<ExtArgs>
   unauthorizedAvatars?: boolean | Prisma.User$unauthorizedAvatarsArgs<ExtArgs>
@@ -1059,7 +1059,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   dataRhid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  data?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  data?: boolean | Prisma.User$dataArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1070,7 +1070,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   dataRhid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  data?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  data?: boolean | Prisma.User$dataArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
@@ -1085,7 +1085,7 @@ export type UserSelectScalar = {
 
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "telegramRhid" | "usernameRhid" | "dataEcid" | "dataRhid" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  data?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  data?: boolean | Prisma.User$dataArgs<ExtArgs>
   createdAvatars?: boolean | Prisma.User$createdAvatarsArgs<ExtArgs>
   avatarProvisionRequests?: boolean | Prisma.User$avatarProvisionRequestsArgs<ExtArgs>
   unauthorizedAvatars?: boolean | Prisma.User$unauthorizedAvatarsArgs<ExtArgs>
@@ -1094,10 +1094,10 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  data?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  data?: boolean | Prisma.User$dataArgs<ExtArgs>
 }
 export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  data?: boolean | Prisma.EncryptedContentDefaultArgs<ExtArgs>
+  data?: boolean | Prisma.User$dataArgs<ExtArgs>
 }
 
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1106,7 +1106,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     /**
      * The encrypted raw Telegram payload for the user.
      */
-    data: Prisma.$EncryptedContentPayload<ExtArgs>
+    data: Prisma.$EncryptedContentPayload<ExtArgs> | null
     /**
      * The avatars created by this user.
      */
@@ -1144,11 +1144,11 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     /**
      * The ECID of the raw Telegram payload for the user.
      */
-    dataEcid: string
+    dataEcid: string | null
     /**
      * The RHID of the raw Telegram payload for the user.
      */
-    dataRhid: string
+    dataRhid: string | null
     /**
      * The timestamp when this user was created.
      */
@@ -1551,7 +1551,7 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  data<T extends Prisma.EncryptedContentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContentDefaultArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  data<T extends Prisma.User$dataArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dataArgs<ExtArgs>>): Prisma.Prisma__EncryptedContentClient<runtime.Types.Result.GetResult<Prisma.$EncryptedContentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   createdAvatars<T extends Prisma.User$createdAvatarsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdAvatarsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvatarPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   avatarProvisionRequests<T extends Prisma.User$avatarProvisionRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$avatarProvisionRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvatarProvisionRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   unauthorizedAvatars<T extends Prisma.User$unauthorizedAvatarsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$unauthorizedAvatarsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UnauthorizedAvatarPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1986,6 +1986,25 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Users to delete.
    */
   limit?: number
+}
+
+/**
+ * User.data
+ */
+export type User$dataArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EncryptedContent
+   */
+  select?: Prisma.EncryptedContentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EncryptedContent
+   */
+  omit?: Prisma.EncryptedContentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EncryptedContentInclude<ExtArgs> | null
+  where?: Prisma.EncryptedContentWhereInput
 }
 
 /**

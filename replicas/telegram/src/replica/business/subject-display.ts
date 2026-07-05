@@ -72,7 +72,7 @@ async function resolveTelegramSubjectTitle(
     },
   })
 
-  if (user === null) {
+  if (user === null || user.dataEcid === null) {
     return undefined
   }
 

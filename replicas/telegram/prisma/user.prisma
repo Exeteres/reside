@@ -10,13 +10,13 @@ model User {
   usernameRhid String? @unique()
 
   /// The ECID of the raw Telegram payload for the user.
-  dataEcid String @unique()
+  dataEcid String? @unique()
 
   /// The RHID of the raw Telegram payload for the user.
-  dataRhid String @unique()
+  dataRhid String? @unique()
 
   /// The encrypted raw Telegram payload for the user.
-  data EncryptedContent @relation(name: "UserData", fields: [dataEcid], references: [ecid])
+  data EncryptedContent? @relation(name: "UserData", fields: [dataEcid], references: [ecid])
 
   /// The avatars created by this user.
   createdAvatars Avatar[]

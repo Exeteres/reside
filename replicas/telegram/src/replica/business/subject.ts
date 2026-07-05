@@ -48,7 +48,7 @@ export async function resolveTelegramSubjectDisplayInfo(
     },
   })
 
-  if (!user) {
+  if (!user || user.dataEcid === null) {
     throw new Error(`Subject "${subjectId}" was not found`)
   }
 

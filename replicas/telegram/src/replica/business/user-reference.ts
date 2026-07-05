@@ -106,6 +106,10 @@ async function resolveUserReferenceReplacements(
   })
 
   for (const user of users) {
+    if (user.dataEcid === null) {
+      continue
+    }
+
     const data = await args.crypto.decrypt(telegramUserDataSchema, user.dataEcid)
     if (data.username === undefined) {
       continue

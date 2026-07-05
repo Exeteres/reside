@@ -415,10 +415,12 @@ export type EncryptedContentCreateNestedOneWithoutUserDataInput = {
   connect?: Prisma.EncryptedContentWhereUniqueInput
 }
 
-export type EncryptedContentUpdateOneRequiredWithoutUserDataNestedInput = {
+export type EncryptedContentUpdateOneWithoutUserDataNestedInput = {
   create?: Prisma.XOR<Prisma.EncryptedContentCreateWithoutUserDataInput, Prisma.EncryptedContentUncheckedCreateWithoutUserDataInput>
   connectOrCreate?: Prisma.EncryptedContentCreateOrConnectWithoutUserDataInput
   upsert?: Prisma.EncryptedContentUpsertWithoutUserDataInput
+  disconnect?: Prisma.EncryptedContentWhereInput | boolean
+  delete?: Prisma.EncryptedContentWhereInput | boolean
   connect?: Prisma.EncryptedContentWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.EncryptedContentUpdateToOneWithWhereWithoutUserDataInput, Prisma.EncryptedContentUpdateWithoutUserDataInput>, Prisma.EncryptedContentUncheckedUpdateWithoutUserDataInput>
 }
