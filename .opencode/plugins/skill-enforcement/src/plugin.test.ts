@@ -98,7 +98,7 @@ describe("createSkillEnforcementPlugin", () => {
     ).rejects.toThrow('Load the "reside-env-interactive" skill')
   })
 
-  test("allows repository reads before bun install in factory environments", async () => {
+  test("allows repository reads before factory preparation", async () => {
     const hooks = await createHooks({ environment: "factory-background" })
 
     await hooks["tool.execute.before"]?.(
@@ -117,7 +117,7 @@ describe("createSkillEnforcementPlugin", () => {
     )
   })
 
-  test("requires bun install before factory edits", async () => {
+  test("requires git rebase and bun install before factory edits", async () => {
     const worktree = createLinkedWorktreeFixture()
     const hooks = await createHooks({ environment: "factory-background", worktree })
 
@@ -128,15 +128,44 @@ describe("createSkillEnforcementPlugin", () => {
         { tool: "write", sessionID: "session-1", callID: "call-2" },
         { args: { filePath: "src/index.ts" } },
       ),
-    ).rejects.toThrow('Run "bun install --frozen-lockfile"')
+    ).rejects.toThrow('run "git rebase main", run "bun install --frozen-lockfile"')
 
     await hooks["tool.execute.before"]?.(
       { tool: "bash", sessionID: "session-1", callID: "call-3" },
+      { args: { command: "git rebase main" } },
+    )
+
+    expect(
+      hooks["tool.execute.before"]?.(
+        { tool: "write", sessionID: "session-1", callID: "call-4" },
+        { args: { filePath: "src/index.ts" } },
+      ),
+    ).rejects.toThrow('run "bun install --frozen-lockfile"')
+
+    await hooks["tool.execute.before"]?.(
+      { tool: "bash", sessionID: "session-1", callID: "call-5" },
       { args: { command: "bun install --frozen-lockfile" } },
     )
 
     await hooks["tool.execute.before"]?.(
-      { tool: "write", sessionID: "session-1", callID: "call-4" },
+      { tool: "write", sessionID: "session-1", callID: "call-6" },
+      { args: { filePath: "src/index.ts" } },
+    )
+  })
+
+  test("allows completing factory preparation in one command", async () => {
+    const worktree = createLinkedWorktreeFixture()
+    const hooks = await createHooks({ environment: "factory-background", worktree })
+
+    await loadFactoryEnvironmentSkill(hooks)
+
+    await hooks["tool.execute.before"]?.(
+      { tool: "bash", sessionID: "session-1", callID: "prepare" },
+      { args: { command: "git rebase main && bun install --frozen-lockfile" } },
+    )
+
+    await hooks["tool.execute.before"]?.(
+      { tool: "write", sessionID: "session-1", callID: "write" },
       { args: { filePath: "src/index.ts" } },
     )
   })
@@ -277,6 +306,10 @@ async function loadFactoryEnvironmentSkill(hooks: Hooks): Promise<void> {
 }
 
 async function runFactoryInstall(hooks: Hooks): Promise<void> {
+  await hooks["tool.execute.before"]?.(
+    { tool: "bash", sessionID: "session-1", callID: "rebase" },
+    { args: { command: "git rebase main" } },
+  )
   await hooks["tool.execute.before"]?.(
     { tool: "bash", sessionID: "session-1", callID: "install" },
     { args: { command: "bun install --frozen-lockfile" } },

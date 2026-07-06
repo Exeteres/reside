@@ -28,18 +28,23 @@ const skillEnvironments = new Map<string, ResideEnvironment>(
   ]),
 )
 const preInteractiveReadTools = new Set(["read"])
-const factoryPreInstallReadTools = new Set(["glob", "grep", "list", "read"])
+const factoryPrepareReadTools = new Set(["glob", "grep", "list", "read"])
 const preInteractiveReadablePaths = new Set(["README.md", "AGENTS.md"])
 const environmentBootstrapPrefix = `Before working with the user's request, load the "`
 const environmentBootstrapSuffix = `" skill.`
 const editTools = new Set(["apply_patch", "edit", "multiedit", "patch", "write"])
+
+type FactoryPrepareState = {
+  didRebase: boolean
+  didInstall: boolean
+}
 
 export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = {}): Plugin {
   return async ({ worktree }) => {
     const rules = await (options.loadRules ?? loadSkillRules)(worktree)
     const loadedSkillsBySession = new Map<string, Set<string>>()
     const environmentBySession = new Map<string, ResideEnvironment>()
-    const installedFactoryDependenciesBySession = new Set<string>()
+    const factoryPrepareStateBySession = new Map<string, FactoryPrepareState>()
     const defaultEnvironment = options.environment ?? getConfiguredEnvironment()
 
     function getLoadedSkills(sessionID: string): Set<string> {
@@ -61,11 +66,22 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
       environmentBySession.set(sessionID, environment)
     }
 
+    function getFactoryPrepareState(sessionID: string): FactoryPrepareState {
+      let state = factoryPrepareStateBySession.get(sessionID)
+
+      if (!state) {
+        state = { didRebase: false, didInstall: false }
+        factoryPrepareStateBySession.set(sessionID, state)
+      }
+
+      return state
+    }
+
     return {
       dispose: async () => {
         loadedSkillsBySession.clear()
         environmentBySession.clear()
-        installedFactoryDependenciesBySession.clear()
+        factoryPrepareStateBySession.clear()
       },
 
       "chat.message": async (input, output) => {
@@ -134,18 +150,19 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
         }
 
         if (isFactoryEnvironment(environment)) {
-          if (input.tool === "bash" && isBunInstallCommand(output.args)) {
-            installedFactoryDependenciesBySession.add(input.sessionID)
-          } else if (
-            !installedFactoryDependenciesBySession.has(input.sessionID) &&
-            !isFactoryPreInstallAllowedRead(input.tool, output.args, worktree)
+          const prepareState = getFactoryPrepareState(input.sessionID)
+
+          if (input.tool === "bash") {
+            prepareState.didRebase ||= isGitRebaseMainCommand(output.args)
+            prepareState.didInstall ||= isBunInstallCommand(output.args)
+          }
+
+          if (
+            !isFactoryPrepared(prepareState) &&
+            !isFactoryPrepareCommand(input.tool, output.args) &&
+            !isFactoryPrepareAllowedRead(input.tool, output.args, worktree)
           ) {
-            throw new Error(
-              [
-                "Skill enforcement blocked this tool call.",
-                `Run "bun install --frozen-lockfile" before serving user requests in the "${environment}" environment.`,
-              ].join("\n"),
-            )
+            throw new Error(createFactoryPrepareError(environment, prepareState))
           }
         }
 
@@ -266,8 +283,8 @@ function isPreInteractiveAllowedRead(tool: string, args: unknown, worktree: stri
   return preInteractiveReadablePaths.has(normalizePath(args.filePath, worktree))
 }
 
-function isFactoryPreInstallAllowedRead(tool: string, args: unknown, worktree: string): boolean {
-  if (!factoryPreInstallReadTools.has(tool) || !isRecord(args)) {
+function isFactoryPrepareAllowedRead(tool: string, args: unknown, worktree: string): boolean {
+  if (!factoryPrepareReadTools.has(tool) || !isRecord(args)) {
     return false
   }
 
@@ -277,6 +294,34 @@ function isFactoryPreInstallAllowedRead(tool: string, args: unknown, worktree: s
   }
 
   return isFactoryEditablePath(targetPath, worktree)
+}
+
+function isFactoryPrepared(state: FactoryPrepareState): boolean {
+  return state.didRebase && state.didInstall
+}
+
+function isFactoryPrepareCommand(tool: string, args: unknown): boolean {
+  return tool === "bash" && (isGitRebaseMainCommand(args) || isBunInstallCommand(args))
+}
+
+function createFactoryPrepareError(
+  environment: ResideEnvironment,
+  state: FactoryPrepareState,
+): string {
+  const missingSteps = []
+
+  if (!state.didRebase) {
+    missingSteps.push('run "git rebase main"')
+  }
+
+  if (!state.didInstall) {
+    missingSteps.push('run "bun install --frozen-lockfile"')
+  }
+
+  return [
+    "Skill enforcement blocked this tool call.",
+    `Complete factory preparation before serving user requests in the "${environment}" environment: ${missingSteps.join(", ")}.`,
+  ].join("\n")
 }
 
 function getReadToolPath(tool: string, args: Record<string, unknown>): string | undefined {
@@ -349,4 +394,12 @@ function isBunInstallCommand(args: unknown): boolean {
   }
 
   return /(^|&&|;)\s*bun\s+install(\s|$)/.test(args.command)
+}
+
+function isGitRebaseMainCommand(args: unknown): boolean {
+  if (!isRecord(args) || typeof args.command !== "string") {
+    return false
+  }
+
+  return /(^|&&|;)\s*git\s+rebase\s+main(\s|$)/.test(args.command)
 }
