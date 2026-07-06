@@ -113,6 +113,10 @@ export function createSkillEnforcementPlugin(options: SkillEnforcementOptions = 
       },
 
       "tool.execute.before": async (input, output) => {
+        if (isChildAgentToolCall(input)) {
+          return
+        }
+
         const loadedSkills = getLoadedSkills(input.sessionID)
         const environment = getSessionEnvironment(input.sessionID)
         const requiredSkillName = environmentSkillNames[environment]
@@ -386,6 +390,14 @@ function createFactoryMainRepositoryEditError(targets: string[]): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
+}
+
+function isChildAgentToolCall(input: unknown): boolean {
+  if (!isRecord(input) || typeof input.agent !== "string") {
+    return false
+  }
+
+  return input.agent !== "build"
 }
 
 function isBunInstallCommand(args: unknown): boolean {

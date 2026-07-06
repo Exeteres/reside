@@ -98,6 +98,21 @@ describe("createSkillEnforcementPlugin", () => {
     ).rejects.toThrow('Load the "reside-env-interactive" skill')
   })
 
+  test("does not enforce rules for child agents", async () => {
+    const hooks = await createHooks({
+      environment: "interactive",
+      rules: [{ name: "reside-typescript", files: ["src/**/*.ts"], commands: [] }],
+    })
+    const childAgentInput = {
+      tool: "write",
+      sessionID: "session-1",
+      callID: "call-1",
+      agent: "explore",
+    }
+
+    await hooks["tool.execute.before"]?.(childAgentInput, { args: { filePath: "src/index.ts" } })
+  })
+
   test("allows repository reads before factory preparation", async () => {
     const hooks = await createHooks({ environment: "factory-background" })
 
