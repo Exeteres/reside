@@ -169,7 +169,7 @@ async function startSharedFactoryMcpServer({
   logger.info('engineer factory mcp server starting owner="%s" repo="%s"', owner, repo)
 
   return await startMcpToolServer({
-    name: "reside-engineer",
+    name: "reside",
     invocationId: "factory",
     token: process.env[FACTORY_MCP_TOKEN_ENV_VAR],
     tools: [

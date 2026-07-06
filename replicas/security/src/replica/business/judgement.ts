@@ -13,7 +13,7 @@ export function buildJudgementPrompt(args: {
   return [
     "Decision instructions:",
     "1) First, evaluate static escalation rules from the system prompt.",
-    "2) Then find relevant allow rules in memory by calling reside_find_notes with separate important words from the request.",
+    "2) Then find relevant allow rules in memory by calling find_notes with separate important words from the request.",
     "3) If no allow rule matches, or any escalation rule matches, choose ESCALATED.",
     "4) Never deny the request.",
     "5) You must call exactly one decision tool with a short resolution in Russian.",

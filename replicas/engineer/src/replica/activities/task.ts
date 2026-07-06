@@ -901,7 +901,7 @@ async function runPlanningSession({
   const finalSummary = extractSummaryFromFinalMessage(finalMessage)
   const draftState = [...draftStatesBySessionId.values()].find(state => state.submittedDraft)
   if (!draftState?.submittedDraft) {
-    throw new Error("Copilot did not submit issue draft via reside_submit_issue_draft tool")
+    throw new Error("Copilot did not submit issue draft via submit_issue_draft tool")
   }
 
   return {
@@ -1016,7 +1016,7 @@ async function runImplementationLanguageStream({
 function createSubmitIssueDraftTool(
   draftStatesBySessionId: Map<string, { submittedDraft?: z.infer<typeof issueDraftSchema> }>,
 ) {
-  return defineTool("reside_submit_issue_draft", {
+  return defineTool("submit_issue_draft", {
     description: "Submit final GitHub issue draft title and body",
     parameters: issueDraftSchema,
     handler: async (parsedDraft, context) => {

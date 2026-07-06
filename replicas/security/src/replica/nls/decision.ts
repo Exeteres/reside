@@ -45,14 +45,14 @@ export function createApprovalDecisionTools(): DecisionToolState {
     }
   }
 
-  const allowTool = defineTool("reside_allow_request", {
+  const allowTool = defineTool("allow_request", {
     description: "Marks the approval request as APPROVED and stores the required resolution.",
     parameters: decisionToolSchema,
     handler: async input => {
       const parsed = ensureValidDecision(input)
 
       if (allowInvocations.has(parsed.token)) {
-        throw new Error(`reside_allow_request already called for token "${parsed.token}"`)
+        throw new Error(`allow_request already called for token "${parsed.token}"`)
       }
 
       allowInvocations.add(parsed.token)
@@ -68,14 +68,14 @@ export function createApprovalDecisionTools(): DecisionToolState {
     },
   })
 
-  const escalateTool = defineTool("reside_escalate_request", {
+  const escalateTool = defineTool("escalate_request", {
     description: "Marks the approval request as ESCALATED and stores the required resolution.",
     parameters: decisionToolSchema,
     handler: async input => {
       const parsed = ensureValidDecision(input)
 
       if (escalateInvocations.has(parsed.token)) {
-        throw new Error(`reside_escalate_request already called for token "${parsed.token}"`)
+        throw new Error(`escalate_request already called for token "${parsed.token}"`)
       }
 
       escalateInvocations.add(parsed.token)

@@ -10,7 +10,7 @@ type ReplicasToolServices = {
 }
 
 export function createReplicasTool({ prisma }: ReplicasToolServices) {
-  return defineTool("reside_replicas", {
+  return defineTool("replicas", {
     description: "Returns registered replicas with routing and placement details.",
     parameters: z.object({}),
     handler: async () => {
@@ -39,7 +39,7 @@ type ReplicaNodeToolServices = {
 }
 
 export function createSetReplicaNodeTool({ temporalClient }: ReplicaNodeToolServices) {
-  return defineTool("reside_set_replica_node", {
+  return defineTool("set_replica_node", {
     description: "Pins a replica to a specific Kubernetes node.",
     parameters: z.object({
       replica: z.string().min(1),
@@ -62,14 +62,14 @@ export function createSetReplicaNodeTool({ temporalClient }: ReplicaNodeToolServ
       return {
         invocationId,
         status: "started",
-        response: `Started command reside_set_replica_node for replica ${replicaName}.`,
+        response: `Started command set_replica_node for replica ${replicaName}.`,
       }
     },
   })
 }
 
 export function createResetReplicaNodeTool({ temporalClient }: ReplicaNodeToolServices) {
-  return defineTool("reside_reset_replica_node", {
+  return defineTool("reset_replica_node", {
     description: "Removes node pinning for a replica.",
     parameters: z.object({
       replica: z.string().min(1),
@@ -84,7 +84,7 @@ export function createResetReplicaNodeTool({ temporalClient }: ReplicaNodeToolSe
       return {
         invocationId,
         status: "started",
-        response: `Started command reside_reset_replica_node for replica ${replicaName}.`,
+        response: `Started command reset_replica_node for replica ${replicaName}.`,
       }
     },
   })

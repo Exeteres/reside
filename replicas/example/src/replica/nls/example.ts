@@ -7,7 +7,7 @@ type ExampleToolServices = Pick<ExampleServices, "prisma" | "storage">
 
 export function createExampleTools({ prisma, storage }: ExampleToolServices) {
   return [
-    defineTool("reside_get_example_status", {
+    defineTool("get_example_status", {
       description: "Gets non-sensitive example replica status and storage configuration.",
       parameters: z.object({}),
       handler: async () => {

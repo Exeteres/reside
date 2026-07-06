@@ -12,7 +12,7 @@ describe("buildJudgementPrompt", () => {
     expect(prompt).toContain("Decision instructions:")
     expect(prompt).toContain("1) First, evaluate static escalation rules from the system prompt.")
     expect(prompt).toContain(
-      "2) Then find relevant allow rules in memory by calling reside_find_notes with separate important words from the request.",
+      "2) Then find relevant allow rules in memory by calling find_notes with separate important words from the request.",
     )
     expect(prompt).toContain("Decision token: 42:token")
     expect(prompt).toContain("Title:\nGrant replica:alpha read access")
