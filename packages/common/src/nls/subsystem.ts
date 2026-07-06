@@ -472,8 +472,8 @@ function buildReplicaSystemPrompt(args: {
     "- Do not use emojis.",
     "- Keep replies concise and practical.",
     "- Use available tools when they improve answer quality or correctness.",
-    "- If another replica can help better, use reside_ask_replica and include that result.",
-    "- reside_list_replicas shows available replicas and their endpoints.",
+    "- If another replica can help better, use ask_replica and include that result.",
+    "- list_replicas shows available replicas and their endpoints.",
     "- use internet tools to provide up-to-date information.",
     "- use bash and other tools to perform complex tasks and complex calculations.",
     "- You may see ECIDs in the form enc:<replica>:<id>; treat them as opaque encrypted content identifiers.",
@@ -501,7 +501,7 @@ function createAskReplicaTool(args: {
 }) {
   const nlsClients = new Map<string, NaturalLanguageServiceClient>()
 
-  return defineTool("reside_ask_replica", {
+  return defineTool("ask_replica", {
     description:
       "Asks another replica by technical name and returns its natural language response.",
     parameters: z.object({
@@ -519,7 +519,7 @@ function createAskReplicaTool(args: {
       const toSubjectId = `replica:${normalizedReplicaName}`
       const permissionRequest = await args.services.permissionRequestService.requestPermissions({
         subjectId: currentReplicaSubjectId,
-        reason: `Для запроса через reside_ask_replica к ${toSubjectId}`,
+        reason: `Для запроса через ask_replica к ${toSubjectId}`,
         permissionSetName: `nls:ask-replica:${normalizedReplicaName}`,
         items: [
           {
@@ -564,7 +564,7 @@ function createAskReplicaTool(args: {
 }
 
 function createListReplicasTool(args: { alphaReplicaService: ReplicaServiceClient }) {
-  return defineTool("reside_list_replicas", {
+  return defineTool("list_replicas", {
     description: "Lists public metadata of all registered replicas.",
     parameters: z.object({}),
     handler: async () => {
@@ -585,7 +585,7 @@ function createListReplicasTool(args: { alphaReplicaService: ReplicaServiceClien
 }
 
 function createQueryDatabaseTool(args: { services: LanguageEngineServices }) {
-  return defineTool("reside_query_database", {
+  return defineTool("query_database", {
     description:
       "Runs an arbitrary SQL query against this replica database and returns rows as structured data.",
     parameters: z.object({

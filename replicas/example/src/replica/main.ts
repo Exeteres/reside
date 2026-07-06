@@ -38,7 +38,7 @@ await setupLanguageSubsystem({
   description: strings.bootstrap.registration.description,
   instructions:
     "Help users understand the example replica template. " +
-    "Use reside_get_example_status for status requests. " +
+    "Use get_example_status for status requests. " +
     "Do not expose decrypted note content or internal storage object names.",
   tools: createExampleTools(services),
 })

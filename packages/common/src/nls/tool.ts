@@ -48,8 +48,6 @@ export type SessionConfig = {
   tools?: Tool[]
 }
 
-const NLS_TOOL_NAME_PREFIX = "reside_"
-
 export function defineTool<T = unknown>(
   name: string,
   config: {
@@ -60,9 +58,5 @@ export function defineTool<T = unknown>(
     skipPermission?: boolean
   },
 ): Tool<T> {
-  if (!name.startsWith(NLS_TOOL_NAME_PREFIX)) {
-    throw new Error(`NLS tool name "${name}" must start with "${NLS_TOOL_NAME_PREFIX}"`)
-  }
-
   return { name, ...config }
 }

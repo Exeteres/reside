@@ -16,8 +16,8 @@ description: Use when operating as the Engineer factory background implementatio
 - The agent may inspect the repository and implement code-changing tasks.
 - The agent may use git commands needed during implementation.
 - The agent may run Prisma, Bun, repository checks, generators, and project-specific tools directly.
-- The agent may use `reside_commit_changes`, `reside_deliver_changes`, and `reside_deploy_replica` for code-changing tasks with actual repository changes.
-- The agent may call `reside_create_dev_database` when Prisma or database-backed checks need temporary development databases.
+- The agent may use `commit_changes`, `deliver_changes`, and `deploy_replica` for code-changing tasks with actual repository changes.
+- The agent may call `create_dev_database` when Prisma or database-backed checks need temporary development databases.
 
 ## Required First Steps
 
@@ -39,7 +39,7 @@ description: Use when operating as the Engineer factory background implementatio
 
 ## Code-Changing Tasks
 
-- Only call `reside_commit_changes`, `reside_deliver_changes`, or `reside_deploy_replica` for code-changing tasks with actual repository changes.
+- Only call `commit_changes`, `deliver_changes`, or `deploy_replica` for code-changing tasks with actual repository changes.
 - If this session is running in the main git repository instead of a workspace, do not edit repository files; advise the user to create a new workspace for this repository and request the changes there.
 - Do not edit files outside the current session worktree or `/tmp`.
 - If the user requests changes outside the current session worktree or `/tmp`, advise them to create a new workspace for that target and request the changes there.
@@ -57,31 +57,31 @@ description: Use when operating as the Engineer factory background implementatio
 
 ## Prisma Databases
 
-- When Prisma migration generation needs a development database, call `reside_create_dev_database` twice.
+- When Prisma migration generation needs a development database, call `create_dev_database` twice.
 - Use the first returned `DATABASE_URL` as `DATABASE_URL` and the second returned `DATABASE_URL` as `SHADOW_DATABASE_URL`.
 - Run direct commands such as `DATABASE_URL=... SHADOW_DATABASE_URL=... bun prisma migrate dev --name <name>`.
-- When Prisma checks or database-backed tests need a database but do not run `migrate dev`, call `reside_create_dev_database` once and use the returned `DATABASE_URL`.
+- When Prisma checks or database-backed tests need a database but do not run `migrate dev`, call `create_dev_database` once and use the returned `DATABASE_URL`.
 - Temporary development databases are removed after 24 hours.
-- If a resumed session finds that a created database disappeared, call `reside_create_dev_database` again for each missing `DATABASE_URL` or `SHADOW_DATABASE_URL` and continue with the new URLs.
+- If a resumed session finds that a created database disappeared, call `create_dev_database` again for each missing `DATABASE_URL` or `SHADOW_DATABASE_URL` and continue with the new URLs.
 
 ## Commit And Delivery
 
-- Prefer `reside_commit_changes` for normal commits because it stages paths, creates a conventional commit without a body, and validates branch commit rules.
+- Prefer `commit_changes` for normal commits because it stages paths, creates a conventional commit without a body, and validates branch commit rules.
 - Raw git commit commands remain available for recovery and advanced history fixes.
-- Before calling `reside_deliver_changes`, ensure git HEAD is on the initial branch.
+- Before calling `deliver_changes`, ensure git HEAD is on the initial branch.
 - When multiple invalid commits exist, rewrite current-branch history as needed before creating PR.
-- Use `reside_deliver_changes` to validate commits, push the branch, create or update PR, wait for `ci:check`, merge with rebase, and delete the source branch.
-- Do not manually push or force-push the branch before `reside_deliver_changes` unless recovering from an explicit `reside_deliver_changes` failure.
-- If `reside_deliver_changes` fails with commit validation, rewrite invalid commit messages first, at minimum amend the latest commit, then retry `reside_deliver_changes`.
+- Use `deliver_changes` to validate commits, push the branch, create or update PR, wait for `ci:check`, merge with rebase, and delete the source branch.
+- Do not manually push or force-push the branch before `deliver_changes` unless recovering from an explicit `deliver_changes` failure.
+- If `deliver_changes` fails with commit validation, rewrite invalid commit messages first, at minimum amend the latest commit, then retry `deliver_changes`.
 
 ## Deployment
 
-- Before calling `reside_deploy_replica`, commit your changes.
+- Before calling `deploy_replica`, commit your changes.
 - If you are confident deploy is safe without PR, you may deploy directly.
-- When repository review is needed, call `reside_deliver_changes` with your own descriptive title before deploy.
-- When a code-changing task modifies a replica and bumps its `reside.manifest.json` version, the task is not complete until you call `reside_deploy_replica` for that replica after the PR is merged, unless the user explicitly says not to deploy.
-- When PR is used, `reside_deploy_replica` should be called only after merged PR exists on this branch.
-- If `reside_deploy_replica` fails, report the exact failure reason and continue by fixing the root cause.
+- When repository review is needed, call `deliver_changes` with your own descriptive title before deploy.
+- When a code-changing task modifies a replica and bumps its `reside.manifest.json` version, the task is not complete until you call `deploy_replica` for that replica after the PR is merged, unless the user explicitly says not to deploy.
+- When PR is used, `deploy_replica` should be called only after merged PR exists on this branch.
+- If `deploy_replica` fails, report the exact failure reason and continue by fixing the root cause.
 
 ## Pull Requests
 

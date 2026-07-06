@@ -27,7 +27,7 @@ export function createDevDatabaseTool({
   provisionService: ProvisionServiceClient
   infraOperationService: OperationServiceClient
 }) {
-  return defineTool("reside_create_dev_database", {
+  return defineTool("create_dev_database", {
     description:
       "Creates a temporary PostgreSQL development database that is automatically deleted after 24 hours",
     parameters: z.object({}),
@@ -54,7 +54,7 @@ export function createDevDatabaseTool({
       return [
         "Temporary PostgreSQL database created.",
         "It will be deleted automatically after 24 hours.",
-        "If this session is resumed after a long time and the database no longer exists, call reside_create_dev_database again.",
+        "If this session is resumed after a long time and the database no longer exists, call create_dev_database again.",
         `host=${credentials.host}`,
         `port=${credentials.port}`,
         `database=${credentials.database}`,
@@ -85,7 +85,7 @@ export function createDeployReplicaTool({
   repo: string
   issueNumber?: number
 }) {
-  return defineTool("reside_deploy_replica", {
+  return defineTool("deploy_replica", {
     description:
       "Builds and pushes replica image via workflow dispatch from main, waits for completion, then loads replica through alpha",
     parameters: z.object({
@@ -206,7 +206,7 @@ export function createDeliverChangesTool({
   issueNumber?: number
   refreshRepository?: () => Promise<void>
 }) {
-  return defineTool("reside_deliver_changes", {
+  return defineTool("deliver_changes", {
     description:
       "Validates commits, pushes current branch, creates or updates pull request, waits for ci:check, merges it with rebase, and deletes source branch",
     parameters: z.object({
@@ -322,7 +322,7 @@ export function createCommitChangesTool({
 }: {
   refreshRepository?: () => Promise<void>
 }) {
-  return defineTool("reside_commit_changes", {
+  return defineTool("commit_changes", {
     description:
       "Stages repository paths and creates a validated conventional commit without a commit body",
     parameters: z.object({

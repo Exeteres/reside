@@ -22,8 +22,8 @@ description: Use when operating in the Engineer factory web OpenCode environment
 - The agent may inspect the repository and implement code-changing tasks.
 - The agent may use git commands needed during implementation.
 - The agent may run Prisma, Bun, repository checks, generators, and project-specific tools directly.
-- The agent may use `reside_commit_changes`, `reside_deliver_changes`, and `reside_deploy_replica` for code-changing tasks with actual repository changes.
-- The agent may call `reside_create_dev_database` when Prisma or database-backed checks need temporary development databases.
+- The agent may use `commit_changes`, `deliver_changes`, and `deploy_replica` for code-changing tasks with actual repository changes.
+- The agent may call `create_dev_database` when Prisma or database-backed checks need temporary development databases.
 
 ## Working Directory For Engineer Tools
 
@@ -42,8 +42,8 @@ description: Use when operating in the Engineer factory web OpenCode environment
 
 ## Commit And Delivery
 
-- Use `reside_commit_changes` when the user asks you to commit or when a completed code-changing task should be committed.
-- Use `reside_deliver_changes` only after checking that delivery is appropriate for the user's request.
+- Use `commit_changes` when the user asks you to commit or when a completed code-changing task should be committed.
+- Use `deliver_changes` only after checking that delivery is appropriate for the user's request.
 - If the user asks to both deliver and deploy, always deliver the committed changes first, then deploy from the delivered main branch state.
 - Do not deploy unless the user explicitly requests deployment or the loaded task-scoped rules require it.
 

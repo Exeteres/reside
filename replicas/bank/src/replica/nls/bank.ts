@@ -7,7 +7,7 @@ type BankToolServices = Pick<BankServices, "prisma">
 
 export function createBankTools({ prisma }: BankToolServices) {
   return [
-    defineTool("reside_bank_get_balance", {
+    defineTool("bank_get_balance", {
       description:
         "Gets the ∅ balance for the current interaction subject. Use only the current subject ID from the interaction system prompt.",
       parameters: z.object({
@@ -23,7 +23,7 @@ export function createBankTools({ prisma }: BankToolServices) {
         }
       },
     }),
-    defineTool("reside_bank_transfer", {
+    defineTool("bank_transfer", {
       description:
         "Transfers ∅ from the current interaction subject to another subject. Use the tool invocation ID as the idempotency key.",
       parameters: z.object({
@@ -46,7 +46,7 @@ export function createBankTools({ prisma }: BankToolServices) {
         }
       },
     }),
-    defineTool("reside_bank_list_transactions", {
+    defineTool("bank_list_transactions", {
       description:
         "Lists ∅ transactions for the current interaction subject with cursor pagination. Amounts are returned as ECIDs and must not be rewritten as plaintext by the model.",
       parameters: z.object({

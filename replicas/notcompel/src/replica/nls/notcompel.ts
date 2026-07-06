@@ -11,7 +11,7 @@ export function createNotcompelTools(services: NotcompelToolServices) {
   const notcompelService = createNotcompelService(services)
 
   return [
-    defineTool("reside_send_notcompel_image", {
+    defineTool("send_notcompel_image", {
       description: "Fetches the current image from notcompel.ru and sends it to the system chat.",
       parameters: z.object({}),
       handler: async () => {

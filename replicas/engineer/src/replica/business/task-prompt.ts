@@ -34,7 +34,7 @@ export function createPlanningPrompt(
     "If some functionality is not requested, do not include it in requirements.",
     "If user asks to just deploy replica, plan that intent without any implementation details (implementation agent knows how to deploy without instructions).",
     "If user asks to create/update replica, assume that replica must be deployed as well and include deploy intent in the plan unless user explicitly states that no deploy is needed.",
-    "Use reside_submit_issue_draft exactly once.",
+    "Use submit_issue_draft exactly once.",
     "End assistant response with a concise russian summary in one paragraph (prefer 3-5 short sentences).",
     "Focus the summary on new, useful information for the user: what changed in substance, what decisions matter now, and what follow-up is relevant.",
     "Avoid process checklist narration and avoid describing rule compliance unless it affects user choices.",
