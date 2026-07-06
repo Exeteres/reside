@@ -100,6 +100,7 @@ async function main(): Promise<void> {
   manifest.version = nextVersion
 
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8")
+  await formatManifest(manifestPath)
 
   const today = formatLocalDate(new Date())
   const newSection = `## ${nextVersion} - ${today}\n\n${changelogEntry}\n`
@@ -124,6 +125,23 @@ async function main(): Promise<void> {
   console.log(`Updated ${path.relative(rootDir, manifestPath)} to version ${nextVersion}`)
   console.log(`Updated ${path.relative(rootDir, changelogPath)}`)
   console.log("Note: load reside-changes for replica versioning and changelog policy.")
+}
+
+async function formatManifest(manifestPath: string): Promise<void> {
+  const process = Bun.spawn(["bunx", "biome", "format", "--write", manifestPath], {
+    stdout: "pipe",
+    stderr: "pipe",
+  })
+
+  const [stdout, stderr, exitCode] = await Promise.all([
+    process.stdout.text(),
+    process.stderr.text(),
+    process.exited,
+  ])
+
+  if (exitCode !== 0) {
+    fail(["Error: failed to format reside.manifest.json with Biome", stdout, stderr].join("\n"))
+  }
 }
 
 await main()

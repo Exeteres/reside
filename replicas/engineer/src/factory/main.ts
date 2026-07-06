@@ -575,7 +575,15 @@ async function runRclone(
   ignoreMissing: boolean,
 ): Promise<void> {
   try {
-    await runCommand(["rclone", "--config", configPath, "--links", ...args])
+    await runCommand([
+      "rclone",
+      "--config",
+      configPath,
+      "--links",
+      "--exclude",
+      "**/node_modules/**",
+      ...args,
+    ])
   } catch (error) {
     if (ignoreMissing) {
       logger.warn(

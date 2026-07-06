@@ -14,6 +14,7 @@ description: Use when operating in the Engineer factory web OpenCode environment
 
 - Run `git rebase main` from the session worktree before dependency installation, and resolve any conflicts if the rebase stops.
 - Run `bun install --frozen-lockfile` before serving the user's request.
+- On new workspaces, prefer running `git rebase main && bun install --frozen-lockfile` as the preparation command.
 - Read `README.md`, load `reside-core`, and load any task-scoped skills before editing.
 
 ## Agent Capabilities
