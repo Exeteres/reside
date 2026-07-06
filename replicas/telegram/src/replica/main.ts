@@ -1,7 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
 import { CoreV1Api } from "@kubernetes/client-node"
-import { ApprovalService } from "@reside/api/common/approval.v1"
 import { OperationService, OperationSubscriptionService } from "@reside/api/common/operation.v1"
 import { PingService } from "@reside/api/common/ping.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
@@ -34,7 +33,6 @@ import { startActivityRewardWorkflow } from "./business/activity-reward"
 import { createBotRuntime, createWebhookUrl } from "./business/bot-runtime"
 import { loadTelegramConfigState } from "./business/config"
 import { loadTelegramSecretState } from "./business/secret"
-import { createApprovalService } from "./services/approval"
 import { createAvatarService } from "./services/avatar"
 import { createDefinitionService } from "./services/definition"
 import { createNotificationService } from "./services/notification"
@@ -54,7 +52,6 @@ await server.register(fastifyConnectPlugin, {
     router.service(DefinitionService, createDefinitionService(services))
     router.service(NotificationService, createNotificationService({ ...services, crypto }))
     router.service(TopicService, createTopicService({ ...services, crypto }))
-    router.service(ApprovalService, createApprovalService(services))
     router.service(AvatarService, createAvatarService({ ...services, crypto }))
     router.service(SubjectService, createSubjectService({ ...services, crypto }))
     router.service(ReplicaReaperHandler, createReaperService({ ...services, crypto }))

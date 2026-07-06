@@ -18,11 +18,6 @@ export { Prisma }
 export * as $Enums from './enums.ts'
 export * from './enums.ts';
 /**
- * Model ApprovalRequest
- * Represents an approval request handled through interaction notifications.
- */
-export type ApprovalRequest = Prisma.ApprovalRequestModel
-/**
  * Model Avatar
  * Represents a managed Telegram bot avatar assigned to a replica subject.
  */

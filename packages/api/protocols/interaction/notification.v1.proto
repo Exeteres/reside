@@ -306,6 +306,10 @@ message NotificationResponse {
 
   // The notification read model at the moment the response operation was resolved.
   Notification notification = 3;
+
+  // The canonical subject identifier of the user who responded.
+  // This value identifies the actor in the interaction implementation's subject namespace and must not expose external platform IDs.
+  google.protobuf.StringValue subject_id = 5;
 }
 
 // The notification service, which allows sending notifications to users and receiving their responses.

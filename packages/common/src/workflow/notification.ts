@@ -34,6 +34,12 @@ type NotificationResponseResult = NotificationResponseJson & {
   contextToken?: string
 }
 
+type NotificationResponseMetadataPayload = {
+  contextToken?: string
+  subjectId?: string
+  notification?: NotificationJson
+}
+
 export type NotificationTaskInput = {
   id: string
   title: string
@@ -111,37 +117,29 @@ type NotificationResponsePayload<
 
 type NotificationTaskUpdatePayload = {
   type: "task_update"
-  contextToken?: string
-  notification?: NotificationJson
-}
+} & NotificationResponseMetadataPayload
 
 type NotificationUserResponsePayload<
   TActions extends NotificationActionsInput,
   TRequiresTextResponse extends boolean,
 > = [CallbackActionNames<TActions>] extends [never]
   ? TRequiresTextResponse extends true
-    ? { type: "text"; text: string; contextToken?: string; notification?: NotificationJson }
+    ? { type: "text"; text: string } & NotificationResponseMetadataPayload
     : Record<never, never>
   : TRequiresTextResponse extends true
     ?
-        | {
+        | ({
             type: "action"
             actionName: CallbackActionNames<TActions>
-            contextToken?: string
-            notification?: NotificationJson
-          }
-        | {
+          } & NotificationResponseMetadataPayload)
+        | ({
             type: "text"
             text: string
-            contextToken?: string
-            notification?: NotificationJson
-          }
+          } & NotificationResponseMetadataPayload)
     : {
         type: "action"
         actionName: CallbackActionNames<TActions>
-        contextToken?: string
-        notification?: NotificationJson
-      }
+      } & NotificationResponseMetadataPayload
 
 type NotificationCancelledPayload = {
   type: "cancelled"

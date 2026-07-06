@@ -106,6 +106,13 @@ export type FailPermissionRequestSetWorkflowIfPendingInput = {
   resolution: string
 }
 
+export type CanUseApprovalNotificationsOutput = {
+  /**
+   * Whether the interaction notification service is available to this worker.
+   */
+  available: boolean
+}
+
 export type AccessActivities = {
   /**
    * Loads approval context for a permission request operation.
@@ -147,4 +154,9 @@ export type AccessActivities = {
   failPermissionRequestSetWorkflowIfPending: (
     input: FailPermissionRequestSetWorkflowIfPendingInput,
   ) => Promise<void>
+
+  /**
+   * Checks whether approval notifications can be sent.
+   */
+  canUseApprovalNotifications: () => Promise<CanUseApprovalNotificationsOutput>
 }

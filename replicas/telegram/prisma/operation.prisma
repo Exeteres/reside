@@ -15,9 +15,6 @@ enum OperationType {
   /// A notification is waiting for a user response.
   NOTIFICATION_RESPONSE
 
-  /// An approval request is waiting for resolution.
-  APPROVAL_REQUEST
-
   /// An avatar provisioning request is waiting for managed bot setup.
   AVATAR_PROVISION
 
@@ -65,9 +62,6 @@ model Operation {
 
   /// The notification response associated with this operation.
   notificationResponse NotificationResponse?
-
-  /// The approval request associated with this operation.
-  approvalRequest ApprovalRequest?
 
   /// The avatar provisioning request associated with this operation.
   avatarProvisionRequest AvatarProvisionRequest?

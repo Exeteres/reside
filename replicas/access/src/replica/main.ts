@@ -30,6 +30,13 @@ import { createPermissionRequestService } from "./services/request"
 import { createSubjectService } from "./services/subject"
 
 const services = await createServices()
+const interactionActivities =
+  services.notificationService !== undefined && services.interactionOperationService !== undefined
+    ? createInteractionActivities(
+        services.notificationService,
+        services.interactionOperationService,
+      )
+    : {}
 
 const server = await createServer(services)
 
@@ -71,10 +78,7 @@ await startTemporalWorker({
   activities: {
     ...services.operationService.activities,
     ...createAccessActivities(services),
-    ...createInteractionActivities(
-      services.notificationService,
-      services.interactionOperationService,
-    ),
+    ...interactionActivities,
   },
 })
 

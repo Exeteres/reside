@@ -629,6 +629,7 @@ export async function createTelegramBot(args: {
       superAdminUserId: args.superAdminUserId,
       chatId,
       userId,
+      subjectUserId,
       messageThreadId: message.message_thread_id,
       responseMessageId: message.message_id,
       textResponse,
@@ -661,6 +662,7 @@ export async function createTelegramBot(args: {
         operationService: args.operationService,
         chatId,
         userId,
+        subjectUserId,
         repliedMessageId,
         responseMessageId: message.message_id,
         textResponse,
@@ -791,7 +793,8 @@ export async function createTelegramBot(args: {
 
     const selectedOptionName = resolveCallbackOptionTitle(context, actionName)
 
-    await ensureTelegramEntities(args.crypto, args.prisma, context)
+    const entities = await ensureTelegramEntities(args.crypto, args.prisma, context)
+    const subjectUserId = entities.user?.id
 
     let result: CallbackCompletionResult
     try {
@@ -801,6 +804,7 @@ export async function createTelegramBot(args: {
         operationService: args.operationService,
         chatId,
         userId,
+        subjectUserId,
         messageId,
         actionName,
         isSuperAdminUser: candidateUserId =>
@@ -1600,6 +1604,7 @@ async function handleNotificationTaskPollAnswer(
     args.prisma,
     poll,
     selectedOptionIds,
+    subjectId,
   )
 
   await deletePlanningPollMessage(args.crypto, context, poll.messageEcid)
@@ -1687,6 +1692,7 @@ async function handleNotificationTaskTextSelection(
     args.prisma,
     prompt,
     selectedOptionIds,
+    subjectId,
   )
 
   await deletePlanningPollMessage(args.crypto, context, prompt.messageEcid)
@@ -1789,6 +1795,7 @@ async function applyNotificationTaskPlanningSelection(
   prisma: PrismaClient,
   prompt: PlanningPromptRecord,
   selectedOptionIds: Set<number>,
+  subjectId: string | undefined,
 ): Promise<number | undefined> {
   const operationIdToComplete =
     prompt.notification.operationId !== null &&
@@ -1819,6 +1826,7 @@ async function applyNotificationTaskPlanningSelection(
           operationId: operationIdToComplete,
           type: "TASK_UPDATE",
           actionName: null,
+          subjectId: subjectId ?? null,
           textResponseEcid: null,
         },
       })
@@ -2195,6 +2203,7 @@ async function completeTopicMessageResponse(args: {
   superAdminUserId: string | undefined
   chatId: number
   userId: number
+  subjectUserId: number | undefined
   messageThreadId: number | undefined
   responseMessageId: number
   textResponse: string
@@ -2213,6 +2222,7 @@ async function completeTopicMessageResponse(args: {
       operationService: args.operationService,
       chatId: args.chatId,
       userId: args.userId,
+      subjectUserId: args.subjectUserId,
       messageThreadId: args.messageThreadId,
       responseMessageId: args.responseMessageId,
       textResponse: args.textResponse,

@@ -8,7 +8,6 @@
  *
  * 🟢 You can import this file directly.
  */
-export type * from './models/ApprovalRequest.ts'
 export type * from './models/Avatar.ts'
 export type * from './models/AvatarProvisionRequest.ts'
 export type * from './models/UnauthorizedAvatar.ts'

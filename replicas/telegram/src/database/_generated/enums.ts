@@ -9,15 +9,6 @@
 * 🟢 You can import this file directly.
 */
 
-export const ApprovalResult = {
-  ESCALATED: 'ESCALATED',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED'
-} as const
-
-export type ApprovalResult = (typeof ApprovalResult)[keyof typeof ApprovalResult]
-
-
 export const NaturalLanguageInteractionMessageSender = {
   USER: 'USER',
   AVATAR: 'AVATAR'
@@ -69,7 +60,6 @@ export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationSta
 
 export const OperationType = {
   NOTIFICATION_RESPONSE: 'NOTIFICATION_RESPONSE',
-  APPROVAL_REQUEST: 'APPROVAL_REQUEST',
   AVATAR_PROVISION: 'AVATAR_PROVISION',
   DELETE_AVATAR: 'DELETE_AVATAR'
 } as const
