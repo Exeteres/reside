@@ -7,6 +7,7 @@ import {
   runPrismaMigrations,
 } from "@reside/common"
 import { accessReplica, WellKnownPermissions } from "@reside/registry"
+import { AccessNotificationChannels } from "../definitions"
 import { strings } from "../locale"
 import { createServices } from "../shared"
 
@@ -133,6 +134,11 @@ await replicaRealmPromise
 await ensureStaticBindings([
   // Static permissions required by Access Replica bootstrap.
   { permission: permissions.telegramAvatarOwn, subjectId: ACCESS_SUBJECT_ID, scope: "access" },
+  {
+    permission: permissions.telegramNotificationChannelManage,
+    subjectId: ACCESS_SUBJECT_ID,
+    scope: AccessNotificationChannels.PERMISSION_REQUESTS,
+  },
   { permission: permissions.reaperHandlerRegister, subjectId: ACCESS_SUBJECT_ID, scope: "access" },
 
   // Static permissions required by Infra Replica bootstrap.
@@ -150,11 +156,6 @@ await ensureStaticBindings([
 
   // Static permissions required by Telegram Replica bootstrap.
   { permission: permissions.accessRealmManage, subjectId: TELEGRAM_SUBJECT_ID, scope: "telegram" },
-  {
-    permission: permissions.accessApproverManage,
-    subjectId: TELEGRAM_SUBJECT_ID,
-    scope: "telegram:50:replica:telegram",
-  },
   { permission: permissions.accessSubjectRead, subjectId: TELEGRAM_SUBJECT_ID, scope: "replica" },
   {
     permission: permissions.accessPermissionManage,
@@ -238,12 +239,6 @@ await ensureStaticBindings([
   { permission: permissions.reaperHandlerRegister, subjectId: REAPER_SUBJECT_ID, scope: "reaper" },
 ])
 
-await ensureReplicaAvatar({
-  avatarService: services.avatarService,
-  operationService: services.interactionOperationService,
-  avatarTitle: strings.bootstrap.registration.title,
-})
-
 await backfillApproverOwners()
 
 await defineCommonResources({
@@ -255,6 +250,9 @@ await defineCommonResources({
     },
   ],
 })
+
+await defineInteractionResourcesIfAvailable()
+await ensureReplicaAvatarIfAvailable()
 
 await bootstrapService({ longRunning: true })
 
@@ -297,6 +295,34 @@ async function backfillApproverOwners(): Promise<void> {
       })
     }),
   )
+}
+
+async function defineInteractionResourcesIfAvailable(): Promise<void> {
+  if (services.interactionDefinitionService === undefined) {
+    return
+  }
+
+  await services.interactionDefinitionService.putChannels({
+    channels: [
+      {
+        name: AccessNotificationChannels.PERMISSION_REQUESTS,
+        title: strings.notifications.channels.permissionRequests.title,
+        description: strings.notifications.channels.permissionRequests.description,
+      },
+    ],
+  })
+}
+
+async function ensureReplicaAvatarIfAvailable(): Promise<void> {
+  if (services.avatarService === undefined || services.interactionOperationService === undefined) {
+    return
+  }
+
+  await ensureReplicaAvatar({
+    avatarService: services.avatarService,
+    operationService: services.interactionOperationService,
+    avatarTitle: strings.bootstrap.registration.title,
+  })
 }
 
 async function ensurePermissions<TDefinitions extends PermissionDefinitions>(

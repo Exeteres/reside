@@ -5,8 +5,8 @@ import type { BankServiceClient } from "@reside/api/bank/bank.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type { GatewayServiceClient } from "@reside/api/infra/gateway.v1"
 import type { ResideCrypto } from "@reside/common/encryption"
-import type { ApprovalResult, Operation, PrismaClient } from "../../database"
-import type { ApprovalActionName, TelegramActivities } from "../../definitions"
+import type { Operation, PrismaClient } from "../../database"
+import type { TelegramActivities } from "../../definitions"
 import { createHash } from "node:crypto"
 import { fromJson } from "@bufbuild/protobuf"
 import { CoreV1Api } from "@kubernetes/client-node"
@@ -765,39 +765,6 @@ export function createTelegramActivities({
         },
       })
     },
-
-    async completeApprovalOperation(input) {
-      const mappedResult = mapActionToResult(input.actionName)
-
-      await prisma.$transaction(async tx => {
-        await tx.approvalRequest.update({
-          where: {
-            operationId: input.operationId,
-          },
-          data: {
-            result: mappedResult.result,
-            resolution: mappedResult.resolution,
-            respondedAt: new Date(),
-          },
-        })
-      })
-
-      await operationService.setCompleted(input.operationId)
-    },
-
-    async failApprovalOperation(input) {
-      await prisma.operation.update({
-        where: {
-          id: input.operationId,
-        },
-        data: {
-          status: "FAILED",
-          failureReason: input.reason,
-          failureMessage: input.message,
-          resolvedAt: new Date(),
-        },
-      })
-    },
   }
 }
 
@@ -972,29 +939,6 @@ function createManagedBotLink(
 ): string {
   const suggestedBotUsername = `${expectedPrefix}_bot`
   return `https://t.me/newbot/${managerBotUsername}/${suggestedBotUsername}?name=${encodeURIComponent(suggestedBotName)}`
-}
-
-function mapActionToResult(actionName: ApprovalActionName): {
-  result: ApprovalResult
-  resolution: string
-} {
-  switch (actionName) {
-    case "approve":
-      return {
-        result: "APPROVED",
-        resolution: strings.worker.activities.approvalResolutionApproved,
-      }
-    case "reject":
-      return {
-        result: "REJECTED",
-        resolution: strings.worker.activities.approvalResolutionRejected,
-      }
-    case "escalate":
-      return {
-        result: "ESCALATED",
-        resolution: strings.worker.activities.approvalResolutionEscalated,
-      }
-  }
 }
 
 function createWebhookSecret(token: string): string {

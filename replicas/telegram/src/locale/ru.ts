@@ -62,10 +62,6 @@ export const ru = {
     nlsImpersonationReason:
       "Телеграмной Реплике нужно вызывать NLS от имени пользователей Telegram-реалма и очищать их контекст.",
     channels: {
-      approvals: {
-        title: "Подтверждения",
-        description: "Уведомления для подтверждения запросов доступа.",
-      },
       avatarProvisioning: {
         title: "Создание аватаров реплик",
         description: "Уведомления с запросами на создание управляемых ботов-аватаров.",
@@ -74,10 +70,6 @@ export const ru = {
         title: "Проблемы доставки аватаров",
         description: "Уведомления о проблемах доставки сообщений ботами-аватарами.",
       },
-    },
-    approver: {
-      title: "Telegram-подтверждение",
-      description: "Автоматическое подтверждение запросов для Telegram-реалма",
     },
     gateway: {
       title: "Шлюз Телеграмной Реплики",
@@ -118,12 +110,6 @@ export const ru = {
   },
   worker: {
     workflows: {
-      approvalCancellationMessage: "Запрос был отменен.",
-      approvalActions: {
-        approve: "Подтвердить",
-        reject: "Отклонить",
-        escalate: "Эскалировать",
-      },
       avatarProvisioning: {
         title: (replicaTitle: string) => `Создание аватара для ${replicaTitle}`,
         createdTitle: (replicaTitle: string) => `Аватар для ${replicaTitle} создан`,
@@ -135,11 +121,6 @@ export const ru = {
       activityReward: {
         transactionTitle: "Награда за активность",
       },
-    },
-    activities: {
-      approvalResolutionApproved: "Запрос подтвержден в Telegram",
-      approvalResolutionRejected: "Запрос отклонен в Telegram",
-      approvalResolutionEscalated: "Запрос эскалирован в Telegram",
     },
     authorization: {
       autoRequestReason: (commandName: string) =>

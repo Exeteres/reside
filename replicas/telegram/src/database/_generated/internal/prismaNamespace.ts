@@ -384,7 +384,6 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
-  ApprovalRequest: 'ApprovalRequest',
   Avatar: 'Avatar',
   AvatarProvisionRequest: 'AvatarProvisionRequest',
   UnauthorizedAvatar: 'UnauthorizedAvatar',
@@ -420,84 +419,10 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "approvalRequest" | "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "notificationChannelBinding" | "chat" | "command" | "encryptedContent" | "memoryNote" | "naturalLanguageInteraction" | "naturalLanguageInteractionMessage" | "notificationResponse" | "notificationTopic" | "notificationTaskGroup" | "notificationTask" | "notificationTaskPlanningPoll" | "notificationTaskPlanningPollOption" | "notification" | "operation" | "user"
+    modelProps: "avatar" | "avatarProvisionRequest" | "unauthorizedAvatar" | "notificationChannel" | "notificationChannelBinding" | "chat" | "command" | "encryptedContent" | "memoryNote" | "naturalLanguageInteraction" | "naturalLanguageInteractionMessage" | "notificationResponse" | "notificationTopic" | "notificationTaskGroup" | "notificationTask" | "notificationTaskPlanningPoll" | "notificationTaskPlanningPollOption" | "notification" | "operation" | "user"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
-    ApprovalRequest: {
-      payload: Prisma.$ApprovalRequestPayload<ExtArgs>
-      fields: Prisma.ApprovalRequestFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.ApprovalRequestFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.ApprovalRequestFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>
-        }
-        findFirst: {
-          args: Prisma.ApprovalRequestFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.ApprovalRequestFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>
-        }
-        findMany: {
-          args: Prisma.ApprovalRequestFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>[]
-        }
-        create: {
-          args: Prisma.ApprovalRequestCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>
-        }
-        createMany: {
-          args: Prisma.ApprovalRequestCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.ApprovalRequestCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>[]
-        }
-        delete: {
-          args: Prisma.ApprovalRequestDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>
-        }
-        update: {
-          args: Prisma.ApprovalRequestUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>
-        }
-        deleteMany: {
-          args: Prisma.ApprovalRequestDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.ApprovalRequestUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.ApprovalRequestUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>[]
-        }
-        upsert: {
-          args: Prisma.ApprovalRequestUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalRequestPayload>
-        }
-        aggregate: {
-          args: Prisma.ApprovalRequestAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateApprovalRequest>
-        }
-        groupBy: {
-          args: Prisma.ApprovalRequestGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ApprovalRequestGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.ApprovalRequestCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ApprovalRequestCountAggregateOutputType> | number
-        }
-      }
-    }
     Avatar: {
       payload: Prisma.$AvatarPayload<ExtArgs>
       fields: Prisma.AvatarFieldRefs
@@ -2017,21 +1942,6 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const ApprovalRequestScalarFieldEnum = {
-  id: 'id',
-  operationId: 'operationId',
-  title: 'title',
-  content: 'content',
-  result: 'result',
-  resolution: 'resolution',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  respondedAt: 'respondedAt'
-} as const
-
-export type ApprovalRequestScalarFieldEnum = (typeof ApprovalRequestScalarFieldEnum)[keyof typeof ApprovalRequestScalarFieldEnum]
-
-
 export const AvatarScalarFieldEnum = {
   id: 'id',
   subjectId: 'subjectId',
@@ -2179,6 +2089,7 @@ export const NotificationResponseScalarFieldEnum = {
   operationId: 'operationId',
   type: 'type',
   actionName: 'actionName',
+  subjectId: 'subjectId',
   textResponseEcid: 'textResponseEcid',
   createdAt: 'createdAt'
 } as const
@@ -2386,20 +2297,6 @@ export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
  * Reference to a field of type 'String[]'
  */
 export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
-    
-
-
-/**
- * Reference to a field of type 'ApprovalResult'
- */
-export type EnumApprovalResultFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalResult'>
-    
-
-
-/**
- * Reference to a field of type 'ApprovalResult[]'
- */
-export type ListEnumApprovalResultFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalResult[]'>
     
 
 
@@ -2630,7 +2527,6 @@ export type PrismaClientOptions = ({
   comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
-  approvalRequest?: Prisma.ApprovalRequestOmit
   avatar?: Prisma.AvatarOmit
   avatarProvisionRequest?: Prisma.AvatarProvisionRequestOmit
   unauthorizedAvatar?: Prisma.UnauthorizedAvatarOmit

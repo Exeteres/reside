@@ -5,6 +5,7 @@ import { logger, rhid } from "@reside/common"
 import { isRecord } from "@reside/utils"
 import { createInteractionContextToken } from "../../shared"
 import { getNotificationCallbackActionNames } from "./notification-pagination"
+import { toTelegramSubjectId } from "./subject"
 
 export type CallbackCompletionReason =
   | "accepted"
@@ -31,6 +32,7 @@ export async function completeOperationFromTextReply(args: {
   operationService: GenericOperationService<Operation>
   chatId: number
   userId: number
+  subjectUserId?: number
   repliedMessageId: number
   responseMessageId: number
   textResponse: string
@@ -77,6 +79,7 @@ export async function completeOperationFromTextReply(args: {
         operationId: operation.id,
         type: "TEXT",
         actionName: null,
+        subjectId: toResponderSubjectId(args.subjectUserId),
         textResponseEcid: await args.crypto.encrypt(args.textResponse),
       },
     })
@@ -115,6 +118,7 @@ export async function completeOperationFromTopicMessage(args: {
   operationService: GenericOperationService<Operation>
   chatId: number
   userId: number
+  subjectUserId?: number
   messageThreadId: number | undefined
   responseMessageId: number
   textResponse: string
@@ -161,6 +165,7 @@ export async function completeOperationFromTopicMessage(args: {
         operationId: operation.id,
         type: "TEXT",
         actionName: null,
+        subjectId: toResponderSubjectId(args.subjectUserId),
         textResponseEcid: await args.crypto.encrypt(args.textResponse),
       },
     })
@@ -199,6 +204,7 @@ export async function completeOperationFromCallbackAction(args: {
   operationService: GenericOperationService<Operation>
   chatId: number
   userId: number
+  subjectUserId?: number
   messageId: number
   actionName: string
   canInteractWithChannel: (userId: number, channelName: string | null) => Promise<boolean>
@@ -338,6 +344,7 @@ export async function completeOperationFromCallbackAction(args: {
         operationId: actionableOperation.id,
         type: "ACTION",
         actionName: args.actionName,
+        subjectId: toResponderSubjectId(args.subjectUserId),
         textResponseEcid: null,
       },
     })
@@ -389,6 +396,10 @@ function isUniqueConstraintError(error: unknown): boolean {
   }
 
   return error.code === "P2002"
+}
+
+function toResponderSubjectId(subjectUserId: number | undefined): string | null {
+  return subjectUserId === undefined ? null : toTelegramSubjectId(subjectUserId)
 }
 
 async function hasExistingResponseForPendingOperation(

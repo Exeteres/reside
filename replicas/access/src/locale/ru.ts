@@ -68,48 +68,56 @@ export const ru = {
     reasonHeader: "Причина:",
   },
   notifications: {
-    approvedRequest: {
-      title: "Запрос разрешений одобрен",
-      requestSetLabel: "Номер запроса:",
+    channels: {
+      permissionRequests: {
+        title: "Запросы разрешений",
+        description: "Уведомления о подтверждении запросов разрешений.",
+      },
+    },
+    permissionRequests: {
+      statusLabel: "Статус:",
+      historyHeader: "История решений:",
       approverLabel: "Подтверждающий:",
+      decisionLabel: "Решение:",
       resolutionLabel: "Резолюция:",
       emptyResolution: "(без резолюции)",
-    },
-    nonTelegramApprover: {
-      requested: {
+      started: {
+        title: "Начато подтверждение разрешений",
+        status: "Процесс подтверждения начат.",
+      },
+      waitingApprover: {
         title: "Ожидается решение подтверждающего",
-        requestSetLabel: "Номер запроса:",
-        approverLabel: "Подтверждающий:",
-        statusLabel: "Статус:",
-        statusValue: "Ожидание решения",
+        status: (approverTitle: string) => `Ожидается решение ${approverTitle}`,
+      },
+      escalated: {
+        title: "Запрос разрешений эскалирован",
+        status: "Запрос эскалирован к следующему подтверждающему",
+      },
+      humanApproval: {
+        title: "Требуется подтверждение разрешений",
+        status: "Автоматические подтверждающие исчерпаны. Ожидается решение человека",
+        approverName: "human",
+        approverTitle: "Человек",
+        actions: {
+          approve: "Подтвердить",
+          reject: "Отклонить",
+        },
+        approvedResolution: "Запрос подтвержден человеком",
+        rejectedResolution: "Запрос отклонен человеком",
       },
       approved: {
-        title: "Подтверждающий одобрил запрос",
-        requestSetLabel: "Номер запроса:",
-        approverLabel: "Подтверждающий:",
-        statusLabel: "Статус:",
-        statusValue: "Одобрено",
-        resolutionLabel: "Резолюция:",
-        emptyResolution: "(без резолюции)",
+        title: "Запрос разрешений одобрен",
+        status: "Запрос одобрен",
       },
       rejected: {
-        title: "Подтверждающий отклонил запрос",
-        requestSetLabel: "Номер запроса:",
-        approverLabel: "Подтверждающий:",
-        statusLabel: "Статус:",
-        statusValue: "Отклонено",
-        resolutionLabel: "Резолюция:",
-        emptyResolution: "(без резолюции)",
+        title: "Запрос разрешений отклонен",
+        status: "Запрос отклонен",
       },
-    },
-  },
-  workflow: {
-    previousEscalation: {
-      header: "Произошла эскалация!",
-      approverTitleLabel: "Подтверждающий:",
-      resolutionLabel: "Резолюция:",
-      emptyResolution: "(без резолюции)",
-      fallbackApproverTitle: "(без названия)",
+      decisions: {
+        approved: "Одобрено",
+        rejected: "Отклонено",
+        escalated: "Эскалировано",
+      },
     },
   },
   e2e: {

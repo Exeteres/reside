@@ -3,7 +3,6 @@ import type { AccessActivities, ApprovePermissionRequestSetWorkflowInput } from 
 import {
   block,
   bold,
-  deleteNotification,
   inline,
   SPACE,
   sendNotification,
@@ -11,6 +10,7 @@ import {
   waitForOperationResult,
 } from "@reside/common/workflow"
 import { isCancellation, log, proxyActivities } from "@temporalio/workflow"
+import { AccessNotificationChannels } from "../definitions"
 import { strings } from "../locale"
 
 const {
@@ -20,6 +20,7 @@ const {
   approvePermissionRequestSet,
   rejectPermissionRequestSet,
   failPermissionRequestSetWorkflowIfPending,
+  canUseApprovalNotifications,
 } = proxyActivities<AccessActivities>({
   scheduleToCloseTimeout: "5 minutes",
 })
@@ -34,9 +35,13 @@ const { requestApproverDecision } = proxyActivities<
   },
 })
 
-type PreviousEscalation = {
+type ApprovalDecisionResult = "APPROVED" | "REJECTED" | "ESCALATED"
+
+type ApprovalDecision = {
+  approverName: string
   approverTitle: string
-  resolution: string
+  result: ApprovalDecisionResult
+  resolution?: string
 }
 
 type CurrentApproverOperation = {
@@ -46,7 +51,7 @@ type CurrentApproverOperation = {
 
 type BuildApproverDecisionContentArgs = {
   baseContent: string
-  previousEscalation: PreviousEscalation | undefined
+  decisions: ApprovalDecision[]
 }
 
 export async function approvePermissionRequestSetWorkflow({
@@ -54,9 +59,9 @@ export async function approvePermissionRequestSetWorkflow({
 }: ApprovePermissionRequestSetWorkflowInput): Promise<void> {
   log.info("starting approvePermissionRequestSetWorkflow", { operationId })
 
-  let previousEscalation: PreviousEscalation | undefined
+  const decisions: ApprovalDecision[] = []
   let currentApproverOperation: CurrentApproverOperation | undefined
-  let currentNonTelegramApproverNotificationId: string | undefined
+  let notificationId: string | undefined
 
   try {
     const approvalContext = await getApprovalContext({ operationId })
@@ -64,40 +69,59 @@ export async function approvePermissionRequestSetWorkflow({
 
     log.info("loaded approval context", { operationId, approversCount: approvers.length })
 
-    for (const [approverIndex, approver] of approvers.entries()) {
+    const approvalNotifications = await canUseApprovalNotifications()
+
+    for (const approver of approvers) {
       log.info("requesting approver decision", { operationId, approverName: approver.name })
+
+      const waitingTitle = strings.notifications.permissionRequests.waitingApprover.title
+      const waitingMessage = buildApprovalProcessNotificationContent({
+        baseContent: approvalContext.content,
+        decisions,
+        status: strings.notifications.permissionRequests.waitingApprover.status(
+          resolveApproverTitle(approver),
+        ),
+      })
+
+      if (notificationId === undefined && approvalNotifications.available) {
+        const notification = await sendApprovalProcessNotification({
+          title: waitingTitle,
+          message: waitingMessage,
+          logContext: {
+            operationId,
+            requestSetId: approvalContext.requestSetId,
+            approverName: approver.name,
+            phase: "waiting-first-approver",
+          },
+        })
+
+        notificationId = notification.notificationId
+      } else {
+        await updateApprovalProcessNotificationSafely({
+          notificationId,
+          title: waitingTitle,
+          message: waitingMessage,
+          logContext: {
+            operationId,
+            requestSetId: approvalContext.requestSetId,
+            approverName: approver.name,
+            phase: "waiting-approver",
+          },
+        })
+      }
 
       const { operationId: approverOperationId } = await requestApproverDecision({
         approverId: approver.id,
         title: approvalContext.title,
         content: buildApproverDecisionContent({
           baseContent: approvalContext.content,
-          previousEscalation,
+          decisions,
         }),
       })
 
       currentApproverOperation = {
         approverId: approver.id,
         operationId: approverOperationId,
-      }
-
-      if (!isTelegramApproverName(approver.name)) {
-        const notification = await sendSystemNotificationSafely({
-          title: strings.notifications.nonTelegramApprover.requested.title,
-          message: buildNonTelegramApproverRequestedNotificationContent({
-            requestSetId: approvalContext.requestSetId,
-            approverName: approver.name,
-            approverTitle: approver.title,
-          }),
-          logContext: {
-            operationId,
-            requestSetId: approvalContext.requestSetId,
-            approverName: approver.name,
-            phase: "requested",
-          },
-        })
-
-        currentNonTelegramApproverNotificationId = notification.notificationId
       }
 
       log.info("waiting for approver operation result", {
@@ -119,59 +143,40 @@ export async function approvePermissionRequestSetWorkflow({
 
       currentApproverOperation = undefined
 
+      if (approvalResponse.result === undefined) {
+        throw new Error(`Approver operation "${approverOperationId}" completed without result`)
+      }
+
+      decisions.push({
+        approverName: approver.name,
+        approverTitle: resolveApproverTitle(approver),
+        result: approvalResponse.result,
+        resolution: approvalResponse.resolution ?? "",
+      })
+
       if (approvalResponse.result === "ESCALATED") {
         log.info("approver escalated request", { operationId, approverName: approver.name })
 
-        const nextApprover = approvers[approverIndex + 1]
-        if (
-          currentNonTelegramApproverNotificationId !== undefined &&
-          nextApprover !== undefined &&
-          isTelegramApproverName(nextApprover.name)
-        ) {
-          await deleteNotificationSafely(currentNonTelegramApproverNotificationId, {
+        await updateApprovalProcessNotificationSafely({
+          notificationId,
+          title: strings.notifications.permissionRequests.escalated.title,
+          message: buildApprovalProcessNotificationContent({
+            baseContent: approvalContext.content,
+            decisions,
+            status: strings.notifications.permissionRequests.escalated.status,
+          }),
+          logContext: {
             operationId,
             requestSetId: approvalContext.requestSetId,
             approverName: approver.name,
-            phase: "escalated-to-telegram",
-          })
-
-          currentNonTelegramApproverNotificationId = undefined
-        }
-
-        previousEscalation = {
-          approverTitle:
-            approver.title.trim().length > 0
-              ? approver.title.trim()
-              : strings.workflow.previousEscalation.fallbackApproverTitle,
-          resolution: approvalResponse.resolution ?? "",
-        }
+            phase: "escalated",
+          },
+        })
         continue
       }
 
       if (approvalResponse.result === "APPROVED") {
         log.info("approver approved request", { operationId, approverName: approver.name })
-
-        if (currentNonTelegramApproverNotificationId !== undefined) {
-          await updateNotificationSafely({
-            notificationId: currentNonTelegramApproverNotificationId,
-            title: strings.notifications.nonTelegramApprover.approved.title,
-            message: buildNonTelegramApproverResolvedNotificationContent({
-              requestSetId: approvalContext.requestSetId,
-              approverName: approver.name,
-              approverTitle: approver.title,
-              result: "APPROVED",
-              resolution: approvalResponse.resolution ?? "",
-            }),
-            logContext: {
-              operationId,
-              requestSetId: approvalContext.requestSetId,
-              approverName: approver.name,
-              phase: "approved",
-            },
-          })
-
-          currentNonTelegramApproverNotificationId = undefined
-        }
 
         await approvePermissionRequestSet({
           operationId,
@@ -179,23 +184,22 @@ export async function approvePermissionRequestSetWorkflow({
           resolvedBySubjectId: null,
         })
 
-        if (!isTelegramApproverName(approver.name)) {
-          await sendSystemNotificationSafely({
-            title: strings.notifications.approvedRequest.title,
-            message: buildApprovedNotificationContent({
-              requestSetId: approvalContext.requestSetId,
-              approverName: approver.name,
-              approverTitle: approver.title,
-              resolution: approvalResponse.resolution ?? "",
-            }),
-            logContext: {
-              operationId,
-              requestSetId: approvalContext.requestSetId,
-              approverName: approver.name,
-              phase: "approved-summary",
-            },
-          })
-        }
+        await updateApprovalProcessNotificationSafely({
+          notificationId,
+          title: strings.notifications.permissionRequests.approved.title,
+          message: buildApprovalProcessNotificationContent({
+            baseContent: approvalContext.content,
+            decisions,
+            status: strings.notifications.permissionRequests.approved.status,
+          }),
+          actions: {},
+          logContext: {
+            operationId,
+            requestSetId: approvalContext.requestSetId,
+            approverName: approver.name,
+            phase: "approved",
+          },
+        })
 
         log.info("processed approved request notification", {
           operationId,
@@ -207,42 +211,137 @@ export async function approvePermissionRequestSetWorkflow({
 
       log.info("approver rejected request", { operationId, approverName: approver.name })
 
-      if (currentNonTelegramApproverNotificationId !== undefined) {
-        await updateNotificationSafely({
-          notificationId: currentNonTelegramApproverNotificationId,
-          title: strings.notifications.nonTelegramApprover.rejected.title,
-          message: buildNonTelegramApproverResolvedNotificationContent({
-            requestSetId: approvalContext.requestSetId,
-            approverName: approver.name,
-            approverTitle: approver.title,
-            result: "REJECTED",
-            resolution: approvalResponse.resolution ?? "",
-          }),
-          logContext: {
-            operationId,
-            requestSetId: approvalContext.requestSetId,
-            approverName: approver.name,
-            phase: "rejected",
-          },
-        })
-
-        currentNonTelegramApproverNotificationId = undefined
-      }
-
       await rejectPermissionRequestSet({
         operationId,
         resolution: approvalResponse.resolution ?? "",
         resolvedBySubjectId: null,
       })
+
+      await updateApprovalProcessNotificationSafely({
+        notificationId,
+        title: strings.notifications.permissionRequests.rejected.title,
+        message: buildApprovalProcessNotificationContent({
+          baseContent: approvalContext.content,
+          decisions,
+          status: strings.notifications.permissionRequests.rejected.status,
+        }),
+        actions: {},
+        logContext: {
+          operationId,
+          requestSetId: approvalContext.requestSetId,
+          approverName: approver.name,
+          phase: "rejected",
+        },
+      })
       return
     }
 
-    log.info("no approver approved request, marking as rejected")
+    if (notificationId === undefined) {
+      log.info("approval notification unavailable, marking as rejected")
+
+      await rejectPermissionRequestSet({
+        operationId,
+        resolution: strings.common.noApproverApproved,
+        resolvedBySubjectId: null,
+      })
+
+      return
+    }
+
+    log.info("requesting final human approval", { operationId })
+
+    const finalDecision = await updateNotification({
+      notificationId,
+      title: strings.notifications.permissionRequests.humanApproval.title,
+      content: {
+        html: buildApprovalProcessNotificationContent({
+          baseContent: approvalContext.content,
+          decisions,
+          status: strings.notifications.permissionRequests.humanApproval.status,
+        }),
+      },
+      actions: {
+        approve: {
+          title: strings.notifications.permissionRequests.humanApproval.actions.approve,
+        },
+        reject: {
+          title: strings.notifications.permissionRequests.humanApproval.actions.reject,
+        },
+      },
+      requiresTextResponse: false,
+      expectImmediateFeedback: true,
+    })
+
+    if (finalDecision.type !== "action") {
+      throw new Error(`Unexpected approval notification response type: ${finalDecision.type}`)
+    }
+
+    if (finalDecision.actionName === "approve") {
+      const humanApproverTitle =
+        finalDecision.subjectId ??
+        strings.notifications.permissionRequests.humanApproval.approverTitle
+
+      decisions.push({
+        approverName: strings.notifications.permissionRequests.humanApproval.approverName,
+        approverTitle: humanApproverTitle,
+        result: "APPROVED",
+      })
+
+      await approvePermissionRequestSet({
+        operationId,
+        resolution: strings.notifications.permissionRequests.humanApproval.approvedResolution,
+        resolvedBySubjectId: finalDecision.subjectId ?? null,
+      })
+
+      await updateApprovalProcessNotificationSafely({
+        notificationId,
+        title: strings.notifications.permissionRequests.approved.title,
+        message: buildApprovalProcessNotificationContent({
+          baseContent: approvalContext.content,
+          decisions,
+          status: strings.notifications.permissionRequests.approved.status,
+        }),
+        actions: {},
+        logContext: {
+          operationId,
+          requestSetId: approvalContext.requestSetId,
+          phase: "human-approved",
+        },
+      })
+
+      return
+    }
+
+    const humanApproverTitle =
+      finalDecision.subjectId ??
+      strings.notifications.permissionRequests.humanApproval.approverTitle
+
+    decisions.push({
+      approverName: strings.notifications.permissionRequests.humanApproval.approverName,
+      approverTitle: humanApproverTitle,
+      result: "REJECTED",
+    })
 
     await rejectPermissionRequestSet({
       operationId,
-      resolution: strings.common.noApproverApproved,
-      resolvedBySubjectId: null,
+      resolution: strings.notifications.permissionRequests.humanApproval.rejectedResolution,
+      resolvedBySubjectId: finalDecision.subjectId ?? null,
+    })
+
+    await updateApprovalProcessNotificationSafely({
+      notificationId,
+      title: strings.notifications.permissionRequests.rejected.title,
+      message: buildApprovalProcessNotificationContent({
+        baseContent: approvalContext.content,
+        decisions,
+        status: strings.notifications.permissionRequests.rejected.status,
+      }),
+      actions: {},
+      logContext: {
+        operationId,
+        requestSetId: approvalContext.requestSetId,
+        phase: "human-rejected",
+      },
     })
   } catch (error) {
     if (isCancellation(error)) {
@@ -255,13 +354,6 @@ export async function approvePermissionRequestSetWorkflow({
           approverOperationId: currentApproverOperation.operationId,
         })
         await cancelApproverOperation(currentApproverOperation)
-      }
-
-      if (currentNonTelegramApproverNotificationId !== undefined) {
-        await deleteNotificationSafely(currentNonTelegramApproverNotificationId, {
-          operationId,
-          phase: "workflow-cancelled",
-        })
       }
 
       return
@@ -280,93 +372,7 @@ export async function approvePermissionRequestSetWorkflow({
   }
 }
 
-const TELEGRAM_APPROVAL_CHANNEL = "telegram:approval"
-
-function isTelegramApproverName(approverName: string): boolean {
-  return approverName.trim().toLowerCase() === "telegram"
-}
-
-function buildApprovedNotificationContent(args: {
-  requestSetId: number
-  approverName: string
-  approverTitle: string
-  resolution: string
-}): string {
-  const normalizedApproverTitle = args.approverTitle.trim()
-  const normalizedResolution = args.resolution.trim()
-
-  return block(
-    inline(
-      bold(strings.notifications.approvedRequest.requestSetLabel),
-      SPACE,
-      String(args.requestSetId),
-    ),
-    inline(
-      bold(strings.notifications.approvedRequest.approverLabel),
-      SPACE,
-      normalizedApproverTitle.length > 0 ? normalizedApproverTitle : args.approverName,
-    ),
-    bold(strings.notifications.approvedRequest.resolutionLabel),
-    normalizedResolution.length > 0
-      ? normalizedResolution
-      : strings.notifications.approvedRequest.emptyResolution,
-  ).html
-}
-
-function buildNonTelegramApproverRequestedNotificationContent(args: {
-  requestSetId: number
-  approverName: string
-  approverTitle: string
-}): string {
-  const normalizedApproverTitle = args.approverTitle.trim()
-
-  return block(
-    inline(
-      bold(strings.notifications.nonTelegramApprover.requested.requestSetLabel),
-      SPACE,
-      String(args.requestSetId),
-    ),
-    inline(
-      bold(strings.notifications.nonTelegramApprover.requested.approverLabel),
-      SPACE,
-      normalizedApproverTitle.length > 0 ? normalizedApproverTitle : args.approverName,
-    ),
-    inline(
-      bold(strings.notifications.nonTelegramApprover.requested.statusLabel),
-      SPACE,
-      strings.notifications.nonTelegramApprover.requested.statusValue,
-    ),
-  ).html
-}
-
-function buildNonTelegramApproverResolvedNotificationContent(args: {
-  requestSetId: number
-  approverName: string
-  approverTitle: string
-  result: "APPROVED" | "REJECTED"
-  resolution: string
-}): string {
-  const normalizedApproverTitle = args.approverTitle.trim()
-  const normalizedResolution = args.resolution.trim()
-  const resolvedStrings =
-    args.result === "APPROVED"
-      ? strings.notifications.nonTelegramApprover.approved
-      : strings.notifications.nonTelegramApprover.rejected
-
-  return block(
-    inline(bold(resolvedStrings.requestSetLabel), SPACE, String(args.requestSetId)),
-    inline(
-      bold(resolvedStrings.approverLabel),
-      SPACE,
-      normalizedApproverTitle.length > 0 ? normalizedApproverTitle : args.approverName,
-    ),
-    inline(bold(resolvedStrings.statusLabel), SPACE, resolvedStrings.statusValue),
-    bold(resolvedStrings.resolutionLabel),
-    normalizedResolution.length > 0 ? normalizedResolution : resolvedStrings.emptyResolution,
-  ).html
-}
-
-async function sendSystemNotificationSafely(args: {
+async function sendApprovalProcessNotification(args: {
   title: string
   message: string
   logContext: Record<string, number | string>
@@ -374,11 +380,12 @@ async function sendSystemNotificationSafely(args: {
   try {
     const notification = await sendNotification({
       system: true,
-      channel: TELEGRAM_APPROVAL_CHANNEL,
+      channel: AccessNotificationChannels.PERMISSION_REQUESTS,
       title: args.title,
       message: {
         html: args.message,
       },
+      waitForResponse: false,
     })
 
     return {
@@ -394,12 +401,17 @@ async function sendSystemNotificationSafely(args: {
   }
 }
 
-async function updateNotificationSafely(args: {
-  notificationId: string
+async function updateApprovalProcessNotificationSafely(args: {
+  notificationId: string | undefined
   title: string
   message: string
+  actions?: Record<string, never>
   logContext: Record<string, number | string>
 }): Promise<void> {
+  if (args.notificationId === undefined) {
+    return
+  }
+
   try {
     await updateNotification({
       notificationId: args.notificationId,
@@ -407,6 +419,8 @@ async function updateNotificationSafely(args: {
       content: {
         html: args.message,
       },
+      actions: args.actions,
+      requiresTextResponse: false,
     })
   } catch (error) {
     log.error("failed to update notification", {
@@ -417,38 +431,90 @@ async function updateNotificationSafely(args: {
   }
 }
 
-async function deleteNotificationSafely(
-  notificationId: string,
-  logContext: Record<string, number | string>,
-): Promise<void> {
-  try {
-    await deleteNotification(notificationId)
-  } catch (error) {
-    log.error("failed to delete notification", {
-      ...logContext,
-      notificationId,
-      error: String(error),
-    })
-  }
-}
-
 function buildApproverDecisionContent(args: BuildApproverDecisionContentArgs): string {
-  if (args.previousEscalation === undefined) {
+  if (args.decisions.length === 0) {
     return args.baseContent
   }
 
-  const resolution = args.previousEscalation.resolution.trim()
+  return block({ html: args.baseContent }, "", buildApprovalHistoryContent(args.decisions)).html
+}
 
-  return block(
+function buildApprovalProcessNotificationContent(args: {
+  baseContent: string
+  decisions: ApprovalDecision[]
+  status: string
+}): string {
+  const content = block(
     { html: args.baseContent },
     "",
-    bold(strings.workflow.previousEscalation.header),
+    inline(bold(strings.notifications.permissionRequests.statusLabel), SPACE, args.status),
+  )
+
+  if (args.decisions.length === 0) {
+    return content.html
+  }
+
+  return block(content, "", buildApprovalHistoryContent(args.decisions)).html
+}
+
+function buildApprovalHistoryContent(decisions: ApprovalDecision[]) {
+  return block(
+    bold(strings.notifications.permissionRequests.historyHeader),
+    "",
+    decisions.map(decision => buildApprovalDecisionContent(decision)),
+  )
+}
+
+function buildApprovalDecisionContent(decision: ApprovalDecision) {
+  const resolution = decision.resolution?.trim()
+
+  if (resolution === undefined) {
+    return block(
+      inline(
+        bold(strings.notifications.permissionRequests.approverLabel),
+        SPACE,
+        decision.approverTitle,
+      ),
+      inline(
+        bold(strings.notifications.permissionRequests.decisionLabel),
+        SPACE,
+        toApprovalDecisionResultText(decision.result),
+      ),
+    )
+  }
+
+  return block(
     inline(
-      bold(strings.workflow.previousEscalation.approverTitleLabel),
+      bold(strings.notifications.permissionRequests.approverLabel),
       SPACE,
-      args.previousEscalation.approverTitle,
+      decision.approverTitle,
     ),
-    bold(strings.workflow.previousEscalation.resolutionLabel),
-    resolution.length > 0 ? resolution : strings.workflow.previousEscalation.emptyResolution,
-  ).html
+    inline(
+      bold(strings.notifications.permissionRequests.decisionLabel),
+      SPACE,
+      toApprovalDecisionResultText(decision.result),
+    ),
+    inline(bold(strings.notifications.permissionRequests.resolutionLabel)),
+    resolution.length > 0 ? resolution : strings.notifications.permissionRequests.emptyResolution,
+  )
+}
+
+function resolveApproverTitle(approver: { name: string; title: string }): string {
+  const title = approver.title.trim()
+  if (title.length > 0) {
+    return title
+  }
+
+  return approver.name
+}
+
+function toApprovalDecisionResultText(result: ApprovalDecisionResult): string {
+  switch (result) {
+    case "APPROVED":
+      return strings.notifications.permissionRequests.decisions.approved
+    case "REJECTED":
+      return strings.notifications.permissionRequests.decisions.rejected
+    case "ESCALATED":
+      return strings.notifications.permissionRequests.decisions.escalated
+  }
 }

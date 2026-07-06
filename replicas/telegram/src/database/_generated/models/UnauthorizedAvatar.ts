@@ -388,6 +388,10 @@ export type UnauthorizedAvatarOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type UnauthorizedAvatarCreateNestedManyWithoutCreatedByUserInput = {
   create?: Prisma.XOR<Prisma.UnauthorizedAvatarCreateWithoutCreatedByUserInput, Prisma.UnauthorizedAvatarUncheckedCreateWithoutCreatedByUserInput> | Prisma.UnauthorizedAvatarCreateWithoutCreatedByUserInput[] | Prisma.UnauthorizedAvatarUncheckedCreateWithoutCreatedByUserInput[]
   connectOrCreate?: Prisma.UnauthorizedAvatarCreateOrConnectWithoutCreatedByUserInput | Prisma.UnauthorizedAvatarCreateOrConnectWithoutCreatedByUserInput[]

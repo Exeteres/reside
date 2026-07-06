@@ -1,4 +1,3 @@
-import type { ApprovalResponseJson } from "@reside/api/common/approval.v1"
 import type {
   NotificationJson,
   NotificationStatusJson,
@@ -8,7 +7,6 @@ import type {
   NotificationStatus as StoredNotificationStatus,
   NotificationTaskStatus as StoredNotificationTaskStatus,
 } from "../database"
-import { status as GrpcStatus } from "@grpc/grpc-js"
 import { OperationService } from "@reside/api/common/operation.v1"
 import { SubjectService } from "@reside/api/common/subject.v1"
 import { DefinitionService as InteractionDefinitionService } from "@reside/api/interaction/definition.v1"
@@ -23,9 +21,8 @@ import {
   crypto,
 } from "@reside/common"
 import { telegramReplica } from "@reside/registry"
-import { isGrpcServiceError } from "@temporalio/client"
 import { PrismaClient } from "../database"
-import { approvalCancelSignal, encryptedStringSchema, getApprovalWorkflowId } from "../definitions"
+import { encryptedStringSchema } from "../definitions"
 
 export async function createServices() {
   const services = await createCommonServices(telegramReplica.endpoints)
@@ -49,19 +46,6 @@ export async function createServices() {
     temporalClient,
 
     getResult: async operationId => {
-      const approvalRequest = await prisma.approvalRequest.findUnique({
-        where: {
-          operationId,
-        },
-      })
-
-      if (approvalRequest?.result !== null && approvalRequest?.result !== undefined) {
-        return {
-          result: approvalRequest.result,
-          resolution: approvalRequest.resolution ?? "",
-        } satisfies ApprovalResponseJson
-      }
-
       const avatarProvisionRequest = await prisma.avatarProvisionRequest.findUnique({
         where: {
           operationId,
@@ -95,6 +79,7 @@ export async function createServices() {
       }
 
       const contextToken = operation.notificationResponseContextToken ?? undefined
+      const subjectId = response.subjectId ?? undefined
       const notification =
         operation.notification === null ? undefined : toNotificationJson(operation.notification)
 
@@ -106,6 +91,7 @@ export async function createServices() {
         return {
           actionName: response.actionName,
           contextToken,
+          subjectId,
           notification,
         }
       }
@@ -114,6 +100,7 @@ export async function createServices() {
         return {
           taskUpdate: {},
           contextToken,
+          subjectId,
           notification,
         }
       }
@@ -125,36 +112,12 @@ export async function createServices() {
       return {
         textResponse: await crypto.decrypt(encryptedStringSchema, response.textResponseEcid),
         contextToken,
+        subjectId,
         notification,
       }
     },
 
-    cancelOperation: async operationId => {
-      const approvalRequest = await prisma.approvalRequest.findUnique({
-        where: {
-          operationId,
-        },
-        select: {
-          operationId: true,
-        },
-      })
-
-      if (approvalRequest === null) {
-        return
-      }
-
-      try {
-        const workflowHandle = temporalClient.workflow.getHandle(getApprovalWorkflowId(operationId))
-
-        await workflowHandle.signal(approvalCancelSignal)
-      } catch (error) {
-        if (isGrpcServiceError(error) && error.code === GrpcStatus.NOT_FOUND) {
-          return
-        }
-
-        throw error
-      }
-    },
+    cancelOperation: async () => {},
   })
 
   return {

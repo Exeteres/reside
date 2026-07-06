@@ -123,22 +123,6 @@ await Promise.all([
   // create bootstrap channels directly since now have no telegram service
   services.prisma.notificationChannel.upsert({
     where: {
-      name: TelegramNotificationChannels.APPROVAL,
-    },
-    create: {
-      name: TelegramNotificationChannels.APPROVAL,
-      title: strings.bootstrap.channels.approvals.title,
-      description: strings.bootstrap.channels.approvals.description,
-      ownerReplicaName: "telegram",
-    },
-    update: {
-      title: strings.bootstrap.channels.approvals.title,
-      description: strings.bootstrap.channels.approvals.description,
-      ownerReplicaName: "telegram",
-    },
-  }),
-  services.prisma.notificationChannel.upsert({
-    where: {
       name: TelegramNotificationChannels.AVATAR_PROVISIONING,
     },
     create: {
@@ -172,15 +156,6 @@ await Promise.all([
 ])
 
 await backfillOwnerReplicaNames()
-
-await services.accessDefinitionService.putApprover({
-  name: "telegram",
-  priority: 50,
-  realms: ["telegram", "replica"],
-  title: strings.bootstrap.approver.title,
-  description: strings.bootstrap.approver.description,
-  callbackEndpoint: getReplicaCallbackEndpoint(),
-})
 
 {
   const { operation } = await services.permissionRequestService.requestPermissions({

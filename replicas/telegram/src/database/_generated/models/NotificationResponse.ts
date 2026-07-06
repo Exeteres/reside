@@ -40,6 +40,7 @@ export type NotificationResponseMinAggregateOutputType = {
   operationId: number | null
   type: $Enums.NotificationResponseType | null
   actionName: string | null
+  subjectId: string | null
   textResponseEcid: string | null
   createdAt: Date | null
 }
@@ -48,6 +49,7 @@ export type NotificationResponseMaxAggregateOutputType = {
   operationId: number | null
   type: $Enums.NotificationResponseType | null
   actionName: string | null
+  subjectId: string | null
   textResponseEcid: string | null
   createdAt: Date | null
 }
@@ -56,6 +58,7 @@ export type NotificationResponseCountAggregateOutputType = {
   operationId: number
   type: number
   actionName: number
+  subjectId: number
   textResponseEcid: number
   createdAt: number
   _all: number
@@ -74,6 +77,7 @@ export type NotificationResponseMinAggregateInputType = {
   operationId?: true
   type?: true
   actionName?: true
+  subjectId?: true
   textResponseEcid?: true
   createdAt?: true
 }
@@ -82,6 +86,7 @@ export type NotificationResponseMaxAggregateInputType = {
   operationId?: true
   type?: true
   actionName?: true
+  subjectId?: true
   textResponseEcid?: true
   createdAt?: true
 }
@@ -90,6 +95,7 @@ export type NotificationResponseCountAggregateInputType = {
   operationId?: true
   type?: true
   actionName?: true
+  subjectId?: true
   textResponseEcid?: true
   createdAt?: true
   _all?: true
@@ -185,6 +191,7 @@ export type NotificationResponseGroupByOutputType = {
   operationId: number
   type: $Enums.NotificationResponseType
   actionName: string | null
+  subjectId: string | null
   textResponseEcid: string | null
   createdAt: Date
   _count: NotificationResponseCountAggregateOutputType | null
@@ -216,6 +223,7 @@ export type NotificationResponseWhereInput = {
   operationId?: Prisma.IntFilter<"NotificationResponse"> | number
   type?: Prisma.EnumNotificationResponseTypeFilter<"NotificationResponse"> | $Enums.NotificationResponseType
   actionName?: Prisma.StringNullableFilter<"NotificationResponse"> | string | null
+  subjectId?: Prisma.StringNullableFilter<"NotificationResponse"> | string | null
   textResponseEcid?: Prisma.StringNullableFilter<"NotificationResponse"> | string | null
   createdAt?: Prisma.DateTimeFilter<"NotificationResponse"> | Date | string
   textResponse?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
@@ -226,6 +234,7 @@ export type NotificationResponseOrderByWithRelationInput = {
   operationId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   actionName?: Prisma.SortOrderInput | Prisma.SortOrder
+  subjectId?: Prisma.SortOrderInput | Prisma.SortOrder
   textResponseEcid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   textResponse?: Prisma.EncryptedContentOrderByWithRelationInput
@@ -240,6 +249,7 @@ export type NotificationResponseWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.NotificationResponseWhereInput | Prisma.NotificationResponseWhereInput[]
   type?: Prisma.EnumNotificationResponseTypeFilter<"NotificationResponse"> | $Enums.NotificationResponseType
   actionName?: Prisma.StringNullableFilter<"NotificationResponse"> | string | null
+  subjectId?: Prisma.StringNullableFilter<"NotificationResponse"> | string | null
   createdAt?: Prisma.DateTimeFilter<"NotificationResponse"> | Date | string
   textResponse?: Prisma.XOR<Prisma.EncryptedContentNullableScalarRelationFilter, Prisma.EncryptedContentWhereInput> | null
   operation?: Prisma.XOR<Prisma.OperationScalarRelationFilter, Prisma.OperationWhereInput>
@@ -249,6 +259,7 @@ export type NotificationResponseOrderByWithAggregationInput = {
   operationId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   actionName?: Prisma.SortOrderInput | Prisma.SortOrder
+  subjectId?: Prisma.SortOrderInput | Prisma.SortOrder
   textResponseEcid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.NotificationResponseCountOrderByAggregateInput
@@ -265,6 +276,7 @@ export type NotificationResponseScalarWhereWithAggregatesInput = {
   operationId?: Prisma.IntWithAggregatesFilter<"NotificationResponse"> | number
   type?: Prisma.EnumNotificationResponseTypeWithAggregatesFilter<"NotificationResponse"> | $Enums.NotificationResponseType
   actionName?: Prisma.StringNullableWithAggregatesFilter<"NotificationResponse"> | string | null
+  subjectId?: Prisma.StringNullableWithAggregatesFilter<"NotificationResponse"> | string | null
   textResponseEcid?: Prisma.StringNullableWithAggregatesFilter<"NotificationResponse"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"NotificationResponse"> | Date | string
 }
@@ -272,6 +284,7 @@ export type NotificationResponseScalarWhereWithAggregatesInput = {
 export type NotificationResponseCreateInput = {
   type: $Enums.NotificationResponseType
   actionName?: string | null
+  subjectId?: string | null
   createdAt?: Date | string
   textResponse?: Prisma.EncryptedContentCreateNestedOneWithoutNotificationResponseTextInput
   operation: Prisma.OperationCreateNestedOneWithoutNotificationResponseInput
@@ -281,6 +294,7 @@ export type NotificationResponseUncheckedCreateInput = {
   operationId: number
   type: $Enums.NotificationResponseType
   actionName?: string | null
+  subjectId?: string | null
   textResponseEcid?: string | null
   createdAt?: Date | string
 }
@@ -288,6 +302,7 @@ export type NotificationResponseUncheckedCreateInput = {
 export type NotificationResponseUpdateInput = {
   type?: Prisma.EnumNotificationResponseTypeFieldUpdateOperationsInput | $Enums.NotificationResponseType
   actionName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   textResponse?: Prisma.EncryptedContentUpdateOneWithoutNotificationResponseTextNestedInput
   operation?: Prisma.OperationUpdateOneRequiredWithoutNotificationResponseNestedInput
@@ -297,6 +312,7 @@ export type NotificationResponseUncheckedUpdateInput = {
   operationId?: Prisma.IntFieldUpdateOperationsInput | number
   type?: Prisma.EnumNotificationResponseTypeFieldUpdateOperationsInput | $Enums.NotificationResponseType
   actionName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textResponseEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -305,6 +321,7 @@ export type NotificationResponseCreateManyInput = {
   operationId: number
   type: $Enums.NotificationResponseType
   actionName?: string | null
+  subjectId?: string | null
   textResponseEcid?: string | null
   createdAt?: Date | string
 }
@@ -312,6 +329,7 @@ export type NotificationResponseCreateManyInput = {
 export type NotificationResponseUpdateManyMutationInput = {
   type?: Prisma.EnumNotificationResponseTypeFieldUpdateOperationsInput | $Enums.NotificationResponseType
   actionName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -319,6 +337,7 @@ export type NotificationResponseUncheckedUpdateManyInput = {
   operationId?: Prisma.IntFieldUpdateOperationsInput | number
   type?: Prisma.EnumNotificationResponseTypeFieldUpdateOperationsInput | $Enums.NotificationResponseType
   actionName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textResponseEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -332,6 +351,7 @@ export type NotificationResponseCountOrderByAggregateInput = {
   operationId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   actionName?: Prisma.SortOrder
+  subjectId?: Prisma.SortOrder
   textResponseEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -344,6 +364,7 @@ export type NotificationResponseMaxOrderByAggregateInput = {
   operationId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   actionName?: Prisma.SortOrder
+  subjectId?: Prisma.SortOrder
   textResponseEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -352,6 +373,7 @@ export type NotificationResponseMinOrderByAggregateInput = {
   operationId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   actionName?: Prisma.SortOrder
+  subjectId?: Prisma.SortOrder
   textResponseEcid?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -431,6 +453,7 @@ export type NotificationResponseUncheckedUpdateOneWithoutOperationNestedInput = 
 export type NotificationResponseCreateWithoutTextResponseInput = {
   type: $Enums.NotificationResponseType
   actionName?: string | null
+  subjectId?: string | null
   createdAt?: Date | string
   operation: Prisma.OperationCreateNestedOneWithoutNotificationResponseInput
 }
@@ -439,6 +462,7 @@ export type NotificationResponseUncheckedCreateWithoutTextResponseInput = {
   operationId: number
   type: $Enums.NotificationResponseType
   actionName?: string | null
+  subjectId?: string | null
   createdAt?: Date | string
 }
 
@@ -461,6 +485,7 @@ export type NotificationResponseUpdateToOneWithWhereWithoutTextResponseInput = {
 export type NotificationResponseUpdateWithoutTextResponseInput = {
   type?: Prisma.EnumNotificationResponseTypeFieldUpdateOperationsInput | $Enums.NotificationResponseType
   actionName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneRequiredWithoutNotificationResponseNestedInput
 }
@@ -469,12 +494,14 @@ export type NotificationResponseUncheckedUpdateWithoutTextResponseInput = {
   operationId?: Prisma.IntFieldUpdateOperationsInput | number
   type?: Prisma.EnumNotificationResponseTypeFieldUpdateOperationsInput | $Enums.NotificationResponseType
   actionName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type NotificationResponseCreateWithoutOperationInput = {
   type: $Enums.NotificationResponseType
   actionName?: string | null
+  subjectId?: string | null
   createdAt?: Date | string
   textResponse?: Prisma.EncryptedContentCreateNestedOneWithoutNotificationResponseTextInput
 }
@@ -482,6 +509,7 @@ export type NotificationResponseCreateWithoutOperationInput = {
 export type NotificationResponseUncheckedCreateWithoutOperationInput = {
   type: $Enums.NotificationResponseType
   actionName?: string | null
+  subjectId?: string | null
   textResponseEcid?: string | null
   createdAt?: Date | string
 }
@@ -505,6 +533,7 @@ export type NotificationResponseUpdateToOneWithWhereWithoutOperationInput = {
 export type NotificationResponseUpdateWithoutOperationInput = {
   type?: Prisma.EnumNotificationResponseTypeFieldUpdateOperationsInput | $Enums.NotificationResponseType
   actionName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   textResponse?: Prisma.EncryptedContentUpdateOneWithoutNotificationResponseTextNestedInput
 }
@@ -512,6 +541,7 @@ export type NotificationResponseUpdateWithoutOperationInput = {
 export type NotificationResponseUncheckedUpdateWithoutOperationInput = {
   type?: Prisma.EnumNotificationResponseTypeFieldUpdateOperationsInput | $Enums.NotificationResponseType
   actionName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textResponseEcid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -522,6 +552,7 @@ export type NotificationResponseSelect<ExtArgs extends runtime.Types.Extensions.
   operationId?: boolean
   type?: boolean
   actionName?: boolean
+  subjectId?: boolean
   textResponseEcid?: boolean
   createdAt?: boolean
   textResponse?: boolean | Prisma.NotificationResponse$textResponseArgs<ExtArgs>
@@ -532,6 +563,7 @@ export type NotificationResponseSelectCreateManyAndReturn<ExtArgs extends runtim
   operationId?: boolean
   type?: boolean
   actionName?: boolean
+  subjectId?: boolean
   textResponseEcid?: boolean
   createdAt?: boolean
   textResponse?: boolean | Prisma.NotificationResponse$textResponseArgs<ExtArgs>
@@ -542,6 +574,7 @@ export type NotificationResponseSelectUpdateManyAndReturn<ExtArgs extends runtim
   operationId?: boolean
   type?: boolean
   actionName?: boolean
+  subjectId?: boolean
   textResponseEcid?: boolean
   createdAt?: boolean
   textResponse?: boolean | Prisma.NotificationResponse$textResponseArgs<ExtArgs>
@@ -552,11 +585,12 @@ export type NotificationResponseSelectScalar = {
   operationId?: boolean
   type?: boolean
   actionName?: boolean
+  subjectId?: boolean
   textResponseEcid?: boolean
   createdAt?: boolean
 }
 
-export type NotificationResponseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"operationId" | "type" | "actionName" | "textResponseEcid" | "createdAt", ExtArgs["result"]["notificationResponse"]>
+export type NotificationResponseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"operationId" | "type" | "actionName" | "subjectId" | "textResponseEcid" | "createdAt", ExtArgs["result"]["notificationResponse"]>
 export type NotificationResponseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   textResponse?: boolean | Prisma.NotificationResponse$textResponseArgs<ExtArgs>
   operation?: boolean | Prisma.OperationDefaultArgs<ExtArgs>
@@ -595,6 +629,10 @@ export type $NotificationResponsePayload<ExtArgs extends runtime.Types.Extension
      * The action name when the response kind is ACTION.
      */
     actionName: string | null
+    /**
+     * The canonical subject identifier of the responding user.
+     */
+    subjectId: string | null
     /**
      * The ECID of the text value when the response kind is TEXT.
      */
@@ -1031,6 +1069,7 @@ export interface NotificationResponseFieldRefs {
   readonly operationId: Prisma.FieldRef<"NotificationResponse", 'Int'>
   readonly type: Prisma.FieldRef<"NotificationResponse", 'NotificationResponseType'>
   readonly actionName: Prisma.FieldRef<"NotificationResponse", 'String'>
+  readonly subjectId: Prisma.FieldRef<"NotificationResponse", 'String'>
   readonly textResponseEcid: Prisma.FieldRef<"NotificationResponse", 'String'>
   readonly createdAt: Prisma.FieldRef<"NotificationResponse", 'DateTime'>
 }

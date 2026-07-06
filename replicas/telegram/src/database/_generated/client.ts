@@ -31,8 +31,8 @@ export * from "./enums.ts"
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more ApprovalRequests
- * const approvalRequests = await prisma.approvalRequest.findMany()
+ * // Fetch zero or more Avatars
+ * const avatars = await prisma.avatar.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -41,11 +41,6 @@ export const PrismaClient = $Class.getPrismaClientClass()
 export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts extends Prisma.PrismaClientOptions["omit"] = Prisma.PrismaClientOptions["omit"], ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>
 export { Prisma }
 
-/**
- * Model ApprovalRequest
- * Represents an approval request handled through interaction notifications.
- */
-export type ApprovalRequest = Prisma.ApprovalRequestModel
 /**
  * Model Avatar
  * Represents a managed Telegram bot avatar assigned to a replica subject.

@@ -1,3 +1,5 @@
+import type { OperationServiceClient } from "@reside/api/common/operation.v1"
+import type { NotificationServiceClient } from "@reside/api/interaction/notification.v1"
 import type { Operation, PrismaClient } from "../../database"
 import type { AccessActivities } from "../../definitions"
 import { create } from "@bufbuild/protobuf"
@@ -34,11 +36,15 @@ const PERMISSION_REQUEST_WORKFLOW_FAILED_REASON = "PERMISSION_REQUEST_WORKFLOW_F
 type AccessActivityServices = {
   prisma: PrismaClient
   operationService: GenericOperationService<Operation>
+  notificationService?: NotificationServiceClient
+  interactionOperationService?: OperationServiceClient
 }
 
 export function createAccessActivities({
   prisma,
   operationService,
+  notificationService,
+  interactionOperationService,
 }: AccessActivityServices): AccessActivities {
   const clientsByEndpoint = new Map<string, EndpointClients>()
   const subjectServiceClientsByEndpoint = new Map<string, SubjectServiceClient>()
@@ -186,6 +192,12 @@ export function createAccessActivities({
           priority: approver.priority,
           realms: approver.realms.map(realm => realm.name),
         })),
+      }
+    },
+
+    async canUseApprovalNotifications() {
+      return {
+        available: notificationService !== undefined && interactionOperationService !== undefined,
       }
     },
 

@@ -60,6 +60,9 @@ model NotificationResponse {
   /// The action name when the response kind is ACTION.
   actionName String?
 
+  /// The canonical subject identifier of the responding user.
+  subjectId String?
+
   /// The ECID of the text value when the response kind is TEXT.
   textResponseEcid String? @unique
 

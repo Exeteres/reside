@@ -51,7 +51,6 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  ApprovalRequest: 'ApprovalRequest',
   Avatar: 'Avatar',
   AvatarProvisionRequest: 'AvatarProvisionRequest',
   UnauthorizedAvatar: 'UnauthorizedAvatar',
@@ -88,21 +87,6 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
-
-
-export const ApprovalRequestScalarFieldEnum = {
-  id: 'id',
-  operationId: 'operationId',
-  title: 'title',
-  content: 'content',
-  result: 'result',
-  resolution: 'resolution',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  respondedAt: 'respondedAt'
-} as const
-
-export type ApprovalRequestScalarFieldEnum = (typeof ApprovalRequestScalarFieldEnum)[keyof typeof ApprovalRequestScalarFieldEnum]
 
 
 export const AvatarScalarFieldEnum = {
@@ -252,6 +236,7 @@ export const NotificationResponseScalarFieldEnum = {
   operationId: 'operationId',
   type: 'type',
   actionName: 'actionName',
+  subjectId: 'subjectId',
   textResponseEcid: 'textResponseEcid',
   createdAt: 'createdAt'
 } as const

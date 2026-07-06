@@ -12,8 +12,6 @@ export type TelegramCommandEvent = {
   }
 }
 
-export type ApprovalActionName = "approve" | "reject" | "escalate"
-
 export type PrepareCommandInvocationInvokeOutput = {
   /**
    * Indicates that the command should be invoked.
@@ -330,18 +328,6 @@ export type FailOperationInput = {
   message: string
 }
 
-export type CompleteApprovalOperationInput = {
-  /**
-   * Approval operation identifier.
-   */
-  operationId: number
-
-  /**
-   * Selected approval action.
-   */
-  actionName: ApprovalActionName
-}
-
 export type ActivityRewardInterval = {
   /**
    * Internal Telegram replica user record identifier.
@@ -440,16 +426,6 @@ export type TelegramActivities = {
    * Marks avatar provisioning operation as failed.
    */
   failAvatarProvisionOperation: (input: FailOperationInput) => Promise<void>
-
-  /**
-   * Stores approval action result and completes the operation.
-   */
-  completeApprovalOperation: (input: CompleteApprovalOperationInput) => Promise<void>
-
-  /**
-   * Marks approval operation as failed.
-   */
-  failApprovalOperation: (input: FailOperationInput) => Promise<void>
 
   /**
    * Lists fixed user message intervals that should be rewarded.
