@@ -272,6 +272,13 @@ export function createDeliverChangesTool({
             })
           ).data
 
+      await assertPullRequestMergeable({
+        octokit,
+        owner,
+        repo,
+        pullRequestNumber: pullRequest.number,
+      })
+
       const ciCheckResult = await waitForPullRequestCiCheck({
         octokit,
         owner,
@@ -360,6 +367,34 @@ export function createCommitChangesTool({
       return `Created validated commit ${commitHash}.`
     },
   })
+}
+
+async function assertPullRequestMergeable(input: {
+  octokit: Awaited<ReturnType<GitHubService["getOctokit"]>>
+  owner: string
+  repo: string
+  pullRequestNumber: number
+}): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const pullRequest = await input.octokit.rest.pulls.get({
+      owner: input.owner,
+      repo: input.repo,
+      pull_number: input.pullRequestNumber,
+    })
+
+    const mergeableState = pullRequest.data.mergeable_state
+    if (mergeableState === "dirty" || mergeableState === "conflicting") {
+      throw new Error(
+        `Pull request #${input.pullRequestNumber} has merge conflicts with main. Rebase the branch and retry delivery.`,
+      )
+    }
+
+    if (pullRequest.data.mergeable !== null) {
+      return
+    }
+
+    await sleep(1000)
+  }
 }
 
 function buildTemporaryDatabaseUrl(credentials: PostgresDatabaseCredentials): string {
