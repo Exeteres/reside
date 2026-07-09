@@ -29,10 +29,14 @@ export async function bootstrapNotcompelCronJob(): Promise<void> {
 function buildCronContainerEnv(
   replicaName: string,
   namespace: string,
-): Array<{ name: string; value: string }> {
+): { name: string; value: string }[] {
   return [
-    { name: "RESIDE_REPLICA", value: replicaName },
-    { name: "RESIDE_NAMESPACE", value: namespace },
+    { name: "NODE_EXTRA_CA_CERTS", value: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt" },
+    { name: "REPLICA_NAME", value: replicaName },
+    { name: "REPLICA_COMPONENT_NAME", value: `${replicaName}-daily-image-cron` },
+    { name: "REPLICA_NAMESPACE", value: namespace },
+    { name: "REPLICA_SERVICE_ACCOUNT_NAME", value: getReplicaServiceAccountName() },
+    { name: "REPLICA_IMAGE", value: getReplicaImage() },
     { name: "RESIDE_BIN", value: "replica" },
     { name: "NOTCOMPEL_RUN_ON_START", value: "true" },
   ]
