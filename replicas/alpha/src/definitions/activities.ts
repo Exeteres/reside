@@ -55,7 +55,7 @@ export type DeleteReplicaInput = {
   replicaName: string
 }
 
-export type ReconcileRegistrationOperationStatus = "completed" | "pending"
+export type ReconcileRegistrationOperationStatus = "completed" | "failed" | "pending"
 
 export type ListRegisteredReplicasOutput = {
   /**
@@ -69,6 +69,11 @@ export type ReconcileRegistrationOperationOutput = {
    * The current reconciliation status.
    */
   status: ReconcileRegistrationOperationStatus
+
+  /**
+   * The human-readable failure message when reconciliation failed.
+   */
+  failureMessage?: string
 }
 
 export type ReplicaManagementActivities = {

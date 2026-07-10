@@ -22,7 +22,7 @@ describe("shouldUpdateReplicaCrdImage", () => {
   test("allows initial image reconciliation when cluster image is missing", () => {
     expect(
       shouldUpdateReplicaCrdImage({
-        databaseImage: "ghcr.io/example/alpha:1.2.3",
+        requestedImage: "ghcr.io/example/alpha:1.2.3",
         clusterImage: null,
       }),
     ).toBe(true)
@@ -31,21 +31,21 @@ describe("shouldUpdateReplicaCrdImage", () => {
   test("allows updating only to greater database image versions", () => {
     expect(
       shouldUpdateReplicaCrdImage({
-        databaseImage: "ghcr.io/example/alpha:1.2.4",
+        requestedImage: "ghcr.io/example/alpha:1.2.4",
         clusterImage: "ghcr.io/example/alpha:1.2.3",
       }),
     ).toBe(true)
 
     expect(
       shouldUpdateReplicaCrdImage({
-        databaseImage: "ghcr.io/example/alpha:1.2.3",
+        requestedImage: "ghcr.io/example/alpha:1.2.3",
         clusterImage: "ghcr.io/example/alpha:1.2.3",
       }),
     ).toBe(false)
 
     expect(
       shouldUpdateReplicaCrdImage({
-        databaseImage: "ghcr.io/example/alpha:1.2.2",
+        requestedImage: "ghcr.io/example/alpha:1.2.2",
         clusterImage: "ghcr.io/example/alpha:1.2.3",
       }),
     ).toBe(false)
@@ -54,33 +54,35 @@ describe("shouldUpdateReplicaCrdImage", () => {
   test("uses semantic prerelease ordering", () => {
     expect(
       shouldUpdateReplicaCrdImage({
-        databaseImage: "ghcr.io/example/alpha:1.2.3",
+        requestedImage: "ghcr.io/example/alpha:1.2.3",
         clusterImage: "ghcr.io/example/alpha:1.2.3-rc.1",
       }),
     ).toBe(true)
 
     expect(
       shouldUpdateReplicaCrdImage({
-        databaseImage: "ghcr.io/example/alpha:1.2.3-rc.1",
+        requestedImage: "ghcr.io/example/alpha:1.2.3-rc.1",
         clusterImage: "ghcr.io/example/alpha:1.2.3",
       }),
     ).toBe(false)
   })
 
-  test("does not update when either version cannot be compared", () => {
+  test("does not update when requested version cannot be compared", () => {
     expect(
       shouldUpdateReplicaCrdImage({
-        databaseImage: "ghcr.io/example/alpha:latest",
+        requestedImage: "ghcr.io/example/alpha:latest",
         clusterImage: "ghcr.io/example/alpha:1.2.3",
       }),
     ).toBe(false)
+  })
 
+  test("allows semantic requested versions to override non-semantic cluster tags", () => {
     expect(
       shouldUpdateReplicaCrdImage({
-        databaseImage: "ghcr.io/example/alpha:1.2.3",
+        requestedImage: "ghcr.io/example/alpha:1.2.3",
         clusterImage: "ghcr.io/example/alpha:latest",
       }),
-    ).toBe(false)
+    ).toBe(true)
   })
 })
 

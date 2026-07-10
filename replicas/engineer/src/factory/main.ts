@@ -24,6 +24,7 @@ import {
   createDeliverChangesTool,
   createDeployReplicaTool,
   createDevDatabaseTool,
+  createListReplicasTool,
 } from "./tools"
 
 const FACTORY_RCLONE_CONFIG_DIR = ".config/rclone"
@@ -188,6 +189,9 @@ async function startSharedFactoryMcpServer({
         alphaOperationService: services.alphaOperationService,
         owner,
         repo,
+      }),
+      createListReplicasTool({
+        replicaService: services.alphaReplicaService,
       }),
       createDevDatabaseTool({
         provisionService: services.provisionService,
