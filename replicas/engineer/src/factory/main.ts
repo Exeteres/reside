@@ -38,6 +38,7 @@ const RESIDE_LLM_ENDPOINT_ENV_VAR = "RESIDE_LLM_ENDPOINT"
 const RESIDE_LLM_API_KEY_ENV_VAR = "RESIDE_LLM_API_KEY"
 const GITHUB_MCP_URL = "https://api.githubcopilot.com/mcp/"
 const GITHUB_MCP_TOOLSETS = "default,actions"
+const GITHUB_MCP_PROTOCOL_VERSION = "2025-06-18"
 const SIGNOZ_MCP_BINARY_PATH = "/usr/local/bin/signoz-mcp-server"
 const SIGNOZ_URL = "http://signoz.replica-infra.svc.cluster.local:8080"
 const OPENCODE_REPOSITORY_CONFIG_PATH = ".opencode/opencode.json"
@@ -312,12 +313,7 @@ async function createFactoryOpenCodeConfig(
   const githubToken = await createGitHubInstallationToken(github)
   const signozSecret = await crypto.getSecret(signozSecretSchema, "signoz")
 
-  logger.info(
-    'engineer factory github mcp configured url="%s" toolsets="%s" token_length="%s"',
-    GITHUB_MCP_URL,
-    GITHUB_MCP_TOOLSETS,
-    String(githubToken.length),
-  )
+  await preflightGitHubMcp(githubToken)
 
   return {
     ...config,
@@ -659,6 +655,60 @@ async function createGitHubInstallationToken(
   logger.info('engineer github installation token created token_length="%s"', String(token.length))
 
   return token
+}
+
+async function preflightGitHubMcp(githubToken: string): Promise<void> {
+  try {
+    const response = await fetch(GITHUB_MCP_URL, {
+      method: "POST",
+      headers: {
+        accept: "application/json, text/event-stream",
+        authorization: `Bearer ${githubToken}`,
+        "content-type": "application/json",
+        "mcp-protocol-version": GITHUB_MCP_PROTOCOL_VERSION,
+        "X-MCP-Toolsets": GITHUB_MCP_TOOLSETS,
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: "engineer-factory-preflight",
+        method: "initialize",
+        params: {
+          protocolVersion: GITHUB_MCP_PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: {
+            name: "reside-engineer-factory",
+            version: "1.0.0",
+          },
+        },
+      }),
+    })
+
+    const responseText = sanitizeMcpPreflightText(await response.text())
+    if (response.ok) {
+      logger.info(
+        'engineer factory github mcp preflight succeeded status="%s" response="%s"',
+        String(response.status),
+        responseText,
+      )
+      return
+    }
+
+    logger.warn(
+      'engineer factory github mcp preflight failed status="%s" response="%s"',
+      String(response.status),
+      responseText,
+    )
+  } catch (error) {
+    logger.warn({ error }, "engineer factory github mcp preflight request failed")
+  }
+}
+
+function sanitizeMcpPreflightText(value: string): string {
+  return value
+    .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, "Bearer ***")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 1000)
 }
 
 async function pathExists(path: string): Promise<boolean> {
