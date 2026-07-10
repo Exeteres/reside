@@ -61,6 +61,10 @@ export const ru = {
       transactions: {
         title: "История транзакций",
         empty: "Пока пусто",
+        actions: {
+          previous: "Назад",
+          next: "Вперед",
+        },
       },
       transfer: (amount: string) => `Переведено ${amount} ∅`,
       issue: (amount: string, subjectId: string) => `Выпущено ${amount} ∅ для ${subjectId}`,
