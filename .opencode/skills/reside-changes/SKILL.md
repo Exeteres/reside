@@ -26,6 +26,11 @@ enforcement:
 - Avoid complex wording and avoid naming the changed replica unless it is needed for clarity.
 - When a changelog entry names a replica, use the replica title from `src/locale/ru.ts`.
 - Dependency-only changes, including package dependency updates or changes to other replicas, must not cause a replica version bump.
+- Core component changes shared by replicas normally must not cause replica version bumps by themselves.
+- If the user explicitly asks to deploy a specific replica and the deploy would otherwise reuse the in-cluster version, bump that replica version with a patch update even when the code change is only in a shared/core component.
+- Before doing a deploy-only replica version bump for a shared/core component, use the Engineer replica listing tool when available to compare Alpha's in-cluster version with the replica manifest version.
+- Do not add a deploy-only replica version bump if another meaningful change in that replica already bumped the version.
+- Release notes for a deploy-only shared/core component bump must state what changed in the shared/core component and how that affects the deployed replica.
 - Backward-incompatible changes are forbidden.
 - Major version bumps are forbidden.
 

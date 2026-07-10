@@ -48,9 +48,13 @@ export async function waitForReplicaRegistrationWorkflow({
   operationId,
 }: WaitForReplicaRegistrationWorkflowInput): Promise<void> {
   while (true) {
-    const { status } = await reconcileRegistrationOperation({ operationId })
+    const { failureMessage, status } = await reconcileRegistrationOperation({ operationId })
     if (status === "completed") {
       return
+    }
+
+    if (status === "failed") {
+      throw new Error(failureMessage ?? "Replica registration failed")
     }
 
     await safeSleep(REGISTRATION_CHECK_INTERVAL_MS)

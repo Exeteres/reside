@@ -1,5 +1,6 @@
 import type { PermissionRequestServiceClient } from "@reside/api/access/request.v1"
 import type { LoadServiceClient } from "@reside/api/alpha/load.v1"
+import type { ReplicaServiceClient } from "@reside/api/alpha/replica.v1"
 import type { OperationServiceClient } from "@reside/api/common/operation.v1"
 import type {
   PostgresDatabaseCredentials,
@@ -178,9 +179,16 @@ export function createDeployReplicaTool({
         throw new Error("Alpha load operation was not returned")
       }
 
-      await waitForOperationSuccess(loadReplicaResponse.operation, {
-        operationService: alphaOperationService,
-      })
+      try {
+        await waitForOperationSuccess(loadReplicaResponse.operation, {
+          operationService: alphaOperationService,
+        })
+      } catch (error) {
+        throw new Error(
+          `Alpha failed to load replica "${replicaName}" version "${manifest.version}": ${error instanceof Error ? error.message : String(error)}`,
+          { cause: error },
+        )
+      }
 
       logger.info(
         'engineer deploy_replica completed replica="%s" branch="%s"',
@@ -189,6 +197,47 @@ export function createDeployReplicaTool({
       )
 
       return `Replica ${replicaName} deployed successfully`
+    },
+  })
+}
+
+export function createListReplicasTool({
+  replicaService,
+}: {
+  replicaService: ReplicaServiceClient
+}) {
+  return defineTool("list_replicas", {
+    description:
+      "Lists replicas registered in Alpha with deployed versions and release notes, so agents can decide whether a deploy needs a version bump",
+    parameters: z.object({}),
+    handler: async () => {
+      logger.info("engineer list_replicas started")
+
+      const response = await replicaService.listReplicas({})
+      const replicas = [...response.replicas].sort((left, right) =>
+        left.name.localeCompare(right.name),
+      )
+
+      logger.info('engineer list_replicas completed replica_count="%s"', String(replicas.length))
+
+      if (replicas.length === 0) {
+        return "No replicas are registered in Alpha."
+      }
+
+      return replicas
+        .map(replica => {
+          const version = replica.version ?? "<unknown>"
+          const changes = replica.changes?.trim() ?? ""
+          const releaseNotes = changes.length > 0 ? changes : "<none>"
+
+          return [
+            `name=${replica.name}`,
+            `title=${replica.title}`,
+            `version=${version}`,
+            `release_notes=${releaseNotes}`,
+          ].join("\n")
+        })
+        .join("\n\n")
     },
   })
 }

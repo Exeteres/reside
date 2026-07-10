@@ -70,6 +70,22 @@ export function createRegistrationActivities({
       }
 
       const readiness = await evaluateRegistrationReadiness(customObjectsApi, replica)
+      if (!readiness.ready && readiness.reason === "REQUESTED_VERSION_NOT_HIGHER") {
+        const failureMessage =
+          strings.server.registration.operations.reconcileReplica.versionNotHigherFailureMessage
+
+        await operationService.setFailed(
+          operationId,
+          "REQUESTED_VERSION_NOT_HIGHER",
+          failureMessage,
+        )
+
+        return {
+          status: "failed",
+          failureMessage,
+        }
+      }
+
       if (!readiness.ready) {
         return {
           status: "pending",
