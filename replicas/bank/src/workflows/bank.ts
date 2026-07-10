@@ -43,6 +43,7 @@ const { fundTelegramAccount } = proxyActivities<BankActivities>({
 const TRANSACTIONS_PAGE_SIZE = 5
 const PREVIOUS_PAGE_ACTION_NAME = "previous_page"
 const NEXT_PAGE_ACTION_NAME = "next_page"
+const MSK_OFFSET_MS = 3 * 60 * 60 * 1000
 
 export async function fundTelegramAccountWorkflow({
   subjectId,
@@ -225,7 +226,7 @@ function formatTransactionHistoryEntry(
 }
 
 function formatTransactionDate(value: string): string {
-  const date = new Date(value)
+  const date = new Date(new Date(value).getTime() + MSK_OFFSET_MS)
   const day = padDatePart(date.getUTCDate())
   const month = padDatePart(date.getUTCMonth() + 1)
   const year = date.getUTCFullYear()
