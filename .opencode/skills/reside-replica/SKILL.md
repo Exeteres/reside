@@ -82,6 +82,8 @@ Replica package root must not contain extra top-level files or directories outsi
 - Reused texts must be placed in a `common` section.
 - Strings with interpolation must be represented as functions.
 - All modules should import localized text from `src/locale/index.ts` via `strings.*`.
+- Notification messages must be built with `block`, `inline`, `bold`, `italic`, `code`, `link`, or other HTML helpers from `@reside/common` / `@reside/common/workflow`; do not hand-write Markdown formatting such as `**bold**` in notification content.
+- When embedding already-rendered trusted notification HTML, pass it as `{ html }` instead of concatenating raw HTML strings with unescaped text.
 
 Example:
 
