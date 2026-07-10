@@ -37,6 +37,7 @@ const FACTORY_MCP_TOKEN_ENV_VAR = "ENGINEER_FACTORY_MCP_TOKEN"
 const RESIDE_LLM_ENDPOINT_ENV_VAR = "RESIDE_LLM_ENDPOINT"
 const RESIDE_LLM_API_KEY_ENV_VAR = "RESIDE_LLM_API_KEY"
 const GITHUB_MCP_URL = "https://api.githubcopilot.com/mcp/"
+const GITHUB_MCP_TOOLSETS = "default,actions"
 const SIGNOZ_MCP_BINARY_PATH = "/usr/local/bin/signoz-mcp-server"
 const SIGNOZ_URL = "http://signoz.replica-infra.svc.cluster.local:8080"
 const OPENCODE_REPOSITORY_CONFIG_PATH = ".opencode/opencode.json"
@@ -311,6 +312,13 @@ async function createFactoryOpenCodeConfig(
   const githubToken = await createGitHubInstallationToken(github)
   const signozSecret = await crypto.getSecret(signozSecretSchema, "signoz")
 
+  logger.info(
+    'engineer factory github mcp configured url="%s" toolsets="%s" token_length="%s"',
+    GITHUB_MCP_URL,
+    GITHUB_MCP_TOOLSETS,
+    String(githubToken.length),
+  )
+
   return {
     ...config,
     enabled_providers: ["reside"],
@@ -331,7 +339,7 @@ async function createFactoryOpenCodeConfig(
         url: GITHUB_MCP_URL,
         enabled: true,
         headers: {
-          "X-MCP-Toolsets": "default,actions",
+          "X-MCP-Toolsets": GITHUB_MCP_TOOLSETS,
           authorization: `Bearer ${githubToken}`,
         },
         oauth: false,
@@ -647,6 +655,8 @@ async function createGitHubInstallationToken(
   if (token.length === 0) {
     throw new Error("GitHub installation token is empty")
   }
+
+  logger.info('engineer github installation token created token_length="%s"', String(token.length))
 
   return token
 }
