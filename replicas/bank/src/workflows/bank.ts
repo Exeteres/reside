@@ -1,6 +1,13 @@
 import type { BankTransaction } from "../definitions"
 import { isResideError } from "@reside/common/definitions"
-import { defineCommandHandler, sendNotification } from "@reside/common/workflow"
+import {
+  block,
+  bold,
+  defineCommandHandler,
+  type MessageContent,
+  sendNotification,
+  updateNotification,
+} from "@reside/common/workflow"
 import { proxyActivities } from "@temporalio/workflow"
 import {
   type BankActivities,
@@ -32,6 +39,10 @@ const { fundTelegramAccount } = proxyActivities<BankActivities>({
     maximumInterval: "1 minute",
   },
 })
+
+const TRANSACTIONS_PAGE_SIZE = 5
+const PREVIOUS_PAGE_ACTION_NAME = "previous_page"
+const NEXT_PAGE_ACTION_NAME = "next_page"
 
 export async function fundTelegramAccountWorkflow({
   subjectId,
@@ -70,28 +81,63 @@ export const transactionsCommandHandler = defineCommandHandler({
       throw new Error("Command invocation is missing subjectId")
     }
     const subjectId = context.subjectId
-    const page = params.page ?? 1
-    let result: { transactions: BankTransaction[]; nextPageToken?: string }
-    try {
-      result = await listTransactions({
-        subjectId,
-        pageSize: 10,
-        pageToken: page > 1 ? String((page - 1) * 10) : undefined,
-      })
-    } catch (error) {
-      await sendBankFailureNotification(error)
+    let page = params.page ?? 1
+    let notificationId: string | undefined
+
+    while (true) {
+      let result: { transactions: BankTransaction[]; nextPageToken?: string }
+      try {
+        result = await listTransactions({
+          subjectId,
+          pageSize: TRANSACTIONS_PAGE_SIZE,
+          pageToken: page > 1 ? String((page - 1) * TRANSACTIONS_PAGE_SIZE) : undefined,
+        })
+      } catch (error) {
+        await sendBankFailureNotification(error)
+        return
+      }
+
+      const title = strings.notifications.bank.transactions.title
+      const content =
+        result.transactions.length === 0
+          ? strings.notifications.bank.transactions.empty
+          : formatTransactionHistory(result.transactions, subjectId)
+      const actions = buildTransactionHistoryActions(page, result.nextPageToken !== undefined)
+
+      const response = notificationId
+        ? await updateNotification({
+            notificationId,
+            title,
+            content,
+            actions,
+            expectImmediateFeedback: true,
+          })
+        : await sendNotification({
+            channel: BankNotificationChannels.COMMAND,
+            title,
+            message: content,
+            actions,
+            expectImmediateFeedback: true,
+          })
+
+      notificationId = response.notificationId
+
+      if (response.type !== "action") {
+        return
+      }
+
+      if (response.actionName === PREVIOUS_PAGE_ACTION_NAME && page > 1) {
+        page -= 1
+        continue
+      }
+
+      if (response.actionName === NEXT_PAGE_ACTION_NAME && result.nextPageToken !== undefined) {
+        page += 1
+        continue
+      }
+
       return
     }
-
-    const lines = result.transactions
-      .map(transaction => formatTransactionHistoryLine(transaction, subjectId))
-      .join("\n")
-
-    await sendNotification({
-      channel: BankNotificationChannels.COMMAND,
-      title: strings.notifications.bank.transactions.title,
-      message: lines || strings.notifications.bank.transactions.empty,
-    })
   },
 })
 
@@ -128,12 +174,78 @@ export const transferCommandHandler = defineCommandHandler({
   },
 })
 
-function formatTransactionHistoryLine(transaction: BankTransaction, subjectId: string): string {
-  const from = transaction.senderSubjectId ?? "-"
-  const to = transaction.recipientSubjectId
-  const sign = transaction.recipientSubjectId === subjectId ? "+" : "-"
+function formatTransactionHistory(
+  transactions: BankTransaction[],
+  subjectId: string,
+): MessageContent {
+  return block(
+    transactions.flatMap((transaction, index) =>
+      index === 0
+        ? [formatTransactionHistoryEntry(transaction, subjectId)]
+        : ["", formatTransactionHistoryEntry(transaction, subjectId)],
+    ),
+  )
+}
 
-  return `[${transaction.id}] ${from} -> ${to}: ${sign}${transaction.amount} ∅`
+function buildTransactionHistoryActions(
+  page: number,
+  hasNextPage: boolean,
+): Record<string, { title: string }> {
+  const actions: Record<string, { title: string }> = {}
+
+  if (page > 1) {
+    actions[PREVIOUS_PAGE_ACTION_NAME] = {
+      title: strings.notifications.bank.transactions.actions.previous,
+    }
+  }
+
+  if (hasNextPage) {
+    actions[NEXT_PAGE_ACTION_NAME] = {
+      title: strings.notifications.bank.transactions.actions.next,
+    }
+  }
+
+  return actions
+}
+
+function formatTransactionHistoryEntry(
+  transaction: BankTransaction,
+  subjectId: string,
+): MessageContent {
+  const sign = transaction.recipientSubjectId === subjectId ? "+" : "-"
+  const date = formatTransactionDate(transaction.createdAt)
+  const peer = getTransactionPeerTitle(transaction, subjectId)
+  const rows: MessageContent[] = [bold(`${sign}${transaction.amount} ∅ | ${date}`), bold(peer)]
+
+  if (transaction.comment) {
+    rows.push(transaction.comment)
+  }
+
+  return block(rows)
+}
+
+function formatTransactionDate(value: string): string {
+  const date = new Date(value)
+  const day = padDatePart(date.getUTCDate())
+  const month = padDatePart(date.getUTCMonth() + 1)
+  const year = date.getUTCFullYear()
+  const hours = padDatePart(date.getUTCHours())
+  const minutes = padDatePart(date.getUTCMinutes())
+
+  return `${day}.${month}.${year} ${hours}:${minutes}`
+}
+
+function padDatePart(value: number): string {
+  return value.toString().padStart(2, "0")
+}
+
+function getTransactionPeerTitle(transaction: BankTransaction, subjectId: string): string {
+  const peerSubjectId =
+    transaction.recipientSubjectId === subjectId
+      ? transaction.senderSubjectId
+      : transaction.recipientSubjectId
+
+  return peerSubjectId ?? "-"
 }
 
 export const issueReplicaFundsCommandHandler = defineCommandHandler({
