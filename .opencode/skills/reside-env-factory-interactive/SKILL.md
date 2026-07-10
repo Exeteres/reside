@@ -40,6 +40,13 @@ description: Use when operating in the Engineer factory web OpenCode environment
 - Avoid shell heredocs, `cat >`, `sed -i`, `perl -pi`, and one-off Node/Python scripts for writing repository source files unless a structured edit tool cannot express the change.
 - Before making changelog, versioning, or commit decisions, load and follow `reside-changes`.
 
+## Ambiguous Bug Reports
+
+- When the user asks to fix a bug but does not provide enough context to identify the failing replica, service, operation, logs, trace, error, or reproduction path, do not blindly edit files.
+- First use the SigNoz MCP tools to investigate production telemetry, starting with the signal that best matches the report.
+- If the signal or resource scope is unclear, follow the SigNoz MCP rules: clarify whether to use metrics, traces, or logs, and ask for or discover a resource-attribute filter before running broad queries.
+- Edit code only after telemetry, reproduction, or user-provided details identify a concrete root cause or a narrow failing component.
+
 ## Commit And Delivery
 
 - Use `commit_changes` when the user asks you to commit or when a completed code-changing task should be committed.
