@@ -37,7 +37,7 @@ export async function provisionPostgresDatabase(
   postgresDatabase: PostgresDatabase,
 ): Promise<void> {
   await ensureDatabaseRole(adminPool, postgresDatabase.database, postgresDatabase.password)
-  await ensureReplicaDatabase(adminPool, postgresDatabase.database)
+  await ensureReplicaDatabase(adminPool, postgresDatabase.database, postgresDatabase.sourceDatabase)
   await ensureDatabaseOwnership(adminConfig, postgresDatabase.database)
 }
 
@@ -63,8 +63,32 @@ export async function ensureDatabaseRole(
   )
 }
 
-async function ensureReplicaDatabase(adminPool: Pool, database: string): Promise<void> {
-  await ensureAdminReplicaDatabase(adminPool, database, database)
+async function ensureReplicaDatabase(
+  adminPool: Pool,
+  database: string,
+  sourceDatabase: string | null,
+): Promise<void> {
+  if (sourceDatabase === null) {
+    await ensureAdminReplicaDatabase(adminPool, database, database)
+    return
+  }
+
+  const existingDatabase = await adminPool.query("SELECT 1 FROM pg_database WHERE datname = $1", [
+    database,
+  ])
+
+  if ((existingDatabase.rowCount ?? 0) === 0) {
+    await adminPool.query(
+      `CREATE DATABASE ${quoteIdentifier(database)} WITH TEMPLATE ${quoteIdentifier(sourceDatabase)}`,
+    )
+  }
+
+  await adminPool.query(
+    `ALTER DATABASE ${quoteIdentifier(database)} OWNER TO ${quoteIdentifier(database)}`,
+  )
+  await adminPool.query(
+    `GRANT ALL PRIVILEGES ON DATABASE ${quoteIdentifier(database)} TO ${quoteIdentifier(database)}`,
+  )
 }
 
 async function ensureDatabaseOwnership(

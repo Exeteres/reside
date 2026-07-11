@@ -61,6 +61,13 @@ message CreateTemporaryPostgresDatabaseResponse {
   }
 }
 
+// The request for creating a temporary PostgreSQL database.
+message CreateTemporaryPostgresDatabaseRequest {
+  // The optional existing database name to use as the template for the temporary database.
+  // Callers can pass names such as replica_alpha to copy production data into the dev database.
+  optional string source_database = 1;
+}
+
 // The response for a GetStorageBucketCredentialsRequest,
 // which may contain either the credentials or an operation if the bucket is not yet ready.
 // The result of the operation, once completed, will be the StorageBucketCredentials.
@@ -81,7 +88,7 @@ service ProvisionService {
   // Creates a new temporary PostgreSQL database for the caller.
   // Temporary databases are deleted automatically 24 hours after creation.
   // This method requires infra:temporary-postgres-database:create permission.
-  rpc CreateTemporaryPostgresDatabase(google.protobuf.Empty)
+  rpc CreateTemporaryPostgresDatabase(CreateTemporaryPostgresDatabaseRequest)
   returns (CreateTemporaryPostgresDatabaseResponse);
 
   // Gets credentials for the caller's personal temporal namespace.

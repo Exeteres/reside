@@ -136,6 +136,8 @@ data Json
 - Later migrations must use short descriptive names of what changed.
 - The dev database is used for migration generation only; data persistence is not important.
 - Non-interactive engineer tasks must create isolated temporary development databases through the engineer database tool.
+- When validating migrations for an existing replica, create the temporary development database from that replica's production database data when available, using the source database name such as `replica_<name>`.
+- Test newly created migrations against the copied real data before submitting them, so application failures on non-empty production-shaped data are caught early.
 - For `prisma migrate dev`, create two databases: use the first URL as `DATABASE_URL` and the second URL as `SHADOW_DATABASE_URL` so Prisma does not need permission to create its own shadow database.
 - For Prisma checks or database-backed tests that do not run `migrate dev`, one temporary `DATABASE_URL` is enough.
 - Temporary databases are removed after 24 hours; if a resumed session finds a database missing, create a replacement for each missing URL and continue.
