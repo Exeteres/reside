@@ -7,6 +7,7 @@ const llmSecretSchema = z.object({
   endpoint: z.string().trim().min(1),
   "api-key": z.string().trim().min(1),
   "image-model": z.string().trim().min(1),
+  "image-moderation": z.enum(["low", "auto"]).default("auto"),
   "smart-model": z.string().trim().min(1).optional(),
 })
 
@@ -25,6 +26,7 @@ export function createOpenAiImageGenerator(
 
     const response = await client.images.generate({
       model: llmSecret["image-model"],
+      moderation: llmSecret["image-moderation"],
       prompt,
       size,
       response_format: "b64_json",
