@@ -918,7 +918,7 @@ export async function getNotificationReadModel(
     )
   }
 
-  return {
+  const result: NotificationJson = {
     notificationId: String(notification.id),
     title: notification.title,
     content: notification.content,
@@ -938,8 +938,13 @@ export async function getNotificationReadModel(
     expectImmediateFeedback: notification.expectImmediateFeedback,
     acquireTopic: notification.acquireTopic,
     acceptedDiceEmojis: notification.acceptedDiceEmojis,
-    protectedForSubjectId: notification.protectedForSubjectId ?? undefined,
   }
+
+  if (notification.protectedForSubjectId !== null) {
+    result.protectedForSubjectId = notification.protectedForSubjectId
+  }
+
+  return result
 }
 
 async function getNotificationReadModelIfAvailable(

@@ -272,7 +272,7 @@ export function throwNotificationServiceError(
   throw new ConnectError(publicMessage, Code.Internal)
 }
 
-function toApiNotification(notification: NotificationJson): ApiNotification {
+export function toApiNotification(notification: NotificationJson): ApiNotification {
   return fromJson(NotificationSchema, notification)
 }
 
