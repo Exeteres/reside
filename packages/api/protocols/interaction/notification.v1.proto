@@ -233,6 +233,11 @@ message SendNotificationRequest {
   // Optional platform-specific sticker file identifier to send after the notification text.
   // Interaction implementations that do not support stickers may ignore this field.
   google.protobuf.StringValue sticker_file_id = 19;
+
+  // Optional image URLs to display in the notification.
+  // Implementations may pass public URLs directly to the target platform.
+  // URLs resolving to private addresses must be fetched by the implementation and uploaded as files.
+  repeated string image_urls = 20;
 }
 
 // The response message for a notification sent to a channel.

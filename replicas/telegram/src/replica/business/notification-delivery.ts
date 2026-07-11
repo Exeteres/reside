@@ -2,6 +2,8 @@ import type { ResideCrypto } from "@reside/common/encryption"
 import type { InlineKeyboardMarkup, InputMediaPhoto } from "grammy/types"
 import type { PrismaClient } from "../../database"
 import type { TelegramBotLike } from "./notification-types"
+import { lookup } from "node:dns/promises"
+import { isIP } from "node:net"
 import { Code, ConnectError } from "@connectrpc/connect"
 import { block, bold, logger, rhid } from "@reside/common"
 import { InputFile } from "grammy"
@@ -10,12 +12,15 @@ import { strings } from "../../locale"
 import { isReplyTargetMessageMissingError, toReplyParameters } from "./notification-message"
 
 type NotificationMediaFile = { content: Uint8Array; name: string }
+type NotificationMediaUrl = { url: string }
+type NotificationImage = NotificationMediaFile | NotificationMediaUrl
 
 export async function sendNotificationPayload(
   bot: TelegramBotLike,
   chatId: string,
   request: {
     images: NotificationMediaFile[]
+    imageUrls?: NotificationMediaUrl[]
     attachments: NotificationMediaFile[]
     stickerFileId?: string
   },
@@ -24,7 +29,9 @@ export async function sendNotificationPayload(
   replyToMessageId: number | undefined,
   messageThreadId?: number,
 ): Promise<{ message_id: number }> {
-  if (request.images.length === 0) {
+  const images = [...request.images, ...(request.imageUrls ?? [])]
+
+  if (images.length === 0) {
     const sentMessage = await bot.api.sendMessage(chatId, messageText, {
       parse_mode: "HTML",
       link_preview_options: {
@@ -56,7 +63,7 @@ export async function sendNotificationPayload(
   const imageMessages = await sendImageGroup(
     bot,
     chatId,
-    request.images,
+    images,
     messageText,
     replyToMessageId,
     messageThreadId,
@@ -105,7 +112,7 @@ export async function sendNotificationPayload(
 async function sendImageGroup(
   bot: TelegramBotLike,
   chatId: string,
-  images: NotificationMediaFile[],
+  images: NotificationImage[],
   caption?: string,
   replyToMessageId?: number,
   messageThreadId?: number,
@@ -116,7 +123,7 @@ async function sendImageGroup(
       return []
     }
 
-    const imageFile = new InputFile(Buffer.from(image.content), image.name)
+    const imageFile = await toTelegramImageInput(image)
     const sentMessage = await bot.api.sendPhoto(chatId, imageFile, {
       caption,
       parse_mode: caption ? "HTML" : undefined,
@@ -128,13 +135,21 @@ async function sendImageGroup(
     return [sentMessage]
   }
 
-  const mediaGroup: InputMediaPhoto[] = images.map((image, index) => ({
-    type: "photo" as const,
-    media: new InputFile(Buffer.from(image.content), image.name),
-    caption: index === 0 ? caption : undefined,
-    parse_mode: index === 0 && caption ? ("HTML" as const) : undefined,
-    show_caption_above_media: index === 0 && caption ? true : undefined,
-  }))
+  const mediaGroup: InputMediaPhoto[] = []
+  for (let index = 0; index < images.length; index++) {
+    const image = images[index]
+    if (!image) {
+      continue
+    }
+
+    mediaGroup.push({
+      type: "photo" as const,
+      media: await toTelegramImageInput(image),
+      caption: index === 0 ? caption : undefined,
+      parse_mode: index === 0 && caption ? ("HTML" as const) : undefined,
+      show_caption_above_media: index === 0 && caption ? true : undefined,
+    })
+  }
 
   return await bot.api.sendMediaGroup(chatId, mediaGroup, {
     reply_parameters: toReplyParameters(replyToMessageId),
@@ -180,6 +195,7 @@ export async function sendNotificationWithReplyFallback(
   senderSubjectId: string,
   request: {
     images: NotificationMediaFile[]
+    imageUrls?: NotificationMediaUrl[]
     attachments: NotificationMediaFile[]
     stickerFileId?: string
   },
@@ -234,6 +250,106 @@ export async function sendNotificationWithReplyFallback(
       usedReplyFallback: true,
     }
   }
+}
+
+async function toTelegramImageInput(image: NotificationImage): Promise<InputFile | string> {
+  if ("content" in image) {
+    return new InputFile(Buffer.from(image.content), image.name)
+  }
+
+  const url = parseHttpImageUrl(image.url)
+  if (!(await resolvesToPrivateAddress(url.hostname))) {
+    return image.url
+  }
+
+  const response = await fetch(image.url)
+  if (!response.ok) {
+    throw new ConnectError(
+      `Failed to download private image URL: ${response.status}`,
+      Code.Internal,
+    )
+  }
+
+  const bytes = new Uint8Array(await response.arrayBuffer())
+  return new InputFile(Buffer.from(bytes), getImageUrlFileName(url))
+}
+
+function parseHttpImageUrl(value: string): URL {
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch (error) {
+    throw new ConnectError(
+      "Image URL is invalid",
+      Code.InvalidArgument,
+      undefined,
+      undefined,
+      error,
+    )
+  }
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new ConnectError("Image URL must use HTTP or HTTPS", Code.InvalidArgument)
+  }
+
+  return url
+}
+
+async function resolvesToPrivateAddress(hostname: string): Promise<boolean> {
+  const addresses = await lookup(hostname, { all: true, verbatim: true })
+  return addresses.some(({ address }) => isPrivateAddress(address))
+}
+
+function isPrivateAddress(address: string): boolean {
+  if (isIP(address) === 4) {
+    return isPrivateIpv4Address(address)
+  }
+
+  const normalized = address.toLowerCase()
+  return (
+    normalized === "::1" ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    normalized.startsWith("fe80:") ||
+    normalized.startsWith("::ffff:10.") ||
+    normalized.startsWith("::ffff:127.") ||
+    normalized.startsWith("::ffff:192.168.") ||
+    normalized.startsWith("::ffff:169.254.")
+  )
+}
+
+function isPrivateIpv4Address(address: string): boolean {
+  const octets = address.split(".").map(value => Number(value))
+  const [first, second] = octets
+
+  if (
+    first === undefined ||
+    second === undefined ||
+    octets.some(value => !Number.isInteger(value))
+  ) {
+    return true
+  }
+
+  return (
+    first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    (first === 198 && (second === 18 || second === 19)) ||
+    first >= 224
+  )
+}
+
+function getImageUrlFileName(url: URL): string {
+  const pathnameName = url.pathname.split("/").filter(Boolean).at(-1)
+  if (pathnameName?.includes(".")) {
+    return pathnameName
+  }
+
+  return "image.png"
 }
 
 export async function sendAvatarPrivacyModeWarning(

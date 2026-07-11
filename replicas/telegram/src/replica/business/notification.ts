@@ -196,6 +196,7 @@ export async function sendNotificationForReplica(
         senderSubjectId,
         {
           images: input.images,
+          imageUrls: input.imageUrls ?? [],
           attachments: input.attachments,
           stickerFileId: input.stickerFileId,
         },
@@ -211,6 +212,7 @@ export async function sendNotificationForReplica(
           senderSubjectId,
           {
             images: input.images,
+            imageUrls: input.imageUrls ?? [],
             attachments: input.attachments,
             stickerFileId: input.stickerFileId,
           },
