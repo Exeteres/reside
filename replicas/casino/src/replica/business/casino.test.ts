@@ -22,7 +22,7 @@ describe("parseBet", () => {
       sides: [1, 2, 3],
       selectedSideCount: 3,
       payoutAmount: "20",
-      multiplierLabel: "x2",
+      multiplierLabel: "x2.0",
     })
   })
 
@@ -30,24 +30,28 @@ describe("parseBet", () => {
     expect(parseBet("10", "1,2-4,4,6").sides).toEqual([1, 2, 3, 4, 6])
   })
 
-  test("parses all sides as even payout with x1 multiplier", () => {
+  test("parses all sides as decimal x1 multiplier", () => {
     expect(parseBet("10", "1-6")).toEqual({
       amount: "10",
       sides: [1, 2, 3, 4, 5, 6],
       selectedSideCount: 6,
       payoutAmount: "10",
-      multiplierLabel: "x1",
+      multiplierLabel: "x1.0",
     })
   })
 
-  test("parses two sides as x3 multiplier", () => {
+  test("parses two sides as decimal x3 multiplier", () => {
     expect(parseBet("10", "2,5")).toEqual({
       amount: "10",
       sides: [2, 5],
       selectedSideCount: 2,
       payoutAmount: "30",
-      multiplierLabel: "x3",
+      multiplierLabel: "x3.0",
     })
+  })
+
+  test("formats fractional multipliers as decimals", () => {
+    expect(parseBet("5", "1-5").multiplierLabel).toBe("x1.2")
   })
 
   test("trims empty separators around sides", () => {
@@ -102,7 +106,7 @@ describe("parseEncryptedBet", () => {
     expect(parsed).toMatchObject({
       sides: [1, 2, 3],
       selectedSideCount: 3,
-      multiplierLabel: "x2",
+      multiplierLabel: "x2.0",
     })
     expect(parsed.amountEcid).toStartWith("enc:")
     expect(parsed.payoutAmountEcid).toStartWith("enc:")
