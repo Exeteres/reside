@@ -37,6 +37,7 @@ import {
   resolveNotificationChannelRoute,
 } from "./notification-channel-binding"
 import {
+  editNotificationMediaPayload,
   sendAvatarPrivacyModeWarning,
   sendNotificationWithReplyFallback,
 } from "./notification-delivery"
@@ -423,6 +424,7 @@ export async function updateNotificationForReplica(
     row.actions.some(action => action.url !== undefined),
   )
   const isNoopUpdate =
+    (input.imageUrls?.length ?? 0) === 0 &&
     notification.title === input.title &&
     notification.content === input.content &&
     notification.status === notificationStatus &&
@@ -493,7 +495,21 @@ export async function updateNotificationForReplica(
   const telegramMessage = await crypto.decrypt(telegramSentMessageSchema, notification.messageEcid)
   const targetChatId = getTelegramMessageChatId(telegramMessage)
 
-  if (!(isNoopUpdate && !hasUrlActions)) {
+  if ((input.imageUrls?.length ?? 0) > 0) {
+    const imageUrl = input.imageUrls?.[0]
+    if (imageUrl === undefined) {
+      throw new ConnectError("Notification image URL is missing", Code.InvalidArgument)
+    }
+
+    await editNotificationMediaPayload(
+      bot,
+      targetChatId,
+      telegramMessage.message_id,
+      imageUrl,
+      messageText,
+      replyMarkup,
+    )
+  } else if (!(isNoopUpdate && !hasUrlActions)) {
     await bot.api.editMessageText(targetChatId, telegramMessage.message_id, messageText, {
       parse_mode: "HTML",
       link_preview_options: {

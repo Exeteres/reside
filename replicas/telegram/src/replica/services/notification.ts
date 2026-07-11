@@ -172,6 +172,7 @@ export function createNotificationService({
             acquireTopic: request.acquireTopic,
             status: toBusinessNotificationStatus(request.status),
             taskGroups: request.taskGroups.map(toBusinessTaskGroup),
+            imageUrls: request.imageUrls.map(url => ({ url })),
           },
         )
 

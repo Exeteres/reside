@@ -401,6 +401,11 @@ export type UpdateNotificationInput<
    * If it becomes true first, helper returns `type: "cancelled"`.
    */
   cancelWhen?: () => boolean
+
+  /**
+   * The updated image URLs to display in the notification.
+   */
+  imageUrls?: string[]
 }
 
 /**
@@ -597,6 +602,7 @@ export async function updateNotification<
     protectedForSubjectId: input.protectedForSubjectId,
     status: input.status,
     taskGroups: toApiTaskGroups(input.taskGroups),
+    imageUrls: input.imageUrls ?? [],
   })
 
   const response = await updateNotification(request)

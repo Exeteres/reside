@@ -15,6 +15,34 @@ type NotificationMediaFile = { content: Uint8Array; name: string }
 type NotificationMediaUrl = { url: string }
 type NotificationImage = NotificationMediaFile | NotificationMediaUrl
 
+export async function editNotificationMediaPayload(
+  bot: TelegramBotLike,
+  chatId: string,
+  messageId: number,
+  image: NotificationMediaUrl,
+  caption: string,
+  replyMarkup: InlineKeyboardMarkup | undefined,
+): Promise<void> {
+  if (bot.api.editMessageMedia === undefined) {
+    throw new ConnectError("Telegram bot cannot edit message media", Code.FailedPrecondition)
+  }
+
+  await bot.api.editMessageMedia(
+    chatId,
+    messageId,
+    {
+      type: "photo",
+      media: await toTelegramImageInput(image),
+      caption,
+      parse_mode: caption.length > 0 ? "HTML" : undefined,
+      show_caption_above_media: caption.length > 0 ? true : undefined,
+    },
+    {
+      reply_markup: replyMarkup,
+    },
+  )
+}
+
 export async function sendNotificationPayload(
   bot: TelegramBotLike,
   chatId: string,

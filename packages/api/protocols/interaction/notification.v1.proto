@@ -302,6 +302,10 @@ message UpdateNotificationRequest {
   // Optional canonical subject identifier allowed to respond to this notification.
   // If not provided, the current restriction is preserved.
   google.protobuf.StringValue protected_for_subject_id = 11;
+
+  // Optional image URLs to display in the updated notification.
+  // Implementations may promote an existing text notification to a media notification when supported.
+  repeated string image_urls = 12;
 }
 
 // The response message for a notification update operation.
