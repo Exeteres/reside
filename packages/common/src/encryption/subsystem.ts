@@ -259,7 +259,6 @@ function createEncryptionRuntime(services: EncryptionServices): EncryptionRuntim
     async transferToReplica(ecids, targetReplicaName) {
       const replicaName = getReplicaName()
       const credentials = await loadVaultCredentials(services)
-      await ensureVaultTransitKey(credentials, targetReplicaName)
 
       const ciphertexts: string[] = []
       for (const ecid of ecids) {
