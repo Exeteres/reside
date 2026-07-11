@@ -18,7 +18,8 @@
     "@temporalio/workflow": "catalog:",
     "pg": "catalog:",
     "prisma": "catalog:",
-    "fastify": "catalog:"
+    "fastify": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@prisma/client": "catalog:",
