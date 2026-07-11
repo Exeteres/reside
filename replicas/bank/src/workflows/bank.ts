@@ -125,6 +125,17 @@ export async function confirmPaymentRequestWorkflow({
     return
   }
 
+  if (result.result.status === "REJECTED") {
+    await updateNotification({
+      notificationId: response.notificationId,
+      title: strings.notifications.bank.paymentRequest.title,
+      content: strings.notifications.bank.paymentRequest.rejected,
+      actions: {},
+      requiresTextResponse: false,
+    })
+    return
+  }
+
   if (!result.result.transaction) {
     throw new Error("Approved payment request is missing transaction")
   }

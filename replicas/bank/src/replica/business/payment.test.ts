@@ -221,6 +221,37 @@ describe("payment requests", () => {
     expect(operationSetCompleted).toHaveBeenCalledWith(42)
   })
 
+  test("rejects approved pending request when payer funds are insufficient", async () => {
+    const crypto = createCrypto()
+    const paymentRequestUpdate = mock(async () => ({}))
+    const paymentAuthorizationUpsert = mock(async () => ({}))
+    const operationSetCompleted = mock(async () => ({}))
+    const prisma = createApprovalPrisma({
+      paymentAuthorizationUpsert,
+      paymentRequestUpdate,
+      payerBalanceEcid: "enc:2",
+    })
+    const operationService = {
+      setCompleted: operationSetCompleted,
+    } as unknown as GenericOperationService<Operation>
+
+    const result = await approvePaymentRequest(crypto, prisma, operationService, {
+      operationId: 42,
+      approveAlways: true,
+    })
+
+    expect(result).toEqual({ status: "REJECTED" })
+    expect(paymentAuthorizationUpsert).not.toHaveBeenCalled()
+    expect(paymentRequestUpdate).toHaveBeenCalledWith({
+      where: { operationId: 42 },
+      data: {
+        status: "REJECTED",
+        resolvedAt: expect.any(Date),
+      },
+    })
+    expect(operationSetCompleted).toHaveBeenCalledWith(42)
+  })
+
   test("rejects pending request and completes operation with rejected result", async () => {
     const paymentRequestUpdate = mock(async () => ({}))
     const operationSetCompleted = mock(async () => ({}))
@@ -328,9 +359,11 @@ function createCrypto(): ResideCrypto {
 function createApprovalPrisma({
   paymentAuthorizationUpsert,
   paymentRequestUpdate,
+  payerBalanceEcid = "enc:10",
 }: {
   paymentAuthorizationUpsert: ReturnType<typeof mock>
   paymentRequestUpdate: ReturnType<typeof mock>
+  payerBalanceEcid?: string
 }): BankPaymentPrisma {
   return {
     paymentRequest: {
@@ -365,7 +398,7 @@ function createApprovalPrisma({
           account: {
             findUnique: mock(async ({ where }: { where: { subject_id: string } }) => ({
               subject_id: where.subject_id,
-              balanceEcid: where.subject_id === "telegram:1" ? "enc:10" : "enc:0",
+              balanceEcid: where.subject_id === "telegram:1" ? payerBalanceEcid : "enc:0",
             })),
             update: mock(async () => ({})),
           },
