@@ -127,5 +127,50 @@ describe("fetchKeyRate", () => {
     expect(rate).toBe(13.5)
     expect(fetchCalls).toHaveLength(1)
     expect(fetchCalls[0]?.init?.method).toBe("POST")
+    expect(fetchCalls[0]?.init?.body).toContain("<fromDate>2026-04-30T12:00:00.000Z</fromDate>")
+    expect(fetchCalls[0]?.init?.body).toContain("<ToDate>2026-05-30T12:00:00.000Z</ToDate>")
+  })
+
+  it("rethrows CBR network failures with context", () => {
+    const fetchFn = createFetchMock(async () => {
+      throw new Error("network unavailable")
+    })
+
+    expect(
+      fetchKeyRate({
+        fetchFn,
+        now: () => new Date("2026-05-30T12:00:00.000Z"),
+      }),
+    ).rejects.toThrow("Failed to fetch key rate response from CBR")
+  })
+
+  it("rethrows CBR XML parser failures with context", () => {
+    const fetchFn = createFetchMock(async () => {
+      return new Response("<xml />", {
+        status: 200,
+        headers: {
+          "content-type": "text/xml",
+        },
+      })
+    })
+
+    expect(
+      fetchKeyRate({
+        fetchFn,
+        now: () => new Date("2026-05-30T12:00:00.000Z"),
+        parseXml: () => {
+          throw new Error("invalid xml")
+        },
+      }),
+    ).rejects.toThrow("Failed to parse key rate XML from CBR")
   })
 })
+
+type FetchMockHandler = (
+  input: Parameters<typeof fetch>[0],
+  init?: RequestInit,
+) => Promise<Response>
+
+function createFetchMock(handler: FetchMockHandler) {
+  return handler as unknown as typeof fetch
+}

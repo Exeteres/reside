@@ -100,4 +100,5 @@ Result fields:
 - `unit` is the unit and is always `percent`.
 - `response` is a human-readable message for the language interface.
 
-If data could not be fetched or parsed, the tool returns an object with a `response` field containing the error text.
+If data could not be fetched or parsed, the tool must throw or rethrow the error.
+The NLS tool handler is expected to pass thrown errors to the replica automatically.

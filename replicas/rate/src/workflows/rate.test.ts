@@ -7,6 +7,7 @@ const sendNotification = mock(async () => {
 })
 
 const fetchKeyRate = mock(async () => ({ rate: 21 }))
+const updateChatTitleRate = mock(async () => ({ updated: true }))
 
 mock.module("@reside/common/workflow", () => {
   return {
@@ -20,6 +21,7 @@ mock.module("@temporalio/workflow", () => {
   return {
     proxyActivities: () => ({
       fetchKeyRate,
+      updateChatTitleRate,
     }),
   }
 })
@@ -66,6 +68,33 @@ describe("rateCommandHandler", () => {
     expect(sendNotification).toHaveBeenCalledWith({
       channel: "rate:rate",
       title: "Не удалось получить ключевую ставку",
+    })
+  })
+
+  it("sends success notification when chat title is not updated", async () => {
+    updateChatTitleRate.mockImplementationOnce(async () => ({ updated: false }))
+    const { rateCommandHandler } = await import("./rate")
+
+    await rateCommandHandler.handler({
+      definition: rateCommandHandler.command,
+      context: {
+        invocationId: "id-3",
+        subjectId: "subject",
+        parameters: {},
+        context: {
+          token: "context-token",
+        },
+      },
+      params: {},
+    })
+
+    expect(updateChatTitleRate).toHaveBeenCalledWith({
+      contextToken: "context-token",
+      rate: 21,
+    })
+    expect(sendNotification).toHaveBeenCalledWith({
+      channel: "rate:rate",
+      title: "Ключевая ставка ЦБ РФ: 21%",
     })
   })
 })

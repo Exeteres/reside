@@ -2,6 +2,7 @@ import { XMLParser } from "fast-xml-parser"
 
 const cbrKeyRateUrl = "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx"
 const cbrSoapAction = "http://web.cbr.ru/KeyRate"
+const keyRateLookupWindowDays = 30
 
 type ParseXml = (xml: string) => unknown
 
@@ -51,25 +52,23 @@ export async function fetchKeyRate({
 }: FetchKeyRateDependencies): Promise<number> {
   const to = now()
   const from = new Date(to)
-  from.setDate(from.getDate() - 30)
+  from.setDate(from.getDate() - keyRateLookupWindowDays)
   const fromDate = formatSoapDateTime(from)
   const toDate = formatSoapDateTime(to)
   const requestBody = buildKeyRateSoapEnvelope(fromDate, toDate)
 
-  const response = await fetchFn(keyRateUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/xml; charset=utf-8",
-      SOAPAction: `"${soapAction}"`,
-    },
-    body: requestBody,
+  const response = await fetchCbrKeyRateResponse({
+    fetchFn,
+    keyRateUrl,
+    soapAction,
+    requestBody,
   })
 
   if (!response.ok) {
     throw new Error(`Failed to fetch key rate response with status "${response.status}"`)
   }
 
-  const xml = await response.text()
+  const xml = await readCbrKeyRateResponseText(response)
   const latestRateRow = parseLatestRateRowFromXml({
     xml,
     parseXml,
@@ -87,6 +86,43 @@ export async function fetchKeyRate({
   }
 
   return parsedRate
+}
+
+async function fetchCbrKeyRateResponse({
+  fetchFn,
+  keyRateUrl,
+  soapAction,
+  requestBody,
+}: {
+  fetchFn: typeof fetch
+  keyRateUrl: string
+  soapAction: string
+  requestBody: string
+}): Promise<Response> {
+  try {
+    return await fetchFn(keyRateUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml; charset=utf-8",
+        SOAPAction: `"${soapAction}"`,
+      },
+      body: requestBody,
+    })
+  } catch (error) {
+    throw new Error("Failed to fetch key rate response from CBR", {
+      cause: error,
+    })
+  }
+}
+
+async function readCbrKeyRateResponseText(response: Response): Promise<string> {
+  try {
+    return await response.text()
+  } catch (error) {
+    throw new Error("Failed to read key rate response from CBR", {
+      cause: error,
+    })
+  }
 }
 
 function formatSoapDateTime(date: Date): string {
@@ -153,7 +189,16 @@ export function parseLatestRateRowFromXml({
 }
 
 function extractRateRows({ xml, parseXml }: { xml: string; parseXml: ParseXml }): RateRow[] {
-  const parsedXml = parseXml(xml)
+  let parsedXml: unknown
+
+  try {
+    parsedXml = parseXml(xml)
+  } catch (error) {
+    throw new Error("Failed to parse key rate XML from CBR", {
+      cause: error,
+    })
+  }
+
   const rows: RateRow[] = []
 
   collectRateRows(parsedXml, rows)
