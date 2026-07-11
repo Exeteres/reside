@@ -7,7 +7,7 @@ import {
   safeSleep,
   sendNotification,
   updateNotification,
-  waitForOperationSuccess,
+  waitForOperation,
 } from "@reside/common/workflow"
 import { proxyActivities, workflowInfo } from "@temporalio/workflow"
 import { betCommand, CasinoNotificationChannels, CasinoValidationError } from "../definitions"
@@ -109,7 +109,7 @@ export const betCommandHandler = defineCommandHandler({
         throw new Error("Pending payment is missing operation id")
       }
 
-      await waitForOperationSuccess(
+      await waitForOperation(
         payment.paymentOperationId,
         subscribeToBankOperationCompletion as never,
       )
