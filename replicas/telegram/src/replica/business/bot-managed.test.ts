@@ -160,6 +160,7 @@ describe("handleManagedBotLifecycleUpdate", () => {
       123,
       expect.objectContaining({
         can_manage_chat: true,
+        can_change_info: true,
         can_promote_members: false,
       }),
     )

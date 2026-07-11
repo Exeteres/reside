@@ -22,7 +22,7 @@ const AVATAR_MINIMAL_ADMIN_PERMISSIONS = {
   can_manage_video_chats: false,
   can_restrict_members: false,
   can_promote_members: false,
-  can_change_info: false,
+  can_change_info: true,
   can_invite_users: false,
   can_post_messages: false,
   can_edit_messages: false,
