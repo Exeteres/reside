@@ -40,5 +40,4 @@ description: Use when consuming or editing the bank replica API, bank commands, 
 
 - Balance reads and transaction listing handle lazily created empty accounts.
 - Transfers use stable idempotency keys and do not derive them from wall-clock time.
-- Payment integrations handle both interactive and automatic rejection paths.
 - User-facing text uses `∅` for the currency symbol.
