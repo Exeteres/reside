@@ -119,13 +119,21 @@ type NotificationTaskUpdatePayload = {
   type: "task_update"
 } & NotificationResponseMetadataPayload
 
+type NotificationDiceResponsePayload = {
+  type: "dice"
+  emoji: string
+  value: number
+} & NotificationResponseMetadataPayload
+
 type NotificationUserResponsePayload<
   TActions extends NotificationActionsInput,
   TRequiresTextResponse extends boolean,
 > = [CallbackActionNames<TActions>] extends [never]
   ? TRequiresTextResponse extends true
-    ? { type: "text"; text: string } & NotificationResponseMetadataPayload
-    : Record<never, never>
+    ?
+        | ({ type: "text"; text: string } & NotificationResponseMetadataPayload)
+        | NotificationDiceResponsePayload
+    : NotificationDiceResponsePayload
   : TRequiresTextResponse extends true
     ?
         | ({
@@ -136,10 +144,13 @@ type NotificationUserResponsePayload<
             type: "text"
             text: string
           } & NotificationResponseMetadataPayload)
-    : {
-        type: "action"
-        actionName: CallbackActionNames<TActions>
-      } & NotificationResponseMetadataPayload
+        | NotificationDiceResponsePayload
+    :
+        | ({
+            type: "action"
+            actionName: CallbackActionNames<TActions>
+          } & NotificationResponseMetadataPayload)
+        | NotificationDiceResponsePayload
 
 type NotificationCancelledPayload = {
   type: "cancelled"
@@ -227,6 +238,11 @@ export type NotificationInput<
   protected?: boolean
 
   /**
+   * Optional subject identifier allowed to respond to this notification.
+   */
+  protectedForSubjectId?: string
+
+  /**
    * Optional subject identifier to send the notification on behalf of.
    */
   sendAsSubjectId?: string
@@ -245,6 +261,11 @@ export type NotificationInput<
    * Whether messages sent into the target topic should be treated as text responses.
    */
   acquireTopic?: boolean
+
+  /**
+   * Dice emojis accepted as notification responses.
+   */
+  acceptedDiceEmojis?: string[]
 
   /**
    * The notification lifecycle status used by renderers.
@@ -351,6 +372,21 @@ export type UpdateNotificationInput<
   taskGroups?: NotificationTaskGroupInput[]
 
   /**
+   * Dice emojis accepted as notification responses.
+   */
+  acceptedDiceEmojis?: string[]
+
+  /**
+   * Whether messages sent into the target topic should be treated as responses.
+   */
+  acquireTopic?: boolean
+
+  /**
+   * Optional subject identifier allowed to respond to this notification.
+   */
+  protectedForSubjectId?: string
+
+  /**
    * Optional cancellation predicate checked while waiting for notification response.
    * If it becomes true first, helper returns `type: "cancelled"`.
    */
@@ -418,10 +454,12 @@ export async function sendNotification<
     actionRows,
     requiresTextResponse: input.requiresTextResponse,
     protected: input.protected,
+    protectedForSubjectId: input.protectedForSubjectId,
     sendAsSubjectId: input.sendAsSubjectId,
     expectImmediateFeedback: input.expectImmediateFeedback,
     topicId: input.topicId,
     acquireTopic: input.acquireTopic,
+    acceptedDiceEmojis: input.acceptedDiceEmojis,
     status: input.status,
     taskGroups: toApiTaskGroups(input.taskGroups),
     attachments: input.attachments ?? [],
@@ -542,6 +580,9 @@ export async function updateNotification<
     actionRows,
     requiresTextResponse: input.requiresTextResponse,
     expectImmediateFeedback: input.expectImmediateFeedback,
+    acceptedDiceEmojis: input.acceptedDiceEmojis,
+    acquireTopic: input.acquireTopic,
+    protectedForSubjectId: input.protectedForSubjectId,
     status: input.status,
     taskGroups: toApiTaskGroups(input.taskGroups),
   })
@@ -834,6 +875,19 @@ async function waitNotificationOutput<
       type: "task_update",
       contextToken: operation.contextToken,
       notification: operation.notification,
+    } as unknown as NotificationOutput<TActions, TRequiresTextResponse>
+  }
+
+  if (operation.diceResponse) {
+    return {
+      notificationId,
+      messageLink,
+      type: "dice",
+      emoji: operation.diceResponse.emoji,
+      value: operation.diceResponse.value,
+      contextToken: operation.contextToken,
+      notification: operation.notification,
+      subjectId: operation.subjectId,
     } as unknown as NotificationOutput<TActions, TRequiresTextResponse>
   }
 

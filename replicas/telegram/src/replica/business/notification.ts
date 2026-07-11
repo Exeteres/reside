@@ -80,6 +80,11 @@ export async function sendNotificationForReplica(
   const notificationStatus = input.status ?? "REGULAR"
   const taskGroups = input.taskGroups ?? []
   assertTaskGroups(notificationStatus, taskGroups)
+  assertResponseMode({
+    acquireTopic: input.acquireTopic === true,
+    acceptedDiceEmojis: input.acceptedDiceEmojis ?? [],
+    protectedForSubjectId: input.protectedForSubjectId,
+  })
 
   const replicaSubjectId = `replica:${replicaName}`
   const senderSubjectId = await resolveSenderSubjectId(
@@ -103,7 +108,10 @@ export async function sendNotificationForReplica(
   const callbackActions = collectCallbackActions(input.actionRows)
   const actionRows = toNotificationActionRows(input.actionRows)
   const hasPendingResponse =
-    callbackActions.length > 0 || input.requiresTextResponse === true || input.acquireTopic === true
+    callbackActions.length > 0 ||
+    input.requiresTextResponse === true ||
+    input.acquireTopic === true ||
+    (input.acceptedDiceEmojis?.length ?? 0) > 0
 
   const avatar = await prisma.avatar.findUnique({
     where: {
@@ -249,8 +257,10 @@ export async function sendNotificationForReplica(
         taskGroups: createTaskGroupNestedWrites(taskGroups),
         requiresTextResponse: input.requiresTextResponse === true,
         isProtected: input.protected === true,
+        protectedForSubjectId: input.protectedForSubjectId,
         expectImmediateFeedback: input.expectImmediateFeedback === true,
         acquireTopic: input.acquireTopic === true,
+        acceptedDiceEmojis: input.acceptedDiceEmojis ?? [],
       },
       select: {
         id: true,
@@ -294,8 +304,10 @@ export async function sendNotificationForReplica(
         taskGroups: createTaskGroupNestedWrites(taskGroups),
         requiresTextResponse: input.requiresTextResponse === true,
         isProtected: input.protected === true,
+        protectedForSubjectId: input.protectedForSubjectId,
         expectImmediateFeedback: input.expectImmediateFeedback === true,
         acquireTopic: input.acquireTopic === true,
+        acceptedDiceEmojis: input.acceptedDiceEmojis ?? [],
       },
       select: {
         id: true,
@@ -367,8 +379,10 @@ export async function updateNotificationForReplica(
       messageEcid: true,
       actionRows: true,
       requiresTextResponse: true,
+      protectedForSubjectId: true,
       expectImmediateFeedback: true,
       acquireTopic: true,
+      acceptedDiceEmojis: true,
       operationId: true,
       operation: {
         select: {
@@ -387,10 +401,20 @@ export async function updateNotificationForReplica(
   const nextRequiresTextResponse = input.requiresTextResponse ?? notification.requiresTextResponse
   const nextExpectImmediateFeedback =
     input.expectImmediateFeedback ?? notification.expectImmediateFeedback
+  const nextProtectedForSubjectId =
+    input.protectedForSubjectId ?? notification.protectedForSubjectId
+  const nextAcceptedDiceEmojis = input.acceptedDiceEmojis ?? notification.acceptedDiceEmojis ?? []
+  const nextAcquireTopic = input.acquireTopic ?? notification.acquireTopic
+  assertResponseMode({
+    acquireTopic: nextAcquireTopic,
+    acceptedDiceEmojis: nextAcceptedDiceEmojis,
+    protectedForSubjectId: nextProtectedForSubjectId,
+  })
   const nextHasPendingResponse =
     nextCallbackActionNames.length > 0 ||
     nextRequiresTextResponse === true ||
-    notification.acquireTopic === true
+    nextAcquireTopic === true ||
+    nextAcceptedDiceEmojis.length > 0
   const hasUrlActions = input.actionRows.some(row =>
     row.actions.some(action => action.url !== undefined),
   )
@@ -400,7 +424,10 @@ export async function updateNotificationForReplica(
     notification.status === notificationStatus &&
     JSON.stringify(notification.actionRows) === JSON.stringify(nextActionRowsData) &&
     notification.requiresTextResponse === nextRequiresTextResponse &&
+    notification.protectedForSubjectId === nextProtectedForSubjectId &&
     notification.expectImmediateFeedback === nextExpectImmediateFeedback &&
+    notification.acquireTopic === nextAcquireTopic &&
+    JSON.stringify(notification.acceptedDiceEmojis) === JSON.stringify(nextAcceptedDiceEmojis) &&
     JSON.stringify(await getNotificationTaskGroups(prisma, notification.id)) ===
       JSON.stringify(taskGroups)
 
@@ -527,7 +554,10 @@ export async function updateNotificationForReplica(
           create: createTaskGroupNestedWrites(taskGroups).create,
         },
         requiresTextResponse: nextRequiresTextResponse,
+        protectedForSubjectId: nextProtectedForSubjectId,
         expectImmediateFeedback: nextExpectImmediateFeedback,
+        acquireTopic: nextAcquireTopic,
+        acceptedDiceEmojis: nextAcceptedDiceEmojis,
         operationId: nextOperationId,
       },
     })
@@ -561,6 +591,7 @@ export async function acceptNotificationResponseForReplica(
       requiresTextResponse: true,
       actionRows: true,
       acquireTopic: true,
+      acceptedDiceEmojis: true,
       operationId: true,
       sendAsSubjectId: true,
       operation: {
@@ -578,7 +609,8 @@ export async function acceptNotificationResponseForReplica(
   if (
     collectCallbackActions(toActionRowsFromData(notification.actionRows)).length === 0 &&
     !notification.requiresTextResponse &&
-    !notification.acquireTopic
+    !notification.acquireTopic &&
+    notification.acceptedDiceEmojis.length === 0
   ) {
     throw new ConnectError(
       `Notification "${input.notificationId}" does not accept responses`,
@@ -842,6 +874,8 @@ export async function getNotificationReadModel(
       isProtected: true,
       expectImmediateFeedback: true,
       acquireTopic: true,
+      acceptedDiceEmojis: true,
+      protectedForSubjectId: true,
       taskGroups: {
         orderBy: {
           position: "asc",
@@ -875,7 +909,8 @@ export async function getNotificationReadModel(
     typeof notification.requiresTextResponse !== "boolean" ||
     typeof notification.isProtected !== "boolean" ||
     typeof notification.expectImmediateFeedback !== "boolean" ||
-    typeof notification.acquireTopic !== "boolean"
+    typeof notification.acquireTopic !== "boolean" ||
+    !Array.isArray(notification.acceptedDiceEmojis)
   ) {
     throw new ConnectError(
       `Notification "${notificationId}" read model is incomplete`,
@@ -902,6 +937,8 @@ export async function getNotificationReadModel(
     protected: notification.isProtected,
     expectImmediateFeedback: notification.expectImmediateFeedback,
     acquireTopic: notification.acquireTopic,
+    acceptedDiceEmojis: notification.acceptedDiceEmojis,
+    protectedForSubjectId: notification.protectedForSubjectId ?? undefined,
   }
 }
 
@@ -1038,6 +1075,27 @@ function assertTaskGroups(
       "Planning notification must include at least one task",
       Code.InvalidArgument,
     )
+  }
+}
+
+function assertResponseMode(input: {
+  acquireTopic: boolean
+  acceptedDiceEmojis: string[]
+  protectedForSubjectId?: string | null
+}): void {
+  if (input.acceptedDiceEmojis.length === 0) {
+    return
+  }
+
+  if (input.acquireTopic) {
+    throw new ConnectError(
+      "Dice responses cannot be combined with topic acquisition",
+      Code.InvalidArgument,
+    )
+  }
+
+  if (input.protectedForSubjectId == null || input.protectedForSubjectId.length === 0) {
+    throw new ConnectError("Dice responses must be protected for a subject", Code.InvalidArgument)
   }
 }
 

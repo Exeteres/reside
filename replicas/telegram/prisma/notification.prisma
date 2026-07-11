@@ -8,6 +8,9 @@ enum NotificationResponseType {
 
   /// The user updated the notification task list.
   TASK_UPDATE
+
+  /// The user submitted a dice response.
+  DICE
 }
 
 /// The high-level notification lifecycle status used by renderers.
@@ -68,6 +71,12 @@ model NotificationResponse {
 
   /// The encrypted text value when the response kind is TEXT.
   textResponse EncryptedContent? @relation(name: "NotificationResponseText", fields: [textResponseEcid], references: [ecid])
+
+  /// The dice emoji when the response kind is DICE.
+  diceEmoji String?
+
+  /// The dice value when the response kind is DICE.
+  diceValue Int?
 
   /// The timestamp when the response was created.
   createdAt DateTime @default(now())
@@ -316,11 +325,17 @@ model Notification {
   /// Whether interaction with this notification requires permission checks.
   isProtected Boolean @default(false)
 
+  /// Optional canonical subject identifier allowed to respond to this notification.
+  protectedForSubjectId String?
+
   /// Whether callback selection should avoid accepted/chosen suffix rendering.
   expectImmediateFeedback Boolean @default(false)
 
   /// Whether topic messages should resolve this notification as text responses.
   acquireTopic Boolean @default(false)
+
+  /// Dice emojis accepted as notification responses.
+  acceptedDiceEmojis String[] @default([])
 
   /// The avatar provisioning request that references this notification.
   avatarProvisionRequest AvatarProvisionRequest?

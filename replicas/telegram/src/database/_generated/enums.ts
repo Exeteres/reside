@@ -20,7 +20,8 @@ export type NaturalLanguageInteractionMessageSender = (typeof NaturalLanguageInt
 export const NotificationResponseType = {
   ACTION: 'ACTION',
   TEXT: 'TEXT',
-  TASK_UPDATE: 'TASK_UPDATE'
+  TASK_UPDATE: 'TASK_UPDATE',
+  DICE: 'DICE'
 } as const
 
 export type NotificationResponseType = (typeof NotificationResponseType)[keyof typeof NotificationResponseType]

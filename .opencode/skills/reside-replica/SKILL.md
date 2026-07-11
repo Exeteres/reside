@@ -45,6 +45,7 @@ Each replica package must follow this structure:
 - `src/locale/ru.ts` contains the Russian locale dictionary as `export const ru = { ... }` for all user-facing strings.
 - `src/locale/index.ts` reexports locale as `export const strings = ru`.
 - `src/replica/business/` contains business logic units grouped by feature.
+- `src/replica/nls/` contains replica-specific NLS tools; load `reside-nls` for mandatory NLS and memory integration rules.
 - `src/replica/services/` contains runtime service implementations grouped by feature.
 - `src/replica/services/index.ts` is the mandatory barrel entry for service factories used by `src/replica/main.ts`.
 - `src/shared/` is the shared module for bootstrap, replica, and e2e.

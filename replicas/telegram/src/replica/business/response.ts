@@ -57,9 +57,11 @@ export async function completeOperationFromTextReply(args: {
   }
 
   if (
-    operation.isProtected &&
-    !args.isSuperAdminUser(args.userId) &&
-    !(await args.canInteractWithChannel(args.userId, operation.channelName))
+    !(await isResponseAuthorized(args, {
+      isProtected: operation.isProtected,
+      protectedForSubjectId: operation.protectedForSubjectId,
+      channelName: operation.channelName,
+    }))
   ) {
     return {
       completed: false,
@@ -143,9 +145,11 @@ export async function completeOperationFromTopicMessage(args: {
   }
 
   if (
-    operation.isProtected &&
-    !args.isSuperAdminUser(args.userId) &&
-    !(await args.canInteractWithChannel(args.userId, operation.channelName))
+    !(await isResponseAuthorized(args, {
+      isProtected: operation.isProtected,
+      protectedForSubjectId: operation.protectedForSubjectId,
+      channelName: operation.channelName,
+    }))
   ) {
     return {
       completed: false,
@@ -194,6 +198,81 @@ export async function completeOperationFromTopicMessage(args: {
   await args.operationService.setCompleted(operation.id)
 
   logger.info({ operationId: operation.id }, "notification topic response persisted")
+
+  return { completed: true, unauthorized: false }
+}
+
+export async function completeOperationFromDiceMessage(args: {
+  crypto: ResideCrypto
+  prisma: PrismaClient
+  operationService: GenericOperationService<Operation>
+  chatId: number
+  userId: number
+  subjectUserId?: number
+  messageThreadId: number | undefined
+  responseMessageId: number
+  emoji: string
+  value: number
+  canInteractWithChannel: (userId: number, channelName: string | null) => Promise<boolean>
+  isSuperAdminUser: (userId: number) => boolean
+}): Promise<{
+  completed: boolean
+  unauthorized: boolean
+  unauthorizedChannelName?: string | null
+}> {
+  const operation = await getPendingOperationByDiceMessage(args.prisma, {
+    chatId: args.chatId,
+    subjectId: toResponderSubjectId(args.subjectUserId),
+    messageThreadId: args.messageThreadId,
+    emoji: args.emoji,
+  })
+
+  if (!operation) {
+    return { completed: false, unauthorized: false }
+  }
+
+  try {
+    const responseContextToken = await createInteractionContextToken(args.crypto, {
+      chat_id: String(args.chatId),
+      message_id: args.responseMessageId,
+    })
+
+    await args.prisma.notificationResponse.create({
+      data: {
+        operationId: operation.id,
+        type: "DICE",
+        actionName: null,
+        subjectId: toResponderSubjectId(args.subjectUserId),
+        textResponseEcid: null,
+        diceEmoji: args.emoji,
+        diceValue: args.value,
+      },
+    })
+
+    await args.prisma.operation.update({
+      where: {
+        id: operation.id,
+      },
+      data: {
+        notificationResponseContextToken: responseContextToken,
+      },
+    })
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      if (await hasExistingResponseForPendingOperation(args.prisma, operation.id)) {
+        await args.operationService.setCompleted(operation.id)
+        return { completed: true, unauthorized: false }
+      }
+
+      return { completed: false, unauthorized: false }
+    }
+
+    throw error
+  }
+
+  await args.operationService.setCompleted(operation.id)
+
+  logger.info({ operationId: operation.id }, "notification dice response persisted")
 
   return { completed: true, unauthorized: false }
 }
@@ -316,9 +395,11 @@ export async function completeOperationFromCallbackAction(args: {
   }
 
   if (
-    actionableOperation.isProtected &&
-    !args.isSuperAdminUser(args.userId) &&
-    !(await args.canInteractWithChannel(args.userId, actionableOperation.channelName))
+    !(await isResponseAuthorized(args, {
+      isProtected: actionableOperation.isProtected,
+      protectedForSubjectId: actionableOperation.protectedForSubjectId,
+      channelName: actionableOperation.channelName,
+    }))
   ) {
     logger.info(
       {
@@ -402,6 +483,37 @@ function toResponderSubjectId(subjectUserId: number | undefined): string | null 
   return subjectUserId === undefined ? null : toTelegramSubjectId(subjectUserId)
 }
 
+async function isResponseAuthorized(
+  args: {
+    userId: number
+    subjectUserId?: number
+    canInteractWithChannel: (userId: number, channelName: string | null) => Promise<boolean>
+    isSuperAdminUser: (userId: number) => boolean
+  },
+  operation: {
+    isProtected: boolean
+    protectedForSubjectId: string | null | undefined
+    channelName: string | null
+  },
+): Promise<boolean> {
+  if (args.isSuperAdminUser(args.userId)) {
+    return true
+  }
+
+  if (
+    operation.protectedForSubjectId != null &&
+    operation.protectedForSubjectId !== toResponderSubjectId(args.subjectUserId)
+  ) {
+    return false
+  }
+
+  if (!operation.isProtected) {
+    return true
+  }
+
+  return await args.canInteractWithChannel(args.userId, operation.channelName)
+}
+
 async function hasExistingResponseForPendingOperation(
   prisma: PrismaClient,
   operationId: number,
@@ -436,6 +548,7 @@ async function getPendingOperationsByMessage(
     callbackActionNames: string[]
     channelName: string | null
     isProtected: boolean
+    protectedForSubjectId: string | null
     targetChatRhid: string
     response: { operationId: number } | null
   }[]
@@ -451,6 +564,7 @@ async function getPendingOperationsByMessage(
       id: true,
       actionRows: true,
       isProtected: true,
+      protectedForSubjectId: true,
       channel: {
         select: {
           name: true,
@@ -488,6 +602,7 @@ async function getPendingOperationsByMessage(
         callbackActionNames: getNotificationCallbackActionNames(record.actionRows),
         channelName: record.channel.name,
         isProtected: record.isProtected,
+        protectedForSubjectId: record.protectedForSubjectId,
         targetChatRhid: record.chat.telegramRhid,
         response: record.operation.notificationResponse,
       },
@@ -502,6 +617,7 @@ async function getPendingOperationByTopic(
   id: number
   channelName: string | null
   isProtected: boolean
+  protectedForSubjectId: string | null
 } | null> {
   const record = await prisma.notification.findFirst({
     where: {
@@ -519,6 +635,7 @@ async function getPendingOperationByTopic(
     },
     select: {
       isProtected: true,
+      protectedForSubjectId: true,
       channel: {
         select: {
           name: true,
@@ -543,6 +660,64 @@ async function getPendingOperationByTopic(
     id: record.operation.id,
     channelName: record.channel.name,
     isProtected: record.isProtected,
+    protectedForSubjectId: record.protectedForSubjectId,
+  }
+}
+
+async function getPendingOperationByDiceMessage(
+  prisma: PrismaClient,
+  args: {
+    chatId: number
+    subjectId: string | null
+    messageThreadId: number | undefined
+    emoji: string
+  },
+): Promise<{
+  id: number
+} | null> {
+  if (args.subjectId === null) {
+    return null
+  }
+
+  const record = await prisma.notification.findFirst({
+    where: {
+      acceptedDiceEmojis: {
+        has: args.emoji,
+      },
+      protectedForSubjectId: args.subjectId,
+      chat: {
+        telegramRhid: rhid(String(args.chatId)),
+      },
+      ...(args.messageThreadId === undefined
+        ? { topicId: null }
+        : {
+            topic: {
+              threadRhid: rhid(args.messageThreadId),
+            },
+          }),
+      operation: {
+        status: "PENDING",
+        notificationResponse: null,
+      },
+    },
+    select: {
+      operation: {
+        select: {
+          id: true,
+        },
+      },
+    },
+    orderBy: {
+      id: "desc",
+    },
+  })
+
+  if (!record?.operation) {
+    return null
+  }
+
+  return {
+    id: record.operation.id,
   }
 }
 

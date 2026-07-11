@@ -1,0 +1,70 @@
+enum BetStatus {
+  PAYMENT_PENDING
+  PAYMENT_REJECTED
+  WAITING_DICE
+  LOST
+  PAYOUT_PENDING
+  PAYOUT_COMPLETED
+  FAILED
+}
+
+/// Represents a single dice bet orchestrated by the casino workflow.
+model Bet {
+  id Int @id @default(autoincrement())
+
+  /// The command invocation identifier used as the bet idempotency source.
+  invocationId String @unique
+
+  /// The Temporal workflow identifier that owns the bet lifecycle.
+  workflowId String @unique
+
+  /// The canonical player subject identifier, for example `telegram:1`.
+  playerSubjectId String
+
+  /// The ECID of the encrypted bet amount in ∅.
+  amountEcid String @unique
+
+  /// The encrypted bet amount in ∅.
+  amount EncryptedContent @relation(name: "BetAmount", fields: [amountEcid], references: [ecid], onDelete: Restrict)
+
+  /// The selected dice sides, sorted ascending.
+  sides Int[]
+
+  /// Number of selected sides.
+  selectedSideCount Int
+
+  /// The ECID of the encrypted integer payout amount in ∅.
+  payoutAmountEcid String @unique
+
+  /// The encrypted integer payout amount in ∅.
+  payoutAmount EncryptedContent @relation(name: "BetPayoutAmount", fields: [payoutAmountEcid], references: [ecid], onDelete: Restrict)
+
+  /// The bank payment idempotency key.
+  paymentIdempotencyKey String @unique
+
+  /// The bank payout transfer idempotency key.
+  payoutIdempotencyKey String @unique
+
+  /// Bank operation id when payment awaits user confirmation.
+  paymentOperationId Int?
+
+  /// Opaque casino progress notification id.
+  notificationId String?
+
+  /// Dice emoji received from the interaction implementation.
+  diceEmoji String?
+
+  /// Dice value received from the interaction implementation.
+  diceValue Int?
+
+  status BetStatus @default(PAYMENT_PENDING)
+
+  failureMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resolvedAt DateTime?
+
+  @@index([playerSubjectId, status])
+  @@index([createdAt])
+}
