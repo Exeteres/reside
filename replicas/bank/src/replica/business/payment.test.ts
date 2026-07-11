@@ -87,6 +87,54 @@ describe("payment requests", () => {
     })
   })
 
+  test("rejects authorized request when payer funds are insufficient", async () => {
+    const crypto = createCrypto()
+    const operationCreate = mock(async () => ({ id: 42 }))
+    const paymentRequestCreate = mock(async () => ({}))
+    const prisma = {
+      paymentRequest: {
+        findUnique: mock(async () => null),
+        create: paymentRequestCreate,
+      },
+      paymentAuthorization: {
+        findUnique: mock(async () => ({ id: 1 })),
+      },
+      operation: {
+        create: operationCreate,
+      },
+      $transaction: mock(
+        async callback =>
+          await callback({
+            transaction: {
+              findUnique: mock(async () => null),
+            },
+            account: {
+              findUnique: mock(async ({ where }: { where: { subject_id: string } }) => ({
+                subject_id: where.subject_id,
+                balanceEcid: where.subject_id === "telegram:1" ? "enc:2" : "enc:0",
+              })),
+            },
+          }),
+      ),
+    } as unknown as BankPaymentPrisma
+
+    const result = await requestPayment(crypto, prisma, {} as TemporalClient, baseInput)
+
+    expect(result).toEqual({ type: "result", result: { status: "REJECTED" } })
+    expect(paymentRequestCreate).toHaveBeenCalledWith({
+      data: {
+        operationId: 42,
+        payerSubjectId: "telegram:1",
+        requesterSubjectId: "replica:casino",
+        amountEcid: "enc:7",
+        idempotencyKey: "bet:1",
+        commentEcid: "enc:Ставка",
+        status: "REJECTED",
+        resolvedAt: expect.any(Date),
+      },
+    })
+  })
+
   test("returns existing pending operation for idempotent retry", async () => {
     const crypto = createCrypto()
     const prisma = {

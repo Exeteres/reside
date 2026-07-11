@@ -1,7 +1,7 @@
 import type { GenericOperationService, ResideCrypto } from "@reside/common"
 import type { Client as TemporalClient } from "@temporalio/client"
 import type { Operation, PrismaClient } from "../../database"
-import type { PaymentRequestResult } from "../../definitions"
+import type { BankTransaction, PaymentRequestResult } from "../../definitions"
 import { DEFAULT_TEMPORAL_TASK_QUEUE } from "@reside/common"
 import { WorkflowIdReusePolicy } from "@temporalio/client"
 import { OperationType } from "../../database"
@@ -138,16 +138,55 @@ export async function requestPayment(
   })
 
   if (authorization) {
-    const transaction = await transfer(crypto, prisma, {
-      senderSubjectId: input.payerSubjectId,
-      recipientSubjectId: input.requesterSubjectId,
-      amount: input.amount,
-      idempotencyKey: `payment:${input.idempotencyKey}`,
-      comment: input.comment,
-    })
-
     const amountEcid = await crypto.encrypt(input.amount)
     const commentEcid = input.comment ? await crypto.encrypt(input.comment) : undefined
+
+    let transaction: BankTransaction | undefined
+    try {
+      transaction = await transfer(crypto, prisma, {
+        senderSubjectId: input.payerSubjectId,
+        recipientSubjectId: input.requesterSubjectId,
+        amount: input.amount,
+        idempotencyKey: `payment:${input.idempotencyKey}`,
+        comment: input.comment,
+      })
+    } catch (error) {
+      if (!(error instanceof BankError) || error.reason !== strings.errors.insufficientFunds) {
+        throw error
+      }
+
+      const operation = await prisma.operation.create({
+        data: {
+          title: strings.notifications.bank.paymentRequest.operationTitle,
+          description: strings.notifications.bank.paymentRequest.operationDescription(
+            input.amount,
+            input.requesterSubjectId,
+          ),
+          type: OperationType.PAYMENT_REQUEST,
+          status: "COMPLETED",
+          resolvedAt: new Date(),
+        },
+      })
+
+      await prisma.paymentRequest.create({
+        data: {
+          operationId: operation.id,
+          payerSubjectId: input.payerSubjectId,
+          requesterSubjectId: input.requesterSubjectId,
+          amountEcid,
+          idempotencyKey: input.idempotencyKey,
+          commentEcid,
+          status: "REJECTED",
+          resolvedAt: new Date(),
+        },
+      })
+
+      return {
+        type: "result",
+        result: { status: "REJECTED" },
+      }
+    }
+
     const operation = await prisma.operation.create({
       data: {
         title: strings.notifications.bank.paymentRequest.operationTitle,
