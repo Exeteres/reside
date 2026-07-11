@@ -105,6 +105,7 @@ export function createNotificationService({
             content: request.content,
             actionRows: request.actionRows,
             images: request.images,
+            imageUrls: request.imageUrls.map(url => ({ url })),
             attachments: request.attachments,
             contextToken: request.contextToken,
             sendAsSubjectId: request.sendAsSubjectId,

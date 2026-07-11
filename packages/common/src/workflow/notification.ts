@@ -228,6 +228,11 @@ export type NotificationInput<
   images?: InlineFile[]
 
   /**
+   * The image URLs to be included in the notification.
+   */
+  imageUrls?: string[]
+
+  /**
    * Optional platform-specific sticker file identifier to send after the notification text.
    */
   stickerFileId?: string
@@ -469,6 +474,7 @@ export async function sendNotification<
     taskGroups: toApiTaskGroups(input.taskGroups),
     attachments: input.attachments ?? [],
     images: input.images ?? [],
+    imageUrls: input.imageUrls ?? [],
     stickerFileId: input.stickerFileId,
   })
 

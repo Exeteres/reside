@@ -38,6 +38,10 @@ export type NotificationFileInput = {
   name: string
 }
 
+export type NotificationImageUrlInput = {
+  url: string
+}
+
 export type NotificationKeyboardOptions = {
   status?: NotificationStatus
 }
@@ -53,6 +57,7 @@ export type SendNotificationInput = {
   content?: string
   actionRows: ActionRow[]
   images: NotificationFileInput[]
+  imageUrls?: NotificationImageUrlInput[]
   attachments: NotificationFileInput[]
   contextToken?: string
   sendAsSubjectId?: string
@@ -131,7 +136,7 @@ export type TelegramBotLike = {
     ): Promise<true>
     sendPhoto(
       chatId: string,
-      photo: InputFile,
+      photo: InputFile | string,
       options?: {
         caption?: string
         parse_mode?: "HTML"

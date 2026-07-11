@@ -1,0 +1,36 @@
+{
+  "name": "@replicas/ai",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "biome": "biome check --write --unsafe --error-on-warnings",
+    "biome:check": "biome check --error-on-warnings",
+    "test": "bun test",
+    "generate": "prisma generate"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.914.0",
+    "@aws-sdk/s3-request-presigner": "3.1048.0",
+    "@bufbuild/protobuf": "catalog:",
+    "@connectrpc/connect": "catalog:",
+    "@connectrpc/connect-fastify": "catalog:",
+    "@temporalio/client": "catalog:",
+    "@temporalio/worker": "catalog:",
+    "@temporalio/workflow": "catalog:",
+    "openai": "catalog:",
+    "pg": "catalog:",
+    "prisma": "catalog:",
+    "fastify": "catalog:"
+  },
+  "devDependencies": {
+    "@prisma/client": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "@types/pg": "catalog:",
+    "@reside/api": "workspace:*",
+    "@reside/common": "workspace:*",
+    "@reside/registry": "workspace:*",
+    "zod": "catalog:"
+  }
+}

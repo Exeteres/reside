@@ -118,6 +118,61 @@ describe("sendNotificationPayload", () => {
     expect(bot.api.sendMessage.spy()).toHaveBeenCalledTimes(0)
   })
 
+  test("passes public image URL directly to Telegram", async () => {
+    const bot = mockDeepFn<TelegramBotLike>()
+    bot.api.sendPhoto.mockResolvedValue({ message_id: 102 } as never)
+
+    const sentMessageId = await sendNotificationPayload(
+      bot,
+      "-1001",
+      {
+        images: [],
+        imageUrls: [{ url: "https://8.8.8.8/image.png" }],
+        attachments: [],
+      },
+      "Message",
+      undefined,
+      undefined,
+    )
+
+    expect(sentMessageId.message_id).toBe(102)
+    expect(bot.api.sendPhoto.spy().mock.calls[0]?.[1]).toBe("https://8.8.8.8/image.png")
+  })
+
+  test("downloads private image URL before sending to Telegram", async () => {
+    const server = Bun.serve({
+      port: 0,
+      fetch: () =>
+        new Response(new Uint8Array([1, 2, 3]), {
+          headers: {
+            "content-type": "image/png",
+          },
+        }),
+    })
+    const bot = mockDeepFn<TelegramBotLike>()
+    bot.api.sendPhoto.mockResolvedValue({ message_id: 103 } as never)
+
+    try {
+      const sentMessageId = await sendNotificationPayload(
+        bot,
+        "-1001",
+        {
+          images: [],
+          imageUrls: [{ url: `http://127.0.0.1:${server.port}/private.png` }],
+          attachments: [],
+        },
+        "Message",
+        undefined,
+        undefined,
+      )
+
+      expect(sentMessageId.message_id).toBe(103)
+      expect(typeof bot.api.sendPhoto.spy().mock.calls[0]?.[1]).toBe("object")
+    } finally {
+      await server.stop()
+    }
+  })
+
   test("sends action prompt when media exists and reply markup is provided", async () => {
     const bot = mockDeepFn<TelegramBotLike>()
     bot.api.sendMediaGroup.mockResolvedValue([{ message_id: 201 }] as never)

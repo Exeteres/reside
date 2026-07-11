@@ -6,9 +6,37 @@ import { describe, expect, mock, test } from "bun:test"
 import { CommandParameterType } from "@reside/api/interaction/definition.v1"
 import { mockDeepFn, testCrypto } from "@reside/common/testing"
 import { strings } from "../../locale"
+import { parseCommandParameters } from "./bot-command"
 import { handleCommandInvocation } from "./bot-command-invocation"
 
 describe("handleCommandInvocation", () => {
+  test("captures rest command arguments as one parameter", () => {
+    const parameters = parseCommandParameters(
+      [
+        {
+          name: "size",
+          title: "Size",
+          type: CommandParameterType.STRING,
+          required: true,
+          rest: false,
+        },
+        {
+          name: "prompt",
+          title: "Prompt",
+          type: CommandParameterType.STRING,
+          required: true,
+          rest: true,
+        },
+      ],
+      ["1024x1024", "silent", "wizard", "near", "a", "lake"],
+    )
+
+    expect(parameters).toEqual({
+      size: "1024x1024",
+      prompt: "silent wizard near a lake",
+    })
+  })
+
   test("returns early for non-command text", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     const authzService = mockDeepFn<AuthzServiceClient>()
