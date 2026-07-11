@@ -6,6 +6,7 @@ import {
   inline,
   safeSleep,
   sendNotification,
+  updateNotification,
   waitForOperationSuccess,
 } from "@reside/common/workflow"
 import { proxyActivities, workflowInfo } from "@temporalio/workflow"
@@ -115,22 +116,19 @@ export const betCommandHandler = defineCommandHandler({
 
     if (payment.status === "REJECTED") {
       await markPaymentRejected({ betId })
-      await sendNotification({
-        channel: CasinoNotificationChannels.COMMAND,
+      await updateNotification({
+        notificationId: notification.notificationId,
         title: strings.notifications.bet.paymentRejected.title,
-        message: strings.notifications.bet.paymentRejected.content,
-        system: true,
-        waitForResponse: false,
+        content: strings.notifications.bet.paymentRejected.content,
       })
       return
     }
 
     await markWaitingDice({ betId })
-    const dice = await sendNotification({
-      channel: CasinoNotificationChannels.COMMAND,
+    const dice = await updateNotification({
+      notificationId: notification.notificationId,
       title: strings.notifications.bet.waitingDice.title,
-      message: formatWaitingDiceMessage(parsed),
-      system: true,
+      content: formatWaitingDiceMessage(parsed),
       actions: {},
       requiresTextResponse: false,
       acceptedDiceEmojis: [DICE_EMOJI],
@@ -166,7 +164,7 @@ export const betCommandHandler = defineCommandHandler({
     }
 
     await markPayoutPending({ betId, diceEmoji: dice.emoji, diceValue: dice.value })
-    await sendNotification({
+    const resultNotification = await sendNotification({
       channel: CasinoNotificationChannels.COMMAND,
       contextToken: dice.contextToken,
       title: strings.notifications.bet.wonPending.title,
@@ -177,13 +175,10 @@ export const betCommandHandler = defineCommandHandler({
 
     const payout = await transferPayout({ betId })
     await completePayout({ betId, transactionId: payout.transactionId })
-    await sendNotification({
-      channel: CasinoNotificationChannels.COMMAND,
-      contextToken: dice.contextToken,
+    await updateNotification({
+      notificationId: resultNotification.notificationId,
       title: strings.notifications.bet.paid.title,
-      message: formatPaidMessage(parsed, dice.value, payout.transactionId),
-      system: dice.contextToken === undefined,
-      waitForResponse: false,
+      content: formatPaidMessage(parsed, dice.value, payout.transactionId),
     })
   },
 })
