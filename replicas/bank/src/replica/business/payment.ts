@@ -344,13 +344,33 @@ export async function approvePaymentRequest(
   const comment = paymentRequest.commentEcid
     ? await crypto.decrypt(encryptedCommentSchema, paymentRequest.commentEcid)
     : undefined
-  const transaction = await transfer(crypto, prisma, {
-    senderSubjectId: paymentRequest.payerSubjectId,
-    recipientSubjectId: paymentRequest.requesterSubjectId,
-    amount,
-    idempotencyKey: `payment:${paymentRequest.idempotencyKey}`,
-    comment,
-  })
+
+  let transaction: BankTransaction | undefined
+  try {
+    transaction = await transfer(crypto, prisma, {
+      senderSubjectId: paymentRequest.payerSubjectId,
+      recipientSubjectId: paymentRequest.requesterSubjectId,
+      amount,
+      idempotencyKey: `payment:${paymentRequest.idempotencyKey}`,
+      comment,
+    })
+  } catch (error) {
+    if (!(error instanceof BankError) || error.reason !== strings.errors.insufficientFunds) {
+      throw error
+    }
+
+    await prisma.paymentRequest.update({
+      where: { operationId: input.operationId },
+      data: {
+        status: "REJECTED",
+        resolvedAt: new Date(),
+      },
+    })
+    await operationService.setCompleted(input.operationId)
+
+    return { status: "REJECTED" }
+  }
+
   const status = input.approveAlways ? "APPROVED_ALWAYS" : "APPROVED"
 
   if (input.approveAlways) {
