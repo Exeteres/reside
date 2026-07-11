@@ -89,6 +89,7 @@ export const ru = {
         approvedAlways: (amount: string) =>
           `Оплачено ${amount} ∅. Следующие запросы будут оплачиваться автоматически.`,
         rejected: "Запрос оплаты отклонен",
+        rejectedWithReason: (reason: string) => `Запрос оплаты отклонен. Причина: ${reason}`,
       },
       failure: {
         title: "Банковская операция не выполнена",

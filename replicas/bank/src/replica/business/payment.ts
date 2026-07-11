@@ -151,7 +151,7 @@ export async function requestPayment(
         comment: input.comment,
       })
     } catch (error) {
-      if (!(error instanceof BankError) || error.reason !== strings.errors.insufficientFunds) {
+      if (!(error instanceof BankError)) {
         throw error
       }
 
@@ -183,7 +183,10 @@ export async function requestPayment(
 
       return {
         type: "result",
-        result: { status: "REJECTED" },
+        result: {
+          status: "REJECTED",
+          rejectionReason: error.reason,
+        },
       }
     }
 
@@ -355,7 +358,7 @@ export async function approvePaymentRequest(
       comment,
     })
   } catch (error) {
-    if (!(error instanceof BankError) || error.reason !== strings.errors.insufficientFunds) {
+    if (!(error instanceof BankError)) {
       throw error
     }
 
@@ -366,9 +369,11 @@ export async function approvePaymentRequest(
         resolvedAt: new Date(),
       },
     })
+
+    // expected payment rejection is a completed business result, not an operation failure
     await operationService.setCompleted(input.operationId)
 
-    return { status: "REJECTED" }
+    return { status: "REJECTED", rejectionReason: error.reason }
   }
 
   const status = input.approveAlways ? "APPROVED_ALWAYS" : "APPROVED"

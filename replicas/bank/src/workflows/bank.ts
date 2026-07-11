@@ -129,7 +129,11 @@ export async function confirmPaymentRequestWorkflow({
     await updateNotification({
       notificationId: response.notificationId,
       title: strings.notifications.bank.paymentRequest.title,
-      content: strings.notifications.bank.paymentRequest.rejected,
+      content: result.result.rejectionReason
+        ? strings.notifications.bank.paymentRequest.rejectedWithReason(
+            result.result.rejectionReason,
+          )
+        : strings.notifications.bank.paymentRequest.rejected,
       actions: {},
       requiresTextResponse: false,
     })
