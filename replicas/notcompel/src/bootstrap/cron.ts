@@ -20,7 +20,6 @@ export async function bootstrapNotcompelCronJob(): Promise<void> {
     namespace,
     body: buildCronJob(namespace, replicaName),
     fieldManager: "notcompel-bootstrap",
-    force: true,
   })
 
   logger.info('created/updated cronjob "%s" in namespace "%s"', CRON_JOB_NAME, namespace)
