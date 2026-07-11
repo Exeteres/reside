@@ -2,11 +2,18 @@ import { NotificationStatus } from "@reside/api/interaction/notification.v1"
 import {
   block,
   defineCommandHandler,
+  safeSleep,
   sendNotification,
   updateNotification,
 } from "@reside/common/workflow"
 import { proxyActivities } from "@temporalio/workflow"
-import { type AiActivities, AiNotificationChannels, imageCommand } from "../definitions"
+import {
+  type AiActivities,
+  AiNotificationChannels,
+  type CreateAiImageInput,
+  type CreateAiImageOutput,
+  imageCommand,
+} from "../definitions"
 import { strings } from "../locale"
 
 const { createAiImage } = proxyActivities<AiActivities>({
@@ -17,6 +24,8 @@ const { createAiImage } = proxyActivities<AiActivities>({
     maximumAttempts: 3,
   },
 })
+
+const IMAGE_GENERATION_KEEPALIVE_INTERVAL_MS = 20_000
 
 export const imageCommandHandler = defineCommandHandler({
   command: imageCommand,
@@ -31,7 +40,7 @@ export const imageCommandHandler = defineCommandHandler({
     })
 
     try {
-      const image = await createAiImage({
+      const image = await createAiImageWithKeepAlive({
         size: params.size,
         prompt: params.prompt,
       })
@@ -53,3 +62,20 @@ export const imageCommandHandler = defineCommandHandler({
     }
   },
 })
+
+async function createAiImageWithKeepAlive(input: CreateAiImageInput): Promise<CreateAiImageOutput> {
+  const imagePromise = createAiImage(input)
+
+  while (true) {
+    const result = await Promise.race([
+      imagePromise.then(image => ({ type: "image" as const, image })),
+      safeSleep(IMAGE_GENERATION_KEEPALIVE_INTERVAL_MS).then(() => ({
+        type: "keepalive" as const,
+      })),
+    ])
+
+    if (result.type === "image") {
+      return result.image
+    }
+  }
+}
