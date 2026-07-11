@@ -1,10 +1,11 @@
+import { waitForOperationSuccess } from "@reside/api"
 import {
   bootstrapService,
   defineCommonResources,
   registerReplica,
   runPrismaMigrations,
 } from "@reside/common"
-import { casinoReplica } from "@reside/registry"
+import { casinoReplica, WellKnownPermissions } from "@reside/registry"
 import { betCommand, CasinoNotificationChannels } from "../definitions"
 import { strings } from "../locale"
 import { createServices } from "../shared"
@@ -25,6 +26,25 @@ await defineCommonResources({
     },
   ],
 })
+
+{
+  const { operation } = await services.permissionRequestService.requestPermissions({
+    reason: strings.bootstrap.bankPaymentRequestReason,
+    permissionSetName: "casino-bank-payment-requests",
+    items: [
+      {
+        permissionName: WellKnownPermissions.BANK_REQUEST_PAYMENTS,
+        scope: "telegram",
+      },
+    ],
+  })
+
+  if (operation) {
+    await waitForOperationSuccess(operation, {
+      operationService: services.accessOperationService,
+    })
+  }
+}
 
 await bootstrapService()
 
