@@ -25,7 +25,7 @@ const { createAiImage } = proxyActivities<AiActivities>({
   },
 })
 
-const IMAGE_GENERATION_KEEPALIVE_INTERVAL_MS = 20_000
+const IMAGE_GENERATION_KEEPALIVE_INTERVAL_MS = 25_000
 
 export const imageCommandHandler = defineCommandHandler({
   command: imageCommand,
