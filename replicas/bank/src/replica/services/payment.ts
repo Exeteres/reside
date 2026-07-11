@@ -7,15 +7,18 @@ import { TransactionKind } from "@reside/api/bank/bank.v1_pb"
 import { PaymentRequestResultStatus } from "@reside/api/bank/payment.v1_pb"
 import { authenticateReplica, crypto } from "@reside/common"
 import { WellKnownPermissions } from "@reside/registry"
+import { BankNotificationChannels } from "../../definitions"
+import { strings } from "../../locale"
 import { requestPayment } from "../business"
 
 type BankPaymentServiceDependencies = Pick<
   BankServices,
-  "authzService" | "operationService" | "prisma" | "temporalClient"
+  "authzService" | "notificationService" | "operationService" | "prisma" | "temporalClient"
 >
 
 export function createBankPaymentService({
   authzService,
+  notificationService,
   operationService,
   prisma,
   temporalClient,
@@ -43,6 +46,12 @@ export function createBankPaymentService({
       })
 
       if (result.type === "result") {
+        await sendRejectedPaymentNotification({
+          notificationService,
+          payerSubjectId: request.payerSubjectId,
+          result: result.result,
+        })
+
         return {
           response: {
             case: "result",
@@ -59,6 +68,30 @@ export function createBankPaymentService({
       }
     },
   }
+}
+
+type RejectedPaymentNotificationInput = {
+  notificationService: BankPaymentServiceDependencies["notificationService"]
+  payerSubjectId: string
+  result: PaymentRequestResult
+}
+
+export async function sendRejectedPaymentNotification({
+  notificationService,
+  payerSubjectId,
+  result,
+}: RejectedPaymentNotificationInput): Promise<void> {
+  if (result.status !== "REJECTED" || !result.rejectionReason) {
+    return
+  }
+
+  await notificationService.sendNotification({
+    channel: BankNotificationChannels.PAYMENT_REQUESTS,
+    partition: payerSubjectId,
+    title: strings.notifications.bank.paymentRequest.title,
+    content: strings.notifications.bank.paymentRequest.rejectedWithReason(result.rejectionReason),
+    requiresTextResponse: false,
+  })
 }
 
 function toApiPaymentRequestResult(result: PaymentRequestResult) {

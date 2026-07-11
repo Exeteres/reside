@@ -13,6 +13,7 @@ export type PaymentRequestResultStatus = "APPROVED" | "APPROVED_ALWAYS" | "REJEC
 export type PaymentRequestResult = {
   status: PaymentRequestResultStatus
   transaction?: BankTransaction
+  rejectionReason?: string
 }
 
 export type BankActivities = {

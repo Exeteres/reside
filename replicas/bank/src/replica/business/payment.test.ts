@@ -120,7 +120,10 @@ describe("payment requests", () => {
 
     const result = await requestPayment(crypto, prisma, {} as TemporalClient, baseInput)
 
-    expect(result).toEqual({ type: "result", result: { status: "REJECTED" } })
+    expect(result).toEqual({
+      type: "result",
+      result: { status: "REJECTED", rejectionReason: "Недостаточно нихуя" },
+    })
     expect(paymentRequestCreate).toHaveBeenCalledWith({
       data: {
         operationId: 42,
@@ -240,8 +243,47 @@ describe("payment requests", () => {
       approveAlways: true,
     })
 
-    expect(result).toEqual({ status: "REJECTED" })
+    expect(result).toEqual({ status: "REJECTED", rejectionReason: "Недостаточно нихуя" })
     expect(paymentAuthorizationUpsert).not.toHaveBeenCalled()
+    expect(paymentRequestUpdate).toHaveBeenCalledWith({
+      where: { operationId: 42 },
+      data: {
+        status: "REJECTED",
+        resolvedAt: expect.any(Date),
+      },
+    })
+    expect(operationSetCompleted).toHaveBeenCalledWith(42)
+  })
+
+  test("uses bank domain error reason for rejected approved payment", async () => {
+    const paymentRequestUpdate = mock(async () => ({}))
+    const operationSetCompleted = mock(async () => ({}))
+    const prisma = {
+      paymentRequest: {
+        findUnique: mock(async () => ({
+          status: "PENDING",
+          payerSubjectId: "telegram:1",
+          requesterSubjectId: "telegram:1",
+          amountEcid: "enc:7",
+          commentEcid: null,
+          idempotencyKey: "bet:1",
+        })),
+        update: paymentRequestUpdate,
+      },
+    } as unknown as BankPaymentPrisma
+    const operationService = {
+      setCompleted: operationSetCompleted,
+    } as unknown as GenericOperationService<Operation>
+
+    const result = await approvePaymentRequest(createCrypto(), prisma, operationService, {
+      operationId: 42,
+      approveAlways: false,
+    })
+
+    expect(result).toEqual({
+      status: "REJECTED",
+      rejectionReason: "Отправитель и получатель должны отличаться",
+    })
     expect(paymentRequestUpdate).toHaveBeenCalledWith({
       where: { operationId: 42 },
       data: {
