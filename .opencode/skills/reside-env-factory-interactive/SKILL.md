@@ -57,6 +57,7 @@ description: Use when operating in the Engineer factory web OpenCode environment
 - Use `commit_changes` when the user asks you to commit or when a completed code-changing task should be committed.
 - Use `deliver_changes` only after checking that delivery is appropriate for the user's request.
 - If the user asks to both deliver and deploy, always deliver the committed changes first, then deploy from the delivered main branch state.
+- When deploying multiple replicas and there is no dependency order, rollout sequencing, or other concrete blocker, start the `deploy_replica` calls in parallel instead of deploying replicas one by one.
 - Do not deploy unless the user explicitly requests deployment or the loaded task-scoped rules require it.
 
 ## Validation
