@@ -1,7 +1,13 @@
 import type { BankServices } from "../../shared"
 import { crypto, defineTool } from "@reside/common"
 import { z } from "zod"
-import { getBalance, listTransactionAmountReferences, transfer } from "../business"
+import {
+  cancelPaymentAuthorization,
+  getBalance,
+  listPaymentAuthorizations,
+  listTransactionAmountReferences,
+  transfer,
+} from "../business"
 
 type BankToolServices = Pick<BankServices, "prisma">
 
@@ -65,6 +71,47 @@ export function createBankTools({ prisma }: BankToolServices) {
           ...result,
           currency: "∅",
           response: `Found ${result.transactions.length} transaction(s). Use amountEcid values instead of plaintext amounts.`,
+        }
+      },
+    }),
+    defineTool("bank_list_payment_authorizations", {
+      description:
+        "Lists replicas that the current interaction subject has allowed to request future automatic payments.",
+      parameters: z.object({
+        currentSubjectId: z.string(),
+      }),
+      handler: async ({ currentSubjectId }) => {
+        const authorizations = await listPaymentAuthorizations(prisma, currentSubjectId)
+
+        return {
+          authorizations,
+          response:
+            authorizations.length === 0
+              ? "No payment authorizations found."
+              : `Found ${authorizations.length} payment authorization(s).`,
+        }
+      },
+    }),
+    defineTool("bank_cancel_payment_authorization", {
+      description:
+        "Cancels one automatic payment authorization for the current interaction subject. Use an authorization ID returned by bank_list_payment_authorizations.",
+      parameters: z.object({
+        currentSubjectId: z.string(),
+        authorizationId: z.number().int().positive(),
+      }),
+      handler: async ({ currentSubjectId, authorizationId }) => {
+        const authorization = await cancelPaymentAuthorization(prisma, {
+          payerSubjectId: currentSubjectId,
+          authorizationId,
+        })
+
+        return {
+          authorization,
+          cancelled: authorization !== undefined,
+          response:
+            authorization === undefined
+              ? "Payment authorization was not found."
+              : `Cancelled payment authorization for ${authorization.requesterSubjectId}.`,
         }
       },
     }),

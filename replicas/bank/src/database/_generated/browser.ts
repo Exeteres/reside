@@ -28,6 +28,16 @@ export type Account = Prisma.AccountModel
  */
 export type Transaction = Prisma.TransactionModel
 /**
+ * Model PaymentRequest
+ * A user-confirmed request to transfer funds from a payer to a replica account.
+ */
+export type PaymentRequest = Prisma.PaymentRequestModel
+/**
+ * Model PaymentAuthorization
+ * A payer authorization allowing a replica to create future payments without prompting.
+ */
+export type PaymentAuthorization = Prisma.PaymentAuthorizationModel
+/**
  * Model EncryptedContent
  * 
  */
@@ -37,3 +47,8 @@ export type EncryptedContent = Prisma.EncryptedContentModel
  * 
  */
 export type MemoryNote = Prisma.MemoryNoteModel
+/**
+ * Model Operation
+ * Represents a long-running operation.
+ */
+export type Operation = Prisma.OperationModel

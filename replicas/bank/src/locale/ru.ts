@@ -55,6 +55,10 @@ export const ru = {
         title: "Банк",
         description: "Уведомления банковской реплики.",
       },
+      paymentRequests: {
+        title: "Запросы оплаты",
+        description: "Подтверждения платежей для других реплик.",
+      },
     },
     bank: {
       balance: (amount: string) => `Баланс: ${amount} ∅`,
@@ -68,6 +72,24 @@ export const ru = {
       },
       transfer: (amount: string) => `Переведено ${amount} ∅`,
       issue: (amount: string, subjectId: string) => `Выпущено ${amount} ∅ для ${subjectId}`,
+      paymentRequest: {
+        title: "Запрос оплаты",
+        operationTitle: "Подтверждение оплаты",
+        operationDescription: (amount: string, requesterSubjectId: string) =>
+          `Запрос на оплату ${amount} ∅ для ${requesterSubjectId}.`,
+        message: (amount: string, requesterSubjectId: string) =>
+          `Реплика ${requesterSubjectId} просит оплатить ${amount} ∅.`,
+        comment: (comment: string) => `Комментарий: ${comment}`,
+        actions: {
+          accept: "Оплатить",
+          acceptAlways: "Оплачивать всегда",
+          reject: "Отклонить",
+        },
+        approved: (amount: string) => `Оплачено ${amount} ∅`,
+        approvedAlways: (amount: string) =>
+          `Оплачено ${amount} ∅. Следующие запросы будут оплачиваться автоматически.`,
+        rejected: "Запрос оплаты отклонен",
+      },
       failure: {
         title: "Банковская операция не выполнена",
       },
@@ -76,6 +98,9 @@ export const ru = {
   errors: {
     differentTransferSubjects: "Отправитель и получатель должны отличаться",
     insufficientFunds: "Недостаточно нихуя",
+    paymentRequestPayloadMismatch:
+      "Ключ идемпотентности уже использован для другого запроса оплаты",
+    paymentRequestMissingTransaction: "Подтвержденный запрос оплаты не содержит транзакцию",
     positiveAmount: "Сумма должна быть положительной",
     integerAmount: "Сумма должна быть целым числом",
     integerField: (fieldName: string) => `Поле "${fieldName}" должно быть целым числом`,

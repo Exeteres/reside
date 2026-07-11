@@ -8,15 +8,15 @@ import { z } from "zod"
 import { BankError } from "../../definitions"
 import { strings } from "../../locale"
 
-const encryptedAmountSchema = z.string().regex(/^\d+$/)
-const encryptedCommentSchema = z.string()
+export const encryptedAmountSchema = z.string().regex(/^\d+$/)
+export const encryptedCommentSchema = z.string()
 const DEFAULT_PAGE_SIZE = 10
 const MAX_PAGE_SIZE = 50
 const TELEGRAM_WELCOME_IDEMPOTENCY_PREFIX = "telegram-welcome:"
 
 export type BankPrisma = PrismaClient
 
-type TransactionRecord = {
+export type TransactionRecord = {
   id: bigint
   kind: "ISSUE" | "TRANSFER"
   sender_subject_id: string | null
@@ -294,7 +294,7 @@ async function listTransactionRecords(
   }
 }
 
-async function mapTransaction(
+export async function mapTransaction(
   crypto: ResideCrypto,
   transaction: TransactionRecord,
 ): Promise<BankTransaction> {
@@ -325,11 +325,11 @@ function mapTransactionAmountReference(
   }
 }
 
-async function decryptAmount(crypto: ResideCrypto, ecid: string): Promise<string> {
+export async function decryptAmount(crypto: ResideCrypto, ecid: string): Promise<string> {
   return await crypto.decrypt(encryptedAmountSchema, ecid)
 }
 
-function parsePositiveAmount(value: string): bigint {
+export function parsePositiveAmount(value: string): bigint {
   const amount = parsePositiveOrZeroAmount(value)
 
   if (amount <= 0n) {
@@ -339,7 +339,7 @@ function parsePositiveAmount(value: string): bigint {
   return amount
 }
 
-function parsePositiveOrZeroAmount(value: string): bigint {
+export function parsePositiveOrZeroAmount(value: string): bigint {
   if (!/^\d+$/.test(value)) {
     throw new BankError(strings.errors.integerAmount)
   }

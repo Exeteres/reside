@@ -8,6 +8,13 @@ export type BankTransaction = {
   createdAt: string
 }
 
+export type PaymentRequestResultStatus = "APPROVED" | "APPROVED_ALWAYS" | "REJECTED"
+
+export type PaymentRequestResult = {
+  status: PaymentRequestResultStatus
+  transaction?: BankTransaction
+}
+
 export type BankActivities = {
   getBalance: (input: { subjectId: string }) => Promise<{ balance: string }>
   listTransactions: (input: {
@@ -28,4 +35,18 @@ export type BankActivities = {
     idempotencyKey: string
   }) => Promise<{ transaction: BankTransaction }>
   fundTelegramAccount: (input: { subjectId: string }) => Promise<{ transaction: BankTransaction }>
+  getPendingPaymentRequest: (input: { operationId: number }) => Promise<{
+    payerSubjectId: string
+    requesterSubjectId: string
+    amount: string
+    commentEcid?: string
+  }>
+  approvePaymentRequest: (input: {
+    operationId: number
+    approveAlways: boolean
+  }) => Promise<{ result: PaymentRequestResult }>
+  rejectPaymentRequest: (input: {
+    operationId: number
+  }) => Promise<{ result: PaymentRequestResult }>
+  failPaymentRequest: (input: { operationId: number; failureMessage: string }) => Promise<void>
 }

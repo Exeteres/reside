@@ -161,6 +161,8 @@ export type EncryptedContentWhereInput = {
   accountBalance?: Prisma.XOR<Prisma.AccountNullableScalarRelationFilter, Prisma.AccountWhereInput> | null
   transactionAmount?: Prisma.XOR<Prisma.TransactionNullableScalarRelationFilter, Prisma.TransactionWhereInput> | null
   transactionComment?: Prisma.XOR<Prisma.TransactionNullableScalarRelationFilter, Prisma.TransactionWhereInput> | null
+  paymentRequestAmount?: Prisma.XOR<Prisma.PaymentRequestNullableScalarRelationFilter, Prisma.PaymentRequestWhereInput> | null
+  paymentRequestComment?: Prisma.XOR<Prisma.PaymentRequestNullableScalarRelationFilter, Prisma.PaymentRequestWhereInput> | null
 }
 
 export type EncryptedContentOrderByWithRelationInput = {
@@ -169,6 +171,8 @@ export type EncryptedContentOrderByWithRelationInput = {
   accountBalance?: Prisma.AccountOrderByWithRelationInput
   transactionAmount?: Prisma.TransactionOrderByWithRelationInput
   transactionComment?: Prisma.TransactionOrderByWithRelationInput
+  paymentRequestAmount?: Prisma.PaymentRequestOrderByWithRelationInput
+  paymentRequestComment?: Prisma.PaymentRequestOrderByWithRelationInput
 }
 
 export type EncryptedContentWhereUniqueInput = Prisma.AtLeast<{
@@ -180,6 +184,8 @@ export type EncryptedContentWhereUniqueInput = Prisma.AtLeast<{
   accountBalance?: Prisma.XOR<Prisma.AccountNullableScalarRelationFilter, Prisma.AccountWhereInput> | null
   transactionAmount?: Prisma.XOR<Prisma.TransactionNullableScalarRelationFilter, Prisma.TransactionWhereInput> | null
   transactionComment?: Prisma.XOR<Prisma.TransactionNullableScalarRelationFilter, Prisma.TransactionWhereInput> | null
+  paymentRequestAmount?: Prisma.XOR<Prisma.PaymentRequestNullableScalarRelationFilter, Prisma.PaymentRequestWhereInput> | null
+  paymentRequestComment?: Prisma.XOR<Prisma.PaymentRequestNullableScalarRelationFilter, Prisma.PaymentRequestWhereInput> | null
 }, "ecid">
 
 export type EncryptedContentOrderByWithAggregationInput = {
@@ -204,6 +210,8 @@ export type EncryptedContentCreateInput = {
   accountBalance?: Prisma.AccountCreateNestedOneWithoutBalanceInput
   transactionAmount?: Prisma.TransactionCreateNestedOneWithoutAmountInput
   transactionComment?: Prisma.TransactionCreateNestedOneWithoutCommentInput
+  paymentRequestAmount?: Prisma.PaymentRequestCreateNestedOneWithoutAmountInput
+  paymentRequestComment?: Prisma.PaymentRequestCreateNestedOneWithoutCommentInput
 }
 
 export type EncryptedContentUncheckedCreateInput = {
@@ -212,6 +220,8 @@ export type EncryptedContentUncheckedCreateInput = {
   accountBalance?: Prisma.AccountUncheckedCreateNestedOneWithoutBalanceInput
   transactionAmount?: Prisma.TransactionUncheckedCreateNestedOneWithoutAmountInput
   transactionComment?: Prisma.TransactionUncheckedCreateNestedOneWithoutCommentInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutAmountInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutCommentInput
 }
 
 export type EncryptedContentUpdateInput = {
@@ -220,6 +230,8 @@ export type EncryptedContentUpdateInput = {
   accountBalance?: Prisma.AccountUpdateOneWithoutBalanceNestedInput
   transactionAmount?: Prisma.TransactionUpdateOneWithoutAmountNestedInput
   transactionComment?: Prisma.TransactionUpdateOneWithoutCommentNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUpdateOneWithoutAmountNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUpdateOneWithoutCommentNestedInput
 }
 
 export type EncryptedContentUncheckedUpdateInput = {
@@ -228,6 +240,8 @@ export type EncryptedContentUncheckedUpdateInput = {
   accountBalance?: Prisma.AccountUncheckedUpdateOneWithoutBalanceNestedInput
   transactionAmount?: Prisma.TransactionUncheckedUpdateOneWithoutAmountNestedInput
   transactionComment?: Prisma.TransactionUncheckedUpdateOneWithoutCommentNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedUpdateOneWithoutAmountNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedUpdateOneWithoutCommentNestedInput
 }
 
 export type EncryptedContentCreateManyInput = {
@@ -314,11 +328,43 @@ export type EncryptedContentUpdateOneWithoutTransactionCommentNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EncryptedContentUpdateToOneWithWhereWithoutTransactionCommentInput, Prisma.EncryptedContentUpdateWithoutTransactionCommentInput>, Prisma.EncryptedContentUncheckedUpdateWithoutTransactionCommentInput>
 }
 
+export type EncryptedContentCreateNestedOneWithoutPaymentRequestAmountInput = {
+  create?: Prisma.XOR<Prisma.EncryptedContentCreateWithoutPaymentRequestAmountInput, Prisma.EncryptedContentUncheckedCreateWithoutPaymentRequestAmountInput>
+  connectOrCreate?: Prisma.EncryptedContentCreateOrConnectWithoutPaymentRequestAmountInput
+  connect?: Prisma.EncryptedContentWhereUniqueInput
+}
+
+export type EncryptedContentCreateNestedOneWithoutPaymentRequestCommentInput = {
+  create?: Prisma.XOR<Prisma.EncryptedContentCreateWithoutPaymentRequestCommentInput, Prisma.EncryptedContentUncheckedCreateWithoutPaymentRequestCommentInput>
+  connectOrCreate?: Prisma.EncryptedContentCreateOrConnectWithoutPaymentRequestCommentInput
+  connect?: Prisma.EncryptedContentWhereUniqueInput
+}
+
+export type EncryptedContentUpdateOneRequiredWithoutPaymentRequestAmountNestedInput = {
+  create?: Prisma.XOR<Prisma.EncryptedContentCreateWithoutPaymentRequestAmountInput, Prisma.EncryptedContentUncheckedCreateWithoutPaymentRequestAmountInput>
+  connectOrCreate?: Prisma.EncryptedContentCreateOrConnectWithoutPaymentRequestAmountInput
+  upsert?: Prisma.EncryptedContentUpsertWithoutPaymentRequestAmountInput
+  connect?: Prisma.EncryptedContentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EncryptedContentUpdateToOneWithWhereWithoutPaymentRequestAmountInput, Prisma.EncryptedContentUpdateWithoutPaymentRequestAmountInput>, Prisma.EncryptedContentUncheckedUpdateWithoutPaymentRequestAmountInput>
+}
+
+export type EncryptedContentUpdateOneWithoutPaymentRequestCommentNestedInput = {
+  create?: Prisma.XOR<Prisma.EncryptedContentCreateWithoutPaymentRequestCommentInput, Prisma.EncryptedContentUncheckedCreateWithoutPaymentRequestCommentInput>
+  connectOrCreate?: Prisma.EncryptedContentCreateOrConnectWithoutPaymentRequestCommentInput
+  upsert?: Prisma.EncryptedContentUpsertWithoutPaymentRequestCommentInput
+  disconnect?: Prisma.EncryptedContentWhereInput | boolean
+  delete?: Prisma.EncryptedContentWhereInput | boolean
+  connect?: Prisma.EncryptedContentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EncryptedContentUpdateToOneWithWhereWithoutPaymentRequestCommentInput, Prisma.EncryptedContentUpdateWithoutPaymentRequestCommentInput>, Prisma.EncryptedContentUncheckedUpdateWithoutPaymentRequestCommentInput>
+}
+
 export type EncryptedContentCreateWithoutAccountBalanceInput = {
   ecid: string
   data: string
   transactionAmount?: Prisma.TransactionCreateNestedOneWithoutAmountInput
   transactionComment?: Prisma.TransactionCreateNestedOneWithoutCommentInput
+  paymentRequestAmount?: Prisma.PaymentRequestCreateNestedOneWithoutAmountInput
+  paymentRequestComment?: Prisma.PaymentRequestCreateNestedOneWithoutCommentInput
 }
 
 export type EncryptedContentUncheckedCreateWithoutAccountBalanceInput = {
@@ -326,6 +372,8 @@ export type EncryptedContentUncheckedCreateWithoutAccountBalanceInput = {
   data: string
   transactionAmount?: Prisma.TransactionUncheckedCreateNestedOneWithoutAmountInput
   transactionComment?: Prisma.TransactionUncheckedCreateNestedOneWithoutCommentInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutAmountInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutCommentInput
 }
 
 export type EncryptedContentCreateOrConnectWithoutAccountBalanceInput = {
@@ -349,6 +397,8 @@ export type EncryptedContentUpdateWithoutAccountBalanceInput = {
   data?: Prisma.StringFieldUpdateOperationsInput | string
   transactionAmount?: Prisma.TransactionUpdateOneWithoutAmountNestedInput
   transactionComment?: Prisma.TransactionUpdateOneWithoutCommentNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUpdateOneWithoutAmountNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUpdateOneWithoutCommentNestedInput
 }
 
 export type EncryptedContentUncheckedUpdateWithoutAccountBalanceInput = {
@@ -356,6 +406,8 @@ export type EncryptedContentUncheckedUpdateWithoutAccountBalanceInput = {
   data?: Prisma.StringFieldUpdateOperationsInput | string
   transactionAmount?: Prisma.TransactionUncheckedUpdateOneWithoutAmountNestedInput
   transactionComment?: Prisma.TransactionUncheckedUpdateOneWithoutCommentNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedUpdateOneWithoutAmountNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedUpdateOneWithoutCommentNestedInput
 }
 
 export type EncryptedContentCreateWithoutTransactionAmountInput = {
@@ -363,6 +415,8 @@ export type EncryptedContentCreateWithoutTransactionAmountInput = {
   data: string
   accountBalance?: Prisma.AccountCreateNestedOneWithoutBalanceInput
   transactionComment?: Prisma.TransactionCreateNestedOneWithoutCommentInput
+  paymentRequestAmount?: Prisma.PaymentRequestCreateNestedOneWithoutAmountInput
+  paymentRequestComment?: Prisma.PaymentRequestCreateNestedOneWithoutCommentInput
 }
 
 export type EncryptedContentUncheckedCreateWithoutTransactionAmountInput = {
@@ -370,6 +424,8 @@ export type EncryptedContentUncheckedCreateWithoutTransactionAmountInput = {
   data: string
   accountBalance?: Prisma.AccountUncheckedCreateNestedOneWithoutBalanceInput
   transactionComment?: Prisma.TransactionUncheckedCreateNestedOneWithoutCommentInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutAmountInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutCommentInput
 }
 
 export type EncryptedContentCreateOrConnectWithoutTransactionAmountInput = {
@@ -382,6 +438,8 @@ export type EncryptedContentCreateWithoutTransactionCommentInput = {
   data: string
   accountBalance?: Prisma.AccountCreateNestedOneWithoutBalanceInput
   transactionAmount?: Prisma.TransactionCreateNestedOneWithoutAmountInput
+  paymentRequestAmount?: Prisma.PaymentRequestCreateNestedOneWithoutAmountInput
+  paymentRequestComment?: Prisma.PaymentRequestCreateNestedOneWithoutCommentInput
 }
 
 export type EncryptedContentUncheckedCreateWithoutTransactionCommentInput = {
@@ -389,6 +447,8 @@ export type EncryptedContentUncheckedCreateWithoutTransactionCommentInput = {
   data: string
   accountBalance?: Prisma.AccountUncheckedCreateNestedOneWithoutBalanceInput
   transactionAmount?: Prisma.TransactionUncheckedCreateNestedOneWithoutAmountInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutAmountInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutCommentInput
 }
 
 export type EncryptedContentCreateOrConnectWithoutTransactionCommentInput = {
@@ -412,6 +472,8 @@ export type EncryptedContentUpdateWithoutTransactionAmountInput = {
   data?: Prisma.StringFieldUpdateOperationsInput | string
   accountBalance?: Prisma.AccountUpdateOneWithoutBalanceNestedInput
   transactionComment?: Prisma.TransactionUpdateOneWithoutCommentNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUpdateOneWithoutAmountNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUpdateOneWithoutCommentNestedInput
 }
 
 export type EncryptedContentUncheckedUpdateWithoutTransactionAmountInput = {
@@ -419,6 +481,8 @@ export type EncryptedContentUncheckedUpdateWithoutTransactionAmountInput = {
   data?: Prisma.StringFieldUpdateOperationsInput | string
   accountBalance?: Prisma.AccountUncheckedUpdateOneWithoutBalanceNestedInput
   transactionComment?: Prisma.TransactionUncheckedUpdateOneWithoutCommentNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedUpdateOneWithoutAmountNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedUpdateOneWithoutCommentNestedInput
 }
 
 export type EncryptedContentUpsertWithoutTransactionCommentInput = {
@@ -437,6 +501,8 @@ export type EncryptedContentUpdateWithoutTransactionCommentInput = {
   data?: Prisma.StringFieldUpdateOperationsInput | string
   accountBalance?: Prisma.AccountUpdateOneWithoutBalanceNestedInput
   transactionAmount?: Prisma.TransactionUpdateOneWithoutAmountNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUpdateOneWithoutAmountNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUpdateOneWithoutCommentNestedInput
 }
 
 export type EncryptedContentUncheckedUpdateWithoutTransactionCommentInput = {
@@ -444,6 +510,112 @@ export type EncryptedContentUncheckedUpdateWithoutTransactionCommentInput = {
   data?: Prisma.StringFieldUpdateOperationsInput | string
   accountBalance?: Prisma.AccountUncheckedUpdateOneWithoutBalanceNestedInput
   transactionAmount?: Prisma.TransactionUncheckedUpdateOneWithoutAmountNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedUpdateOneWithoutAmountNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedUpdateOneWithoutCommentNestedInput
+}
+
+export type EncryptedContentCreateWithoutPaymentRequestAmountInput = {
+  ecid: string
+  data: string
+  accountBalance?: Prisma.AccountCreateNestedOneWithoutBalanceInput
+  transactionAmount?: Prisma.TransactionCreateNestedOneWithoutAmountInput
+  transactionComment?: Prisma.TransactionCreateNestedOneWithoutCommentInput
+  paymentRequestComment?: Prisma.PaymentRequestCreateNestedOneWithoutCommentInput
+}
+
+export type EncryptedContentUncheckedCreateWithoutPaymentRequestAmountInput = {
+  ecid: string
+  data: string
+  accountBalance?: Prisma.AccountUncheckedCreateNestedOneWithoutBalanceInput
+  transactionAmount?: Prisma.TransactionUncheckedCreateNestedOneWithoutAmountInput
+  transactionComment?: Prisma.TransactionUncheckedCreateNestedOneWithoutCommentInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutCommentInput
+}
+
+export type EncryptedContentCreateOrConnectWithoutPaymentRequestAmountInput = {
+  where: Prisma.EncryptedContentWhereUniqueInput
+  create: Prisma.XOR<Prisma.EncryptedContentCreateWithoutPaymentRequestAmountInput, Prisma.EncryptedContentUncheckedCreateWithoutPaymentRequestAmountInput>
+}
+
+export type EncryptedContentCreateWithoutPaymentRequestCommentInput = {
+  ecid: string
+  data: string
+  accountBalance?: Prisma.AccountCreateNestedOneWithoutBalanceInput
+  transactionAmount?: Prisma.TransactionCreateNestedOneWithoutAmountInput
+  transactionComment?: Prisma.TransactionCreateNestedOneWithoutCommentInput
+  paymentRequestAmount?: Prisma.PaymentRequestCreateNestedOneWithoutAmountInput
+}
+
+export type EncryptedContentUncheckedCreateWithoutPaymentRequestCommentInput = {
+  ecid: string
+  data: string
+  accountBalance?: Prisma.AccountUncheckedCreateNestedOneWithoutBalanceInput
+  transactionAmount?: Prisma.TransactionUncheckedCreateNestedOneWithoutAmountInput
+  transactionComment?: Prisma.TransactionUncheckedCreateNestedOneWithoutCommentInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedCreateNestedOneWithoutAmountInput
+}
+
+export type EncryptedContentCreateOrConnectWithoutPaymentRequestCommentInput = {
+  where: Prisma.EncryptedContentWhereUniqueInput
+  create: Prisma.XOR<Prisma.EncryptedContentCreateWithoutPaymentRequestCommentInput, Prisma.EncryptedContentUncheckedCreateWithoutPaymentRequestCommentInput>
+}
+
+export type EncryptedContentUpsertWithoutPaymentRequestAmountInput = {
+  update: Prisma.XOR<Prisma.EncryptedContentUpdateWithoutPaymentRequestAmountInput, Prisma.EncryptedContentUncheckedUpdateWithoutPaymentRequestAmountInput>
+  create: Prisma.XOR<Prisma.EncryptedContentCreateWithoutPaymentRequestAmountInput, Prisma.EncryptedContentUncheckedCreateWithoutPaymentRequestAmountInput>
+  where?: Prisma.EncryptedContentWhereInput
+}
+
+export type EncryptedContentUpdateToOneWithWhereWithoutPaymentRequestAmountInput = {
+  where?: Prisma.EncryptedContentWhereInput
+  data: Prisma.XOR<Prisma.EncryptedContentUpdateWithoutPaymentRequestAmountInput, Prisma.EncryptedContentUncheckedUpdateWithoutPaymentRequestAmountInput>
+}
+
+export type EncryptedContentUpdateWithoutPaymentRequestAmountInput = {
+  ecid?: Prisma.StringFieldUpdateOperationsInput | string
+  data?: Prisma.StringFieldUpdateOperationsInput | string
+  accountBalance?: Prisma.AccountUpdateOneWithoutBalanceNestedInput
+  transactionAmount?: Prisma.TransactionUpdateOneWithoutAmountNestedInput
+  transactionComment?: Prisma.TransactionUpdateOneWithoutCommentNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUpdateOneWithoutCommentNestedInput
+}
+
+export type EncryptedContentUncheckedUpdateWithoutPaymentRequestAmountInput = {
+  ecid?: Prisma.StringFieldUpdateOperationsInput | string
+  data?: Prisma.StringFieldUpdateOperationsInput | string
+  accountBalance?: Prisma.AccountUncheckedUpdateOneWithoutBalanceNestedInput
+  transactionAmount?: Prisma.TransactionUncheckedUpdateOneWithoutAmountNestedInput
+  transactionComment?: Prisma.TransactionUncheckedUpdateOneWithoutCommentNestedInput
+  paymentRequestComment?: Prisma.PaymentRequestUncheckedUpdateOneWithoutCommentNestedInput
+}
+
+export type EncryptedContentUpsertWithoutPaymentRequestCommentInput = {
+  update: Prisma.XOR<Prisma.EncryptedContentUpdateWithoutPaymentRequestCommentInput, Prisma.EncryptedContentUncheckedUpdateWithoutPaymentRequestCommentInput>
+  create: Prisma.XOR<Prisma.EncryptedContentCreateWithoutPaymentRequestCommentInput, Prisma.EncryptedContentUncheckedCreateWithoutPaymentRequestCommentInput>
+  where?: Prisma.EncryptedContentWhereInput
+}
+
+export type EncryptedContentUpdateToOneWithWhereWithoutPaymentRequestCommentInput = {
+  where?: Prisma.EncryptedContentWhereInput
+  data: Prisma.XOR<Prisma.EncryptedContentUpdateWithoutPaymentRequestCommentInput, Prisma.EncryptedContentUncheckedUpdateWithoutPaymentRequestCommentInput>
+}
+
+export type EncryptedContentUpdateWithoutPaymentRequestCommentInput = {
+  ecid?: Prisma.StringFieldUpdateOperationsInput | string
+  data?: Prisma.StringFieldUpdateOperationsInput | string
+  accountBalance?: Prisma.AccountUpdateOneWithoutBalanceNestedInput
+  transactionAmount?: Prisma.TransactionUpdateOneWithoutAmountNestedInput
+  transactionComment?: Prisma.TransactionUpdateOneWithoutCommentNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUpdateOneWithoutAmountNestedInput
+}
+
+export type EncryptedContentUncheckedUpdateWithoutPaymentRequestCommentInput = {
+  ecid?: Prisma.StringFieldUpdateOperationsInput | string
+  data?: Prisma.StringFieldUpdateOperationsInput | string
+  accountBalance?: Prisma.AccountUncheckedUpdateOneWithoutBalanceNestedInput
+  transactionAmount?: Prisma.TransactionUncheckedUpdateOneWithoutAmountNestedInput
+  transactionComment?: Prisma.TransactionUncheckedUpdateOneWithoutCommentNestedInput
+  paymentRequestAmount?: Prisma.PaymentRequestUncheckedUpdateOneWithoutAmountNestedInput
 }
 
 
@@ -454,6 +626,8 @@ export type EncryptedContentSelect<ExtArgs extends runtime.Types.Extensions.Inte
   accountBalance?: boolean | Prisma.EncryptedContent$accountBalanceArgs<ExtArgs>
   transactionAmount?: boolean | Prisma.EncryptedContent$transactionAmountArgs<ExtArgs>
   transactionComment?: boolean | Prisma.EncryptedContent$transactionCommentArgs<ExtArgs>
+  paymentRequestAmount?: boolean | Prisma.EncryptedContent$paymentRequestAmountArgs<ExtArgs>
+  paymentRequestComment?: boolean | Prisma.EncryptedContent$paymentRequestCommentArgs<ExtArgs>
 }, ExtArgs["result"]["encryptedContent"]>
 
 export type EncryptedContentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -476,6 +650,8 @@ export type EncryptedContentInclude<ExtArgs extends runtime.Types.Extensions.Int
   accountBalance?: boolean | Prisma.EncryptedContent$accountBalanceArgs<ExtArgs>
   transactionAmount?: boolean | Prisma.EncryptedContent$transactionAmountArgs<ExtArgs>
   transactionComment?: boolean | Prisma.EncryptedContent$transactionCommentArgs<ExtArgs>
+  paymentRequestAmount?: boolean | Prisma.EncryptedContent$paymentRequestAmountArgs<ExtArgs>
+  paymentRequestComment?: boolean | Prisma.EncryptedContent$paymentRequestCommentArgs<ExtArgs>
 }
 export type EncryptedContentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 export type EncryptedContentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -486,6 +662,8 @@ export type $EncryptedContentPayload<ExtArgs extends runtime.Types.Extensions.In
     accountBalance: Prisma.$AccountPayload<ExtArgs> | null
     transactionAmount: Prisma.$TransactionPayload<ExtArgs> | null
     transactionComment: Prisma.$TransactionPayload<ExtArgs> | null
+    paymentRequestAmount: Prisma.$PaymentRequestPayload<ExtArgs> | null
+    paymentRequestComment: Prisma.$PaymentRequestPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     /**
@@ -893,6 +1071,8 @@ export interface Prisma__EncryptedContentClient<T, Null = never, ExtArgs extends
   accountBalance<T extends Prisma.EncryptedContent$accountBalanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$accountBalanceArgs<ExtArgs>>): Prisma.Prisma__AccountClient<runtime.Types.Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   transactionAmount<T extends Prisma.EncryptedContent$transactionAmountArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$transactionAmountArgs<ExtArgs>>): Prisma.Prisma__TransactionClient<runtime.Types.Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   transactionComment<T extends Prisma.EncryptedContent$transactionCommentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$transactionCommentArgs<ExtArgs>>): Prisma.Prisma__TransactionClient<runtime.Types.Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  paymentRequestAmount<T extends Prisma.EncryptedContent$paymentRequestAmountArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$paymentRequestAmountArgs<ExtArgs>>): Prisma.Prisma__PaymentRequestClient<runtime.Types.Result.GetResult<Prisma.$PaymentRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  paymentRequestComment<T extends Prisma.EncryptedContent$paymentRequestCommentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EncryptedContent$paymentRequestCommentArgs<ExtArgs>>): Prisma.Prisma__PaymentRequestClient<runtime.Types.Result.GetResult<Prisma.$PaymentRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1366,6 +1546,44 @@ export type EncryptedContent$transactionCommentArgs<ExtArgs extends runtime.Type
    */
   include?: Prisma.TransactionInclude<ExtArgs> | null
   where?: Prisma.TransactionWhereInput
+}
+
+/**
+ * EncryptedContent.paymentRequestAmount
+ */
+export type EncryptedContent$paymentRequestAmountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PaymentRequest
+   */
+  select?: Prisma.PaymentRequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PaymentRequest
+   */
+  omit?: Prisma.PaymentRequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PaymentRequestInclude<ExtArgs> | null
+  where?: Prisma.PaymentRequestWhereInput
+}
+
+/**
+ * EncryptedContent.paymentRequestComment
+ */
+export type EncryptedContent$paymentRequestCommentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PaymentRequest
+   */
+  select?: Prisma.PaymentRequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PaymentRequest
+   */
+  omit?: Prisma.PaymentRequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PaymentRequestInclude<ExtArgs> | null
+  where?: Prisma.PaymentRequestWhereInput
 }
 
 /**
