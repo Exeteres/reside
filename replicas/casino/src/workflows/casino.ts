@@ -187,10 +187,42 @@ export const betCommandHandler = defineCommandHandler({
 })
 
 function formatRejectionMessage(error: unknown) {
-  const message =
-    error instanceof Error ? error.message : strings.notifications.bet.failed.beforePayment
+  const message = formatRejectionReason(error)
 
   return block(inline(message), inline(strings.notifications.bet.rejected.example))
+}
+
+export function formatRejectionReason(error: unknown): string {
+  return getCasinoValidationErrorMessage(error) ?? strings.notifications.bet.failed.beforePayment
+}
+
+function getCasinoValidationErrorMessage(error: unknown): string | undefined {
+  if (error instanceof CasinoValidationError && error.message.length > 0) {
+    return error.message
+  }
+
+  if (error === null || typeof error !== "object") {
+    return undefined
+  }
+
+  const isSerializedCasinoValidationError =
+    ("type" in error && error.type === CasinoValidationError.name) ||
+    ("name" in error && error.name === CasinoValidationError.name)
+
+  if (
+    isSerializedCasinoValidationError &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.length > 0
+  ) {
+    return error.message
+  }
+
+  if ("cause" in error) {
+    return getCasinoValidationErrorMessage(error.cause)
+  }
+
+  return undefined
 }
 
 function formatPaymentMessage(parsed: ParsedBet) {
