@@ -195,6 +195,7 @@ function formatRejectionMessage(error: unknown) {
 function formatPaymentMessage(parsed: ParsedBet) {
   return block(
     formatBetSummary(parsed),
+    "",
     inline(strings.notifications.bet.payment.confirmBank),
     inline(strings.notifications.bet.payment.throwAfterPayment),
   )
@@ -204,6 +205,7 @@ function formatWaitingDiceMessage(parsed: ParsedBet) {
   return block(
     inline(strings.notifications.bet.waitingDice.paymentAccepted),
     formatBetSummary(parsed),
+    "",
     inline(strings.notifications.bet.waitingDice.prompt),
   )
 }
@@ -236,10 +238,10 @@ function formatPaidMessage(parsed: ParsedBet, diceValue: number, transactionId: 
 
 function formatBetSummary(parsed: ParsedBet) {
   return block(
-    inline(bold(strings.labels.bet), ": ", code(parsed.amountEcid), " ∅"),
-    inline(bold(strings.labels.sides), ": ", code(formatSides(parsed.sides))),
-    inline(bold(strings.labels.multiplier), ": ", code(parsed.multiplierLabel)),
-    inline(bold(strings.labels.payout), ": ", code(parsed.payoutAmountEcid), " ∅"),
+    inline(bold(strings.labels.bet), ": ", parsed.amountEcid, " ∅"),
+    inline(bold(strings.labels.sides), ": ", formatSides(parsed.sides)),
+    inline(bold(strings.labels.multiplier), ": ", parsed.multiplierLabel),
+    inline(bold(strings.labels.payout), ": ", parsed.payoutAmountEcid, " ∅"),
   )
 }
 
