@@ -14,9 +14,19 @@ export function createRateActivities(services: {
     },
 
     async updateChatTitleRate(input) {
-      const { title } = await services.avatarService.getAvatarChatTitle({
-        contextToken: input.contextToken,
-      })
+      let title: string
+
+      try {
+        const result = await services.avatarService.getAvatarChatTitle({
+          contextToken: input.contextToken,
+        })
+        title = result.title
+      } catch {
+        return {
+          updated: false,
+        }
+      }
+
       const updatedTitle = replaceSingleRateInTitle(title, input.rate)
 
       if (updatedTitle === undefined || updatedTitle === title) {
@@ -25,10 +35,16 @@ export function createRateActivities(services: {
         }
       }
 
-      await services.avatarService.updateAvatarChatTitle({
-        contextToken: input.contextToken,
-        title: updatedTitle,
-      })
+      try {
+        await services.avatarService.updateAvatarChatTitle({
+          contextToken: input.contextToken,
+          title: updatedTitle,
+        })
+      } catch {
+        return {
+          updated: false,
+        }
+      }
 
       return {
         updated: true,

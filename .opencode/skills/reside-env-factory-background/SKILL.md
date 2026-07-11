@@ -52,6 +52,11 @@ description: Use when operating as the Engineer factory background implementatio
 
 - When the user or issue asks to fix a bug but does not provide enough context to identify the failing replica, service, operation, logs, trace, error, or reproduction path, do not blindly edit files.
 - First use the SigNoz MCP tools to investigate production telemetry, starting with the signal that best matches the report.
+- Inspect surrounding error and warning logs, not only logs whose text matches the initially suspected subsystem.
+- Follow cross-replica communication edges in logs and traces.
+  If one replica reports a client-side failure from another replica, inspect the server-side logs and traces for that other replica before deciding on the fix.
+- Treat secondary activities and downstream calls as possible root causes.
+  Do not stop after making the caller tolerate the failure when the downstream service, permission, external API, or replica configuration is what actually failed.
 - If the signal or resource scope is unclear, follow the SigNoz MCP rules: clarify whether to use metrics, traces, or logs, and ask for or discover a resource-attribute filter before running broad queries.
 - Edit code only after telemetry, reproduction, or provided issue details identify a concrete root cause or a narrow failing component.
 
