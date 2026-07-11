@@ -2,12 +2,10 @@ import type { CasinoActivities, ParsedBet } from "../definitions"
 import {
   block,
   bold,
-  code,
   defineCommandHandler,
   inline,
   safeSleep,
   sendNotification,
-  updateNotification,
   waitForOperationSuccess,
 } from "@reside/common/workflow"
 import { proxyActivities, workflowInfo } from "@temporalio/workflow"
@@ -117,22 +115,22 @@ export const betCommandHandler = defineCommandHandler({
 
     if (payment.status === "REJECTED") {
       await markPaymentRejected({ betId })
-      await updateNotification({
-        notificationId: notification.notificationId,
+      await sendNotification({
+        channel: CasinoNotificationChannels.COMMAND,
         title: strings.notifications.bet.paymentRejected.title,
-        content: strings.notifications.bet.paymentRejected.content,
-        actions: {},
-        requiresTextResponse: false,
-        acceptedDiceEmojis: [],
+        message: strings.notifications.bet.paymentRejected.content,
+        system: true,
+        waitForResponse: false,
       })
       return
     }
 
     await markWaitingDice({ betId })
-    const dice = await updateNotification({
-      notificationId: notification.notificationId,
+    const dice = await sendNotification({
+      channel: CasinoNotificationChannels.COMMAND,
       title: strings.notifications.bet.waitingDice.title,
-      content: formatWaitingDiceMessage(parsed),
+      message: formatWaitingDiceMessage(parsed),
+      system: true,
       actions: {},
       requiresTextResponse: false,
       acceptedDiceEmojis: [DICE_EMOJI],
@@ -141,13 +139,13 @@ export const betCommandHandler = defineCommandHandler({
 
     if (dice.type !== "dice" || dice.emoji !== DICE_EMOJI || dice.value < 1 || dice.value > 6) {
       await failBet({ betId, failureMessage: strings.errors.invalidSideValue })
-      await updateNotification({
-        notificationId: notification.notificationId,
+      await sendNotification({
+        channel: CasinoNotificationChannels.COMMAND,
+        contextToken: dice.contextToken,
         title: strings.notifications.bet.failed.title,
-        content: strings.errors.invalidSideValue,
-        actions: {},
-        requiresTextResponse: false,
-        acceptedDiceEmojis: [],
+        message: strings.errors.invalidSideValue,
+        system: dice.contextToken === undefined,
+        waitForResponse: false,
       })
       return
     }
@@ -156,36 +154,36 @@ export const betCommandHandler = defineCommandHandler({
 
     if (!parsed.sides.includes(dice.value)) {
       await markLoss({ betId, diceEmoji: dice.emoji, diceValue: dice.value })
-      await updateNotification({
-        notificationId: notification.notificationId,
+      await sendNotification({
+        channel: CasinoNotificationChannels.COMMAND,
+        contextToken: dice.contextToken,
         title: strings.notifications.bet.lost.title,
-        content: formatLostMessage(parsed, dice.value),
-        actions: {},
-        requiresTextResponse: false,
-        acceptedDiceEmojis: [],
+        message: formatLostMessage(parsed, dice.value),
+        system: dice.contextToken === undefined,
+        waitForResponse: false,
       })
       return
     }
 
     await markPayoutPending({ betId, diceEmoji: dice.emoji, diceValue: dice.value })
-    await updateNotification({
-      notificationId: notification.notificationId,
+    await sendNotification({
+      channel: CasinoNotificationChannels.COMMAND,
+      contextToken: dice.contextToken,
       title: strings.notifications.bet.wonPending.title,
-      content: formatWonPendingMessage(parsed, dice.value),
-      actions: {},
-      requiresTextResponse: false,
-      acceptedDiceEmojis: [],
+      message: formatWonPendingMessage(parsed, dice.value),
+      system: dice.contextToken === undefined,
+      waitForResponse: false,
     })
 
     const payout = await transferPayout({ betId })
     await completePayout({ betId, transactionId: payout.transactionId })
-    await updateNotification({
-      notificationId: notification.notificationId,
+    await sendNotification({
+      channel: CasinoNotificationChannels.COMMAND,
+      contextToken: dice.contextToken,
       title: strings.notifications.bet.paid.title,
-      content: formatPaidMessage(parsed, dice.value, payout.transactionId),
-      actions: {},
-      requiresTextResponse: false,
-      acceptedDiceEmojis: [],
+      message: formatPaidMessage(parsed, dice.value, payout.transactionId),
+      system: dice.contextToken === undefined,
+      waitForResponse: false,
     })
   },
 })
@@ -217,16 +215,16 @@ function formatWaitingDiceMessage(parsed: ParsedBet) {
 
 function formatLostMessage(parsed: ParsedBet, diceValue: number) {
   return block(
-    inline(bold(strings.labels.dice), ": ", code(String(diceValue))),
-    inline(bold(strings.labels.selectedSides), ": ", code(formatSides(parsed.sides))),
+    inline(bold(strings.labels.dice), ": ", String(diceValue)),
+    inline(bold(strings.labels.selectedSides), ": ", formatSides(parsed.sides)),
     inline(strings.notifications.bet.lost.content(parsed.amountEcid)),
   )
 }
 
 function formatWonPendingMessage(parsed: ParsedBet, diceValue: number) {
   return block(
-    inline(bold(strings.labels.dice), ": ", code(String(diceValue))),
-    inline(bold(strings.labels.selectedSides), ": ", code(formatSides(parsed.sides))),
+    inline(bold(strings.labels.dice), ": ", String(diceValue)),
+    inline(bold(strings.labels.selectedSides), ": ", formatSides(parsed.sides)),
     inline(strings.notifications.bet.wonPending.payout(parsed.payoutAmountEcid)),
     inline(strings.notifications.bet.wonPending.sending),
   )
@@ -234,10 +232,10 @@ function formatWonPendingMessage(parsed: ParsedBet, diceValue: number) {
 
 function formatPaidMessage(parsed: ParsedBet, diceValue: number, transactionId: string) {
   return block(
-    inline(bold(strings.labels.dice), ": ", code(String(diceValue))),
-    inline(bold(strings.labels.selectedSides), ": ", code(formatSides(parsed.sides))),
-    inline(bold(strings.labels.paid), ": ", code(parsed.payoutAmountEcid), " ∅"),
-    inline(bold(strings.labels.transaction), ": ", code(transactionId)),
+    inline(bold(strings.labels.dice), ": ", String(diceValue)),
+    inline(bold(strings.labels.selectedSides), ": ", formatSides(parsed.sides)),
+    inline(bold(strings.labels.paid), ": ", parsed.payoutAmountEcid, " ∅"),
+    inline(bold(strings.labels.transaction), ": ", transactionId),
   )
 }
 
