@@ -7,6 +7,7 @@ import {
   createInteractionActivities,
   createPingService,
   createServer,
+  createSleepActivities,
   crypto,
   logger,
   setupEncryption,
@@ -57,6 +58,7 @@ await startTemporalWorker({
       services.notificationService,
       services.interactionOperationService,
     ),
+    ...createSleepActivities(services.timerService),
   },
 })
 
