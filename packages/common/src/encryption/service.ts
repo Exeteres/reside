@@ -8,6 +8,7 @@ import {
 import { WellKnownPermissions } from "@reside/registry"
 import { authenticateReplica } from "../auth"
 import { getReplicaName } from "../kubernetes"
+import { logger } from "../logger"
 
 export type EncryptionServiceOptions = {
   runtime: EncryptionRuntime
@@ -39,7 +40,21 @@ export function createEncryptionService({
         )
       }
 
-      const ciphertexts = await runtime.transferToReplica(request.ecids, requester.name)
+      let ciphertexts: string[]
+      try {
+        ciphertexts = await runtime.transferToReplica(request.ecids, requester.name)
+      } catch (error) {
+        const errorObject = error instanceof Error ? error : new Error(String(error))
+        logger.error(
+          { error: errorObject },
+          'failed to transfer encrypted content requester="%s" source_replica="%s" ecid_count="%d"',
+          requester.subjectId,
+          replicaName,
+          request.ecids.length,
+        )
+
+        throw error
+      }
 
       return create(TransferResponseSchema, {
         ciphertexts,
