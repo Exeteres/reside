@@ -3,6 +3,13 @@ enum TransactionKind {
   TRANSFER
 }
 
+enum PaymentRequestStatus {
+  PENDING
+  APPROVED
+  APPROVED_ALWAYS
+  REJECTED
+}
+
 /// A ledger account owned by a canonical subject such as `telegram:1` or `replica:alpha`.
 model Account {
   subject_id String @id
@@ -46,6 +53,58 @@ model Transaction {
 
   createdAt DateTime @default(now())
 
+  paymentRequest PaymentRequest?
+
   @@index([sender_subject_id, createdAt])
   @@index([recipient_subject_id, createdAt])
+}
+
+/// A user-confirmed request to transfer funds from a payer to a replica account.
+model PaymentRequest {
+  id Int @id @default(autoincrement())
+
+  operationId Int @unique
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+
+  payerSubjectId String
+  requesterSubjectId String
+
+  /// The ECID of the encrypted requested amount.
+  amountEcid String @unique
+
+  /// The encrypted requested amount stored as a decimal string.
+  amount EncryptedContent @relation(name: "PaymentRequestAmount", fields: [amountEcid], references: [ecid], onDelete: Restrict)
+
+  idempotencyKey String @unique
+
+  /// The ECID of the optional encrypted request comment.
+  commentEcid String? @unique
+
+  /// The optional encrypted request comment.
+  comment EncryptedContent? @relation(name: "PaymentRequestComment", fields: [commentEcid], references: [ecid], onDelete: Restrict)
+
+  status PaymentRequestStatus @default(PENDING)
+
+  transactionId BigInt? @unique
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resolvedAt DateTime?
+
+  @@index([payerSubjectId, status])
+  @@index([requesterSubjectId, status])
+}
+
+/// A payer authorization allowing a replica to create future payments without prompting.
+model PaymentAuthorization {
+  id Int @id @default(autoincrement())
+
+  payerSubjectId String
+  requesterSubjectId String
+
+  createdAt DateTime @default(now())
+
+  @@unique([payerSubjectId, requesterSubjectId])
+  @@index([requesterSubjectId])
 }

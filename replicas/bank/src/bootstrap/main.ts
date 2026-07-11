@@ -30,12 +30,23 @@ await defineCommonResources({
       description: "Позволяет увеличивать баланс любой реплики в банковской реплике.",
       scoped: false,
     },
+    {
+      name: WellKnownPermissions.BANK_REQUEST_PAYMENTS,
+      title: "Запрос платежей",
+      description: "Позволяет реплике запрашивать оплату у пользователей в рамках реалма.",
+      scoped: true,
+    },
   ],
   notificationsChannels: [
     {
       name: BankNotificationChannels.COMMAND,
       title: strings.notifications.channels.bank.title,
       description: strings.notifications.channels.bank.description,
+    },
+    {
+      name: BankNotificationChannels.PAYMENT_REQUESTS,
+      title: strings.notifications.channels.paymentRequests.title,
+      description: strings.notifications.channels.paymentRequests.description,
     },
   ],
 })

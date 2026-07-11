@@ -1,4 +1,8 @@
-import type { BankTransaction } from "../definitions"
+import type {
+  BankTransaction,
+  ConfirmPaymentRequestWorkflowInput,
+  PaymentRequestResult,
+} from "../definitions"
 import { isResideError } from "@reside/common/definitions"
 import {
   block,
@@ -20,16 +24,24 @@ import {
 } from "../definitions"
 import { strings } from "../locale"
 
-const { getBalance, issueReplicaFunds, listTransactions, transfer } =
-  proxyActivities<BankActivities>({
-    scheduleToCloseTimeout: "30 seconds",
-    retry: {
-      initialInterval: "3 seconds",
-      backoffCoefficient: 2,
-      maximumAttempts: 3,
-      nonRetryableErrorTypes: [BankError.name],
-    },
-  })
+const {
+  approvePaymentRequest,
+  failPaymentRequest,
+  getBalance,
+  getPendingPaymentRequest,
+  issueReplicaFunds,
+  listTransactions,
+  rejectPaymentRequest,
+  transfer,
+} = proxyActivities<BankActivities>({
+  scheduleToCloseTimeout: "30 seconds",
+  retry: {
+    initialInterval: "3 seconds",
+    backoffCoefficient: 2,
+    maximumAttempts: 3,
+    nonRetryableErrorTypes: [BankError.name],
+  },
+})
 
 const { fundTelegramAccount } = proxyActivities<BankActivities>({
   scheduleToCloseTimeout: "365 days",
@@ -43,6 +55,9 @@ const { fundTelegramAccount } = proxyActivities<BankActivities>({
 const TRANSACTIONS_PAGE_SIZE = 5
 const PREVIOUS_PAGE_ACTION_NAME = "previous_page"
 const NEXT_PAGE_ACTION_NAME = "next_page"
+const ACCEPT_PAYMENT_ACTION_NAME = "accept"
+const ACCEPT_PAYMENT_ALWAYS_ACTION_NAME = "accept_always"
+const REJECT_PAYMENT_ACTION_NAME = "reject"
 const MSK_OFFSET_MS = 3 * 60 * 60 * 1000
 
 export async function fundTelegramAccountWorkflow({
@@ -51,6 +66,78 @@ export async function fundTelegramAccountWorkflow({
   subjectId: string
 }): Promise<void> {
   await fundTelegramAccount({ subjectId })
+}
+
+export async function confirmPaymentRequestWorkflow({
+  operationId,
+}: ConfirmPaymentRequestWorkflowInput): Promise<void> {
+  const paymentRequest = await getPendingPaymentRequest({ operationId })
+  const response = await sendNotification({
+    system: true,
+    channel: BankNotificationChannels.PAYMENT_REQUESTS,
+    partition: paymentRequest.payerSubjectId,
+    title: strings.notifications.bank.paymentRequest.title,
+    message: formatPaymentRequestMessage(paymentRequest),
+    actions: {
+      [ACCEPT_PAYMENT_ACTION_NAME]: {
+        title: strings.notifications.bank.paymentRequest.actions.accept,
+      },
+      [ACCEPT_PAYMENT_ALWAYS_ACTION_NAME]: {
+        title: strings.notifications.bank.paymentRequest.actions.acceptAlways,
+      },
+      [REJECT_PAYMENT_ACTION_NAME]: {
+        title: strings.notifications.bank.paymentRequest.actions.reject,
+      },
+    },
+    expectImmediateFeedback: true,
+  })
+
+  if (response.type !== "action") {
+    return
+  }
+
+  if (response.actionName === REJECT_PAYMENT_ACTION_NAME) {
+    await rejectPaymentRequest({ operationId })
+    await updateNotification({
+      notificationId: response.notificationId,
+      title: strings.notifications.bank.paymentRequest.title,
+      content: strings.notifications.bank.paymentRequest.rejected,
+      actions: {},
+      requiresTextResponse: false,
+    })
+    return
+  }
+
+  const approveAlways = response.actionName === ACCEPT_PAYMENT_ALWAYS_ACTION_NAME
+  let result: { result: PaymentRequestResult }
+  try {
+    result = await approvePaymentRequest({ operationId, approveAlways })
+  } catch (error) {
+    const failureMessage = error instanceof Error ? error.message : strings.errors.insufficientFunds
+    await failPaymentRequest({ operationId, failureMessage })
+    await updateNotification({
+      notificationId: response.notificationId,
+      title: strings.notifications.bank.failure.title,
+      content: failureMessage,
+      actions: {},
+      requiresTextResponse: false,
+    })
+    return
+  }
+
+  if (!result.result.transaction) {
+    throw new Error("Approved payment request is missing transaction")
+  }
+
+  await updateNotification({
+    notificationId: response.notificationId,
+    title: strings.notifications.bank.paymentRequest.title,
+    content: approveAlways
+      ? strings.notifications.bank.paymentRequest.approvedAlways(result.result.transaction.amount)
+      : strings.notifications.bank.paymentRequest.approved(result.result.transaction.amount),
+    actions: {},
+    requiresTextResponse: false,
+  })
 }
 
 export const balanceCommandHandler = defineCommandHandler({
@@ -186,6 +273,25 @@ function formatTransactionHistory(
         : ["", formatTransactionHistoryEntry(transaction, subjectId)],
     ),
   )
+}
+
+function formatPaymentRequestMessage(paymentRequest: {
+  requesterSubjectId: string
+  amount: string
+  commentEcid?: string
+}): MessageContent {
+  const rows: MessageContent[] = [
+    strings.notifications.bank.paymentRequest.message(
+      paymentRequest.amount,
+      paymentRequest.requesterSubjectId,
+    ),
+  ]
+
+  if (paymentRequest.commentEcid) {
+    rows.push("", strings.notifications.bank.paymentRequest.comment(paymentRequest.commentEcid))
+  }
+
+  return block(rows)
 }
 
 function buildTransactionHistoryActions(

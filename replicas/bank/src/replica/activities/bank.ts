@@ -4,18 +4,26 @@ import { Code, ConnectError } from "@connectrpc/connect"
 import { crypto } from "@reside/common"
 import { WellKnownPermissions } from "@reside/registry"
 import {
+  approvePaymentRequest as approvePaymentRequestBusiness,
+  failPaymentRequest as failPaymentRequestBusiness,
   getBalance,
+  getPendingPaymentRequest as getPendingPaymentRequestBusiness,
   getTelegramWelcomeIdempotencyKey,
   issueReplicaFunds,
   listTransactions,
+  rejectPaymentRequest as rejectPaymentRequestBusiness,
   startTelegramWelcomeFundingWorkflow,
   transfer,
 } from "../business"
 
-type BankActivityServices = Pick<BankServices, "authzService" | "prisma" | "temporalClient">
+type BankActivityServices = Pick<
+  BankServices,
+  "authzService" | "operationService" | "prisma" | "temporalClient"
+>
 
 export function createBankActivities({
   authzService,
+  operationService,
   prisma,
   temporalClient,
 }: BankActivityServices): BankActivities {
@@ -63,6 +71,32 @@ export function createBankActivities({
           idempotencyKey: getTelegramWelcomeIdempotencyKey(input.subjectId),
         }),
       }
+    },
+    async getPendingPaymentRequest(input) {
+      return await getPendingPaymentRequestBusiness(crypto, prisma, input.operationId)
+    },
+    async approvePaymentRequest(input) {
+      const result = await approvePaymentRequestBusiness(crypto, prisma, operationService, input)
+
+      return {
+        result: {
+          ...result,
+          transaction: result.transaction
+            ? {
+                ...result.transaction,
+                comment: undefined,
+              }
+            : undefined,
+        },
+      }
+    },
+    async rejectPaymentRequest(input) {
+      return {
+        result: await rejectPaymentRequestBusiness(crypto, prisma, operationService, input),
+      }
+    },
+    async failPaymentRequest(input) {
+      await failPaymentRequestBusiness(operationService, input)
     },
   }
 }

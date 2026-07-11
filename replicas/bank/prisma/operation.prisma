@@ -1,0 +1,62 @@
+/// The status of a long-running operation.
+enum OperationStatus {
+  /// The operation is created and awaiting completion.
+  PENDING
+
+  /// The operation is resolved successfully with a result.
+  COMPLETED
+
+  /// The operation failed and cannot be completed.
+  FAILED
+}
+
+/// The type of a long-running operation.
+enum OperationType {
+  /// A payment request is waiting for payer confirmation.
+  PAYMENT_REQUEST
+}
+
+/// Represents a long-running operation.
+model Operation {
+  /// The unique numeric identifier of the operation.
+  id Int @id @default(autoincrement())
+
+  /// The user-facing operation title.
+  title String
+
+  /// The user-facing operation description.
+  description String?
+
+  /// The current operation status.
+  status OperationStatus @default(PENDING)
+
+  /// The optional failure reason for failed operations.
+  failureReason String?
+
+  /// The optional failure message for failed operations.
+  failureMessage String?
+
+  /// Optional callback endpoint for completion notifications.
+  callbackEndpoint String?
+
+  /// Optional custom payload for completion notifications.
+  customData Json?
+
+  /// The type of operation being performed.
+  type OperationType
+
+  /// The payment request associated with this operation.
+  paymentRequest PaymentRequest?
+
+  /// The timestamp when this operation was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this operation was last updated.
+  updatedAt DateTime @updatedAt
+
+  /// The timestamp when this operation was resolved.
+  resolvedAt DateTime?
+
+  @@index([createdAt])
+  @@index([type, status])
+}

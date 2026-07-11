@@ -109,6 +109,12 @@ export enum WellKnownPermissions {
   BANK_ISSUE_REPLICA_FUNDS = "bank:issue-replica-funds",
 
   /**
+   * Allows creating bank payment requests for users from a specific payer realm.
+   * The scope is the payer subject realm.
+   */
+  BANK_REQUEST_PAYMENTS = "bank:request-payments",
+
+  /**
    * Allows to manage the specific gateway in the Infra Replica.
    * The scope is the name of the gateway.
    */

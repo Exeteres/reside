@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package reside.bank.payment.v1;
+
+import "bank/bank.v1.proto";
+import "common/operation.v1.proto";
+
+enum PaymentRequestResultStatus {
+  // The payment request result status is unknown.
+  PAYMENT_REQUEST_RESULT_STATUS_UNSPECIFIED = 0;
+
+  // The user approved the payment for this request only.
+  PAYMENT_REQUEST_APPROVED = 1;
+
+  // The user approved the payment and authorized future payment requests from this replica in the same payer realm.
+  PAYMENT_REQUEST_APPROVED_ALWAYS = 2;
+
+  // The user rejected the payment request.
+  PAYMENT_REQUEST_REJECTED = 3;
+}
+
+message PaymentRequestResult {
+  // The final result status chosen by the payer or derived from a stored authorization.
+  PaymentRequestResultStatus status = 1;
+
+  // The resulting transaction for approved payments.
+  // Missing when the payer rejects the request.
+  optional reside.bank.v1.Transaction transaction = 2;
+}
+
+message RequestPaymentRequest {
+  // The subject ID that should pay the authenticated caller replica.
+  // The payer realm is used as the permission scope for creating this request.
+  string payer_subject_id = 1;
+
+  // The requested amount in ∅ as a positive decimal string.
+  string amount = 2;
+
+  // Opaque idempotency key for the payment request.
+  // Reusing the same key returns the original result or operation without creating a duplicate request.
+  string idempotency_key = 3;
+
+  // Optional plaintext transaction comment shown to the user and stored encrypted at rest.
+  optional string comment = 4;
+}
+
+message RequestPaymentResponse {
+  oneof response {
+    // The payment was completed immediately through a stored payer authorization.
+    PaymentRequestResult result = 1;
+
+    // The payment is waiting for user confirmation.
+    reside.common.operation.v1.Operation operation = 2;
+  }
+}
+
+// The payment request API for replicas that ask users to pay the caller replica account.
+service BankPaymentService {
+  // Requests payment from a user subject to the authenticated caller replica account.
+  // The caller must have the bank payment request permission scoped to the payer subject realm.
+  // Reusing the same idempotency key returns the original result or operation.
+  rpc RequestPayment(RequestPaymentRequest) returns (RequestPaymentResponse);
+}

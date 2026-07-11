@@ -15,3 +15,29 @@ export const TransactionKind = {
 } as const
 
 export type TransactionKind = (typeof TransactionKind)[keyof typeof TransactionKind]
+
+
+export const PaymentRequestStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  APPROVED_ALWAYS: 'APPROVED_ALWAYS',
+  REJECTED: 'REJECTED'
+} as const
+
+export type PaymentRequestStatus = (typeof PaymentRequestStatus)[keyof typeof PaymentRequestStatus]
+
+
+export const OperationStatus = {
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationStatus]
+
+
+export const OperationType = {
+  PAYMENT_REQUEST: 'PAYMENT_REQUEST'
+} as const
+
+export type OperationType = (typeof OperationType)[keyof typeof OperationType]

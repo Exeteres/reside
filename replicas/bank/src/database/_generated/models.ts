@@ -10,6 +10,9 @@
  */
 export type * from './models/Account.ts'
 export type * from './models/Transaction.ts'
+export type * from './models/PaymentRequest.ts'
+export type * from './models/PaymentAuthorization.ts'
 export type * from './models/EncryptedContent.ts'
 export type * from './models/MemoryNote.ts'
+export type * from './models/Operation.ts'
 export type * from './commonInputTypes.ts'

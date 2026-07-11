@@ -1,11 +1,14 @@
 import type { ConnectRouter } from "@connectrpc/connect"
 import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
 import { BankService } from "@reside/api/bank/bank.v1"
+import { BankPaymentService } from "@reside/api/bank/payment.v1"
+import { OperationService, OperationSubscriptionService } from "@reside/api/common/operation.v1"
 import { PingService } from "@reside/api/common/ping.v1"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import {
   createCommandHandlerService,
   createInteractionActivities,
+  createOperationSubscriptionService,
   createPingService,
   createServer,
   logger,
@@ -18,10 +21,11 @@ import { strings } from "../locale"
 import { createServices } from "../shared"
 import { createBankActivities } from "./activities"
 import { createBankTools } from "./nls"
-import { createBankService } from "./services"
+import { createBankPaymentService, createBankService } from "./services"
 
 const services = await createServices()
 const bankService = createBankService(services)
+const bankPaymentService = createBankPaymentService(services)
 
 const server = await createServer(services)
 
@@ -30,7 +34,13 @@ await setupEncryption({ services, server })
 await server.register(fastifyConnectPlugin, {
   routes(router: ConnectRouter) {
     router.service(BankService, bankService)
+    router.service(BankPaymentService, bankPaymentService)
     router.service(CommandHandlerService, createCommandHandlerService(services.temporalClient))
+    router.service(OperationService, services.operationService.implementation)
+    router.service(
+      OperationSubscriptionService,
+      createOperationSubscriptionService(services.temporalClient),
+    )
     router.service(PingService, createPingService())
   },
 })
@@ -44,6 +54,7 @@ await setupLanguageSubsystem({
     "Help users manage the ∅ virtual currency. " +
     "Use bank tools only for the current interaction subject from the system prompt. " +
     "Use transaction amount ECIDs exactly as returned instead of plaintext amounts. " +
+    "Help users review and cancel automatic payment authorizations when they ask about payment permissions. " +
     "Do not invent balances or claim that a transfer succeeded unless the tool result confirms it.",
   tools: createBankTools(services),
 })
@@ -54,6 +65,7 @@ await startTemporalWorker({
   services,
   activities: {
     ...createBankActivities(services),
+    ...services.operationService.activities,
     ...createInteractionActivities(
       services.notificationService,
       services.interactionOperationService,
