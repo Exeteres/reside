@@ -29,11 +29,7 @@ export function parseBet(amount: string, rawSides?: string): ParsedBet {
     throw new CasinoValidationError(strings.errors.fractionalPayout)
   }
 
-  const multiplierNumerator = 6
-  const multiplierLabel =
-    multiplierNumerator % selectedSideCount === 0
-      ? `x${multiplierNumerator / selectedSideCount}`
-      : `x${multiplierNumerator}/${selectedSideCount}`
+  const multiplierLabel = `x${(6 / selectedSideCount).toFixed(1)}`
 
   return {
     amount: parsedAmount.toString(),
