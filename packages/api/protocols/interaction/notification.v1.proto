@@ -229,6 +229,10 @@ message SendNotificationRequest {
   // Optional canonical subject identifier allowed to respond to this notification.
   // If provided, implementations must reject responses from other subjects.
   google.protobuf.StringValue protected_for_subject_id = 18;
+
+  // Optional platform-specific sticker file identifier to send after the notification text.
+  // Interaction implementations that do not support stickers may ignore this field.
+  google.protobuf.StringValue sticker_file_id = 19;
 }
 
 // The response message for a notification sent to a channel.

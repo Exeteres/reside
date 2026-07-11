@@ -1,6 +1,6 @@
 import type { PrismaClient } from "../../database"
 import type { TelegramBotLike } from "./notification-types"
-import { describe, expect, test } from "bun:test"
+import { describe, expect, mock, test } from "bun:test"
 import { mockDeepFn, mockFn, testCrypto } from "@reside/common/testing"
 import {
   sendAvatarPrivacyModeWarning,
@@ -53,6 +53,43 @@ describe("sendNotificationPayload", () => {
 
     expect(sentMessageId.message_id).toBe(10)
     expect(bot.api.sendDocument.spy()).toHaveBeenCalledTimes(1)
+  })
+
+  test("sends sticker after plain message", async () => {
+    const sendSticker = mock(async () => ({ message_id: 11 }))
+    const bot: TelegramBotLike = {
+      api: {
+        sendMessage: mock(async () => ({ message_id: 10 })),
+        editMessageText: mock(async () => undefined),
+        deleteMessage: mock(async () => true as const),
+        setMessageReaction: mock(async () => true as const),
+        sendPhoto: mock(async () => ({ message_id: 20 })),
+        sendDocument: mock(async () => ({ message_id: 30 })),
+        sendMediaGroup: mock(async () => [{ message_id: 40 }]),
+        sendSticker,
+      },
+    }
+
+    const sentMessageId = await sendNotificationPayload(
+      bot,
+      "-1001",
+      {
+        images: [],
+        attachments: [],
+        stickerFileId: "sticker-1",
+      },
+      "Message",
+      undefined,
+      44,
+    )
+
+    expect(sentMessageId.message_id).toBe(10)
+    expect(sendSticker).toHaveBeenCalledWith("-1001", "sticker-1", {
+      reply_parameters: {
+        message_id: 10,
+      },
+      message_thread_id: undefined,
+    })
   })
 
   test("uses image message id when image is sent without reply markup", async () => {

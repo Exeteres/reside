@@ -15,6 +15,8 @@ import { strings } from "../locale"
 import { DICE_EMOJI } from "../replica/business"
 
 const DICE_ANIMATION_DELAY_MS = 3_000
+const LOST_STICKER_FILE_ID =
+  "CAACAgIAAx0CS1QOwgABDO_UakPrOtXpsJrbYGOg4AABlpxqtHFTAAKNLQACKrURSMNB8V6_UNqfPAQ"
 
 const {
   assertCasinoCanCoverPayout,
@@ -157,6 +159,7 @@ export const betCommandHandler = defineCommandHandler({
         contextToken: dice.contextToken,
         title: strings.notifications.bet.lost.title,
         message: formatLostMessage(parsed, dice.value),
+        stickerFileId: LOST_STICKER_FILE_ID,
         system: dice.contextToken === undefined,
         waitForResponse: false,
       })

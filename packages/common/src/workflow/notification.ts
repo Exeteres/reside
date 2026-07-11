@@ -228,6 +228,11 @@ export type NotificationInput<
   images?: InlineFile[]
 
   /**
+   * Optional platform-specific sticker file identifier to send after the notification text.
+   */
+  stickerFileId?: string
+
+  /**
    * Whether the notification requires a text response from the user.
    */
   requiresTextResponse?: TRequiresTextResponse
@@ -464,6 +469,7 @@ export async function sendNotification<
     taskGroups: toApiTaskGroups(input.taskGroups),
     attachments: input.attachments ?? [],
     images: input.images ?? [],
+    stickerFileId: input.stickerFileId,
   })
 
   const response = await sendNotification(request)
