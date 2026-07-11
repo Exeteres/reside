@@ -17,6 +17,7 @@ export async function sendNotificationPayload(
   request: {
     images: NotificationMediaFile[]
     attachments: NotificationMediaFile[]
+    stickerFileId?: string
   },
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,
@@ -38,6 +39,17 @@ export async function sendNotificationPayload(
       await sendAttachmentGroup(bot, chatId, request.attachments, replyToMessageId, messageThreadId)
     }
 
+    if (request.stickerFileId !== undefined) {
+      if (bot.api.sendSticker === undefined) {
+        throw new ConnectError("Telegram bot cannot send stickers", Code.FailedPrecondition)
+      }
+
+      await bot.api.sendSticker(chatId, request.stickerFileId, {
+        reply_parameters: toReplyParameters(sentMessage.message_id),
+        message_thread_id: messageThreadId,
+      })
+    }
+
     return sentMessage
   }
 
@@ -57,6 +69,17 @@ export async function sendNotificationPayload(
 
   if (request.attachments.length > 0) {
     await sendAttachmentGroup(bot, chatId, request.attachments, replyToMessageId, messageThreadId)
+  }
+
+  if (request.stickerFileId !== undefined) {
+    if (bot.api.sendSticker === undefined) {
+      throw new ConnectError("Telegram bot cannot send stickers", Code.FailedPrecondition)
+    }
+
+    await bot.api.sendSticker(chatId, request.stickerFileId, {
+      reply_parameters: toReplyParameters(firstImageMessage.message_id),
+      message_thread_id: messageThreadId,
+    })
   }
 
   if (!replyMarkup) {
@@ -158,6 +181,7 @@ export async function sendNotificationWithReplyFallback(
   request: {
     images: NotificationMediaFile[]
     attachments: NotificationMediaFile[]
+    stickerFileId?: string
   },
   messageText: string,
   replyMarkup: InlineKeyboardMarkup | undefined,

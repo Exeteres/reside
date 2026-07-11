@@ -65,6 +65,7 @@ export type SendNotificationInput = {
   acceptedDiceEmojis?: string[]
   status?: NotificationStatus
   taskGroups?: NotificationTaskGroupInput[]
+  stickerFileId?: string
 }
 
 export type UpdateNotificationInput = {
@@ -161,6 +162,16 @@ export type TelegramBotLike = {
         message_thread_id?: number
       },
     ): Promise<{ message_id: number }[]>
+    sendSticker?(
+      chatId: string,
+      sticker: string,
+      options?: {
+        reply_parameters?: {
+          message_id: number
+        }
+        message_thread_id?: number
+      },
+    ): Promise<{ message_id: number }>
     createForumTopic?(chatId: string, name: string): Promise<{ message_thread_id: number }>
     editForumTopic?(
       chatId: string,

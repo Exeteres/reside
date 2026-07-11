@@ -117,6 +117,7 @@ export function createNotificationService({
             acceptedDiceEmojis: request.acceptedDiceEmojis,
             status: toBusinessNotificationStatus(request.status),
             taskGroups: request.taskGroups.map(toBusinessTaskGroup),
+            stickerFileId: request.stickerFileId,
           },
         )
 
