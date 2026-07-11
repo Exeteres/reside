@@ -30,6 +30,7 @@ type TelegramBotLike = {
       text: string,
       options?: Record<string, unknown>,
     ) => Promise<unknown>
+    editMessageMedia: (...args: unknown[]) => Promise<unknown>
     deleteMessage: (chatId: string, messageId: number) => Promise<true>
     setMessageReaction: (
       chatId: string,
@@ -801,6 +802,66 @@ describe("updateNotificationForReplica", () => {
     expect(bot.api.editMessageText.spy()).toHaveBeenCalledTimes(1)
     expect(prisma.operation.create.spy()).toHaveBeenCalledTimes(0)
     expect(prisma.notification.update.spy()).toHaveBeenCalledTimes(1)
+  })
+
+  test("promotes text notification to photo notification when image url is provided", async () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    subjectService.getSubjectDisplayInfo.mockResolvedValue({ title: "Sender" } as never)
+    prisma.avatar.findUnique.mockResolvedValue(null as never)
+    prisma.notification.findFirst.mockResolvedValue({
+      id: 7,
+      title: "Old title",
+      content: "Old content",
+      messageEcid: await encryptTelegramMessage(900),
+      actionRows: [],
+      requiresTextResponse: false,
+      operationId: null,
+      operation: null,
+    } as never)
+    bot.api.editMessageMedia.mockResolvedValue({} as never)
+    prisma.notification.update.mockResolvedValue({ id: 7 } as never)
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: TransactionPrisma) => Promise<unknown>) => {
+        return await callback(prisma as unknown as TransactionPrisma)
+      },
+    )
+
+    await updateNotificationForReplica(
+      testCrypto,
+      prisma,
+      subjectService,
+      () => bot,
+      async () => ({
+        botToken: "token",
+        systemChatId: "-1001",
+      }),
+      "demo",
+      {
+        notificationId: "7",
+        title: "New title",
+        content: "New content",
+        actionRows: [],
+        requiresTextResponse: false,
+        imageUrls: [{ url: "https://8.8.8.8/image.png" }],
+      },
+    )
+
+    expect(bot.api.editMessageMedia.spy()).toHaveBeenCalledTimes(1)
+    expect(bot.api.editMessageMedia.spy().mock.calls[0]?.[0]).toBe("-1001")
+    expect(bot.api.editMessageMedia.spy().mock.calls[0]?.[1]).toBe(900)
+    expect(bot.api.editMessageMedia.spy().mock.calls[0]?.[2]).toEqual(
+      expect.objectContaining({
+        type: "photo",
+        media: "https://8.8.8.8/image.png",
+      }),
+    )
+    expect(bot.api.editMessageText.spy()).toHaveBeenCalledTimes(0)
   })
 
   test("decrypts ecids in updated action urls only for telegram markup", async () => {

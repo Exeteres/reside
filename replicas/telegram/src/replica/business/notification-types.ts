@@ -85,6 +85,7 @@ export type UpdateNotificationInput = {
   acquireTopic?: boolean
   status?: NotificationStatus
   taskGroups?: NotificationTaskGroupInput[]
+  imageUrls?: NotificationImageUrlInput[]
 }
 
 export type AuthzServiceClientLike = {
@@ -125,6 +126,14 @@ export type TelegramBotLike = {
         link_preview_options?: {
           is_disabled: true
         }
+        reply_markup?: InlineKeyboardMarkup
+      },
+    ): Promise<unknown>
+    editMessageMedia?(
+      chatId: string,
+      messageId: number,
+      media: InputMediaPhoto,
+      options?: {
         reply_markup?: InlineKeyboardMarkup
       },
     ): Promise<unknown>

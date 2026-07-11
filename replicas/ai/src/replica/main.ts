@@ -3,6 +3,7 @@ import { fastifyConnectPlugin } from "@connectrpc/connect-fastify"
 import { PingService } from "@reside/api/common/ping.v1"
 import { CommandHandlerService } from "@reside/api/interaction/command.v1"
 import {
+  createCommandHandlerService,
   createInteractionActivities,
   createPingService,
   createServer,
@@ -18,7 +19,7 @@ import { strings } from "../locale"
 import { createServices } from "../shared"
 import { createAiActivities } from "./activities"
 import { createAiTools } from "./nls"
-import { createImageCommandService, createOpenAiImageGenerator } from "./services"
+import { createOpenAiImageGenerator } from "./services"
 
 const services = await createServices()
 
@@ -29,14 +30,7 @@ await setupEncryption({ services, server })
 
 await server.register(fastifyConnectPlugin, {
   routes(router: ConnectRouter) {
-    router.service(
-      CommandHandlerService,
-      createImageCommandService({
-        storage: services.storage,
-        notificationService: services.notificationService,
-        generateImage,
-      }),
-    )
+    router.service(CommandHandlerService, createCommandHandlerService(services.temporalClient))
     router.service(PingService, createPingService())
   },
 })
