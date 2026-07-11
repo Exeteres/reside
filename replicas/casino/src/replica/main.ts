@@ -10,6 +10,7 @@ import {
   createOperationSubscriptionService,
   createPingService,
   createServer,
+  createSleepActivities,
   logger,
   setupEncryption,
   setupLanguageSubsystem,
@@ -60,7 +61,9 @@ await startTemporalWorker({
       services.notificationService,
       services.interactionOperationService,
     ),
-    ...createOperationActivities(services.bankOperationService),
+    subscribeToBankOperationCompletion: createOperationActivities(services.bankOperationService)
+      .subscribeToOperationCompletion,
+    ...createSleepActivities(services.timerService),
   },
 })
 
