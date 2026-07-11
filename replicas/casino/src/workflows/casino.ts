@@ -5,6 +5,7 @@ import {
   code,
   defineCommandHandler,
   inline,
+  safeSleep,
   sendNotification,
   updateNotification,
   waitForOperationSuccess,
@@ -13,6 +14,8 @@ import { proxyActivities, workflowInfo } from "@temporalio/workflow"
 import { betCommand, CasinoNotificationChannels, CasinoValidationError } from "../definitions"
 import { strings } from "../locale"
 import { DICE_EMOJI } from "../replica/business"
+
+const DICE_ANIMATION_DELAY_MS = 3_000
 
 const {
   assertCasinoCanCoverPayout,
@@ -45,8 +48,8 @@ const { transferPayout } = proxyActivities<CasinoActivities>({
   },
 })
 
-const { subscribeToOperationCompletion } = proxyActivities<{
-  subscribeToOperationCompletion: (operationId: number, workflowId: string) => Promise<unknown>
+const { subscribeToBankOperationCompletion } = proxyActivities<{
+  subscribeToBankOperationCompletion: (operationId: number, workflowId: string) => Promise<unknown>
 }>({
   scheduleToCloseTimeout: "30 seconds",
   retry: {
@@ -107,7 +110,7 @@ export const betCommandHandler = defineCommandHandler({
 
       await waitForOperationSuccess(
         payment.paymentOperationId,
-        subscribeToOperationCompletion as never,
+        subscribeToBankOperationCompletion as never,
       )
       payment = await requestBetPayment({ betId })
     }
@@ -148,6 +151,8 @@ export const betCommandHandler = defineCommandHandler({
       })
       return
     }
+
+    await safeSleep(DICE_ANIMATION_DELAY_MS)
 
     if (!parsed.sides.includes(dice.value)) {
       await markLoss({ betId, diceEmoji: dice.emoji, diceValue: dice.value })

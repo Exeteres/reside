@@ -778,7 +778,7 @@ export async function createTelegramBot(args: {
 
     const entities = await ensureTelegramEntities(args.crypto, args.prisma, context)
     const subjectUserId = entities.user?.id
-    const result = await completeDiceMessageResponse({
+    await completeDiceMessageResponse({
       crypto: args.crypto,
       prisma: args.prisma,
       operationService: args.operationService,
@@ -797,9 +797,7 @@ export async function createTelegramBot(args: {
       },
     })
 
-    if (result.handled && result.completed) {
-      await setUserMessageAcceptedReaction(bot, chatId, message.message_id)
-    }
+    return
   })
 
   bot.on("callback_query:data", async (context: Context) => {
