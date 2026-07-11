@@ -14,15 +14,37 @@ export async function bootstrapNotcompelCronJob(): Promise<void> {
   const batchApi = kubeConfig.makeApiClient(BatchV1Api)
   const namespace = getReplicaNamespace()
   const replicaName = getReplicaName()
+  const body = buildCronJob(namespace, replicaName)
 
-  await batchApi.patchNamespacedCronJob({
-    name: CRON_JOB_NAME,
-    namespace,
-    body: buildCronJob(namespace, replicaName),
-    fieldManager: "notcompel-bootstrap",
-  })
+  try {
+    await batchApi.createNamespacedCronJob({
+      namespace,
+      body,
+      fieldManager: "notcompel-bootstrap",
+    })
+  } catch (error) {
+    if (!isKubernetesStatusCode(error, 409)) {
+      throw error
+    }
+
+    await batchApi.patchNamespacedCronJob({
+      name: CRON_JOB_NAME,
+      namespace,
+      body,
+      fieldManager: "notcompel-bootstrap",
+    })
+  }
 
   logger.info('created/updated cronjob "%s" in namespace "%s"', CRON_JOB_NAME, namespace)
+}
+
+function isKubernetesStatusCode(error: unknown, expectedCode: number): boolean {
+  if (typeof error !== "object" || error === null) {
+    return false
+  }
+
+  const code = Reflect.get(error, "code")
+  return code === expectedCode
 }
 
 function buildCronContainerEnv(
