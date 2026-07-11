@@ -20,6 +20,9 @@ model PostgresDatabase {
   /// The replica that owns the temporary database, if applicable.
   ownerReplicaName String?
 
+  /// The existing database used as the template for this temporary database, if applicable.
+  sourceDatabase String?
+
   /// The timestamp after which the temporary database should be removed.
   expiresAt DateTime?
 

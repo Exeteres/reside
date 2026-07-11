@@ -140,10 +140,12 @@ export async function resolveTemporaryPostgresCredentialsPayload({
   prisma,
   temporalClient,
   ownerReplicaName,
+  sourceDatabase,
 }: {
   prisma: PrismaClient
   temporalClient: Client
   ownerReplicaName: string
+  sourceDatabase: string | undefined
 }): Promise<ProvisioningPayload<PostgresCredentials>> {
   return await prisma.$transaction(async tx => {
     const expiresAt = new Date(Date.now() + TEMPORARY_POSTGRES_DATABASE_TTL_MS)
@@ -153,6 +155,7 @@ export async function resolveTemporaryPostgresCredentialsPayload({
         password: randomBytes(24).toString("base64url"),
         kind: PostgresDatabaseKind.TEMPORARY,
         ownerReplicaName,
+        sourceDatabase,
         expiresAt,
         deletedAt: null,
       },

@@ -31,11 +31,17 @@ export function createDevDatabaseTool({
   return defineTool("create_dev_database", {
     description:
       "Creates a temporary PostgreSQL development database that is automatically deleted after 24 hours",
-    parameters: z.object({}),
-    handler: async () => {
+    parameters: z.object({
+      sourceDatabase: z
+        .string()
+        .min(1)
+        .optional()
+        .describe("Existing production database name to copy data from, for example replica_alpha"),
+    }),
+    handler: async ({ sourceDatabase }) => {
       logger.info("engineer create_dev_database started")
 
-      const response = await provisionService.createTemporaryPostgresDatabase({})
+      const response = await provisionService.createTemporaryPostgresDatabase({ sourceDatabase })
 
       if (!response.credentials || response.credentials.case === undefined) {
         throw new Error("Infra did not return temporary database credentials")

@@ -45,7 +45,7 @@ export function createProvisionService({
       }
     },
 
-    async createTemporaryPostgresDatabase(_request, context) {
+    async createTemporaryPostgresDatabase(request, context) {
       const identity = await authenticateReplica(context)
       const subjectId = `replica:${identity.name}`
 
@@ -65,6 +65,7 @@ export function createProvisionService({
         prisma,
         temporalClient,
         ownerReplicaName: identity.name,
+        sourceDatabase: request.sourceDatabase,
       })
 
       return {
