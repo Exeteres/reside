@@ -169,8 +169,27 @@ export const transactionsCommandHandler = defineCommandHandler({
       throw new Error("Command invocation is missing subjectId")
     }
     const subjectId = context.subjectId
-    let page = params.page ?? 1
+    const initialPage = Math.max(params.page ?? 1, 1)
+    const previousPageTokens: (string | undefined)[] = []
+    let page = 1
+    let pageToken: string | undefined
     let notificationId: string | undefined
+
+    while (page < initialPage) {
+      const result = await listTransactions({
+        subjectId,
+        pageSize: TRANSACTIONS_PAGE_SIZE,
+        pageToken,
+      })
+
+      if (result.nextPageToken === undefined) {
+        break
+      }
+
+      previousPageTokens.push(pageToken)
+      pageToken = result.nextPageToken
+      page += 1
+    }
 
     while (true) {
       let result: { transactions: BankTransaction[]; nextPageToken?: string }
@@ -178,7 +197,7 @@ export const transactionsCommandHandler = defineCommandHandler({
         result = await listTransactions({
           subjectId,
           pageSize: TRANSACTIONS_PAGE_SIZE,
-          pageToken: page > 1 ? String((page - 1) * TRANSACTIONS_PAGE_SIZE) : undefined,
+          pageToken,
         })
       } catch (error) {
         await sendBankFailureNotification(error)
@@ -215,11 +234,14 @@ export const transactionsCommandHandler = defineCommandHandler({
       }
 
       if (response.actionName === PREVIOUS_PAGE_ACTION_NAME && page > 1) {
+        pageToken = previousPageTokens.pop()
         page -= 1
         continue
       }
 
       if (response.actionName === NEXT_PAGE_ACTION_NAME && result.nextPageToken !== undefined) {
+        previousPageTokens.push(pageToken)
+        pageToken = result.nextPageToken
         page += 1
         continue
       }
