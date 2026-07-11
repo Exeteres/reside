@@ -1,6 +1,26 @@
 import { describe, expect, test } from "bun:test"
 import { Code, ConnectError } from "@connectrpc/connect"
-import { throwNotificationServiceError } from "./notification"
+import { throwNotificationServiceError, toApiNotification } from "./notification"
+
+describe("toApiNotification", () => {
+  test("accepts read models without optional protected subject", () => {
+    const notification = toApiNotification({
+      notificationId: "42",
+      title: "Тест",
+      content: "Сообщение",
+      actionRows: [],
+      taskGroups: [],
+      requiresTextResponse: false,
+      protected: false,
+      expectImmediateFeedback: false,
+      acquireTopic: false,
+      acceptedDiceEmojis: [],
+    })
+
+    expect(notification.notificationId).toBe("42")
+    expect(notification.protectedForSubjectId).toBeUndefined()
+  })
+})
 
 describe("throwNotificationServiceError", () => {
   test("preserves connect error code and message", () => {
