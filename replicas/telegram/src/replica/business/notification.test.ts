@@ -218,6 +218,86 @@ describe("sendNotificationForReplica", () => {
     ).rejects.toThrow('Channel with name "alerts" was not found')
   })
 
+  test("throws when dice responses are combined with topic acquisition", () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<{
+      checkPermission: (args: {
+        permissionName: string
+        subjectId: string
+        scope: string
+      }) => Promise<{ authorized: boolean }>
+    }>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    expect(
+      sendNotificationForReplica(
+        testCrypto,
+        prisma,
+        authzService,
+        subjectService,
+        () => bot,
+        async () => ({
+          botToken: "token",
+          systemChatId: "-1001",
+        }),
+        "demo",
+        {
+          channel: "alerts",
+          title: "Title",
+          content: "Body",
+          actionRows: [],
+          images: [],
+          attachments: [],
+          acquireTopic: true,
+          acceptedDiceEmojis: ["🎲"],
+          protectedForSubjectId: "telegram:20",
+        },
+      ),
+    ).rejects.toThrow("Dice responses cannot be combined with topic acquisition")
+  })
+
+  test("throws when dice responses are not subject-protected", () => {
+    const prisma = mockDeepFn<PrismaClient>()
+    const authzService = mockDeepFn<{
+      checkPermission: (args: {
+        permissionName: string
+        subjectId: string
+        scope: string
+      }) => Promise<{ authorized: boolean }>
+    }>()
+    const subjectService = mockDeepFn<{
+      getSubjectDisplayInfo: (args: { subjectId: string }) => Promise<{ title: string }>
+    }>()
+    const bot = mockDeepFn<TelegramBotLike>()
+
+    expect(
+      sendNotificationForReplica(
+        testCrypto,
+        prisma,
+        authzService,
+        subjectService,
+        () => bot,
+        async () => ({
+          botToken: "token",
+          systemChatId: "-1001",
+        }),
+        "demo",
+        {
+          channel: "alerts",
+          title: "Title",
+          content: "Body",
+          actionRows: [],
+          images: [],
+          attachments: [],
+          acceptedDiceEmojis: ["🎲"],
+        },
+      ),
+    ).rejects.toThrow("Dice responses must be protected for a subject")
+  })
+
   test("sends notification and creates record without operation", async () => {
     const prisma = mockDeepFn<PrismaClient>()
     const authzService = mockDeepFn<{

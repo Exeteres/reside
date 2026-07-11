@@ -99,6 +99,16 @@ message NotificationTaskGroup {
   repeated NotificationTask tasks = 3;
 }
 
+// A dice response emitted by an interaction implementation.
+message DiceResponse {
+  // The dice emoji accepted by the interaction implementation.
+  string emoji = 1;
+
+  // The resulting dice value.
+  // The value range depends on the emoji and the interaction implementation.
+  uint32 value = 2;
+}
+
 // The read model of a notification as currently stored by the interaction implementation.
 message Notification {
   // The identifier of the notification.
@@ -131,6 +141,14 @@ message Notification {
 
   // Whether messages sent into the target topic are treated as text responses to this notification.
   bool acquire_topic = 10;
+
+  // Dice emojis accepted as responses to this notification.
+  // Empty means dice responses are not accepted.
+  repeated string accepted_dice_emojis = 11;
+
+  // Optional canonical subject identifier allowed to respond to this notification.
+  // If provided, implementations must reject responses from other subjects.
+  google.protobuf.StringValue protected_for_subject_id = 12;
 }
 
 // The request message for sending a notification to a channel.
@@ -203,6 +221,14 @@ message SendNotificationRequest {
   // The ordered task groups attached to the notification.
   // Planning notifications must include at least one group with at least one task, and all tasks must be planned or skipped.
   repeated NotificationTaskGroup task_groups = 16;
+
+  // Dice emojis accepted as notification responses.
+  // Empty means dice responses are not accepted.
+  repeated string accepted_dice_emojis = 17;
+
+  // Optional canonical subject identifier allowed to respond to this notification.
+  // If provided, implementations must reject responses from other subjects.
+  google.protobuf.StringValue protected_for_subject_id = 18;
 }
 
 // The response message for a notification sent to a channel.
@@ -255,6 +281,18 @@ message UpdateNotificationRequest {
   // This field replaces the full task list.
   // Planning notifications must include at least one group with at least one task, and all tasks must be planned or skipped.
   repeated NotificationTaskGroup task_groups = 8;
+
+  // The updated dice emojis accepted as notification responses.
+  // Empty means dice responses are not accepted.
+  repeated string accepted_dice_emojis = 9;
+
+  // Whether messages sent into the target topic should be treated as responses to this notification.
+  // If not provided, the current behavior is preserved.
+  google.protobuf.BoolValue acquire_topic = 10;
+
+  // Optional canonical subject identifier allowed to respond to this notification.
+  // If not provided, the current restriction is preserved.
+  google.protobuf.StringValue protected_for_subject_id = 11;
 }
 
 // The response message for a notification update operation.
@@ -302,6 +340,9 @@ message NotificationResponse {
 
     // Indicates that the user updated the notification task list through an implementation-specific task editing interaction.
     google.protobuf.Empty task_update = 4;
+
+    // A dice response emitted by an interaction implementation.
+    DiceResponse dice_response = 6;
   }
 
   // The notification read model at the moment the response operation was resolved.

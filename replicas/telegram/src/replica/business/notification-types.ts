@@ -58,9 +58,11 @@ export type SendNotificationInput = {
   sendAsSubjectId?: string
   requiresTextResponse?: boolean
   protected?: boolean
+  protectedForSubjectId?: string
   expectImmediateFeedback?: boolean
   topicId?: string
   acquireTopic?: boolean
+  acceptedDiceEmojis?: string[]
   status?: NotificationStatus
   taskGroups?: NotificationTaskGroupInput[]
 }
@@ -72,6 +74,9 @@ export type UpdateNotificationInput = {
   actionRows: ActionRow[]
   requiresTextResponse?: boolean
   expectImmediateFeedback?: boolean
+  protectedForSubjectId?: string
+  acceptedDiceEmojis?: string[]
+  acquireTopic?: boolean
   status?: NotificationStatus
   taskGroups?: NotificationTaskGroupInput[]
 }

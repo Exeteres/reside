@@ -59,6 +59,7 @@ export type NotificationMinAggregateOutputType = {
   status: $Enums.NotificationStatus | null
   requiresTextResponse: boolean | null
   isProtected: boolean | null
+  protectedForSubjectId: string | null
   expectImmediateFeedback: boolean | null
   acquireTopic: boolean | null
   createdAt: Date | null
@@ -80,6 +81,7 @@ export type NotificationMaxAggregateOutputType = {
   status: $Enums.NotificationStatus | null
   requiresTextResponse: boolean | null
   isProtected: boolean | null
+  protectedForSubjectId: string | null
   expectImmediateFeedback: boolean | null
   acquireTopic: boolean | null
   createdAt: Date | null
@@ -102,8 +104,10 @@ export type NotificationCountAggregateOutputType = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse: number
   isProtected: number
+  protectedForSubjectId: number
   expectImmediateFeedback: number
   acquireTopic: number
+  acceptedDiceEmojis: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -141,6 +145,7 @@ export type NotificationMinAggregateInputType = {
   status?: true
   requiresTextResponse?: true
   isProtected?: true
+  protectedForSubjectId?: true
   expectImmediateFeedback?: true
   acquireTopic?: true
   createdAt?: true
@@ -162,6 +167,7 @@ export type NotificationMaxAggregateInputType = {
   status?: true
   requiresTextResponse?: true
   isProtected?: true
+  protectedForSubjectId?: true
   expectImmediateFeedback?: true
   acquireTopic?: true
   createdAt?: true
@@ -184,8 +190,10 @@ export type NotificationCountAggregateInputType = {
   actionRows?: true
   requiresTextResponse?: true
   isProtected?: true
+  protectedForSubjectId?: true
   expectImmediateFeedback?: true
   acquireTopic?: true
+  acceptedDiceEmojis?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -293,8 +301,10 @@ export type NotificationGroupByOutputType = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse: boolean
   isProtected: boolean
+  protectedForSubjectId: string | null
   expectImmediateFeedback: boolean
   acquireTopic: boolean
+  acceptedDiceEmojis: string[]
   createdAt: Date
   updatedAt: Date
   _count: NotificationCountAggregateOutputType | null
@@ -338,8 +348,10 @@ export type NotificationWhereInput = {
   actionRows?: Prisma.JsonFilter<"Notification">
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
+  protectedForSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
   expectImmediateFeedback?: Prisma.BoolFilter<"Notification"> | boolean
   acquireTopic?: Prisma.BoolFilter<"Notification"> | boolean
+  acceptedDiceEmojis?: Prisma.StringNullableListFilter<"Notification">
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   operation?: Prisma.XOR<Prisma.OperationNullableScalarRelationFilter, Prisma.OperationWhereInput> | null
@@ -368,8 +380,10 @@ export type NotificationOrderByWithRelationInput = {
   actionRows?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  protectedForSubjectId?: Prisma.SortOrderInput | Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
   acquireTopic?: Prisma.SortOrder
+  acceptedDiceEmojis?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   operation?: Prisma.OperationOrderByWithRelationInput
@@ -402,8 +416,10 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   actionRows?: Prisma.JsonFilter<"Notification">
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
+  protectedForSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
   expectImmediateFeedback?: Prisma.BoolFilter<"Notification"> | boolean
   acquireTopic?: Prisma.BoolFilter<"Notification"> | boolean
+  acceptedDiceEmojis?: Prisma.StringNullableListFilter<"Notification">
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   operation?: Prisma.XOR<Prisma.OperationNullableScalarRelationFilter, Prisma.OperationWhereInput> | null
@@ -432,8 +448,10 @@ export type NotificationOrderByWithAggregationInput = {
   actionRows?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  protectedForSubjectId?: Prisma.SortOrderInput | Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
   acquireTopic?: Prisma.SortOrder
+  acceptedDiceEmojis?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.NotificationCountOrderByAggregateInput
@@ -462,8 +480,10 @@ export type NotificationScalarWhereWithAggregatesInput = {
   actionRows?: Prisma.JsonWithAggregatesFilter<"Notification">
   requiresTextResponse?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
+  protectedForSubjectId?: Prisma.StringNullableWithAggregatesFilter<"Notification"> | string | null
   expectImmediateFeedback?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
   acquireTopic?: Prisma.BoolWithAggregatesFilter<"Notification"> | boolean
+  acceptedDiceEmojis?: Prisma.StringNullableListFilter<"Notification">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Notification"> | Date | string
 }
@@ -478,8 +498,10 @@ export type NotificationCreateInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
@@ -508,8 +530,10 @@ export type NotificationUncheckedCreateInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
@@ -527,8 +551,10 @@ export type NotificationUpdateInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
@@ -557,8 +583,10 @@ export type NotificationUncheckedUpdateInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
@@ -582,8 +610,10 @@ export type NotificationCreateManyInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -598,8 +628,10 @@ export type NotificationUpdateManyMutationInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -620,8 +652,10 @@ export type NotificationUncheckedUpdateManyInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -667,8 +701,10 @@ export type NotificationCountOrderByAggregateInput = {
   actionRows?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  protectedForSubjectId?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
   acquireTopic?: Prisma.SortOrder
+  acceptedDiceEmojis?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -696,6 +732,7 @@ export type NotificationMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  protectedForSubjectId?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
   acquireTopic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -717,6 +754,7 @@ export type NotificationMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   requiresTextResponse?: Prisma.SortOrder
   isProtected?: Prisma.SortOrder
+  protectedForSubjectId?: Prisma.SortOrder
   expectImmediateFeedback?: Prisma.SortOrder
   acquireTopic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -933,8 +971,17 @@ export type NotificationUpdateOneRequiredWithoutTaskPlanningPollsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationUpdateToOneWithWhereWithoutTaskPlanningPollsInput, Prisma.NotificationUpdateWithoutTaskPlanningPollsInput>, Prisma.NotificationUncheckedUpdateWithoutTaskPlanningPollsInput>
 }
 
+export type NotificationCreateacceptedDiceEmojisInput = {
+  set: string[]
+}
+
 export type EnumNotificationStatusFieldUpdateOperationsInput = {
   set?: $Enums.NotificationStatus
+}
+
+export type NotificationUpdateacceptedDiceEmojisInput = {
+  set?: string[]
+  push?: string | string[]
 }
 
 export type NotificationCreateNestedOneWithoutOperationInput = {
@@ -979,8 +1026,10 @@ export type NotificationCreateWithoutAvatarProvisionRequestInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
@@ -1008,8 +1057,10 @@ export type NotificationUncheckedCreateWithoutAvatarProvisionRequestInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
@@ -1042,8 +1093,10 @@ export type NotificationUpdateWithoutAvatarProvisionRequestInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
@@ -1071,8 +1124,10 @@ export type NotificationUncheckedUpdateWithoutAvatarProvisionRequestInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
@@ -1089,8 +1144,10 @@ export type NotificationCreateWithoutChannelInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
@@ -1117,8 +1174,10 @@ export type NotificationUncheckedCreateWithoutChannelInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
@@ -1171,8 +1230,10 @@ export type NotificationScalarWhereInput = {
   actionRows?: Prisma.JsonFilter<"Notification">
   requiresTextResponse?: Prisma.BoolFilter<"Notification"> | boolean
   isProtected?: Prisma.BoolFilter<"Notification"> | boolean
+  protectedForSubjectId?: Prisma.StringNullableFilter<"Notification"> | string | null
   expectImmediateFeedback?: Prisma.BoolFilter<"Notification"> | boolean
   acquireTopic?: Prisma.BoolFilter<"Notification"> | boolean
+  acceptedDiceEmojis?: Prisma.StringNullableListFilter<"Notification">
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
 }
@@ -1187,8 +1248,10 @@ export type NotificationCreateWithoutChatInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
@@ -1215,8 +1278,10 @@ export type NotificationUncheckedCreateWithoutChatInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
@@ -1260,8 +1325,10 @@ export type NotificationCreateWithoutMessageInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
@@ -1288,8 +1355,10 @@ export type NotificationUncheckedCreateWithoutMessageInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
@@ -1323,8 +1392,10 @@ export type NotificationUpdateWithoutMessageInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
@@ -1351,8 +1422,10 @@ export type NotificationUncheckedUpdateWithoutMessageInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
@@ -1370,8 +1443,10 @@ export type NotificationCreateWithoutTopicInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
@@ -1398,8 +1473,10 @@ export type NotificationUncheckedCreateWithoutTopicInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
@@ -1443,8 +1520,10 @@ export type NotificationCreateWithoutTaskGroupsInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
@@ -1472,8 +1551,10 @@ export type NotificationUncheckedCreateWithoutTaskGroupsInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedCreateNestedManyWithoutNotificationInput
@@ -1506,8 +1587,10 @@ export type NotificationUpdateWithoutTaskGroupsInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
@@ -1535,8 +1618,10 @@ export type NotificationUncheckedUpdateWithoutTaskGroupsInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskPlanningPolls?: Prisma.NotificationTaskPlanningPollUncheckedUpdateManyWithoutNotificationNestedInput
@@ -1553,8 +1638,10 @@ export type NotificationCreateWithoutTaskPlanningPollsInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   operation?: Prisma.OperationCreateNestedOneWithoutNotificationInput
@@ -1582,8 +1669,10 @@ export type NotificationUncheckedCreateWithoutTaskPlanningPollsInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
@@ -1616,8 +1705,10 @@ export type NotificationUpdateWithoutTaskPlanningPollsInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
@@ -1645,8 +1736,10 @@ export type NotificationUncheckedUpdateWithoutTaskPlanningPollsInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
@@ -1663,8 +1756,10 @@ export type NotificationCreateWithoutOperationInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   chat: Prisma.ChatCreateNestedOneWithoutNotificationsInput
@@ -1691,8 +1786,10 @@ export type NotificationUncheckedCreateWithoutOperationInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedCreateNestedManyWithoutNotificationInput
@@ -1726,8 +1823,10 @@ export type NotificationUpdateWithoutOperationInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   chat?: Prisma.ChatUpdateOneRequiredWithoutNotificationsNestedInput
@@ -1754,8 +1853,10 @@ export type NotificationUncheckedUpdateWithoutOperationInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
@@ -1778,8 +1879,10 @@ export type NotificationCreateManyChannelInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1794,8 +1897,10 @@ export type NotificationUpdateWithoutChannelInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
@@ -1822,8 +1927,10 @@ export type NotificationUncheckedUpdateWithoutChannelInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
@@ -1846,8 +1953,10 @@ export type NotificationUncheckedUpdateManyWithoutChannelInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1867,8 +1976,10 @@ export type NotificationCreateManyChatInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1883,8 +1994,10 @@ export type NotificationUpdateWithoutChatInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
@@ -1911,8 +2024,10 @@ export type NotificationUncheckedUpdateWithoutChatInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
@@ -1935,8 +2050,10 @@ export type NotificationUncheckedUpdateManyWithoutChatInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1956,8 +2073,10 @@ export type NotificationCreateManyTopicInput = {
   actionRows:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: string | null
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: Prisma.NotificationCreateacceptedDiceEmojisInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1972,8 +2091,10 @@ export type NotificationUpdateWithoutTopicInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operation?: Prisma.OperationUpdateOneWithoutNotificationNestedInput
@@ -2000,8 +2121,10 @@ export type NotificationUncheckedUpdateWithoutTopicInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   taskGroups?: Prisma.NotificationTaskGroupUncheckedUpdateManyWithoutNotificationNestedInput
@@ -2024,8 +2147,10 @@ export type NotificationUncheckedUpdateManyWithoutTopicInput = {
   actionRows?:PrismaJson.NotificationActionRowsData
   requiresTextResponse?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isProtected?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  protectedForSubjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   expectImmediateFeedback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   acquireTopic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptedDiceEmojis?: Prisma.NotificationUpdateacceptedDiceEmojisInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -2086,8 +2211,10 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   actionRows?: boolean
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: boolean
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
@@ -2117,8 +2244,10 @@ export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   actionRows?: boolean
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: boolean
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
@@ -2144,8 +2273,10 @@ export type NotificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   actionRows?: boolean
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: boolean
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
@@ -2171,13 +2302,15 @@ export type NotificationSelectScalar = {
   actionRows?: boolean
   requiresTextResponse?: boolean
   isProtected?: boolean
+  protectedForSubjectId?: boolean
   expectImmediateFeedback?: boolean
   acquireTopic?: boolean
+  acceptedDiceEmojis?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "chatId" | "channelId" | "topicId" | "messageRhid" | "messageEcid" | "callingSubjectId" | "sendAsSubjectId" | "title" | "content" | "status" | "actionRows" | "requiresTextResponse" | "isProtected" | "expectImmediateFeedback" | "acquireTopic" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
+export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "chatId" | "channelId" | "topicId" | "messageRhid" | "messageEcid" | "callingSubjectId" | "sendAsSubjectId" | "title" | "content" | "status" | "actionRows" | "requiresTextResponse" | "isProtected" | "protectedForSubjectId" | "expectImmediateFeedback" | "acquireTopic" | "acceptedDiceEmojis" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
 export type NotificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.Notification$operationArgs<ExtArgs>
   chat?: boolean | Prisma.ChatDefaultArgs<ExtArgs>
@@ -2303,6 +2436,10 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      */
     isProtected: boolean
     /**
+     * Optional canonical subject identifier allowed to respond to this notification.
+     */
+    protectedForSubjectId: string | null
+    /**
      * Whether callback selection should avoid accepted/chosen suffix rendering.
      */
     expectImmediateFeedback: boolean
@@ -2310,6 +2447,10 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
      * Whether topic messages should resolve this notification as text responses.
      */
     acquireTopic: boolean
+    /**
+     * Dice emojis accepted as notification responses.
+     */
+    acceptedDiceEmojis: string[]
     /**
      * The timestamp when this notification was created.
      */
@@ -2764,8 +2905,10 @@ export interface NotificationFieldRefs {
   readonly actionRows: Prisma.FieldRef<"Notification", 'Json'>
   readonly requiresTextResponse: Prisma.FieldRef<"Notification", 'Boolean'>
   readonly isProtected: Prisma.FieldRef<"Notification", 'Boolean'>
+  readonly protectedForSubjectId: Prisma.FieldRef<"Notification", 'String'>
   readonly expectImmediateFeedback: Prisma.FieldRef<"Notification", 'Boolean'>
   readonly acquireTopic: Prisma.FieldRef<"Notification", 'Boolean'>
+  readonly acceptedDiceEmojis: Prisma.FieldRef<"Notification", 'String[]'>
   readonly createdAt: Prisma.FieldRef<"Notification", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Notification", 'DateTime'>
 }

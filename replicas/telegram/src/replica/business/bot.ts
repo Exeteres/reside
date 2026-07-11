@@ -55,6 +55,7 @@ import {
 import {
   type CallbackCompletionResult,
   completeOperationFromCallbackAction,
+  completeOperationFromDiceMessage,
   completeOperationFromTextReply,
   completeOperationFromTopicMessage,
 } from "./response"
@@ -764,6 +765,41 @@ export async function createTelegramBot(args: {
 
     await setUserMessageAcceptedReaction(bot, chatId, message.message_id)
     await clearInlineActions(context, chatId, repliedMessageId)
+  })
+
+  bot.on("message:dice", async (context: Context) => {
+    const message = context.message
+    const dice = message?.dice
+    const chatId = context.chat?.id
+    const userId = context.from?.id
+    if (!message || !dice || !chatId || !userId) {
+      return
+    }
+
+    const entities = await ensureTelegramEntities(args.crypto, args.prisma, context)
+    const subjectUserId = entities.user?.id
+    const result = await completeDiceMessageResponse({
+      crypto: args.crypto,
+      prisma: args.prisma,
+      operationService: args.operationService,
+      permissionRequestService: args.permissionRequestService,
+      authzService: args.authzService,
+      superAdminUserId: args.superAdminUserId,
+      chatId,
+      userId,
+      subjectUserId,
+      messageThreadId: message.message_thread_id,
+      responseMessageId: message.message_id,
+      emoji: dice.emoji,
+      value: dice.value,
+      sendSystemMessage: async input => {
+        await sendSystemMessage(context, input)
+      },
+    })
+
+    if (result.handled && result.completed) {
+      await setUserMessageAcceptedReaction(bot, chatId, message.message_id)
+    }
   })
 
   bot.on("callback_query:data", async (context: Context) => {
@@ -2250,6 +2286,99 @@ async function completeTopicMessageResponse(args: {
         error: error instanceof Error ? error : new Error(String(error)),
       },
       "failed to complete operation from topic message",
+    )
+
+    await args.sendSystemMessage({
+      text: strings.worker.bot.unexpectedError,
+      replyToMessageId: args.responseMessageId,
+    })
+
+    return { completed: false, handled: true }
+  }
+
+  if (result.unauthorized) {
+    if (result.unauthorizedChannelName) {
+      const subjectId = await resolveTelegramSubjectIdByTelegramUserId(args.prisma, args.userId)
+      if (subjectId === undefined) {
+        return { completed: false, handled: true }
+      }
+
+      await requestNotificationChannelInteractPermission({
+        permissionRequestService: args.permissionRequestService,
+        subjectId,
+        channelName: result.unauthorizedChannelName,
+      })
+    }
+
+    await args.sendSystemMessage({
+      text: strings.common.accessDenied,
+      replyToMessageId: args.responseMessageId,
+    })
+
+    return { completed: false, handled: true }
+  }
+
+  return { completed: result.completed, handled: result.completed }
+}
+
+async function completeDiceMessageResponse(args: {
+  crypto: ResideCrypto
+  prisma: PrismaClient
+  operationService: GenericOperationService<Operation>
+  permissionRequestService: PermissionRequestServiceClient
+  authzService: AuthzServiceClient
+  superAdminUserId: string | undefined
+  chatId: number
+  userId: number
+  subjectUserId: number | undefined
+  messageThreadId: number | undefined
+  responseMessageId: number
+  emoji: string
+  value: number
+  sendSystemMessage: (input: { text: string; replyToMessageId: number }) => Promise<void>
+}): Promise<{ completed: boolean; handled: boolean }> {
+  let result: {
+    completed: boolean
+    unauthorized: boolean
+    unauthorizedChannelName?: string | null
+  }
+
+  try {
+    result = await completeOperationFromDiceMessage({
+      crypto: args.crypto,
+      prisma: args.prisma,
+      operationService: args.operationService,
+      chatId: args.chatId,
+      userId: args.userId,
+      subjectUserId: args.subjectUserId,
+      messageThreadId: args.messageThreadId,
+      responseMessageId: args.responseMessageId,
+      emoji: args.emoji,
+      value: args.value,
+      isSuperAdminUser: candidateUserId =>
+        args.superAdminUserId !== undefined && String(candidateUserId) === args.superAdminUserId,
+      canInteractWithChannel: async (candidateUserId, channelName) => {
+        const candidateSubjectId = await resolveTelegramSubjectIdByTelegramUserId(
+          args.prisma,
+          candidateUserId,
+        )
+        if (candidateSubjectId === undefined) {
+          return false
+        }
+
+        return await canInteractWithNotificationChannel({
+          authzService: args.authzService,
+          subjectId: candidateSubjectId,
+          channelName,
+        })
+      },
+    })
+  } catch (error) {
+    logger.error(
+      {
+        error: error instanceof Error ? error : new Error(String(error)),
+      },
+      "failed to complete operation from dice message",
     )
 
     await args.sendSystemMessage({

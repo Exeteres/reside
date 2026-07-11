@@ -1,0 +1,22 @@
+model MemoryNote {
+  /// The sequence number of the note.
+  id Int @id @default(autoincrement())
+
+  /// The title of the note.
+  title String
+
+  /// The short description of the note that will be shown in search results.
+  description String
+
+  /// The full content that can be retrieved when the note is accessed.
+  content String
+
+  /// The tags associated with the note.
+  tags String[]
+
+  /// The timestamp when this note was created.
+  createdAt DateTime @default(now())
+
+  /// The timestamp when this note was last updated.
+  updatedAt DateTime @updatedAt
+}

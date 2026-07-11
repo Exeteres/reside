@@ -216,6 +216,18 @@ export const bankReplica = defineReplica({
   },
 })
 
+export const casinoReplica = defineReplica({
+  name: "casino",
+  dependencies: {
+    replicas: {
+      infra: infraReplica,
+      access: accessReplica,
+      interaction: telegramReplica,
+      bank: bankReplica,
+    },
+  },
+})
+
 export const exampleReplica = defineReplica({
   name: "example",
   dependencies: {

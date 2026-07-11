@@ -105,6 +105,22 @@ export async function createServices() {
         }
       }
 
+      if (response.type === "DICE") {
+        if (!response.diceEmoji || response.diceValue === null) {
+          throw new Error(`Operation "${operationId}" DICE response has no dice value`)
+        }
+
+        return {
+          diceResponse: {
+            emoji: response.diceEmoji,
+            value: response.diceValue,
+          },
+          contextToken,
+          subjectId,
+          notification,
+        }
+      }
+
       if (!response.textResponseEcid) {
         throw new Error(`Operation "${operationId}" TEXT response has no textResponse`)
       }
@@ -142,8 +158,10 @@ const notificationReadModelSelect = {
   actionRows: true,
   requiresTextResponse: true,
   isProtected: true,
+  protectedForSubjectId: true,
   expectImmediateFeedback: true,
   acquireTopic: true,
+  acceptedDiceEmojis: true,
   taskGroups: {
     orderBy: {
       position: "asc" as const,
@@ -173,8 +191,10 @@ function toNotificationJson(notification: {
   actionRows: NotificationJson["actionRows"]
   requiresTextResponse: boolean
   isProtected: boolean
+  protectedForSubjectId: string | null
   expectImmediateFeedback: boolean
   acquireTopic: boolean
+  acceptedDiceEmojis: string[]
   taskGroups: {
     stableId: string
     title: string
@@ -202,8 +222,10 @@ function toNotificationJson(notification: {
     })),
     requiresTextResponse: notification.requiresTextResponse,
     protected: notification.isProtected,
+    protectedForSubjectId: notification.protectedForSubjectId ?? undefined,
     expectImmediateFeedback: notification.expectImmediateFeedback,
     acquireTopic: notification.acquireTopic,
+    acceptedDiceEmojis: notification.acceptedDiceEmojis,
   }
 }
 

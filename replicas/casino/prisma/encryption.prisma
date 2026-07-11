@@ -1,0 +1,10 @@
+model EncryptedContent {
+  /// The ECID of the encrypted content.
+  ecid String @id
+
+  /// The encrypted content data.
+  data String
+
+  betAmount Bet? @relation("BetAmount")
+  betPayoutAmount Bet? @relation("BetPayoutAmount")
+}

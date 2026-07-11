@@ -2091,6 +2091,8 @@ export const NotificationResponseScalarFieldEnum = {
   actionName: 'actionName',
   subjectId: 'subjectId',
   textResponseEcid: 'textResponseEcid',
+  diceEmoji: 'diceEmoji',
+  diceValue: 'diceValue',
   createdAt: 'createdAt'
 } as const
 
@@ -2174,8 +2176,10 @@ export const NotificationScalarFieldEnum = {
   actionRows: 'actionRows',
   requiresTextResponse: 'requiresTextResponse',
   isProtected: 'isProtected',
+  protectedForSubjectId: 'protectedForSubjectId',
   expectImmediateFeedback: 'expectImmediateFeedback',
   acquireTopic: 'acquireTopic',
+  acceptedDiceEmojis: 'acceptedDiceEmojis',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

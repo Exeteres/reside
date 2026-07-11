@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file interaction/notification.v1.proto.
  */
 export const file_interaction_notification_v1: GenFile = /*@__PURE__*/
-  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24ieQoQTm90aWZpY2F0aW9uVGFzaxIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRJKCgZzdGF0dXMYAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvblRhc2tTdGF0dXMidwoVTm90aWZpY2F0aW9uVGFza0dyb3VwEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEkMKBXRhc2tzGAMgAygLMjQucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25UYXNrIpwDCgxOb3RpZmljYXRpb24SFwoPbm90aWZpY2F0aW9uX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2NvbnRlbnQYAyABKAkSRgoGc3RhdHVzGAQgASgOMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25TdGF0dXMSTgoLYWN0aW9uX3Jvd3MYBSADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvblJvdxJOCgt0YXNrX2dyb3VwcxgGIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uVGFza0dyb3VwEh4KFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYByABKAgSEQoJcHJvdGVjdGVkGAggASgIEiEKGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYCSABKAgSFQoNYWNxdWlyZV90b3BpYxgKIAEoCCLhBgoXU2VuZE5vdGlmaWNhdGlvblJlcXVlc3QSGgoNY29udGV4dF90b2tlbhgBIAEoCUgAiAEBEg8KB2NoYW5uZWwYAiABKAkSLwoJcGFydGl0aW9uGAMgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEg0KBXRpdGxlGAQgASgJEi0KB2NvbnRlbnQYBSABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSMQoGaW1hZ2VzGAYgAygLMiEucmVzaWRlLmNvbW1vbi5maWxlLnYxLklubGluZUZpbGUSNgoLYXR0YWNobWVudHMYByADKAsyIS5yZXNpZGUuY29tbW9uLmZpbGUudjEuSW5saW5lRmlsZRJOCgthY3Rpb25fcm93cxgIIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uQWN0aW9uUm93EjoKFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYCSABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEi0KCXByb3RlY3RlZBgKIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSOAoSc2VuZF9hc19zdWJqZWN0X2lkGAsgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEj0KGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYDCABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEi4KCHRvcGljX2lkGA0gASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlEjEKDWFjcXVpcmVfdG9waWMYDiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEkYKBnN0YXR1cxgPIAEoDjI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uU3RhdHVzEk4KC3Rhc2tfZ3JvdXBzGBAgAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25UYXNrR3JvdXBCEAoOX2NvbnRleHRfdG9rZW4i6QEKGFNlbmROb3RpZmljYXRpb25SZXNwb25zZRIXCg9ub3RpZmljYXRpb25faWQYAiABKAkSOAoJb3BlcmF0aW9uGAEgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uEjIKDG1lc3NhZ2VfbGluaxgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRJGCgxub3RpZmljYXRpb24YBCABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbiK3AwoZVXBkYXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkSDQoFdGl0bGUYAiABKAkSDwoHY29udGVudBgDIAEoCRJOCgthY3Rpb25fcm93cxgEIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uQWN0aW9uUm93EjoKFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYBSABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEj0KGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYBiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEkYKBnN0YXR1cxgHIAEoDjI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uU3RhdHVzEk4KC3Rhc2tfZ3JvdXBzGAggAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25UYXNrR3JvdXAingEKGlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbhJGCgxub3RpZmljYXRpb24YAiABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbiI8CiFBY2NlcHROb3RpZmljYXRpb25SZXNwb25zZVJlcXVlc3QSFwoPbm90aWZpY2F0aW9uX2lkGAEgASgJIqYBCiJBY2NlcHROb3RpZmljYXRpb25SZXNwb25zZVJlc3BvbnNlEjgKCW9wZXJhdGlvbhgBIAEoCzIlLnJlc2lkZS5jb21tb24ub3BlcmF0aW9uLnYxLk9wZXJhdGlvbhJGCgxub3RpZmljYXRpb24YAiABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbiI0ChlEZWxldGVOb3RpZmljYXRpb25SZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCSL7AQoUTm90aWZpY2F0aW9uUmVzcG9uc2USFQoLYWN0aW9uX25hbWUYASABKAlIABIXCg10ZXh0X3Jlc3BvbnNlGAIgASgJSAASLQoLdGFza191cGRhdGUYBCABKAsyFi5nb29nbGUucHJvdG9idWYuRW1wdHlIABJGCgxub3RpZmljYXRpb24YAyABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbhIwCgpzdWJqZWN0X2lkGAUgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlQgoKCHJlc3BvbnNlKoMBChZOb3RpZmljYXRpb25BY3Rpb25JY29uEiEKHUNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9OT05FEAASIgoeQ09ORklSTUFUSU9OX0FDVElPTl9JQ09OX0NIRUNLEAESIgoeQ09ORklSTUFUSU9OX0FDVElPTl9JQ09OX0NST1NTEAIqvwEKEk5vdGlmaWNhdGlvblN0YXR1cxIfChtOT1RJRklDQVRJT05fU1RBVFVTX1JFR1VMQVIQABIgChxOT1RJRklDQVRJT05fU1RBVFVTX1BMQU5OSU5HEAESIwofTk9USUZJQ0FUSU9OX1NUQVRVU19JTl9QUk9HUkVTUxACEiEKHU5PVElGSUNBVElPTl9TVEFUVVNfQ09NUExFVEVEEAMSHgoaTk9USUZJQ0FUSU9OX1NUQVRVU19GQUlMRUQQBCqBAgoWTm90aWZpY2F0aW9uVGFza1N0YXR1cxIkCiBOT1RJRklDQVRJT05fVEFTS19TVEFUVVNfUExBTk5FRBAAEiQKIE5PVElGSUNBVElPTl9UQVNLX1NUQVRVU19QRU5ESU5HEAESKAokTk9USUZJQ0FUSU9OX1RBU0tfU1RBVFVTX0lOX1BST0dSRVNTEAISJgoiTk9USUZJQ0FUSU9OX1RBU0tfU1RBVFVTX0NPTVBMRVRFRBADEiMKH05PVElGSUNBVElPTl9UQVNLX1NUQVRVU19GQUlMRUQQBBIkCiBOT1RJRklDQVRJT05fVEFTS19TVEFUVVNfU0tJUFBFRBAFMtYEChNOb3RpZmljYXRpb25TZXJ2aWNlEo0BChBTZW5kTm90aWZpY2F0aW9uEjsucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5TZW5kTm90aWZpY2F0aW9uUmVxdWVzdBo8LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuU2VuZE5vdGlmaWNhdGlvblJlc3BvbnNlEpMBChJVcGRhdGVOb3RpZmljYXRpb24SPS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlVwZGF0ZU5vdGlmaWNhdGlvblJlcXVlc3QaPi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlVwZGF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEqsBChpBY2NlcHROb3RpZmljYXRpb25SZXNwb25zZRJFLnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXF1ZXN0GkYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5BY2NlcHROb3RpZmljYXRpb25SZXNwb25zZVJlc3BvbnNlEmsKEkRlbGV0ZU5vdGlmaWNhdGlvbhI9LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuRGVsZXRlTm90aWZpY2F0aW9uUmVxdWVzdBoWLmdvb2dsZS5wcm90b2J1Zi5FbXB0eWIGcHJvdG8z", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
+  fileDesc("CiFpbnRlcmFjdGlvbi9ub3RpZmljYXRpb24udjEucHJvdG8SInJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEipgEKEk5vdGlmaWNhdGlvbkFjdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEkgKBGljb24YAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkFjdGlvbkljb24SKQoDdXJsGAQgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlImAKFU5vdGlmaWNhdGlvbkFjdGlvblJvdxJHCgdhY3Rpb25zGAEgAygLMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb24ieQoQTm90aWZpY2F0aW9uVGFzaxIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRJKCgZzdGF0dXMYAyABKA4yOi5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvblRhc2tTdGF0dXMidwoVTm90aWZpY2F0aW9uVGFza0dyb3VwEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEkMKBXRhc2tzGAMgAygLMjQucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25UYXNrIiwKDERpY2VSZXNwb25zZRINCgVlbW9qaRgBIAEoCRINCgV2YWx1ZRgCIAEoDSL6AwoMTm90aWZpY2F0aW9uEhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIPCgdjb250ZW50GAMgASgJEkYKBnN0YXR1cxgEIAEoDjI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uU3RhdHVzEk4KC2FjdGlvbl9yb3dzGAUgAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb25Sb3cSTgoLdGFza19ncm91cHMYBiADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvblRhc2tHcm91cBIeChZyZXF1aXJlc190ZXh0X3Jlc3BvbnNlGAcgASgIEhEKCXByb3RlY3RlZBgIIAEoCBIhChlleHBlY3RfaW1tZWRpYXRlX2ZlZWRiYWNrGAkgASgIEhUKDWFjcXVpcmVfdG9waWMYCiABKAgSHAoUYWNjZXB0ZWRfZGljZV9lbW9qaXMYCyADKAkSPgoYcHJvdGVjdGVkX2Zvcl9zdWJqZWN0X2lkGAwgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIr8HChdTZW5kTm90aWZpY2F0aW9uUmVxdWVzdBIaCg1jb250ZXh0X3Rva2VuGAEgASgJSACIAQESDwoHY2hhbm5lbBgCIAEoCRIvCglwYXJ0aXRpb24YAyABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSDQoFdGl0bGUYBCABKAkSLQoHY29udGVudBgFIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIxCgZpbWFnZXMYBiADKAsyIS5yZXNpZGUuY29tbW9uLmZpbGUudjEuSW5saW5lRmlsZRI2CgthdHRhY2htZW50cxgHIAMoCzIhLnJlc2lkZS5jb21tb24uZmlsZS52MS5JbmxpbmVGaWxlEk4KC2FjdGlvbl9yb3dzGAggAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25BY3Rpb25Sb3cSOgoWcmVxdWlyZXNfdGV4dF9yZXNwb25zZRgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSLQoJcHJvdGVjdGVkGAogASgLMhouZ29vZ2xlLnByb3RvYnVmLkJvb2xWYWx1ZRI4ChJzZW5kX2FzX3N1YmplY3RfaWQYCyABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSPQoZZXhwZWN0X2ltbWVkaWF0ZV9mZWVkYmFjaxgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSLgoIdG9waWNfaWQYDSABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWUSMQoNYWNxdWlyZV90b3BpYxgOIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSRgoGc3RhdHVzGA8gASgOMjYucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25TdGF0dXMSTgoLdGFza19ncm91cHMYECADKAsyOS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvblRhc2tHcm91cBIcChRhY2NlcHRlZF9kaWNlX2Vtb2ppcxgRIAMoCRI+Chhwcm90ZWN0ZWRfZm9yX3N1YmplY3RfaWQYEiABKAsyHC5nb29nbGUucHJvdG9idWYuU3RyaW5nVmFsdWVCEAoOX2NvbnRleHRfdG9rZW4i6QEKGFNlbmROb3RpZmljYXRpb25SZXNwb25zZRIXCg9ub3RpZmljYXRpb25faWQYAiABKAkSOAoJb3BlcmF0aW9uGAEgASgLMiUucmVzaWRlLmNvbW1vbi5vcGVyYXRpb24udjEuT3BlcmF0aW9uEjIKDG1lc3NhZ2VfbGluaxgDIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRJGCgxub3RpZmljYXRpb24YBCABKAsyMC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbiLIBAoZVXBkYXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkSDQoFdGl0bGUYAiABKAkSDwoHY29udGVudBgDIAEoCRJOCgthY3Rpb25fcm93cxgEIAMoCzI5LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uQWN0aW9uUm93EjoKFnJlcXVpcmVzX3RleHRfcmVzcG9uc2UYBSABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEj0KGWV4cGVjdF9pbW1lZGlhdGVfZmVlZGJhY2sYBiABKAsyGi5nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEkYKBnN0YXR1cxgHIAEoDjI2LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuTm90aWZpY2F0aW9uU3RhdHVzEk4KC3Rhc2tfZ3JvdXBzGAggAygLMjkucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb25UYXNrR3JvdXASHAoUYWNjZXB0ZWRfZGljZV9lbW9qaXMYCSADKAkSMQoNYWNxdWlyZV90b3BpYxgKIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5Cb29sVmFsdWUSPgoYcHJvdGVjdGVkX2Zvcl9zdWJqZWN0X2lkGAsgASgLMhwuZ29vZ2xlLnByb3RvYnVmLlN0cmluZ1ZhbHVlIp4BChpVcGRhdGVOb3RpZmljYXRpb25SZXNwb25zZRI4CglvcGVyYXRpb24YASABKAsyJS5yZXNpZGUuY29tbW9uLm9wZXJhdGlvbi52MS5PcGVyYXRpb24SRgoMbm90aWZpY2F0aW9uGAIgASgLMjAucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb24iPAohQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCSKmAQoiQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXNwb25zZRI4CglvcGVyYXRpb24YASABKAsyJS5yZXNpZGUuY29tbW9uLm9wZXJhdGlvbi52MS5PcGVyYXRpb24SRgoMbm90aWZpY2F0aW9uGAIgASgLMjAucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb24iNAoZRGVsZXRlTm90aWZpY2F0aW9uUmVxdWVzdBIXCg9ub3RpZmljYXRpb25faWQYASABKAkixgIKFE5vdGlmaWNhdGlvblJlc3BvbnNlEhUKC2FjdGlvbl9uYW1lGAEgASgJSAASFwoNdGV4dF9yZXNwb25zZRgCIAEoCUgAEi0KC3Rhc2tfdXBkYXRlGAQgASgLMhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5SAASSQoNZGljZV9yZXNwb25zZRgGIAEoCzIwLnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuRGljZVJlc3BvbnNlSAASRgoMbm90aWZpY2F0aW9uGAMgASgLMjAucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5Ob3RpZmljYXRpb24SMAoKc3ViamVjdF9pZBgFIAEoCzIcLmdvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZUIKCghyZXNwb25zZSqDAQoWTm90aWZpY2F0aW9uQWN0aW9uSWNvbhIhCh1DT05GSVJNQVRJT05fQUNUSU9OX0lDT05fTk9ORRAAEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DSEVDSxABEiIKHkNPTkZJUk1BVElPTl9BQ1RJT05fSUNPTl9DUk9TUxACKr8BChJOb3RpZmljYXRpb25TdGF0dXMSHwobTk9USUZJQ0FUSU9OX1NUQVRVU19SRUdVTEFSEAASIAocTk9USUZJQ0FUSU9OX1NUQVRVU19QTEFOTklORxABEiMKH05PVElGSUNBVElPTl9TVEFUVVNfSU5fUFJPR1JFU1MQAhIhCh1OT1RJRklDQVRJT05fU1RBVFVTX0NPTVBMRVRFRBADEh4KGk5PVElGSUNBVElPTl9TVEFUVVNfRkFJTEVEEAQqgQIKFk5vdGlmaWNhdGlvblRhc2tTdGF0dXMSJAogTk9USUZJQ0FUSU9OX1RBU0tfU1RBVFVTX1BMQU5ORUQQABIkCiBOT1RJRklDQVRJT05fVEFTS19TVEFUVVNfUEVORElORxABEigKJE5PVElGSUNBVElPTl9UQVNLX1NUQVRVU19JTl9QUk9HUkVTUxACEiYKIk5PVElGSUNBVElPTl9UQVNLX1NUQVRVU19DT01QTEVURUQQAxIjCh9OT1RJRklDQVRJT05fVEFTS19TVEFUVVNfRkFJTEVEEAQSJAogTk9USUZJQ0FUSU9OX1RBU0tfU1RBVFVTX1NLSVBQRUQQBTLWBAoTTm90aWZpY2F0aW9uU2VydmljZRKNAQoQU2VuZE5vdGlmaWNhdGlvbhI7LnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuU2VuZE5vdGlmaWNhdGlvblJlcXVlc3QaPC5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLlNlbmROb3RpZmljYXRpb25SZXNwb25zZRKTAQoSVXBkYXRlTm90aWZpY2F0aW9uEj0ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5VcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0Gj4ucmVzaWRlLmludGVyYWN0aW9uLm5vdGlmaWNhdGlvbi52MS5VcGRhdGVOb3RpZmljYXRpb25SZXNwb25zZRKrAQoaQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2USRS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLkFjY2VwdE5vdGlmaWNhdGlvblJlc3BvbnNlUmVxdWVzdBpGLnJlc2lkZS5pbnRlcmFjdGlvbi5ub3RpZmljYXRpb24udjEuQWNjZXB0Tm90aWZpY2F0aW9uUmVzcG9uc2VSZXNwb25zZRJrChJEZWxldGVOb3RpZmljYXRpb24SPS5yZXNpZGUuaW50ZXJhY3Rpb24ubm90aWZpY2F0aW9uLnYxLkRlbGV0ZU5vdGlmaWNhdGlvblJlcXVlc3QaFi5nb29nbGUucHJvdG9idWYuRW1wdHliBnByb3RvMw", [file_google_protobuf_wrappers, file_google_protobuf_empty, file_common_file_v1, file_common_operation_v1]);
 
 /**
  * The action that a user can take in response to a notification, represented by a button in the UI.
@@ -259,6 +259,57 @@ export const NotificationTaskGroupSchema: GenMessage<NotificationTaskGroup, {jso
   messageDesc(file_interaction_notification_v1, 3);
 
 /**
+ * A dice response emitted by an interaction implementation.
+ *
+ * @generated from message reside.interaction.notification.v1.DiceResponse
+ */
+export type DiceResponse = Message<"reside.interaction.notification.v1.DiceResponse"> & {
+  /**
+   * The dice emoji accepted by the interaction implementation.
+   *
+   * @generated from field: string emoji = 1;
+   */
+  emoji: string;
+
+  /**
+   * The resulting dice value.
+   * The value range depends on the emoji and the interaction implementation.
+   *
+   * @generated from field: uint32 value = 2;
+   */
+  value: number;
+};
+
+/**
+ * A dice response emitted by an interaction implementation.
+ *
+ * @generated from message reside.interaction.notification.v1.DiceResponse
+ */
+export type DiceResponseJson = {
+  /**
+   * The dice emoji accepted by the interaction implementation.
+   *
+   * @generated from field: string emoji = 1;
+   */
+  emoji?: string;
+
+  /**
+   * The resulting dice value.
+   * The value range depends on the emoji and the interaction implementation.
+   *
+   * @generated from field: uint32 value = 2;
+   */
+  value?: number;
+};
+
+/**
+ * Describes the message reside.interaction.notification.v1.DiceResponse.
+ * Use `create(DiceResponseSchema)` to create a new message.
+ */
+export const DiceResponseSchema: GenMessage<DiceResponse, {jsonType: DiceResponseJson}> = /*@__PURE__*/
+  messageDesc(file_interaction_notification_v1, 4);
+
+/**
  * The read model of a notification as currently stored by the interaction implementation.
  *
  * @generated from message reside.interaction.notification.v1.Notification
@@ -334,6 +385,22 @@ export type Notification = Message<"reside.interaction.notification.v1.Notificat
    * @generated from field: bool acquire_topic = 10;
    */
   acquireTopic: boolean;
+
+  /**
+   * Dice emojis accepted as responses to this notification.
+   * Empty means dice responses are not accepted.
+   *
+   * @generated from field: repeated string accepted_dice_emojis = 11;
+   */
+  acceptedDiceEmojis: string[];
+
+  /**
+   * Optional canonical subject identifier allowed to respond to this notification.
+   * If provided, implementations must reject responses from other subjects.
+   *
+   * @generated from field: google.protobuf.StringValue protected_for_subject_id = 12;
+   */
+  protectedForSubjectId?: string;
 };
 
 /**
@@ -412,6 +479,22 @@ export type NotificationJson = {
    * @generated from field: bool acquire_topic = 10;
    */
   acquireTopic?: boolean;
+
+  /**
+   * Dice emojis accepted as responses to this notification.
+   * Empty means dice responses are not accepted.
+   *
+   * @generated from field: repeated string accepted_dice_emojis = 11;
+   */
+  acceptedDiceEmojis?: string[];
+
+  /**
+   * Optional canonical subject identifier allowed to respond to this notification.
+   * If provided, implementations must reject responses from other subjects.
+   *
+   * @generated from field: google.protobuf.StringValue protected_for_subject_id = 12;
+   */
+  protectedForSubjectId?: StringValueJson;
 };
 
 /**
@@ -419,7 +502,7 @@ export type NotificationJson = {
  * Use `create(NotificationSchema)` to create a new message.
  */
 export const NotificationSchema: GenMessage<Notification, {jsonType: NotificationJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 4);
+  messageDesc(file_interaction_notification_v1, 5);
 
 /**
  * The request message for sending a notification to a channel.
@@ -559,6 +642,22 @@ export type SendNotificationRequest = Message<"reside.interaction.notification.v
    * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 16;
    */
   taskGroups: NotificationTaskGroup[];
+
+  /**
+   * Dice emojis accepted as notification responses.
+   * Empty means dice responses are not accepted.
+   *
+   * @generated from field: repeated string accepted_dice_emojis = 17;
+   */
+  acceptedDiceEmojis: string[];
+
+  /**
+   * Optional canonical subject identifier allowed to respond to this notification.
+   * If provided, implementations must reject responses from other subjects.
+   *
+   * @generated from field: google.protobuf.StringValue protected_for_subject_id = 18;
+   */
+  protectedForSubjectId?: string;
 };
 
 /**
@@ -699,6 +798,22 @@ export type SendNotificationRequestJson = {
    * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 16;
    */
   taskGroups?: NotificationTaskGroupJson[];
+
+  /**
+   * Dice emojis accepted as notification responses.
+   * Empty means dice responses are not accepted.
+   *
+   * @generated from field: repeated string accepted_dice_emojis = 17;
+   */
+  acceptedDiceEmojis?: string[];
+
+  /**
+   * Optional canonical subject identifier allowed to respond to this notification.
+   * If provided, implementations must reject responses from other subjects.
+   *
+   * @generated from field: google.protobuf.StringValue protected_for_subject_id = 18;
+   */
+  protectedForSubjectId?: StringValueJson;
 };
 
 /**
@@ -706,7 +821,7 @@ export type SendNotificationRequestJson = {
  * Use `create(SendNotificationRequestSchema)` to create a new message.
  */
 export const SendNotificationRequestSchema: GenMessage<SendNotificationRequest, {jsonType: SendNotificationRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 5);
+  messageDesc(file_interaction_notification_v1, 6);
 
 /**
  * The response message for a notification sent to a channel.
@@ -791,7 +906,7 @@ export type SendNotificationResponseJson = {
  * Use `create(SendNotificationResponseSchema)` to create a new message.
  */
 export const SendNotificationResponseSchema: GenMessage<SendNotificationResponse, {jsonType: SendNotificationResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 6);
+  messageDesc(file_interaction_notification_v1, 7);
 
 /**
  * The request message for updating an existing notification.
@@ -860,6 +975,30 @@ export type UpdateNotificationRequest = Message<"reside.interaction.notification
    * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 8;
    */
   taskGroups: NotificationTaskGroup[];
+
+  /**
+   * The updated dice emojis accepted as notification responses.
+   * Empty means dice responses are not accepted.
+   *
+   * @generated from field: repeated string accepted_dice_emojis = 9;
+   */
+  acceptedDiceEmojis: string[];
+
+  /**
+   * Whether messages sent into the target topic should be treated as responses to this notification.
+   * If not provided, the current behavior is preserved.
+   *
+   * @generated from field: google.protobuf.BoolValue acquire_topic = 10;
+   */
+  acquireTopic?: boolean;
+
+  /**
+   * Optional canonical subject identifier allowed to respond to this notification.
+   * If not provided, the current restriction is preserved.
+   *
+   * @generated from field: google.protobuf.StringValue protected_for_subject_id = 11;
+   */
+  protectedForSubjectId?: string;
 };
 
 /**
@@ -929,6 +1068,30 @@ export type UpdateNotificationRequestJson = {
    * @generated from field: repeated reside.interaction.notification.v1.NotificationTaskGroup task_groups = 8;
    */
   taskGroups?: NotificationTaskGroupJson[];
+
+  /**
+   * The updated dice emojis accepted as notification responses.
+   * Empty means dice responses are not accepted.
+   *
+   * @generated from field: repeated string accepted_dice_emojis = 9;
+   */
+  acceptedDiceEmojis?: string[];
+
+  /**
+   * Whether messages sent into the target topic should be treated as responses to this notification.
+   * If not provided, the current behavior is preserved.
+   *
+   * @generated from field: google.protobuf.BoolValue acquire_topic = 10;
+   */
+  acquireTopic?: BoolValueJson;
+
+  /**
+   * Optional canonical subject identifier allowed to respond to this notification.
+   * If not provided, the current restriction is preserved.
+   *
+   * @generated from field: google.protobuf.StringValue protected_for_subject_id = 11;
+   */
+  protectedForSubjectId?: StringValueJson;
 };
 
 /**
@@ -936,7 +1099,7 @@ export type UpdateNotificationRequestJson = {
  * Use `create(UpdateNotificationRequestSchema)` to create a new message.
  */
 export const UpdateNotificationRequestSchema: GenMessage<UpdateNotificationRequest, {jsonType: UpdateNotificationRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 7);
+  messageDesc(file_interaction_notification_v1, 8);
 
 /**
  * The response message for a notification update operation.
@@ -987,7 +1150,7 @@ export type UpdateNotificationResponseJson = {
  * Use `create(UpdateNotificationResponseSchema)` to create a new message.
  */
 export const UpdateNotificationResponseSchema: GenMessage<UpdateNotificationResponse, {jsonType: UpdateNotificationResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 8);
+  messageDesc(file_interaction_notification_v1, 9);
 
 /**
  * The request message for accepting more responses for an existing notification.
@@ -1024,7 +1187,7 @@ export type AcceptNotificationResponseRequestJson = {
  * Use `create(AcceptNotificationResponseRequestSchema)` to create a new message.
  */
 export const AcceptNotificationResponseRequestSchema: GenMessage<AcceptNotificationResponseRequest, {jsonType: AcceptNotificationResponseRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 9);
+  messageDesc(file_interaction_notification_v1, 10);
 
 /**
  * The response message for accepting more responses for an existing notification.
@@ -1075,7 +1238,7 @@ export type AcceptNotificationResponseResponseJson = {
  * Use `create(AcceptNotificationResponseResponseSchema)` to create a new message.
  */
 export const AcceptNotificationResponseResponseSchema: GenMessage<AcceptNotificationResponseResponse, {jsonType: AcceptNotificationResponseResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 10);
+  messageDesc(file_interaction_notification_v1, 11);
 
 /**
  * The request message for deleting an existing notification.
@@ -1112,7 +1275,7 @@ export type DeleteNotificationRequestJson = {
  * Use `create(DeleteNotificationRequestSchema)` to create a new message.
  */
 export const DeleteNotificationRequestSchema: GenMessage<DeleteNotificationRequest, {jsonType: DeleteNotificationRequestJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 11);
+  messageDesc(file_interaction_notification_v1, 12);
 
 /**
  * The message representing the user's response to a notification, either by taking one of the provided actions or by providing a text response.
@@ -1147,6 +1310,14 @@ export type NotificationResponse = Message<"reside.interaction.notification.v1.N
      */
     value: Empty;
     case: "taskUpdate";
+  } | {
+    /**
+     * A dice response emitted by an interaction implementation.
+     *
+     * @generated from field: reside.interaction.notification.v1.DiceResponse dice_response = 6;
+     */
+    value: DiceResponse;
+    case: "diceResponse";
   } | { case: undefined; value?: undefined };
 
   /**
@@ -1193,6 +1364,13 @@ export type NotificationResponseJson = {
   taskUpdate?: EmptyJson;
 
   /**
+   * A dice response emitted by an interaction implementation.
+   *
+   * @generated from field: reside.interaction.notification.v1.DiceResponse dice_response = 6;
+   */
+  diceResponse?: DiceResponseJson;
+
+  /**
    * The notification read model at the moment the response operation was resolved.
    *
    * @generated from field: reside.interaction.notification.v1.Notification notification = 3;
@@ -1213,7 +1391,7 @@ export type NotificationResponseJson = {
  * Use `create(NotificationResponseSchema)` to create a new message.
  */
 export const NotificationResponseSchema: GenMessage<NotificationResponse, {jsonType: NotificationResponseJson}> = /*@__PURE__*/
-  messageDesc(file_interaction_notification_v1, 12);
+  messageDesc(file_interaction_notification_v1, 13);
 
 /**
  * The well-known icon to be displayed alongside a notification action.
