@@ -10,7 +10,7 @@ import { type AiActivities, AiNotificationChannels, imageCommand } from "../defi
 import { strings } from "../locale"
 
 const { createAiImage } = proxyActivities<AiActivities>({
-  scheduleToCloseTimeout: "2 minutes",
+  scheduleToCloseTimeout: "10 minutes",
   retry: {
     initialInterval: "3 seconds",
     backoffCoefficient: 2,
